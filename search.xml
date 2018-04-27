@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[hexo博客文章添加折叠功能]]></title>
+    <title><![CDATA[hexo博客文章优化]]></title>
     <url>%2F2018%2F04%2F19%2Fhexo%E5%8D%9A%E5%AE%A2%E6%96%87%E7%AB%A0%E6%B7%BB%E5%8A%A0%E6%8A%98%E5%8F%A0%E5%8A%9F%E8%83%BD%2F</url>
-    <content type="text"><![CDATA[在main.js中添加折叠jsnext主题的主要js位于 themes/next/source/js/src/post-details.js在里面找合适的位置，添加如下代码： 12345678$(document).ready(function()&#123; $(document).on(&apos;click&apos;, &apos;.fold_hider&apos;, function()&#123; $(&apos;&gt;.fold&apos;, this.parentNode).slideToggle(); $(&apos;&gt;:first&apos;, this).toggleClass(&apos;open&apos;); &#125;); //默认情况下折叠 $(&quot;div.fold&quot;).css(&quot;display&quot;,&quot;none&quot;);&#125;); 自定义内建标签在主题scripts下添加一个tags.js, 位于themes/next/scripts/tags.js 123456789101112131415161718192021222324/* @haohuawu 修复 Nunjucks 的 tag 里写 ```代码块```，最终都会渲染成 undefined 的问题 https://github.com/hexojs/hexo/issues/2400*/const rEscapeContent = /&lt;escape(?:[^&gt;]*)&gt;([\s\S]*?)&lt;\/escape&gt;/g;const placeholder = &apos;\uFFFD&apos;;const rPlaceholder = /(?:&lt;|&amp;lt;)\!--\uFFFD(\d+)--(?:&gt;|&amp;gt;)/g;const cache = [];function escapeContent(str) &#123; return &apos;&lt;!--&apos; + placeholder + (cache.push(str) - 1) + &apos;--&gt;&apos;;&#125;hexo.extend.filter.register(&apos;before_post_render&apos;, function(data) &#123; data.content = data.content.replace(rEscapeContent, function(match, content) &#123; return escapeContent(content); &#125;); return data;&#125;);hexo.extend.filter.register(&apos;after_post_render&apos;, function(data) &#123; data.content = data.content.replace(rPlaceholder, function() &#123; return cache[arguments[1]]; &#125;); return data;&#125;); 再继续添加一个themes/next/scripts/fold.js 12345678/* global hexo */// Usage: &#123;% fold ???? %&#125; Something &#123;% endfold %&#125;function fold (args, content) &#123; var text = args[0]; if(!text) text = &quot;点击显/隐&quot;; return &apos;&lt;div&gt;&lt;div class=&quot;fold_hider&quot;&gt;&lt;div class=&quot;close hider_title&quot;&gt;&apos; + text + &apos;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;fold&quot;&gt;\n&apos; + hexo.render.renderSync(&#123;text: content, engine: &apos;markdown&apos;&#125;) + &apos;\n&lt;/div&gt;&lt;/div&gt;&apos;;&#125;hexo.extend.tag.register(&apos;fold&apos;, fold, &#123;ends: true&#125;); 最后，添加几个自定义样式，位置 themes/next/source/css/_custom/custom.styl 12345678910.hider_title&#123; font-family: &quot;Microsoft Yahei&quot;; cursor: pointer;&#125;.close:after&#123; content: &quot;▼&quot;;&#125;.open:after&#123; content: &quot;▲&quot;;&#125; 最后，在我们需要折叠的地方前后添加便签，示例用法： 折叠示例代码 123&#123;% fold 点击显/隐内容 %&#125;something you want to fold, include code block.&#123;% endfold %&#125; 参考博客]]></content>
+    <content type="text"><![CDATA[博客文章添加折叠功能博客文章中，有些内容篇幅较大，但是可能对一部分读者来说，并不会特别关注，所以这些数据的展示，可能会直接导致整篇博文变得臃肿，而对另一部分读者，这部分详细的介绍却非常重要，因此不能简单的缩减博文，所以这个时候，针对文章中这部分篇幅较大的内容，增加折叠功能可以很好的解决这类问题。 在main.js中添加折叠jsnext主题的主要js位于 themes/next/source/js/src/post-details.js在里面找合适的位置，添加如下代码： 12345678$(document).ready(function()&#123; $(document).on(&apos;click&apos;, &apos;.fold_hider&apos;, function()&#123; $(&apos;&gt;.fold&apos;, this.parentNode).slideToggle(); $(&apos;&gt;:first&apos;, this).toggleClass(&apos;open&apos;); &#125;); //默认情况下折叠 $(&quot;div.fold&quot;).css(&quot;display&quot;,&quot;none&quot;);&#125;); 自定义内建标签在主题scripts下添加一个tags.js, 位于themes/next/scripts/tags.js 123456789101112131415161718192021222324/* @haohuawu 修复 Nunjucks 的 tag 里写 ```代码块```，最终都会渲染成 undefined 的问题 https://github.com/hexojs/hexo/issues/2400*/const rEscapeContent = /&lt;escape(?:[^&gt;]*)&gt;([\s\S]*?)&lt;\/escape&gt;/g;const placeholder = &apos;\uFFFD&apos;;const rPlaceholder = /(?:&lt;|&amp;lt;)\!--\uFFFD(\d+)--(?:&gt;|&amp;gt;)/g;const cache = [];function escapeContent(str) &#123; return &apos;&lt;!--&apos; + placeholder + (cache.push(str) - 1) + &apos;--&gt;&apos;;&#125;hexo.extend.filter.register(&apos;before_post_render&apos;, function(data) &#123; data.content = data.content.replace(rEscapeContent, function(match, content) &#123; return escapeContent(content); &#125;); return data;&#125;);hexo.extend.filter.register(&apos;after_post_render&apos;, function(data) &#123; data.content = data.content.replace(rPlaceholder, function() &#123; return cache[arguments[1]]; &#125;); return data;&#125;); 再继续添加一个themes/next/scripts/fold.js 12345678/* global hexo */// Usage: &#123;% fold ???? %&#125; Something &#123;% endfold %&#125;function fold (args, content) &#123; var text = args[0]; if(!text) text = &quot;点击显/隐&quot;; return &apos;&lt;div&gt;&lt;div class=&quot;fold_hider&quot;&gt;&lt;div class=&quot;close hider_title&quot;&gt;&apos; + text + &apos;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;fold&quot;&gt;\n&apos; + hexo.render.renderSync(&#123;text: content, engine: &apos;markdown&apos;&#125;) + &apos;\n&lt;/div&gt;&lt;/div&gt;&apos;;&#125;hexo.extend.tag.register(&apos;fold&apos;, fold, &#123;ends: true&#125;); 最后，添加几个自定义样式，位置 themes/next/source/css/_custom/custom.styl 12345678910.hider_title&#123; font-family: &quot;Microsoft Yahei&quot;; cursor: pointer;&#125;.close:after&#123; content: &quot;▼&quot;;&#125;.open:after&#123; content: &quot;▲&quot;;&#125; 最后，在我们需要折叠的地方前后添加便签，示例用法： 折叠示例代码 123&#123;% fold 点击显/隐内容 %&#125;something you want to fold, include code block.&#123;% endfold %&#125; 参考博客 Hexo博文置顶（自定义排序）HEXO默认是按照时间顺序排一条线，然后按照时间顺序来决定显示的顺序的。按照网上的教程整理了一份方法。 使用的是top属性，top值越高，排序越在前，不设置top值得博文按照时间顺序排序。修改Hexo文件夹下的node_modules/hexo-generator-index/lib/generator.js 打开在最后添加如下javascript代码折叠示例代码 12345678910111213posts.data = posts.data.sort(function(a, b) &#123;if(a.top &amp;&amp; b.top) &#123; // 两篇文章top都有定义 if(a.top == b.top) return b.date - a.date; // 若top值一样则按照文章日期降序排 else return b.top - a.top; // 否则按照top值降序排&#125;else if(a.top &amp;&amp; !b.top) &#123; // 以下是只有一篇文章top有定义，那么将有top的排在前面（这里用异或操作居然不行233） return -1;&#125;else if(!a.top &amp;&amp; b.top) &#123; return 1;&#125;else return b.date - a.date; // 都没定义按照文章日期降序排)&#125;; 更改以后，在写博客的时候，添加top属性就可以啦；]]></content>
+      <categories>
+        <category>hexo</category>
+      </categories>
       <tags>
         <tag>hexo</tag>
       </tags>
@@ -25,8 +28,8 @@
         <category>绘图</category>
       </categories>
       <tags>
-        <tag>R</tag>
         <tag>绘图</tag>
+        <tag>R</tag>
         <tag>ggplot</tag>
       </tags>
   </entry>
@@ -87,8 +90,8 @@
         <category>绘图</category>
       </categories>
       <tags>
-        <tag>R</tag>
         <tag>绘图</tag>
+        <tag>R</tag>
         <tag>蜜蜂群图</tag>
       </tags>
   </entry>
