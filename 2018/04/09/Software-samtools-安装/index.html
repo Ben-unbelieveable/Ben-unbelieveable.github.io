@@ -93,10 +93,12 @@
 <meta property="og:site_name" content="Ben-air">
 <meta property="og:description" content="Samtools在Linux环境下的安装过程记录，因为是初始开始安装，缺少多个依赖，所以记录下来以备后用。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2022-03-14T01:12:02.897Z">
+<meta property="og:image" content="http://ben-air.cn/2018/04/09/Software-samtools-安装/samtools_errorDemo1.jpg">
+<meta property="og:updated_time" content="2022-04-13T06:05:16.645Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="samtools-安装">
 <meta name="twitter:description" content="Samtools在Linux环境下的安装过程记录，因为是初始开始安装，缺少多个依赖，所以记录下来以备后用。">
+<meta name="twitter:image" content="http://ben-air.cn/2018/04/09/Software-samtools-安装/samtools_errorDemo1.jpg">
 
 
 
@@ -430,13 +432,19 @@
       
 
       
-        <ol>
-<li>环境配置</li>
-</ol>
+        <p>#1. 环境配置</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#报错缺少时 curses.h: No such file or directory</span><br><span class="line">yum install ncurses-devel ncurses</span><br><span class="line"></span><br><span class="line">#报错缺少时 bzlib.h: No such file or directory</span><br><span class="line">yum install  bzip2-devel.x86_64</span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>软件安装<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">wget -c https://github.com/samtools/samtools/releases/download/1.9/samtools-1.9.tar.bz2</span><br><span class="line">tar xvf samtools-1.9.tar.bz2</span><br><span class="line">cd  samtools-1.9/</span><br><span class="line"></span><br><span class="line">./configure --prefix=~/biosoft/samtools-1.9</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure></li>
+<p>#2. 软件安装<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">wget -c https://github.com/samtools/samtools/releases/download/1.9/samtools-1.9.tar.bz2</span><br><span class="line">tar xvf samtools-1.9.tar.bz2</span><br><span class="line">cd  samtools-1.9/</span><br><span class="line"></span><br><span class="line">./configure --prefix=~/biosoft/samtools-1.9</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure></p>
+<h1 id="3-异常处理"><a href="#3-异常处理" class="headerlink" title="3. 异常处理"></a>3. 异常处理</h1><p>##3.1 samtools打开的文件句柄数目超出Linux限制</p>
+<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在使用Samtools进行排序时，遇到如下情况，程序中断，<br>从截图中可以看到，samtools一共需要合并1032个bam文件，但是在合并到1020个文件时，程序打开文件失败了。<br><img src="/2018/04/09/Software-samtools-安装/samtools_errorDemo1.jpg" alt="image"><br>因为常用samtools的时候，我们都知道这个<strong>sort.1020.bam</strong> 文件，其实是samtools在进行排序处理过程中，生成的中间文件。而这个报错是在合并时出现的（意味着该文件已经生成）。所以经过查找，发现是Linux文件句柄存在限制导致的问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ulimit -n</span><br><span class="line">1024 # Linux系统设置的，一个程序支持打开的文件句柄数</span><br></pre></td></tr></table></figure>
+<p>本次问题中，Linux系统支持最多打开1024个文件，但是需要排序的文件超过了这个数字，因为由于句柄超出，软件处理失败。</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>其实Linux是有文件句柄限制的，一般都是1024，因此我们需要把这个值改大一些。这个1024是当前用户给准备要运行的程序的限制。</p>
+<ol>
+<li>针对非Root用户<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ulimit -n 2048 # 句柄数调整为2048。 #调整当前工作窗口，重启工作窗口后会重置。</span><br><span class="line">``` </span><br><span class="line">2. 针对具有root权限的用户</span><br><span class="line">``` </span><br><span class="line">$ cat &gt;&gt; /etc/security/limits.conf </span><br><span class="line">soft nofile 1000000</span><br><span class="line">hard nofile 1000000</span><br></pre></td></tr></table></figure>
+</li>
 </ol>
+<p>将ulimit 值添加到/etc/profile文件中（适用于有root权限登录的系统）<br>为了每次系统重新启动时，都可以获取更大的ulimit值，将ulimit 加入到/etc/profile 文件底部。</p>
 
       
     </div>
@@ -568,8 +576,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/uploads/avatar.jpg"
@@ -584,7 +601,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">103</span>
+                <span class="site-state-item-count">107</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -595,7 +612,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">37</span>
+                <span class="site-state-item-count">38</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -606,7 +623,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-count">57</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -699,6 +716,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#3-异常处理"><span class="nav-number">1.</span> <span class="nav-text">3. 异常处理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#问题描述"><span class="nav-number">1.0.1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案"><span class="nav-number">1.0.2.</span> <span class="nav-text">解决方案</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
