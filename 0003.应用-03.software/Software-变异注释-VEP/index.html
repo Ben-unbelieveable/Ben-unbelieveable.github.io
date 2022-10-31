@@ -94,7 +94,7 @@
 <meta property="og:description" content="简介在TCGA等大型项目中，也推荐使用了VEP作为注释软件，同时，TCGA项目提供了由VEP向MAF转换的工具 vcf2maf，该工具由MSK长期跟进及维护。VEP 是Ensemble旗下开发的软件，有众多的专业人员进行着更新维护，同时他也符合 CLIA Variant Effect Predictor（VEP）是功能强大的注释、分析工具。它可以对二代测试产生的不同类型变异进行注释，包含SNPs,">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://asia.ensembl.org/info/genome/variation/prediction/consequences.jpg">
-<meta property="og:updated_time" content="2022-09-29T06:01:42.761Z">
+<meta property="og:updated_time" content="2022-10-19T08:27:54.222Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="基因注释软件-VEP">
 <meta name="twitter:description" content="简介在TCGA等大型项目中，也推荐使用了VEP作为注释软件，同时，TCGA项目提供了由VEP向MAF转换的工具 vcf2maf，该工具由MSK长期跟进及维护。VEP 是Ensemble旗下开发的软件，有众多的专业人员进行着更新维护，同时他也符合 CLIA Variant Effect Predictor（VEP）是功能强大的注释、分析工具。它可以对二代测试产生的不同类型变异进行注释，包含SNPs,">
@@ -435,10 +435,17 @@
 <p>NOTE: You should use the <a href="https://grch37.ensembl.org/info/docs/tools/vep/script/vep_custom.html#custom_options" target="_blank" rel="noopener">longer custom annotation form</a> if you wish to customise the name of the GTF as it appears in the SOURCE field and VEP output header.</p>
 <h1 id="VEP的功能"><a href="#VEP的功能" class="headerlink" title="VEP的功能"></a>VEP的功能</h1><h2 id="Ensembl-Variation-Calculated-variant-consequences"><a href="#Ensembl-Variation-Calculated-variant-consequences" class="headerlink" title="Ensembl Variation - Calculated variant consequences"></a>Ensembl Variation - Calculated variant consequences</h2><p><img src="https://asia.ensembl.org/info/genome/variation/prediction/consequences.jpg" alt="image"><br>同时由于一个突变可能会存在多个不同类型的变异描述方式（Stop lost; Inframe insertion），在某些情况下需要形成一个唯一的功能描述，因此Ensemble提供了一套用于评估不同变异描述的优先级顺序，可以参考<a href="https://asia.ensembl.org/info/genome/variation/prediction/predicted_data.html" target="_blank" rel="noopener">官方文档</a>。</p>
 <h1 id="VEP使用过程中发现的问题-风险汇总"><a href="#VEP使用过程中发现的问题-风险汇总" class="headerlink" title="VEP使用过程中发现的问题/风险汇总"></a>VEP使用过程中发现的问题/风险汇总</h1><ul>
-<li>start-lost /init loss 的写法不规范，<br>其实密码子缺失应该输出为 “p.0” 但是VEP输出结果格式为 “p.Leu1?” </li>
+<li>注释结果未见终止密码子，功能输出 stop_lost<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">变异结果： chr1_10342506_TCAGGTGGGCTTGACGTCTGTGACCAGTATTCAAGAGAGGATCATGTCTA/CCAGGTGTAGACATGATCCTCTCTTGAATACTGGTCACAGACGTCAAGCC</span><br><span class="line">注释结果： NM_015074.3：c.1211_1260delinsCCAGGTGTAGACATGATCCTCTCTTGAATACTGGTCACAGACGTCAAGCC	</span><br><span class="line">注释结果： NP_055889.2：p.I404_L420delinsTRCRHDPLLNTGHRRQA</span><br></pre></td></tr></table></figure>
+</li>
 </ul>
+<p>在<a href="http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&amp;lastVirtModeType=default&amp;lastVirtModeExtraState=&amp;virtModeType=default&amp;virtMode=0&amp;nonVirtPosition=&amp;position=chr1%3A10342502%2D10342552&amp;hgsid=1470500241_p0xeU31SaeKo5TIToheRQs7ruDpr" target="_blank" rel="noopener">UCSC中</a>核查发现读码框不一致。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">VEP读码框为    |a T C|A G G|T G G|G C T|T G A|C G T|C T G|T G A|C ......</span><br><span class="line">UCSC读码框为  a g T|C A G|G T G|G G C|T T G|A C G|T C T|G T G|A C ......</span><br><span class="line"></span><br><span class="line">在VEP使用的密码框中，存在多个读码框对应的氨基酸序列为终止密码子（TGA），同时namechecker和Varsome中的突变后氨基酸均基于VEP的读码框翻译产生。</span><br><span class="line"></span><br><span class="line">Ref / Alt </span><br><span class="line">aTCAGGTGGGCTTGACGTCTGTGACCAGTATTCAAGAGAGGATCATGTCTA/aCCAGGTGTAGACATGATCCTCTCTTGAATACTGGTCACAGACGTCAAGCC</span><br><span class="line">I  R  W  A  *  R  L  *  P  V  F  K  R  G  S  C  L  /T  R  C  R  H  D  P  L  L  N  T  G  H  R  R  Q  A</span><br><span class="line">04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20</span><br></pre></td></tr></table></figure></p>
 <ul>
-<li>跨越多个区域的变异，是否需要有氨基酸变化的描述</li>
+<li><p>start-lost /init loss 的写法不规范，<br>其实密码子缺失应该输出为 “p.0” 但是VEP输出结果格式为 “p.Leu1?” </p>
+</li>
+<li><p>VEP 注释结果中，存在部分变异结果没有提供外显子亚区<br>在使用中，进行了人工数据库的构建，但是需要注意一点，bed文件格式为0base的左闭右开，但是VEP的位置信息1base的，</p>
+</li>
+<li><p>跨越多个区域的变异，是否需要有氨基酸变化的描述</p>
+</li>
 </ul>
 <table>
 <thead>
@@ -462,7 +469,7 @@
 </tbody>
 </table>
 <ul>
-<li>q不同方法注释得到的氨基酸变化存在差异，现阶段无法确定正确答案。</li>
+<li>不同方法注释得到的氨基酸变化存在差异，现阶段无法确定正确答案。</li>
 </ul>
 <table>
 <thead>
@@ -629,8 +636,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0003.应用-03.software/software-软件综述-变异注释/" rel="prev" title="基因注释软件-综述信息">
-                基因注释软件-综述信息 <i class="fa fa-chevron-right"></i>
+              <a href="/0003.应用-03.software/Software-变异注释-VEP-源码学习/" rel="prev" title="基因注释软件-VEP">
+                基因注释软件-VEP <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -733,7 +740,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">167</span>
+                <span class="site-state-item-count">174</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>

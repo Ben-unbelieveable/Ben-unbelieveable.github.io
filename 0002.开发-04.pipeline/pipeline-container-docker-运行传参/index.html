@@ -93,7 +93,7 @@
 <meta property="og:site_name" content="Ben-air">
 <meta property="og:description" content="Docker is a platform that allows you to “build, ship, and run any app, anywhere.”">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2022-09-29T06:01:42.704Z">
+<meta property="og:updated_time" content="2022-10-19T08:27:54.218Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="docker - 常用命令 - 运行任务是参数的传递">
 <meta name="twitter:description" content="Docker is a platform that allows you to “build, ship, and run any app, anywhere.”">
@@ -466,31 +466,19 @@
 <p> 注：ENTRYPOINT 同样可以被覆盖，如 docker run –entrypoint ls test -l /，将会执行 ls -l / 命令。</p>
 </li>
 <li><p>四, 如果 ENTRYPOINT 用 shell 格式定义的</p>
- <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ENTRYPOINT java -jar /app.jar</span><br><span class="line">CMD [&quot;hello&quot;, &quot;world&quot;]</span><br></pre></td></tr></table></figure>
-<p> 通过 docker inspect 命令看到镜像中实际的 ENTRYPOINT 是</p>
-<p> ENTRYPOINT [“/bin/sh”, “-c”, “java -jar /app.jar”]</p>
-<p> 所以与 CMD 连接起来的入口就是 [“/bin/sh”, “-c”, “java -jar /app.jar”, “hello”, “world”]，”bin/sh” 直接忽略掉后面的 “hello” 与 “world”，这就是为什么shell 命令方式无法获取参数。</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">      ENTRYPOINT java -jar /app.jar</span><br><span class="line">      CMD [&quot;hello&quot;, &quot;world&quot;]</span><br><span class="line">   ```   </span><br><span class="line">   通过 docker inspect 命令看到镜像中实际的 ENTRYPOINT 是</span><br><span class="line"></span><br><span class="line">   ENTRYPOINT [&quot;/bin/sh&quot;, &quot;-c&quot;, &quot;java -jar /app.jar&quot;]</span><br><span class="line"></span><br><span class="line">   所以与 CMD 连接起来的入口就是 [&quot;/bin/sh&quot;, &quot;-c&quot;, &quot;java -jar /app.jar&quot;, &quot;hello&quot;, &quot;world&quot;]，&quot;bin/sh&quot; 直接忽略掉后面的 &quot;hello&quot; 与 &quot;world&quot;，这就是为什么shell 命令方式无法获取参数。</span><br><span class="line"></span><br><span class="line">有了以上几点概念，以及四个实例作为感观认识后，想要怎么往容器传递参数应该很容易确定了。</span><br><span class="line"></span><br><span class="line">## 传参示例</span><br><span class="line">- 未定义 ENTRYPOINT</span><br><span class="line">没有定义 ENTRYPOINT 的镜像想怎么来就怎么来，docker run &lt;image&gt; 后面的输入你自己作主。</span><br><span class="line"></span><br><span class="line">- 有定义 ENTRYPOINT</span><br><span class="line">   定义了 ENTRYPOINT 的镜像，则是 CMD 或 docker run &lt;image&gt; 后的输入作为  ENTRYPOINT 中命令的附加参数。再次提醒 shell 格式的 ENTRYPOINT 和 CMD  务必要转换为相应 exec  格式来理解。</span><br><span class="line">- shell 格式的 ENTRYPOINT</span><br><span class="line">   如果是复杂的 shell 命令不容易拆解出一个个参数，而希望用  shell 格式来定义 ENTRYPOINT 的话，也有办法。shell 格式的 ENTRYPOINT 是由 &quot;/bin/sh -c&quot; 启动的，而它是可以解析变量的。另一方面 CMD 或 docker run &lt;image&gt; 的输入第一个元素存成了 $0，其他剩余元素存为 $@, 所以 shell 格式的 ENTRYPOINT 可以这么写</span><br><span class="line"></span><br><span class="line">## 使用环境变量传参</span><br><span class="line">### 使用ENTRYPOINT</span><br><span class="line">对于 shell 格式的 ENTRYPOINT, 或者显式由 &quot;/bin/sh -c&quot; 来启动的命令，可以通过环境变量传入参数</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<p>有了以上几点概念，以及四个实例作为感观认识后，想要怎么往容器传递参数应该很容易确定了。</p>
-<h2 id="传参示例"><a href="#传参示例" class="headerlink" title="传参示例"></a>传参示例</h2><ul>
-<li><p>未定义 ENTRYPOINT<br>没有定义 ENTRYPOINT 的镜像想怎么来就怎么来，docker run <image> 后面的输入你自己作主。</image></p>
-</li>
-<li><p>有定义 ENTRYPOINT<br> 定义了 ENTRYPOINT 的镜像，则是 CMD 或 docker run <image> 后的输入作为  ENTRYPOINT 中命令的附加参数。再次提醒 shell 格式的 ENTRYPOINT 和 CMD  务必要转换为相应 exec  格式来理解。</image></p>
-</li>
-<li>shell 格式的 ENTRYPOINT<br> 如果是复杂的 shell 命令不容易拆解出一个个参数，而希望用  shell 格式来定义 ENTRYPOINT 的话，也有办法。shell 格式的 ENTRYPOINT 是由 “/bin/sh -c” 启动的，而它是可以解析变量的。另一方面 CMD 或 docker run <image> 的输入第一个元素存成了 $0，其他剩余元素存为 $@, 所以 shell 格式的 ENTRYPOINT 可以这么写</image></li>
-</ul>
-<h2 id="使用环境变量传参"><a href="#使用环境变量传参" class="headerlink" title="使用环境变量传参"></a>使用环境变量传参</h2><h3 id="使用ENTRYPOINT"><a href="#使用ENTRYPOINT" class="headerlink" title="使用ENTRYPOINT"></a>使用ENTRYPOINT</h3><p>对于 shell 格式的 ENTRYPOINT, 或者显式由 “/bin/sh -c” 来启动的命令，可以通过环境变量传入参数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ENTRYPOINT java $JAVA_OPTS -jar app.jar $0 $@</span><br><span class="line">#或显式的 ENTRYPOINT [&quot;/bin/sh&quot;, &quot;-c&quot;, &quot;java $JAVA_OPTS -jar /app.jar $0 $@&quot;]</span><br></pre></td></tr></table></figure></p>
-<p>启动容器时的命令用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -e JAVA_OPTS=&quot;-Xmx5G -Xms2G&quot; &lt;image-name&gt; aa bb</span><br></pre></td></tr></table></figure></p>
-<p>那么实际执行  java 的完整命令就是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Xmx5G -Xms2G -jar /app.jar aa bb</span><br></pre></td></tr></table></figure></p>
-<h3 id="使用CMD"><a href="#使用CMD" class="headerlink" title="使用CMD"></a>使用CMD</h3><ul>
-<li><p>dockerfile 示例</p>
- <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">FROM docker.io/python:3.6MAINTAINER tianye</span><br><span class="line"># 设置容器时间</span><br><span class="line">RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime &amp;&amp; echo &apos;Asia/Shanghai&apos; &gt;/etc/timezone</span><br><span class="line">ENV LANG C.UTF-8         # 设置编码</span><br><span class="line">ENV PATH=$PATH:/usr/local/lib/python3.6/    </span><br><span class="line">ENV PYTHONPATH $PATH     # 配置环境变量</span><br><span class="line"></span><br><span class="line">ENV PARAMS=&quot;&quot;      # 给我们要传的参数一个初始值</span><br><span class="line"></span><br><span class="line">#代码添加到code文件夹</span><br><span class="line">ADD ./tttt/ /test/code/tttt/</span><br><span class="line">#设置code文件夹为工作目录</span><br><span class="line">WORKDIR /test/code/tttt/</span><br><span class="line">CMD python3 ttt.py $PARAMS</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>创建镜像并启动容器</p>
- <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker build -t my_image .</span><br><span class="line">docker run -it -d --name my_container -e PARAMS=&quot;hahaha&quot;  my_image  # my_image 放最后  这里hahaha 加不加引号 无所谓</span><br><span class="line">docker logs -f --tail 200 my_container</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
+<p>ENTRYPOINT java $JAVA_OPTS -jar app.jar $0 $@</p>
+<p>#或显式的 ENTRYPOINT [“/bin/sh”, “-c”, “java $JAVA_OPTS -jar /app.jar $0 $@”]<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">启动容器时的命令用</span><br></pre></td></tr></table></figure></p>
+<p>docker run -e JAVA_OPTS=”-Xmx5G -Xms2G” <image-name> aa bb<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">那么实际执行  java 的完整命令就是</span><br></pre></td></tr></table></figure></image-name></p>
+<p>java -Xmx5G -Xms2G -jar /app.jar aa bb<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">### 使用CMD</span><br><span class="line">- dockerfile 示例</span><br></pre></td></tr></table></figure></p>
+<p>   FROM docker.io/python:3.6MAINTAINER tianye</p>
+<h1 id="设置容器时间"><a href="#设置容器时间" class="headerlink" title="设置容器时间"></a>设置容器时间</h1><p>   RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime &amp;&amp; echo ‘Asia/Shanghai’ &gt;/etc/timezone<br>   ENV LANG C.UTF-8         # 设置编码<br>   ENV PATH=$PATH:/usr/local/lib/python3.6/<br>   ENV PYTHONPATH $PATH     # 配置环境变量</p>
+<p>   ENV PARAMS=””      # 给我们要传的参数一个初始值</p>
+<p>   #代码添加到code文件夹<br>   ADD ./tttt/ /test/code/tttt/</p>
+<p>   #设置code文件夹为工作目录<br>   WORKDIR /test/code/tttt/<br>   CMD python3 ttt.py $PARAMS<br>   <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- 创建镜像并启动容器</span><br></pre></td></tr></table></figure></p>
+<p>   docker build -t my_image .<br>   docker run -it -d –name my_container -e PARAMS=”hahaha”  my_image  # my_image 放最后  这里hahaha 加不加引号 无所谓<br>   docker logs -f –tail 200 my_container<br>   <code>`</code></p>
 <p>Dockerfile中 最后一行 $PARAMS 会解析为一个变量获取其值，也就是 docker run传入的参数 “hahaha”， 在python程序中通过 argv[1] 就可以获取到我们传入的”hahaha”  ! </p>
 <p><strong>需要注意的一点是Dockerfile 中CMD的用法，如果我们不传参那么写法有很多</strong>如： </p>
 <ul>
@@ -559,8 +547,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0002.开发-04.pipeline/pipeline-container-docker-创建镜像/" rel="next" title="docker - 创建镜像">
-                <i class="fa fa-chevron-left"></i> docker - 创建镜像
+              <a href="/0002.开发-04.pipeline/pipeline-container-docker-挂载目录/" rel="next" title="docker - 挂载目录">
+                <i class="fa fa-chevron-left"></i> docker - 挂载目录
               </a>
             
           </div>
@@ -569,8 +557,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0002.开发-04.pipeline/pipeline-container-docker-用户组管理/" rel="prev" title="docker - 常用命令 - 运行任务是参数的传递">
-                docker - 常用命令 - 运行任务是参数的传递 <i class="fa fa-chevron-right"></i>
+              <a href="/0002.开发-04.pipeline/pipeline-container-docker-常用命令/" rel="prev" title="docker - 常用命令">
+                docker - 常用命令 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -673,7 +661,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">167</span>
+                <span class="site-state-item-count">174</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -798,7 +786,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#在build阶段设置参数"><span class="nav-number">1.</span> <span class="nav-text">在build阶段设置参数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#运行容器时传参"><span class="nav-number">2.</span> <span class="nav-text">运行容器时传参</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ENTRYPOINT-和-CMD"><span class="nav-number">2.1.</span> <span class="nav-text">ENTRYPOINT 和 CMD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#举四个例子进行说明"><span class="nav-number">2.2.</span> <span class="nav-text">举四个例子进行说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传参示例"><span class="nav-number">2.3.</span> <span class="nav-text">传参示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用环境变量传参"><span class="nav-number">2.4.</span> <span class="nav-text">使用环境变量传参</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用ENTRYPOINT"><span class="nav-number">2.4.1.</span> <span class="nav-text">使用ENTRYPOINT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用CMD"><span class="nav-number">2.4.2.</span> <span class="nav-text">使用CMD</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传参机制"><span class="nav-number">2.5.</span> <span class="nav-text">传参机制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#在build阶段设置参数"><span class="nav-number">1.</span> <span class="nav-text">在build阶段设置参数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#运行容器时传参"><span class="nav-number">2.</span> <span class="nav-text">运行容器时传参</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ENTRYPOINT-和-CMD"><span class="nav-number">2.1.</span> <span class="nav-text">ENTRYPOINT 和 CMD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#举四个例子进行说明"><span class="nav-number">2.2.</span> <span class="nav-text">举四个例子进行说明</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#设置容器时间"><span class="nav-number">3.</span> <span class="nav-text">设置容器时间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#传参机制"><span class="nav-number">3.1.</span> <span class="nav-text">传参机制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
