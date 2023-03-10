@@ -94,7 +94,7 @@
 <meta property="og:description" content="阿里云ACP 备考阶段视频课中涉及的相关概念及内容笔记。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://help-static-aliyun-doc.aliyuncs.com/assets/img/zh-CN/6843534661/p496479.png">
-<meta property="og:updated_time" content="2022-11-25T08:34:36.858Z">
+<meta property="og:updated_time" content="2023-01-11T08:00:52.299Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="弹性伸缩 (Auto Scaling)">
 <meta name="twitter:description" content="阿里云ACP 备考阶段视频课中涉及的相关概念及内容笔记。">
@@ -437,9 +437,24 @@
 <li>通过定时任务执行。更多信息，请参见配置定时任务。</li>
 <li>通过报警任务执行。更多信息，请参见报警任务概述。</li>
 </ul>
-<h3 id="伸缩活动"><a href="#伸缩活动" class="headerlink" title="伸缩活动"></a>伸缩活动</h3><p>在执行伸缩规则、手动添加或移出已有ECS实例时，均会触发伸缩活动<strong>实现扩张或收缩操作</strong>，用来描述伸缩组内实例的变化情况。</p>
+<h3 id="伸缩活动"><a href="#伸缩活动" class="headerlink" title="伸缩活动"></a>伸缩活动</h3><p>在执行伸缩规则、手动添加或移出已有ECS实例时，均会触发伸缩活动<strong>实现扩张或收缩操作</strong>，用来描述伸缩组内实例的变化情况。<br>伸缩活动的生命周期为判断伸缩组健康状态和边界条件和启动cooldown步骤间的所有活动，步骤及顺序如下：</p>
+<ol>
+<li>判断伸缩组的健康状态、边界条件和ECS实例的状态、类型。</li>
+<li>分配Activityld和执行伸缩活动。</li>
+<li>加入ECS实例。</li>
+<li>修改Total Capacity.</li>
+<li>添加RDS白名单。</li>
+<li>挂载负载均衡，将权重设为当前伸缩组中已激活的伸缩配置上指定的“负载均衡权重”。此处使用了伸缩配置上指定的负载均衡权重”。</li>
+<li>伸缩活动完成，启动cooldown。</li>
+</ol>
 <h3 id="冷却时间"><a href="#冷却时间" class="headerlink" title="冷却时间"></a>冷却时间</h3><p>自动触发的伸缩活动有冷却时间，<strong>冷却时间</strong>指伸缩组成功执行伸缩活动后的一段锁定时间。在冷却时间内，伸缩组会拒绝由<strong>报警任务触发</strong>的伸缩活动请求。<br>但非报警任务（手动执行任务、定时任务、健康检查等）触发的伸缩活动可以立即执行，绕过冷却时间。</p>
+<h4 id="冷却时间规则"><a href="#冷却时间规则" class="headerlink" title="冷却时间规则"></a>冷却时间规则</h4><ul>
+<li>冷却时间不能为空，如果不配置使用默认冷却时间。</li>
+<li>如果在伸缩活动中，多台ECS实例加入或者移出伸缩组，则从最后一台ECS实例成功加入或者移出伸缩组后，弹性伸缩服务开始计算冷却时间。如果在伸缩活动中，没有ECS实例成功加入或者移出伸缩组，则弹性伸缩服务不会开始计算冷却时间。</li>
+<li>如果您停用再启用伸缩组，伸缩组启用后的首次伸缩活动可以立即执行，不会受冷却时间影响。当伸缩组启用后首次成功执行伸缩活动，弹性伸缩服务才开始计算冷却时间。</li>
+</ul>
 <h3 id="生命周期挂钩"><a href="#生命周期挂钩" class="headerlink" title="生命周期挂钩"></a>生命周期挂钩</h3><p>生命周期挂钩是一个管理伸缩组内ECS实例或ECI实例生命周期的工具。弹性伸缩会自动触发扩缩容活动，并触发生命周期挂钩使伸缩活动中的ECS实例或ECI实例处于挂起中的状态（即等待的状态），为您保留一段自定义操作的时间，直至生命周期挂钩超时结束。</p>
+<h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h2><h3 id="生命周期挂钩和OOS模板"><a href="#生命周期挂钩和OOS模板" class="headerlink" title="生命周期挂钩和OOS模板"></a>生命周期挂钩和OOS模板</h3><p>通过生命周期挂钩，您能够在扩缩容流程中挂起ECS实例，执行自定义操作后再使用或者释放ECS实例。<br>运维编排服务（OOS）是阿里云提供的云上自动化运维服务，能够自动化管理和执行任务。您可以通过模板定义执行任务、执行顺序、执行输入和输出，然后执行模板完成一组运维操作。</p>
 <h1 id="ACP考试相关外延知识点"><a href="#ACP考试相关外延知识点" class="headerlink" title="ACP考试相关外延知识点"></a>ACP考试相关外延知识点</h1><ul>
 <li>弹性伸缩只支持ECS的伸缩，不支持其他服务的伸缩</li>
 <li>用户手动添加到伸缩组中的ECS实例不会停止和释放，弹性伸缩只会停止和释放自动创建的ECS.</li>
@@ -487,8 +502,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0003.应用-03.software/software-对象存储-ossutil-阿里api/" rel="next" title="software-ossutil-阿里云数据传输">
-                <i class="fa fa-chevron-left"></i> software-ossutil-阿里云数据传输
+              <a href="/0003.应用-01.cloud_computing/云计算-概念-SLB-负载均衡/" rel="next" title="负载均衡(SLB:Server Load Balance) 介绍">
+                <i class="fa fa-chevron-left"></i> 负载均衡(SLB:Server Load Balance) 介绍
               </a>
             
           </div>
@@ -497,8 +512,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0003.应用-01.cloud_computing/云计算-概念-安全相关/" rel="prev" title="云计算安全相关概念">
-                云计算安全相关概念 <i class="fa fa-chevron-right"></i>
+              <a href="/0003.应用-01.cloud_computing/云计算-概念-RDS-云数据库/" rel="prev" title="关系型数据库RDS（Relational Database Service）">
+                关系型数据库RDS（Relational Database Service） <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -601,7 +616,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">187</span>
+                <span class="site-state-item-count">201</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -612,7 +627,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">51</span>
+                <span class="site-state-item-count">52</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -623,7 +638,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">92</span>
+                <span class="site-state-item-count">96</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -726,7 +741,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#适用场景"><span class="nav-number">2.</span> <span class="nav-text">适用场景</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#工作原理"><span class="nav-number"></span> <span class="nav-text">工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#支持的伸缩模式"><span class="nav-number">1.</span> <span class="nav-text">支持的伸缩模式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#固定数量模式"><span class="nav-number">1.0.1.</span> <span class="nav-text">固定数量模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#健康模式"><span class="nav-number">1.0.2.</span> <span class="nav-text">健康模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#定时模式"><span class="nav-number">1.0.3.</span> <span class="nav-text">定时模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#动态模式"><span class="nav-number">1.0.4.</span> <span class="nav-text">动态模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自定义模式"><span class="nav-number">1.0.5.</span> <span class="nav-text">自定义模式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#弹性伸缩组件"><span class="nav-number">2.</span> <span class="nav-text">弹性伸缩组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩组概述"><span class="nav-number">2.1.</span> <span class="nav-text">伸缩组概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩配置"><span class="nav-number">2.2.</span> <span class="nav-text">伸缩配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩触发任务"><span class="nav-number">2.3.</span> <span class="nav-text">伸缩触发任务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩规则"><span class="nav-number">2.4.</span> <span class="nav-text">伸缩规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩活动"><span class="nav-number">2.5.</span> <span class="nav-text">伸缩活动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#冷却时间"><span class="nav-number">2.6.</span> <span class="nav-text">冷却时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生命周期挂钩"><span class="nav-number">2.7.</span> <span class="nav-text">生命周期挂钩</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ACP考试相关外延知识点"><span class="nav-number"></span> <span class="nav-text">ACP考试相关外延知识点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number"></span> <span class="nav-text">参考资料</span></a></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#适用场景"><span class="nav-number">2.</span> <span class="nav-text">适用场景</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#工作原理"><span class="nav-number"></span> <span class="nav-text">工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#支持的伸缩模式"><span class="nav-number">1.</span> <span class="nav-text">支持的伸缩模式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#固定数量模式"><span class="nav-number">1.0.1.</span> <span class="nav-text">固定数量模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#健康模式"><span class="nav-number">1.0.2.</span> <span class="nav-text">健康模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#定时模式"><span class="nav-number">1.0.3.</span> <span class="nav-text">定时模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#动态模式"><span class="nav-number">1.0.4.</span> <span class="nav-text">动态模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自定义模式"><span class="nav-number">1.0.5.</span> <span class="nav-text">自定义模式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#弹性伸缩组件"><span class="nav-number">2.</span> <span class="nav-text">弹性伸缩组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩组概述"><span class="nav-number">2.1.</span> <span class="nav-text">伸缩组概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩配置"><span class="nav-number">2.2.</span> <span class="nav-text">伸缩配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩触发任务"><span class="nav-number">2.3.</span> <span class="nav-text">伸缩触发任务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩规则"><span class="nav-number">2.4.</span> <span class="nav-text">伸缩规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#伸缩活动"><span class="nav-number">2.5.</span> <span class="nav-text">伸缩活动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#冷却时间"><span class="nav-number">2.6.</span> <span class="nav-text">冷却时间</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#冷却时间规则"><span class="nav-number">2.6.1.</span> <span class="nav-text">冷却时间规则</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生命周期挂钩"><span class="nav-number">2.7.</span> <span class="nav-text">生命周期挂钩</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最佳实践"><span class="nav-number">3.</span> <span class="nav-text">最佳实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#生命周期挂钩和OOS模板"><span class="nav-number">3.1.</span> <span class="nav-text">生命周期挂钩和OOS模板</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ACP考试相关外延知识点"><span class="nav-number"></span> <span class="nav-text">ACP考试相关外延知识点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number"></span> <span class="nav-text">参考资料</span></a></div>
             
 
           </div>
@@ -749,7 +764,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
