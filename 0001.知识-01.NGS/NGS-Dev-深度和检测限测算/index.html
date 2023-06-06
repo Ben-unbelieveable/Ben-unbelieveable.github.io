@@ -96,7 +96,7 @@
 <meta property="og:image" content="http://ben-air.cn/0001.知识-01.NGS/NGS-Dev-深度和检测限测算/1663124950878.jpg">
 <meta property="og:image" content="http://ben-air.cn/0001.知识-01.NGS/NGS-Dev-深度和检测限测算/1663125122742.jpg">
 <meta property="og:image" content="http://ben-air.cn/0001.知识-01.NGS/NGS-Dev-深度和检测限测算/1663125280718.jpg">
-<meta property="og:updated_time" content="2022-09-29T06:01:42.626Z">
+<meta property="og:updated_time" content="2023-06-06T02:13:49.565Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深度和检测限测算">
 <meta name="twitter:description" content="测序深度或覆盖深度被定义为覆盖给定核苷酸位置的reads的数量，生物信息学工具极其依赖于足够的覆盖深度，以便灵敏和特异地检测变异。覆盖深度与稳定检测样本的变异之间的关系很简单，因为更高数量的高质量测序数据为特定位置的碱基检测供了信心，无论来自测序样本的碱基调用是否是与参考碱基相同（未识别出变异）或者是非参考碱基（识别出变异）。然而，许多因素会影响所需的深度，包括测序平台，目标区域的序列复杂性（与基">
@@ -772,7 +772,9 @@
 <p><a href="NGS-Dev-深度和检测限测算/%E6%B7%B1%E5%BA%A6%E5%92%8C%E4%B8%8D%E5%90%8C%E9%A2%91%E7%8E%87%E6%A3%80%E6%B5%8B%E6%80%A7%E8%83%BD%E8%A1%A8%E7%8E%B0.xlsx">测算数据下载表</a><br><figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">supportRead=<span class="number">4</span> <span class="comment"># 支持reads条数下限</span></span><br><span class="line">depthList=c(<span class="number">300</span>,<span class="number">400</span>,<span class="number">500</span>,<span class="number">600</span>,<span class="number">700</span>,<span class="number">800</span>,<span class="number">900</span>,<span class="number">1000</span>)</span><br><span class="line">freqList=c(<span class="number">0.01</span>,<span class="number">0.015</span>,<span class="number">0.02</span>,<span class="number">0.025</span>,<span class="number">0.03</span>,<span class="number">0.035</span>,<span class="number">0.04</span>,<span class="number">0.045</span>,<span class="number">0.05</span>)</span><br><span class="line">result=<span class="string">""</span></span><br><span class="line"><span class="keyword">for</span> (depth <span class="keyword">in</span> depthList)&#123;</span><br><span class="line">  <span class="keyword">for</span> (freq <span class="keyword">in</span> freqList)&#123;</span><br><span class="line">      p=<span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> (k <span class="keyword">in</span> supportRead:depth) &#123;</span><br><span class="line">          <span class="keyword">if</span>(!is.nan(choose(depth,k)*((<span class="number">1</span>-freq)**(depth-k))*(freq**k)*(<span class="number">1</span>-<span class="number">0.5</span>**(k-<span class="number">1</span>))))&#123;</span><br><span class="line">            p=p+(choose(depth,k)*((<span class="number">1</span>-freq)**(depth-k))*(freq**k)*(<span class="number">1</span>-<span class="number">0.5</span>**(k-<span class="number">1</span>)))</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      tmp=paste(depth,freq,p)</span><br><span class="line">      print(tmp)</span><br><span class="line">      result=paste(result,tmp,sep=<span class="string">"\n"</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h1 id="Establishing-Criteria-for-Depth-of-Sequencing"><a href="#Establishing-Criteria-for-Depth-of-Sequencing" class="headerlink" title="Establishing Criteria for Depth of Sequencing"></a>Establishing Criteria for Depth of Sequencing</h1><p>一个理想的测序深度，应该是可以有效的对阳性位点和阴性位点进行区分的。而不是单纯的保证灵敏性，忽略假阳性带来的风险。<br>因此在上述基础上，可以延伸出来一个更为立项的深度预测模型，预先对检测体系进行评估,获得整个检测体系的错误率。然后根据错误率、预期的检测下限和假阳性或假阴性结果的容忍度来估计所需的覆盖深度。（这些性能参数可以并且应该在开发阶段进行评估，以帮助定义验证的接受标准。例如，对于给定比例的突变等位基因，可以使用二项分布方程来确定检测到最小数量等位基因的概率：<br><img src="/0001.知识-01.NGS/NGS-Dev-深度和检测限测算/1663124950878.jpg" alt="image"><br>整体方法，和前面的一样，只是在这个部分中，我们需要把错误率（引发假阳性）纳入考量，我们把阳性位点和阴性位点的检出频率分布放到一起，可以得到如下图关系,<br><img src="/0001.知识-01.NGS/NGS-Dev-深度和检测限测算/1663125122742.jpg" alt="image"><br>我们要做的，就是寻找一个深度，可以让对应的理想性能的灵敏性和特异性都能满足我们预期的性能需求。<br><figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">library</span>(<span class="string">"ggplot2"</span>)</span><br><span class="line"></span><br><span class="line">Totaldepth=<span class="number">5000</span> <span class="comment"># 预期深度，控制评估的深度上限</span></span><br><span class="line">ErrorRate=<span class="number">0.004</span> <span class="comment"># 基于产品首批高深度产品，评估获得LOB</span></span><br><span class="line">LoDRate = <span class="number">0.01</span>  <span class="comment"># 产品预期的检测性能，后期LOD需要单独进行评估补充。</span></span><br><span class="line">CI = <span class="number">0.9</span>        <span class="comment"># 对性能结果要求的置信区间。</span></span><br><span class="line"></span><br><span class="line">depthlist = c(<span class="number">1</span>:Totaldepth)</span><br><span class="line">ErrorReadNumlist = depthlist</span><br><span class="line">SupportReadNumlist = depthlist</span><br><span class="line"><span class="keyword">for</span> (depth <span class="keyword">in</span> <span class="number">1</span>:Totaldepth) &#123;</span><br><span class="line">  ErrorReadNum = round(depth * ErrorRate) <span class="comment"># 考虑错误率统计过程中本身已经是错误率的最高值，所以不再进行二项分布扩展。</span></span><br><span class="line">  <span class="comment">#ErrorReadNum = qbinom(CI,depth,ErrorRate) # 错误率考虑上95置信区间。</span></span><br><span class="line">  SupportReadNum = qbinom(<span class="number">1</span>-CI,depth,LoDRate)</span><br><span class="line">  ErrorReadNumlist[depth] = ErrorReadNum</span><br><span class="line">  SupportReadNumlist[depth] = SupportReadNum</span><br><span class="line">&#125;</span><br><span class="line">Difference= SupportReadNumlist - ErrorReadNumlist</span><br><span class="line">type=c(rep(paste(<span class="string">'Error:'</span>,ErrorRate),times=Totaldepth),rep(paste(<span class="string">'Detect:'</span>,LoDRate),times=Totaldepth),rep(<span class="string">'Difference'</span>,times=Totaldepth))</span><br><span class="line">depth=c(depthlist,depthlist,depthlist)</span><br><span class="line">read_num=c(ErrorReadNumlist,SupportReadNumlist, Difference)</span><br><span class="line"></span><br><span class="line">data=data.frame(type, depth,read_num)</span><br><span class="line"><span class="comment"># ggplot(data,aes(x=depth,y=read_num,cluster=type,color=type))+geom_line()+geom_hline(yintercept = 2)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## 确定目标深度</span></span><br><span class="line">Target_depth=<span class="string">"Not Find "</span></span><br><span class="line"><span class="keyword">for</span>(i <span class="keyword">in</span> Totaldepth:<span class="number">1</span>)&#123;</span><br><span class="line">  <span class="keyword">if</span>(Difference[i]&lt;<span class="number">2</span>)&#123;</span><br><span class="line">    Target_depth = i+<span class="number">1</span></span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">## 绘图</span></span><br><span class="line">ggplot(data,aes(x=depth,y=read_num,cluster=type,color=type)) + </span><br><span class="line">  geom_line() + </span><br><span class="line">  geom_hline(yintercept = <span class="number">2</span>) + </span><br><span class="line">  annotate(geom = <span class="string">'text'</span>,  </span><br><span class="line">           x= <span class="number">2000</span>, </span><br><span class="line">           y = <span class="number">30</span>, </span><br><span class="line">           label = paste(<span class="string">"Totaldepth=5000\nLOBRate=0.0013\nLODRate=0.01\nCI=0.99\nDepth="</span>,Target_depth ))</span><br></pre></td></tr></table></figure></p>
 <p>示例结果如下图<br><img src="/0001.知识-01.NGS/NGS-Dev-深度和检测限测算/1663125280718.jpg" alt="image"></p>
+<h1 id="202303补充"><a href="#202303补充" class="headerlink" title="202303补充"></a>202303补充</h1><p>《Standardization of Sequencing Coverage Depth in NGS: Recommendation for Detection of Clonal and Subclonal Mutations in Cancer Diagnostics》 发布计算方法和上述介绍原理一致，同时开源了<a href="https://github.com/mvasinek/olgen-coverage-limit.git" target="_blank" rel="noopener">计算代码</a>和<a href="http://app.olgen.cz/clc/" target="_blank" rel="noopener">在线工具</a>。</p>
 <h1 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h1><p>[1]. <a href="https://pubmed.ncbi.nlm.nih.gov/28341590/" target="_blank" rel="noopener">Guidelines for Validation of Next-Generation Sequencing-Based Oncology Panels</a></p>
+<p>[2]. <a href="https://www.frontiersin.org/articles/10.3389/fonc.2019.00851/full" target="_blank" rel="noopener">Standardization of Sequencing Coverage Depth in NGS: Recommendation for Detection of Clonal and Subclonal Mutations in Cancer Diagnostics</a></p>
 
       
     </div>
@@ -813,8 +815,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0001.知识-01.NGS/NGS-Dev-方法学相关指标/" rel="next" title="概念-方法学相关指标">
-                <i class="fa fa-chevron-left"></i> 概念-方法学相关指标
+              <a href="/0001.知识-01.NGS/NGS-Dev-LoDLoBLoQ/" rel="next" title="LoD LoB LoQ">
+                <i class="fa fa-chevron-left"></i> LoD LoB LoQ
               </a>
             
           </div>
@@ -823,8 +825,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0001.知识-01.NGS/NGS-Dev-LoDLoBLoQ/" rel="prev" title="LoD LoB LoQ">
-                LoD LoB LoQ <i class="fa fa-chevron-right"></i>
+              <a href="/0001.知识-01.NGS/NGS-重测序常见的可视化方案/" rel="prev" title="NGS-重测序常见的可视化方案">
+                NGS-重测序常见的可视化方案 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -927,7 +929,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">203</span>
+                <span class="site-state-item-count">213</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -938,7 +940,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">53</span>
+                <span class="site-state-item-count">56</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -949,7 +951,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-count">100</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -1052,7 +1054,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#深度下限-仅考虑检测灵敏性达标"><span class="nav-number">1.</span> <span class="nav-text">深度下限(仅考虑检测灵敏性达标)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Establishing-Criteria-for-Depth-of-Sequencing"><span class="nav-number">2.</span> <span class="nav-text">Establishing Criteria for Depth of Sequencing</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文献"><span class="nav-number">3.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#深度下限-仅考虑检测灵敏性达标"><span class="nav-number">1.</span> <span class="nav-text">深度下限(仅考虑检测灵敏性达标)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Establishing-Criteria-for-Depth-of-Sequencing"><span class="nav-number">2.</span> <span class="nav-text">Establishing Criteria for Depth of Sequencing</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#202303补充"><span class="nav-number">3.</span> <span class="nav-text">202303补充</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文献"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
             
 
           </div>
