@@ -94,7 +94,7 @@
 <meta property="og:description" content="AMP发表的 使用计算机模拟方法进行NGS生物信息学流程性能验证的建议。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://www.jmdjournal.org/cms/attachment/184f3a7b-1cb6-47cd-bd9e-b8b74e570c3a/gr1.jpg">
-<meta property="og:updated_time" content="2023-06-06T02:13:49.565Z">
+<meta property="og:updated_time" content="2023-07-19T01:20:31.279Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Recommendations for the Use of in Silico Approaches for Next-Generation Sequencing Bioinformatic Pipeline Validation">
 <meta name="twitter:description" content="AMP发表的 使用计算机模拟方法进行NGS生物信息学流程性能验证的建议。">
@@ -431,28 +431,14 @@
 <p>在这个大背景下，很多实验室会开始考虑使用模拟数据进行性能评估，使用数据模拟的方法在临床实验室中具有非常高的实用性，可作为临床检测验证的辅助工具。数据模拟可以采用多种形式，包括纯模拟数据或将变异插入现有测序数据中。通过模拟数据可以便捷的构建出真是样本中难以获取的变异数据。这些数据使实验室能够更准确地测试生物信息学流程的性能，而无需对其他病例进行测序。例如，可以模拟低频变异，以测试流程的分析灵敏度，或模拟一系列不同长度的插入/缺失以确定软件的性能边界。目前也有一些已经被广泛应用的方案，例如样本层面通过合成基因组混入目标变异，或生成目标变异的计算机模拟数据混入测序数据（Fastq/Bam）文件中。从而进行更全面的方法学验证和生信流程验证</p>
 <p>在本文中，主要介绍不同类型的数据模拟类型及其优势和局限性、模拟实现方法，以及如何在临床分子诊断实验室中更好的使用模拟数据。</p>
 <h1 id="数据模拟类型"><a href="#数据模拟类型" class="headerlink" title="数据模拟类型"></a>数据模拟类型</h1><p>模拟数据可以广义地定义为人工操作或生成的任何数据。大体上可以主要划分为下述几个大类。<br><img src="https://www.jmdjournal.org/cms/attachment/184f3a7b-1cb6-47cd-bd9e-b8b74e570c3a/gr1.jpg" alt="image"></p>
-<h2 id="A-纯模拟数据（Purely-Simulated-Data-）"><a href="#A-纯模拟数据（Purely-Simulated-Data-）" class="headerlink" title="A. 纯模拟数据（Purely Simulated Data ）"></a>A. 纯模拟数据（Purely Simulated Data ）</h2><p>可以通过模拟参考序列数据（纯模拟数据）的reads从头生成模拟的Fastq数据。这类数据通常用生信流程的的初始测试，可以较便捷的大量生成几乎任何类型的变异。这些数据对于样本稀缺且方法不成熟的复杂变异类型特别有用。但reads模拟器通常不能完整的模拟测序技术的噪音或偏差，尤其是在变异难以检测的重复区域（例如，在均聚物处）。也很难对临床测试中最常用的靶向测序方法的偏差和覆盖分布进行模拟，同样也很难对福尔马林固定、石蜡包埋过程引入的噪音进行模拟。</p>
-<h2 id="B-混合样本（Mixing-Sample-Data）"><a href="#B-混合样本（Mixing-Sample-Data）" class="headerlink" title="B. 混合样本（Mixing Sample Data）"></a>B. 混合样本（Mixing Sample Data）</h2><p>来自物理样本的两个数据文件以不同的比例混合，模拟具有不同频率的变异，和真实数据相比，可以更好的帮助评估生信流程在不同变异频率的性能表现。该策略可以混合来自两个充分表征的正常样本的 BAM 或 FASTQ 文件，通过不同的组成可以混合出不同频率范围的变异，能够测试大量不同变异的检测限。这个方法不能模拟肿瘤中出现的许多体细胞变异的复杂性（例如，拷贝数变异和大的结构变异）。正常基因组通常不存在临床感兴趣的变异，因此实验室也可以将包含感兴趣变异的肿瘤基因组与相应的正常样本混合，以测试它们在不同等位基因部分检测这些变异的能力。正常细胞大部分是已知的胚系变异，而且两个样本可能会有一些变异位点的重叠也会对下游变异检出带来一些困扰。正常细胞系通常会在一部分细胞中出现变异，如果这些变异在参考样本中没有得到很好的表征，则这些变异可能看起来是假阳性体细胞变异。 </p>
-<h2 id="C-Fastq抽样（Downsampling-FASTQ-Files-）"><a href="#C-Fastq抽样（Downsampling-FASTQ-Files-）" class="headerlink" title="C. Fastq抽样（Downsampling FASTQ Files ）"></a>C. Fastq抽样（Downsampling FASTQ Files ）</h2><ul>
-<li>对来自单个物理样本的数据进行采样，以模拟较低覆盖深度对变体检出的影响（下采样 FASTQ 文件）<br>  为了测试管道在不同覆盖率水平下检测变异的能力，可以对高覆盖率的 FASTQ 文件进行下采样（即，可以从更高覆盖率的数据集中随机选择一小部分读取）。一般来说，重要的是从整个 FASTQ 文件中随机抽取所需的读取部分，而不仅仅是读取的前 X 百分比。对于双端测序，进行PE同步采样 [例如，使用像 seqtk 这样的工具（<a href="https://github.com/lh3/seqtk，最后访问时间为" target="_blank" rel="noopener">https://github.com/lh3/seqtk，最后访问时间为</a> 2022 年 5 月 19 日）]。该策略可以识别管道在较低覆盖水平检测变体的能力的局限性，尽管它需要使用上述策略之一在感兴趣的等位基因部分包含感兴趣的变体的数据。</li>
-</ul>
-<h2 id="D-修改实验数据（Manipulated-Assay-Data-）"><a href="#D-修改实验数据（Manipulated-Assay-Data-）" class="headerlink" title="D. 修改实验数据（Manipulated Assay Data ）"></a>D. 修改实验数据（Manipulated Assay Data ）</h2><ul>
-<li>将单核苷酸变异 (SNV)、插入/缺失 (indel) 甚至结构变异等变异插入到实验室数据文件（BAM 或 FASTQ）中，以评估生信流程正确识别和注释变异的能力。<br>  这种方法的优点是可以很好地处理目标或全基因组测序数据，并保留真实数据的许多错误概况和偏差。它还可以在不同等位基因分数的不同基因组背景下验证比实际样本允许的数量多得多的不同类型的变体。将这些 BAM 文件转换回 FASTQ 通常很重要，以便从初始对齐步骤开始测试流程。这种方法有一些重要的局限性：<ul>
-<li>i) 因为它依赖于在修改reads之前正确比对的reads，它不会模拟在难以比对区域中可能发生的所有比对错误，例如带有假基因的基因； </li>
-<li>ii) 它不能模拟变异出现在异常区域的偏差（例如，导致更高测序错误率的均聚物或串联重复序列的扩展，或引入可能导致系统测序错误的 GGT 序列基序）； </li>
-<li>iii) 对较大变异进行模拟具有挑战性（例如，对由大删除或大插入中的排序错误引起的覆盖率下降和断点进行建模）； </li>
-<li>iv）目前的工具不能便捷的操作一些特殊测序技术产生的原始数据格式，例如 Ion Torrent（Thermo Fisher Scientific，Waltham，MA）流数据，来自 PacBio HiFi（Pacific Biosciences，Menlo Park，CA）的原始读数，以及来自纳米孔测序的 fast5 文件（ Oxford Nanopore Technologies, Oxford, UK)，</li>
-</ul>
-</li>
-</ul>
-<h2 id="E-重分析（Data-Reanalysis）"><a href="#E-重分析（Data-Reanalysis）" class="headerlink" title="E. 重分析（Data Reanalysis）"></a>E. 重分析（Data Reanalysis）</h2><ul>
-<li>对生物信息学流程进行更改而不对测定的湿实验室组件进行更改时，可以使用实验室先前生成的数据，用新版本的生物信息学管道（数据重新分析）进行重新分析<br>  当仅对生物信息学管道进行更改时，实验室可以通过使用来自其对各种样本（包括参考材料和临床样本）的分析的现有未修改数据来帮助验证更改。这种方法具有使用现有真实数据的优势，这些数据具有所用方法的所有偏差和错误。实验室可以测试重现以前版本的管道检测到的任何变体的能力，但不会测试以前未在其样本中检测到的任何变体的性能。</li>
-</ul>
-<h2 id="Modifying-Reference-Genome"><a href="#Modifying-Reference-Genome" class="headerlink" title="Modifying Reference Genome"></a>Modifying Reference Genome</h2><ul>
-<li>针对单倍体基因组，还可以通过编辑参考基因组，当参考基因组发生变化时，被测序的个体应该在该位置有一个变异（假设个体与原始参考相匹配）。这种方法最适用于单倍体样本或单倍体染色体，如假常染色体区域外男性的 X 染色体和 Y 染色体。一个例外是，如果二倍体个体在某个位置具有杂合变异，并且更改参考以匹配该变异，则该变异将被逆转（例如，C&gt;T SNV 将变为 T&gt;C SNV , 或 2-bp 删除将更改为 2-bp 插入)。</li>
-</ul>
+<h2 id="A-纯模拟数据（Purely-Simulated-Data-）"><a href="#A-纯模拟数据（Purely-Simulated-Data-）" class="headerlink" title="A. 纯模拟数据（Purely Simulated Data ）"></a>A. 纯模拟数据（Purely Simulated Data ）</h2><p>通过模拟参考序列的测序reads（纯模拟数据）从头生成Fastq数据。这类数据通常是用于生信流程的原始数据，可以较便捷的<strong>大量生成几乎任何类型的变异</strong>。这些数据对于样本稀缺且方法不成熟的复杂变异类型特别有用。但模拟reads生成过程通常<strong>不能完整的模拟测序技术的噪音或偏差</strong>，尤其是在变异难以检测的重复区域（例如，在均聚物处）。也很难对临床测试中最常用的靶向测序方法的偏差和覆盖分布进行模拟，同样也很难对福尔马林固定、石蜡包埋过程引入的噪音进行模拟。</p>
+<h2 id="B-混合样本（Mixing-Sample-Data）"><a href="#B-混合样本（Mixing-Sample-Data）" class="headerlink" title="B. 混合样本（Mixing Sample Data）"></a>B. 混合样本（Mixing Sample Data）</h2><p>来自物理样本的两个数据文件以不同的比例混合，模拟具有不同频率的变异，和真实数据相比，可以更好的帮助评估生信流程在<strong>不同变异频率</strong>的性能表现。该策略可以混合来自两个充分表征的正常样本的 BAM 或 FASTQ 文件，通过不同的组成可以混合出不同频率范围的变异，能够测试大量不同变异的检测限。这个方法不能模拟肿瘤中出现的许多体细胞变异的复杂性（例如，拷贝数变异和大的结构变异）。正常基因组通常不存在临床感兴趣的变异，因此实验室也可以将包含感兴趣变异的肿瘤基因组与相应的正常样本混合，以测试它们在不同等位基因部分检测这些变异的能力。正常细胞大部分是已知的胚系变异，而且两个样本可能会有一些变异位点的重叠也会对下游变异检出带来一些困扰。正常细胞系通常会在一部分细胞中出现变异，如果这些变异在参考样本中没有得到很好的表征，则这些变异可能看起来是假阳性体细胞变异。 </p>
+<h2 id="C-Fastq抽样（Downsampling-FASTQ-Files-）"><a href="#C-Fastq抽样（Downsampling-FASTQ-Files-）" class="headerlink" title="C. Fastq抽样（Downsampling FASTQ Files ）"></a>C. Fastq抽样（Downsampling FASTQ Files ）</h2><p>对来自单个物理样本的数据进行采样，以模拟较低覆盖深度对变体检出的影响（下采样 FASTQ 文件）。为了测试流程在不同覆盖率水平下检测变异的能力，可以对高覆盖率的 FASTQ 文件进行下采样（即，可以从更高覆盖率的数据集中随机选择一小部分读取）。一般来说，重要的是从整个 FASTQ 文件中随机抽取所需的reads数据，而不仅仅是读取的前 X 百分比。对于双端测序，进行PE同步采样 [例如，使用像 seqtk 这样的工具（<a href="https://github.com/lh3/seqtk)]。该策略可以识别流程在较低覆盖水平检测变异的能力局限性，尽管它需要使用上述策略之一确保数据中存在感兴趣的变异信息。" target="_blank" rel="noopener">https://github.com/lh3/seqtk)]。该策略可以识别流程在较低覆盖水平检测变异的能力局限性，尽管它需要使用上述策略之一确保数据中存在感兴趣的变异信息。</a></p>
+<h2 id="D-修改实验数据（Manipulated-Assay-Data-）"><a href="#D-修改实验数据（Manipulated-Assay-Data-）" class="headerlink" title="D. 修改实验数据（Manipulated Assay Data ）"></a>D. 修改实验数据（Manipulated Assay Data ）</h2><p>将单核苷酸变异 (SNV)、插入/缺失 (indel) 甚至结构变异等变异插入到实验室数据文件（BAM 或 FASTQ）中，以评估生信流程正确识别和注释变异的能力。这种方法的优点是<strong>可以很好地处理目标或全基因组测序数据，并保留真实数据的许多错误概况和偏差</strong>。它还可以在不同等位基因分数的不同基因组背景下验证比<strong>实际样本允许的数量多得多的不同类型的变体</strong>。将这些 BAM 文件转换回 FASTQ 通常很重要，以便从初始对齐步骤开始测试流程。这种方法有一些重要的局限性：i) 因为它依赖于在修改reads之前正确比对的reads，它不会模拟在难以比对区域中可能发生的所有比对错误，例如带有假基因的基因； ii) 它不能模拟变异出现在异常区域的偏差（例如，导致更高测序错误率的均聚物或串联重复序列的扩展，或引入可能导致系统测序错误的 GGT 序列基序）； iii) 对较大变异进行模拟具有挑战性（例如，对由大删除或大插入中的排序错误引起的覆盖率下降和断点进行建模）； iv）目前的工具不能便捷的操作一些特殊测序技术产生的原始数据格式，例如 Ion Torrent（Thermo Fisher Scientific，Waltham，MA）流数据，来自 PacBio HiFi（Pacific Biosciences，Menlo Park，CA）的原始读数，以及来自纳米孔测序的 fast5 文件（ Oxford Nanopore Technologies, Oxford, UK)，</p>
+<h2 id="E-重分析（Data-Reanalysis）"><a href="#E-重分析（Data-Reanalysis）" class="headerlink" title="E. 重分析（Data Reanalysis）"></a>E. 重分析（Data Reanalysis）</h2><p>对仅对生物信息学流程进行更改而不对上游的湿实验流程进行更改时，可以通过使用新流程对来自各种样本（包括参考材料和临床样本）的现有未修改数据进行分析来帮助验证优化的效果。这种方法具有使用现有真实数据的优势，这些数据具有所用方法的所有偏差和错误。实验室可以测试重现以前版本的流程检测到所有变异的能力，但不会测试以前未检测到的变异的检测性能。</p>
+<h2 id="Modifying-Reference-Genome"><a href="#Modifying-Reference-Genome" class="headerlink" title="Modifying Reference Genome"></a>Modifying Reference Genome</h2><p>针对单倍体基因组，还可以通过编辑参考基因组，当参考基因组发生变化时，被测序的个体应该在该位置有一个变异（假设个体与原始参考相匹配）。这种方法最适用于单倍体样本或单倍体染色体，如假常染色体区域外男性的 X 染色体和 Y 染色体。一个例外是，如果二倍体个体在某个位置具有杂合变异，并且更改参考以匹配该变异，则该变异将被逆转（例如，C&gt;T SNV 将变为 T&gt;C SNV , 或 2-bp 删除将更改为 2-bp 插入)。</p>
 <p><a href="https://www.jmdjournal.org/cms/10.1016/j.jmoldx.2022.09.007/attachment/f4c39ca1-e74c-4b88-964b-41fc173a45c7/mmc2.docx" target="_blank" rel="noopener">可以用于进行数据模拟的软件清单</a></p>
-<h1 id="模拟数据的应用"><a href="#模拟数据的应用" class="headerlink" title="模拟数据的应用"></a>模拟数据的应用</h1><p>流程的不同阶段/不同程度的变更测试，所需要的模拟数据本身会存在一些差异。这里主要需要明确，如果涉及下机数据获取前（建库、测序等）的变更，则一定需要使用真实数据进行补充验证。每种用途原文由相对详实的介绍，但因为整体不复杂也比较符合大家的主观认识，所以这里只列出每种用途的建议模拟方法。<br>|用途|模拟数据方法|<br>|-|-|<br>|基准生物信息学工具|纯模拟数据；修改实验数据（如适用）|<br>|(a)新变异(b)检测限(c)最少的测序读数|(a) 修改实验数据 (b) 混合多个样本；(c)Fastq抽样|<br>|(a)实验室协议变更(b)变更不影响管道中工具的限制(c)变更影响管道中工具的限制|(a) 生物样本。计算机数据可以根据变化进行补充。(b) 现有的分析数据。计算机数据可以根据变化进行补充。|<br>|Proficiency testing 能力验证|修改实验数据|<br>|Variant annotations 变体注释|修改实验数据， VCF 文件操作|</p>
+<h1 id="模拟数据的应用"><a href="#模拟数据的应用" class="headerlink" title="模拟数据的应用"></a>模拟数据的应用</h1><p>流程的不同开发阶段/不同程度的变更测试，对模拟数据的需求本身也会存在一些差异。这里主要需要明确，如果涉及下机数据获取前（建库、测序等）的变更，则一定需要使用真实数据进行补充验证。每种用途原文由相对详实的介绍，但因为整体不复杂也比较符合大家的主观认识，所以这里只列出每种用途的建议模拟方法。<br>|用途|模拟数据方法|<br>|-|-|<br>|基准生物信息学工具|纯模拟数据；修改实验数据（如适用）|<br>|(a)新变异(b)检测限(c)最少的测序读数|(a) 修改实验数据 (b) 混合多个样本；(c)Fastq抽样|<br>|(a)实验室协议变更(b)变更不影响管道中工具的限制(c)变更影响管道中工具的限制|(a) 生物样本。计算机数据可以根据变化进行补充。(b) 现有的分析数据。计算机数据可以根据变化进行补充。|<br>|Proficiency testing 能力验证|修改实验数据|<br>|Variant annotations 变体注释|修改实验数据， VCF 文件操作|</p>
 <h1 id="模拟数据的未来发展"><a href="#模拟数据的未来发展" class="headerlink" title="模拟数据的未来发展"></a>模拟数据的未来发展</h1><h2 id="Copy-Number-Variants"><a href="#Copy-Number-Variants" class="headerlink" title="Copy Number Variants"></a>Copy Number Variants</h2><p>拷贝数变异是临床上重要的一类遗传改变，在癌症和体质性疾病的管理中具有诊断、治疗和预后意义。拷贝数变异通常比小变异更难检测，特别是当拷贝数改变 (CNA) 存在于亚克隆（肿瘤）或嵌合体（种系）时等级。因此，对旨在识别 CNA 的临床 NGS 检测进行全面验证非常重要。但是对应的CNA样本却相对少见，很难采购样本进行全面验证。所以也表现出对CNA数据模拟的需求。</p>
 <ul>
 <li>Bamgineer 是最近发布的一种算法，可以将任何所需级别的用户定义的等位基因特异性 CNA 引入到 BAM 文件中。当从 BAM 文件中采样读取时，该算法会考虑配对末端测序数据中的reads对。这种方法试图保留 BAM 文件中的原始偏差，并更好地模拟真实样本中的 CNA。该算法可应用于许多用例，例如在无细胞 DNA 样本和亚克隆 CNA 检测中以低等位基因负荷模拟 CNA。</li>
@@ -629,7 +615,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">215</span>
+                <span class="site-state-item-count">221</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -640,7 +626,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">56</span>
+                <span class="site-state-item-count">57</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
