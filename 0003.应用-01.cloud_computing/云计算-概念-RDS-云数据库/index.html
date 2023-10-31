@@ -93,7 +93,7 @@
 <meta property="og:site_name" content="Ben-air">
 <meta property="og:description" content="阿里云ACP 备考阶段视频课中涉及的相关概念及内容笔记。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2022-11-25T08:31:50.534Z">
+<meta property="og:updated_time" content="2023-10-31T01:32:56.312Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="关系型数据库RDS（Relational Database Service）">
 <meta name="twitter:description" content="阿里云ACP 备考阶段视频课中涉及的相关概念及内容笔记。">
@@ -403,7 +403,7 @@
       
 
       
-        <p><a href="https://help.aliyun.com/product/26090.html" target="_blank" rel="noopener">阿里云关系型数据库RDS（Relational Database Service）</a> 是一种稳定可靠、可弹性伸缩的在线数据库服务。基于阿里云分布式文件系统和SSD盘高性能存储，RDS支持<strong>MySQL</strong>、<strong>SQL Server</strong>、<strong>PostgreSQL</strong>和<strong>MariaDB TX</strong>引擎，并且提供了<strong>容灾、备份、恢复、监控、迁移</strong>等方面的全套解决方案，帮助您解决数据库运维的烦恼。 </p>
+        <p><a href="https://help.aliyun.com/product/26090.html" target="_blank" rel="noopener">阿里云关系型数据库RDS（Relational Database Service）</a> 是一种稳定可靠、可弹性伸缩的在线数据库服务。基于阿里云分布式文件系统和SSD盘高性能存储，RDS支持<strong>MySQL</strong>、<strong>SQL Server</strong>、<strong>PostgreSQL</strong>和<strong>MariaDB TX</strong>引擎，并且提供了<strong>容灾、备份、恢复、监控、迁移</strong>等方面的全套解决方案，帮助您解决数据库运维的烦恼。</p>
 <h1 id="相关概念"><a href="#相关概念" class="headerlink" title="相关概念"></a>相关概念</h1><ul>
 <li><p>产品系列<br>云数据库RDS实例包括四个系列：基础版、高可用版、集群版和三节点企业版（原金融版）</p>
 </li>
@@ -412,6 +412,31 @@
 <li><p>规格族<br>云数据库RDS根据CPU、内存、连接数和IOPS，提供多种实例规格族，一种实例规格族又包括多个实例规格。</p>
 </li>
 </ul>
+<h2 id="慢日志"><a href="#慢日志" class="headerlink" title="慢日志"></a>慢日志</h2><h3 id="数据节点慢日志"><a href="#数据节点慢日志" class="headerlink" title="数据节点慢日志"></a>数据节点慢日志</h3><ul>
+<li>数据节点慢日志中统计的命令执行时间仅包含命令在数据节点中的执行时间，不包含数据节点与代理或客户端的通信时间以及命令在单线程队列上的排队延迟等。</li>
+<li>数据节点慢日志的保留时间为72小时，无数量限制。</li>
+<li>由于Redis性能出色，通常情况下，数据节点慢日志的数量较少。</li>
+</ul>
+<h3 id="代理慢日志"><a href="#代理慢日志" class="headerlink" title="代理慢日志"></a>代理慢日志</h3><ul>
+<li>代理慢日志中统计的命令执行时间从代理向数据节点发出请求开始，到代理从数据节点收到相应的回复为止，包含了命令在数据节点中的执行时间、数据在网络中的传输时间以及命令的排队延迟等。</li>
+<li>代理慢日志的保留时间为72小时，无数量限制。</li>
+<li>由于代理慢日志反映的延迟与您在应用端感受到的延迟更相近，在排查Redis服务超时问题时，建议多关注此类日志。</li>
+</ul>
+<h2 id="实例变更"><a href="#实例变更" class="headerlink" title="实例变更"></a>实例变更</h2><h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><ul>
+<li>变更配置可能会进行数据迁移，迁移完成后根据您选择的切换时间进行切换（期间保持增量同步），切换过程中会出现一次约30秒的闪断，而且与数据库、账号、网络等相关的大部分操作都无法执行，请尽量在业务低峰期执行变配操作，或确保您的应用有自动重连机制。</li>
+<li>变更配置后<strong>无需您手动重启实例</strong>。</li>
+<li>由于基础系列只有一个数据库节点，没有备节点作为热备份，因此当该节点意外宕机或者执行变更配置、版本升级等任务时，会出现较长时间的不可用。如果业务对数据库的可用性要求较高，不建议使用基础系列，可选择其他系列（如高可用系列）。</li>
+<li>如果RDS实例下已创建只读实例，则在扩容存储空间时，请确保只读实例的存储空间大于等于主实例的存储空间，否则将扩容失败。建议您先扩容只读实例的存储空间，所有只读实例扩容完成后，再扩容主实例存储空间。</li>
+</ul>
+<p>对实例规格或者存储空间进行配置变更，说明如下：</p>
+<ul>
+<li>实例为<strong>运行中</strong>。</li>
+<li>实例当前无正在运行的备份。</li>
+<li>实例规格和存储空间必须指定一项。</li>
+<li>降低磁盘空间配置，输入的磁盘空间不能小于实际使用空间大小的1.1倍。</li>
+<li>当前只支持常规实例、只读实例变更配置，不支持灾备实例、临时实例。<br>-<h3 id="变更说明"><a href="#变更说明" class="headerlink" title="变更说明"></a>变更说明</h3>|变更项|说明|<br>|-|-|<br>|版本| 部分版本实例支持升级到更高版本|<br>|系列|支持基础系列升级到高可用系列。更多详情，请参见基础系列升级为高可用系列。|<br>|规格|所有实例类型都支持变更规格。|<br>|存储类型|    存储类型为ESSD版本的实例支持升级PL等级（不支持降级），例如将ESSD PL1升级为ESSD PL2。非集群系列的SSD云盘实例支持升级为ESSD云盘，但是不支持再降级回SSD|<br>|存储空间|所有实例仅支持增加存储空间，不支持减少存储空间。在增加存储空间时，最小增加量为5 GB，最大不能超过当前实例规格的存储空间限制。<code>说明:如果主实例有只读实例，由于只读实例存储空间不能小于主实例存储空间，因此需要先增加只读实例存储空间，才能增加主实例的存储空间。</code> <code>ps:高可用云盘版实例增加存储空间时，会出现一次约30秒的闪断。在此期间，数据库、账号、网络等相关的大部分操作都无法执行，请尽量在业务低峰期执行变配操作，并确保您的应用有自动重连机制。</code>|</li>
+</ul>
+<h2 id="库表恢复"><a href="#库表恢复" class="headerlink" title="库表恢复"></a>库表恢复</h2><p>RDS MySQL支持常规和极速级别的库表恢复功能，您可将指定的库、表按备份集或时间点恢复至原实例或新实例，无需恢复全部数据，可用于误操作后的快速订正，以及分析历史数据等场景。</p>
 
       
     </div>
@@ -454,8 +479,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0003.应用-03.software/software-对象存储-ossutil-阿里api/" rel="next" title="software-ossutil-阿里云数据传输">
-                <i class="fa fa-chevron-left"></i> software-ossutil-阿里云数据传输
+              <a href="/0003.应用-01.cloud_computing/异构计算-概念/" rel="next" title="异构计算 - 概念">
+                <i class="fa fa-chevron-left"></i> 异构计算 - 概念
               </a>
             
           </div>
@@ -464,8 +489,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0003.应用-01.cloud_computing/云计算-概念-SLB-负载均衡/" rel="prev" title="负载均衡(SLB:Server Load Balance) 介绍">
-                负载均衡(SLB:Server Load Balance) 介绍 <i class="fa fa-chevron-right"></i>
+              <a href="/0003.应用-01.cloud_computing/边缘计算-概念/" rel="prev" title="边缘计算 - 概念">
+                边缘计算 - 概念 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -568,7 +593,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">224</span>
+                <span class="site-state-item-count">234</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -590,7 +615,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">103</span>
+                <span class="site-state-item-count">105</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -693,7 +718,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#相关概念"><span class="nav-number">1.</span> <span class="nav-text">相关概念</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#相关概念"><span class="nav-number">1.</span> <span class="nav-text">相关概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#慢日志"><span class="nav-number">1.1.</span> <span class="nav-text">慢日志</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据节点慢日志"><span class="nav-number">1.1.1.</span> <span class="nav-text">数据节点慢日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代理慢日志"><span class="nav-number">1.1.2.</span> <span class="nav-text">代理慢日志</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例变更"><span class="nav-number">1.2.</span> <span class="nav-text">实例变更</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#注意事项"><span class="nav-number">1.2.1.</span> <span class="nav-text">注意事项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变更说明"><span class="nav-number">1.2.2.</span> <span class="nav-text">变更说明</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#库表恢复"><span class="nav-number">1.3.</span> <span class="nav-text">库表恢复</span></a></li></ol></li></ol></div>
             
 
           </div>

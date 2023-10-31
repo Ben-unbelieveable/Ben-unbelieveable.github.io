@@ -93,7 +93,7 @@
 <meta property="og:site_name" content="Ben-air">
 <meta property="og:description" content="阿里云ACP 备考阶段视频课中涉及的相关概念及内容笔记，本章记录负载均衡知识点相关内容">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2022-11-25T08:31:50.535Z">
+<meta property="og:updated_time" content="2023-10-31T01:32:56.314Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="专有网络（VPC：Virtual Private Cloud）介绍">
 <meta name="twitter:description" content="阿里云ACP 备考阶段视频课中涉及的相关概念及内容笔记，本章记录负载均衡知识点相关内容">
@@ -409,6 +409,51 @@
 <p>VPC最早是由AWS在2009年提出[1]，不过VPC的一些组成元素在其提出之前就已经存在。VPC只是将这些元素以私有云的视角重新包装了一下。在VPC之后，云主机只能使用VPC内部的对应的元素。从这个角度看，VPC更像是公有云服务商以打包的形式提供服务。</p>
 <p>用户可以在公有云上创建一个或者多个VPC，每个部门一个VPC。对于需要连通的部门创建VPC连接。</p>
 <h2 id="技术角度"><a href="#技术角度" class="headerlink" title="技术角度"></a>技术角度</h2><p>VPC是用户专属的一个二层网络。</p>
+<h1 id="VPC的网络链接组件"><a href="#VPC的网络链接组件" class="headerlink" title="VPC的网络链接组件"></a>VPC的网络链接组件</h1><h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><p>IPv4网关是连接专有网络VPC（Virtual Private Cloud）和公网的网络组件。VPC访问IPv4公网的流量经过IPv4网关，由IPv4网关实现路由转发以及私网地址到公网地址的转换，最终实现对公网的访问。</p>
+<h3 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h3><ul>
+<li>作为VPC路由表中的路由下一跳，控制VPC访问公网的目的地址范围。</li>
+<li>为VPC中分配了IPv4公网地址的网络资源（例如弹性网卡、ECS等），提供网络地址转换功能。<h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3>对公网访问进行集中控制</li>
+</ul>
+<h3 id="使用限制"><a href="#使用限制" class="headerlink" title="使用限制"></a>使用限制</h3><ul>
+<li>IPv4网关是地域级别的资源，只能在同一个地域中使用。</li>
+<li>一个VPC下只支持创建一个IPv4网关，且一个IPv4网关仅能关联一个VPC。</li>
+<li>一个IPv4网关仅能绑定一张网关路由表。</li>
+<li>IPv4网关不能绑定系统路由表。</li>
+<li>已绑定交换机的路由表不能与IPv4网关绑定。</li>
+</ul>
+<h2 id="HaVip（High-Availability-Virtual-IP-Address）高可用虚拟IP"><a href="#HaVip（High-Availability-Virtual-IP-Address）高可用虚拟IP" class="headerlink" title="HaVip（High-Availability Virtual IP Address）高可用虚拟IP"></a>HaVip（High-Availability Virtual IP Address）高可用虚拟IP</h2><p>HaVip是一种可以独立创建和释放的私网IP资源，具备与ECS实例主私网IP地址一样的网络接入能力，可以与高可用软件，例如Keepalived配合使用，搭建高可用主备服务，提高业务的可用性。<br>HaVip支持绑定一个弹性公网IP（EIP）、多个ECS实例或多个ECS实例的主网卡或辅助网卡，以实现同可用区、多服务器高可用架构下的IP漂移，确保对外提供服务的私网IP始终不变。</p>
+<h3 id="HaVip资源限制"><a href="#HaVip资源限制" class="headerlink" title="HaVip资源限制"></a>HaVip资源限制</h3><table>
+<thead>
+<tr>
+<th style="text-align:left">资源</th>
+<th>默认限制</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">支持创建高可用虚拟IP（HaVip）的网络类型</td>
+<td>VPC类型</td>
+</tr>
+<tr>
+<td style="text-align:left">单个ECS实例支持同时绑定的HaVip数量</td>
+<td>5个</td>
+</tr>
+<tr>
+<td style="text-align:left">单个HaVip支持同时绑定的EIP数量</td>
+<td>1个</td>
+</tr>
+<tr>
+<td style="text-align:left">单个HaVip支持同时绑定的ECS实例或弹性网卡的数量</td>
+<td>10个<code>HaVip只能绑定ECS实例和弹性网卡中的一种，不能跨类别绑定；HaVip具有子网属性，只能绑定同一交换机下的实例或弹性网卡</code></td>
+</tr>
+<tr>
+<td style="text-align:left">HaVip是否支持广播和组播通信</td>
+<td>不支持</td>
+</tr>
+</tbody>
+</table>
+<h1 id="网络ACL"><a href="#网络ACL" class="headerlink" title="网络ACL"></a>网络ACL</h1><p>网络ACL是VPC中的网络访问控制功能。您可以自定义设置网络ACL规则，并将网络ACL与交换机绑定，实现对交换机中ECS实例的流量的访问控制。</p>
+<h1 id="ECS安全组"><a href="#ECS安全组" class="headerlink" title="ECS安全组"></a>ECS安全组</h1><p>安全组是一种虚拟防火墙，具备状态检测和数据包过滤能力，用于在云端划分安全域。通过配置安全组规则，您可以控制安全组内一台或多台ECS实例的入流量和出流量。<strong>安全组和交换机不是绑定的。</strong></p>
 <h1 id="经典网络"><a href="#经典网络" class="headerlink" title="经典网络"></a>经典网络</h1><h1 id="ACP考试相关外延知识点"><a href="#ACP考试相关外延知识点" class="headerlink" title="ACP考试相关外延知识点"></a>ACP考试相关外延知识点</h1><ul>
 <li>VPC中使用的弹性公网IP是收费服务。</li>
 </ul>
@@ -455,8 +500,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0003.应用-01.cloud_computing/云计算-概念-子网掩码/" rel="next" title="专有网络（VPC：Virtual Private Cloud）介绍">
-                <i class="fa fa-chevron-left"></i> 专有网络（VPC：Virtual Private Cloud）介绍
+              <a href="/0003.应用-01.cloud_computing/边缘计算-概念/" rel="next" title="边缘计算 - 概念">
+                <i class="fa fa-chevron-left"></i> 边缘计算 - 概念
               </a>
             
           </div>
@@ -465,8 +510,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0003.应用-03.software/software-对象存储-ossutil-阿里api/" rel="prev" title="software-ossutil-阿里云数据传输">
-                software-ossutil-阿里云数据传输 <i class="fa fa-chevron-right"></i>
+              <a href="/0003.应用-01.cloud_computing/云计算-概念-VPN/" rel="prev" title="VPN网关介绍">
+                VPN网关介绍 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -569,7 +614,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">224</span>
+                <span class="site-state-item-count">234</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -591,7 +636,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">103</span>
+                <span class="site-state-item-count">105</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -694,7 +739,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#服务角度"><span class="nav-number">1.1.</span> <span class="nav-text">服务角度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#技术角度"><span class="nav-number">1.2.</span> <span class="nav-text">技术角度</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#经典网络"><span class="nav-number">2.</span> <span class="nav-text">经典网络</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ACP考试相关外延知识点"><span class="nav-number">3.</span> <span class="nav-text">ACP考试相关外延知识点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#服务角度"><span class="nav-number">1.1.</span> <span class="nav-text">服务角度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#技术角度"><span class="nav-number">1.2.</span> <span class="nav-text">技术角度</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#VPC的网络链接组件"><span class="nav-number">2.</span> <span class="nav-text">VPC的网络链接组件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#IPv4"><span class="nav-number">2.1.</span> <span class="nav-text">IPv4</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#功能"><span class="nav-number">2.1.1.</span> <span class="nav-text">功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用场景"><span class="nav-number">2.1.2.</span> <span class="nav-text">使用场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用限制"><span class="nav-number">2.1.3.</span> <span class="nav-text">使用限制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HaVip（High-Availability-Virtual-IP-Address）高可用虚拟IP"><span class="nav-number">2.2.</span> <span class="nav-text">HaVip（High-Availability Virtual IP Address）高可用虚拟IP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HaVip资源限制"><span class="nav-number">2.2.1.</span> <span class="nav-text">HaVip资源限制</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#网络ACL"><span class="nav-number">3.</span> <span class="nav-text">网络ACL</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ECS安全组"><span class="nav-number">4.</span> <span class="nav-text">ECS安全组</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#经典网络"><span class="nav-number">5.</span> <span class="nav-text">经典网络</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ACP考试相关外延知识点"><span class="nav-number">6.</span> <span class="nav-text">ACP考试相关外延知识点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>

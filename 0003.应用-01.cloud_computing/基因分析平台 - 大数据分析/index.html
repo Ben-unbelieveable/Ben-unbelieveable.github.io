@@ -94,7 +94,7 @@
 <meta property="og:description" content="本文介绍以下基因分析平台，同时也介绍一下进行超大数据分析时的一些注意事项。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://static-aliyun-doc.oss-accelerate.aliyuncs.com/assets/img/zh-CN/7585352261/p279233.png">
-<meta property="og:updated_time" content="2023-09-19T02:43:44.309Z">
+<meta property="og:updated_time" content="2023-10-31T01:32:56.321Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="基因分析平台 - 超大数据分析技巧">
 <meta name="twitter:description" content="本文介绍以下基因分析平台，同时也介绍一下进行超大数据分析时的一些注意事项。">
@@ -412,7 +412,7 @@
 <p>因此如果我们想使用基因分析平台进行任务分析，就需要做一些准备工作：</p>
 <ol>
 <li>需要将我们要分析的数据存储到OSS上，所有输入输出数据的长期保存都依赖于OSS，分析中挂载的存储上产生的中间数据均不可见。</li>
-<li>搭建一个分析流程，分析流程目前仅支持 WDL ，调用的分析环境（docker镜像或阿里提供的software）、计算资源（最小 1c2Gb 到最大 64c512Gb ）、分析存储（HDD和SSD）都是在WDL中指定的。 </li>
+<li>搭建一个分析流程，分析流程目前仅支持 WDL ，调用的分析环境（docker镜像或阿里提供的software）、计算资源（最小 1c2Gb 到最大 64c512Gb ）、分析存储（HDD和SSD）都是在WDL中指定的。</li>
 </ol>
 <h2 id="性能监控"><a href="#性能监控" class="headerlink" title="性能监控"></a>性能监控</h2><p>云平台</p>
 <h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
@@ -421,7 +421,7 @@
 <li><p>由于流程运行环境依赖于容器，因此需要注意相关的容器需要开放访问权限。</p>
 </li>
 <li><p>wdl本身提供了scatter语法，以便进行一些遍历/并行操作，但是在基因分析平台任务监控中，只能进行2层深度的scatter解析（多深度可以进行任务的分析，但是并没有对应颗粒度的任务状态监控），所以为了更好的查看所有任务的运行情况和资源使用情况，最好控制wdl的数据深度。比如最高维度可以借助投递逻辑来实现（比如下述示例中的Sample_info层)，流程只是针对一个样本,批次多样本的投递依赖于表格和模板结合进行投递的方式实现。</p>
- <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">scatter (Sample_info in Samples_info)&#123;</span><br><span class="line">    scatter (sample_lib in Sample_info)&#123;</span><br><span class="line">        scatter (Fastq_info in sample_lib.fastqlist)&#123;</span><br><span class="line">            call xxxx ; </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">scatter (Sample_info in Samples_info)&#123;</span><br><span class="line">    scatter (sample_lib in Sample_info)&#123;</span><br><span class="line">        scatter (Fastq_info in sample_lib.fastqlist)&#123;</span><br><span class="line">            call xxxx ;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
 </ol>
 <h2 id="历史的一些隐藏小坑"><a href="#历史的一些隐藏小坑" class="headerlink" title="历史的一些隐藏小坑"></a>历史的一些隐藏小坑</h2><ol>
@@ -429,7 +429,7 @@
 </li>
 <li><p>系统盘（local-disk）的存储范围 40G~500G，超出后无法启动任务，可以不配置（默认40G），如果为了规避资源浪费设置了10G资源，会导致任务无法启动。</p>
 </li>
-<li><p>数据盘官网提示可以挂载 16*32T，但是自定义挂载目录（例如说明文档提供的 /mnt1 、/mnt2），那么生成结果无法正常导入OSS，数据盘挂载目录只有使用 /cromwell_root 时且output中文件名不指定根目录时，生成的数据才能正常导出OSS，并被作为正常输入被下游任务调用。 如果使用根目录，会导出到OSS，但是文件路径会有问题影响下游调用。为方便理解，提供一个示例供大家参考。 </p>
+<li><p>数据盘官网提示可以挂载 16*32T，但是自定义挂载目录（例如说明文档提供的 /mnt1 、/mnt2），那么生成结果无法正常导入OSS，数据盘挂载目录只有使用 /cromwell_root 时且output中文件名不指定根目录时，生成的数据才能正常导出OSS，并被作为正常输入被下游任务调用。 如果使用根目录，会导出到OSS，但是文件路径会有问题影响下游调用。为方便理解，提供一个示例供大家参考。</p>
 </li>
 </ol>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">task test_run &#123;</span><br><span class="line">    input &#123;</span><br><span class="line">        String text</span><br><span class="line">    &#125;</span><br><span class="line">    command &#123;</span><br><span class="line">        echo $&#123;text&#125; &gt; <span class="string">"out1.txt"</span></span><br><span class="line">    &#125;</span><br><span class="line">    output &#123;</span><br><span class="line">        File out1 = <span class="string">"out1.txt"</span></span><br><span class="line">    &#125;</span><br><span class="line">    runtime &#123;</span><br><span class="line">        cpu: <span class="number">1</span></span><br><span class="line">        memory: <span class="string">"2G"</span></span><br><span class="line">        disks: <span class="string">"/cromwell_root 20 cloud_ssd"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -473,8 +473,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0003.应用-01.cloud_computing/云计算-概念-私有云公有云混合云/" rel="next" title="云计算-基础概念-私有云公有云混合云">
-                <i class="fa fa-chevron-left"></i> 云计算-基础概念-私有云公有云混合云
+              <a href="/0003.应用-01.cloud_computing/云计算-概念-常见概念总览/" rel="next" title="云计算-基础概念">
+                <i class="fa fa-chevron-left"></i> 云计算-基础概念
               </a>
             
           </div>
@@ -483,8 +483,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0003.应用-01.cloud_computing/边缘计算-概念/" rel="prev" title="边缘计算 - 概念">
-                边缘计算 - 概念 <i class="fa fa-chevron-right"></i>
+              <a href="/0003.应用-01.cloud_computing/云计算-书_云计算技术及性能优化01/" rel="prev" title="云计算技术及性能优化">
+                云计算技术及性能优化 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -587,7 +587,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">224</span>
+                <span class="site-state-item-count">234</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -609,7 +609,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">103</span>
+                <span class="site-state-item-count">105</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
