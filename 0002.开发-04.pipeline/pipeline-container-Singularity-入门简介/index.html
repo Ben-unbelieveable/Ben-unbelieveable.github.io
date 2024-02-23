@@ -93,7 +93,7 @@
 <meta property="og:site_name" content="Ben-air">
 <meta property="og:description" content="Singularity can be used with Docker images. This feature was included because developers use and really like using Docker and scientists have already put much resources into creating Docker images. Th">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2023-11-08T07:29:02.772Z">
+<meta property="og:updated_time" content="2024-01-31T09:10:13.214Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Singularity - 入门简介">
 <meta name="twitter:description" content="Singularity can be used with Docker images. This feature was included because developers use and really like using Docker and scientists have already put much resources into creating Docker images. Th">
@@ -433,8 +433,13 @@
 <li>You can pull a Docker image (without sudo)</li>
 <li>You can build images with bases from assembled Docker layers that include environment, guts, and labels</li>
 </ul>
-<h1 id="Singularity-安装"><a href="#Singularity-安装" class="headerlink" title="Singularity 安装"></a>Singularity 安装</h1><p>可以直接使用conda进行安装<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conda create -n  singularity  singularity</span><br></pre></td></tr></table></figure></p>
-
+<h1 id="Singularity-安装"><a href="#Singularity-安装" class="headerlink" title="Singularity 安装"></a>Singularity 安装</h1><p>可以直接使用conda进行安装，这里最好使用root账户安装，不然后续使用依然可能存在权限问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conda create -n  singularity  singularity</span><br></pre></td></tr></table></figure>
+<h1 id="Singularity-环境配置"><a href="#Singularity-环境配置" class="headerlink" title="Singularity 环境配置"></a>Singularity 环境配置</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 配置singularity 下载镜像时的存储目录</span><br><span class="line">export SINGULARITY_CACHEDIR=/ifstj2/B2C_RD_H1/Personal/liubo/singularity</span><br></pre></td></tr></table></figure>
+<h1 id="基于docker镜像构建singature镜像"><a href="#基于docker镜像构建singature镜像" class="headerlink" title="基于docker镜像构建singature镜像"></a>基于docker镜像构建singature镜像</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 方式1：从docker uri开始</span><br><span class="line">singularity pull docker://godlovedc/lolcow # 下载pre-built image</span><br><span class="line">singularity build mylolcow_latest.sif docker://godlovedc/lolcow # 下载后再build成镜像</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 方式2：从本地缓存的docker image开始</span><br><span class="line"><span class="meta">$</span> sudo docker images</span><br><span class="line">REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">godlovedc/lolcow    latest              577c1fe8e6d8        16 months ago       241MB</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span> sudo singularity build lolcow_from_docker_cache.sif docker-daemon://godlovedc/lolcow:latest</span><br><span class="line"><span class="meta">#</span> 和方式1 的区别</span><br><span class="line"><span class="meta">#</span> 从原来的docker变成了docker-daemon；</span><br><span class="line"><span class="meta">#</span> 这里需要加sudo，因为docker程序运行时需要sudo权限；</span><br><span class="line"><span class="meta">#</span> docker的镜像后面必须要加TAG标签，可以通过sudo docker images查看TAG标签。</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 方式3：从镜像tar文件开始</span><br><span class="line"><span class="meta">$</span> sudo docker images</span><br><span class="line">REPOSITORY           TAG              IMAGE ID       CREATED        SIZE  </span><br><span class="line">hello-world          latest           d1165f221234   5 months ago   13.3kB</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span> sudo docker save d1165f221234 -o hello_world.tar</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span> singularity build hello_world.sif docker-archive://hello_world.tar</span><br><span class="line">INFO:    Starting build...</span><br><span class="line">Getting image source signatures</span><br><span class="line">Copying blob f22b99068db9 done</span><br><span class="line">Copying config 1189c90721 done</span><br><span class="line">Writing manifest to image destination</span><br><span class="line">Storing signatures</span><br><span class="line">2021/08/15 16:46:15  info unpack layer: sha256:a99912efe9c767b280c869d2e734bef3c92d29d45d4e3beefbeb5a1924ed7445</span><br><span class="line">INFO:    Creating SIF file...</span><br><span class="line">INFO:    Build complete: hello_world.sif</span><br><span class="line"><span class="meta">#</span> 和方式1的主要区别</span><br><span class="line"><span class="meta">#</span> 原本的docker://换成了docker-archive://，方式2里面是docker-daemon://；</span><br><span class="line"><span class="meta">#</span> 这里不需要加sudo了，只需要当前用户有hello_world.tar文件的可访问权限即可；</span><br><span class="line"><span class="meta">#</span> 这里用的是tar文件，singularity也可以处理tar.gz文件。</span><br></pre></td></tr></table></figure>
+<h1 id="运行Singularity-容器"><a href="#运行Singularity-容器" class="headerlink" title="运行Singularity 容器"></a>运行Singularity 容器</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 使用exec直接运行任务</span><br><span class="line">share/app/singularity/3.8.1/bin/singularity exec ensembl-vep_release_108.2.sif vep</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 运行容器后进入容器交互式执行任务</span><br><span class="line">share/app/singularity/3.8.1/bin/singularity shell ensembl-vep_release_108.2.sif</span><br></pre></td></tr></table></figure>
+<h2 id="挂在目录-B"><a href="#挂在目录-B" class="headerlink" title="挂在目录( -B)"></a>挂在目录( -B)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/share/app/singularity/3.8.1/bin/singularity exec -B /ifstj2/B2C_RD_H1/Research_and_Development/ -B /ifstj2/B2C_RD_H1/Personal/liubo  ensembl-vep_release_108.2.sif  vep --fork 4  --cache  --dir_cache /ifstj2/B2C_RD_H1/Research_and_Development/03.database/vep_cache_dir   --assembly GRCh37  --offline  --refseq  --exclude_predicted  --fasta /ifstj2/B2C_RD_H1/Research_and_Development/03.database/Hg19/hg19.fa  -i /ifstj2/B2C_RD_H1/Personal/liubo/singularity/22S03467478.indel.final.vcf  -o /ifstj2/B2C_RD_H1/Personal/liubo/singularity/test/22S03467478.indel.vcfanno.tab  --format vcf  --vcf_info_field ANN  --force_overwrite  --tab  --verbose  --no_escape  --everything  --shift_3prime 1  --dir_plugins  /ifstj2/B2C_RD_H1/Research_and_Development/03.database/VEP_plugins/VEP_plugins-release-108  --plugin TSSDistance  --plugin TERT  --custom /ifstj2/B2C_RD_H1/Personal/liubo/0.Pipeline/aio.NewAnnotation/subpipeline/submodel_annotation_vep/Database/human_maked.gene.gff.gz,,gff  --custom /ifstj2/B2C_RD_H1/Research_and_Development/03.database/vep_inhouse_data/clinvar.vcf.gz,ClinVar,vcf,exact,0,CLNSIG,CLNREVSTAT,CLNDN</span><br></pre></td></tr></table></figure>
+<h2 id="使用root身份运行"><a href="#使用root身份运行" class="headerlink" title="使用root身份运行"></a>使用root身份运行</h2>
       
     </div>
     
@@ -474,8 +479,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/0002.开发-04.pipeline/pipeline-container-docker-01.入门简介及环境配置/" rel="next" title="docker - 入门简介及环境配置">
-                <i class="fa fa-chevron-left"></i> docker - 入门简介及环境配置
+              <a href="/0001.知识-03.standard/fileformat-maf/" rel="next" title="文件格式说明 - MAF(Mutation Annotation Format    )">
+                <i class="fa fa-chevron-left"></i> 文件格式说明 - MAF(Mutation Annotation Format    )
               </a>
             
           </div>
@@ -484,8 +489,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/0001.知识-01.NGS/2021-10-29.肿瘤NGS检测开发过程中的方法学/" rel="prev" title="肿瘤NGS检测开发过程中的方法学">
-                肿瘤NGS检测开发过程中的方法学 <i class="fa fa-chevron-right"></i>
+              <a href="/0002.开发-04.pipeline/pipeline-container-docker-01.入门简介及环境配置/" rel="prev" title="docker - 入门简介及环境配置">
+                docker - 入门简介及环境配置 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -588,7 +593,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">245</span>
+                <span class="site-state-item-count">257</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -599,7 +604,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">61</span>
+                <span class="site-state-item-count">65</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -610,7 +615,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-count">111</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -713,7 +718,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基本概念"><span class="nav-number">1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Singularity-安装"><span class="nav-number">2.</span> <span class="nav-text">Singularity 安装</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基本概念"><span class="nav-number">1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Singularity-安装"><span class="nav-number">2.</span> <span class="nav-text">Singularity 安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Singularity-环境配置"><span class="nav-number">3.</span> <span class="nav-text">Singularity 环境配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基于docker镜像构建singature镜像"><span class="nav-number">4.</span> <span class="nav-text">基于docker镜像构建singature镜像</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#运行Singularity-容器"><span class="nav-number">5.</span> <span class="nav-text">运行Singularity 容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#挂在目录-B"><span class="nav-number">5.1.</span> <span class="nav-text">挂在目录( -B)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用root身份运行"><span class="nav-number">5.2.</span> <span class="nav-text">使用root身份运行</span></a></li></ol></li></ol></div>
             
 
           </div>
