@@ -93,7 +93,7 @@
 <meta property="og:site_name" content="Ben-air">
 <meta property="og:description" content="设计免密码进行节点切换">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2022-06-08T10:20:03.890Z">
+<meta property="og:updated_time" content="2024-03-13T09:11:11.303Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="密钥设置实现免密码访问">
 <meta name="twitter:description" content="设计免密码进行节点切换">
@@ -407,6 +407,16 @@
 <h2 id="通过公钥与私钥"><a href="#通过公钥与私钥" class="headerlink" title="通过公钥与私钥"></a>通过公钥与私钥</h2><h5 id="创建公钥与私钥对"><a href="#创建公钥与私钥对" class="headerlink" title="创建公钥与私钥对"></a>创建公钥与私钥对</h5><p>在本地机器上运行</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen</span><br></pre></td></tr></table></figure>
 <h5 id="将公钥复制到远程目录"><a href="#将公钥复制到远程目录" class="headerlink" title="将公钥复制到远程目录"></a>将公钥复制到远程目录</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssh-copy-id -i ~/.ssh/id_rsa.pub remote-host</span><br><span class="line"># 会提示输入远程服务器的密码</span><br><span class="line"># 密码输入后，会将key写到远程机器的 ~/.ssh/authorized_key.文件中</span><br></pre></td></tr></table></figure>
+<h5 id="多公钥的配置"><a href="#多公钥的配置" class="headerlink" title="多公钥的配置"></a>多公钥的配置</h5><p>有些特殊情况下，可能我们需要配置多个独立的密钥，比如gitlab和github的独立公钥，或者集群公钥：<br>这个时候，我们可以通过编辑 ~/.ssh/config 文件进行适配。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"># host 与 hostname 需要相同</span><br><span class="line"></span><br><span class="line"># configuration 1</span><br><span class="line">Host cluster</span><br><span class="line">  # 你的主机名</span><br><span class="line">  HostName 10.1**.**.**</span><br><span class="line">  # 你的用户名</span><br><span class="line">  User liu******</span><br><span class="line">  # 你的rsa秘钥文件</span><br><span class="line">  IdentityFile ~/.ssh/id_rsa</span><br><span class="line"></span><br><span class="line"># configuration 2</span><br><span class="line">Host github.com</span><br><span class="line">  HostName github.com</span><br><span class="line">  # 你的github账号</span><br><span class="line">  User 6****@qq.com</span><br><span class="line">  # github对应的rsa秘钥文件</span><br><span class="line">  IdentityFile ~/.ssh/id_rsa_github</span><br><span class="line"></span><br><span class="line"># configuration 3</span><br><span class="line"># gitlab   </span><br><span class="line"># host 与 hostname 需要相同</span><br><span class="line">Host gitlab.******.cn</span><br><span class="line">  HostName gitlab.******.cn</span><br><span class="line">  # 你的gitlab账号</span><br><span class="line">  User liu******@********ics.cn</span><br><span class="line">  # gitlab对应的rsa秘钥文件</span><br><span class="line">  IdentityFile ~/.ssh/id_rsa_gitlab</span><br></pre></td></tr></table></figure></p>
+<p>其中关键字不分大小，但是后面的值是区分大小写的，常用的关键字如下：</p>
+<ul>
+<li>Host：类似昵称，用于标识某个特定的配置，在ssh命令中使用，例如我们想要ssh连接到上例中的#1配置的主机，则在命令行执行如下命令即可：<code>ssh cluster</code> , cluster == <a href="mailto:liubo4@10.192.36.4" target="_blank" rel="noopener">liubo4@10.192.36.4</a></li>
+<li>HostName: ssh链接的主机名，一般是IP地址或域名。</li>
+<li>User： ssh链接的用户名</li>
+<li>IdentityFile： 认证证书文件，默认位置是~/.ssh/id_rsa, ~/ssh/id_dsa等，如果采用默认的证书，可以不用设置此参数，除非你的证书放在某个自定义的目录，那么你就需要设置该参数来指向你的证书</li>
+<li>Port： SSH访问主机的端口号，默认是22端口，同上，只有在非默认情况下才需要设置该值</li>
+</ul>
+<p>更多关键字可以通过执行 <code>man ssh_config</code> 查看。</p>
 <h5 id="配置完成进行测试"><a href="#配置完成进行测试" class="headerlink" title="配置完成进行测试"></a>配置完成进行测试</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh remote-host</span><br></pre></td></tr></table></figure>
 <p>不需要输入密码即可登录到远程服务器</p>
 <h2 id="sshpass-工具"><a href="#sshpass-工具" class="headerlink" title="sshpass 工具"></a>sshpass 工具</h2><p>先在机器A上安装 sshpass 工具，然后使用</p>
@@ -566,7 +576,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">255</span>
+                <span class="site-state-item-count">263</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -577,7 +587,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">65</span>
+                <span class="site-state-item-count">66</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -691,7 +701,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#通过公钥与私钥"><span class="nav-number">1.</span> <span class="nav-text">通过公钥与私钥</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#创建公钥与私钥对"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">创建公钥与私钥对</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#将公钥复制到远程目录"><span class="nav-number">1.0.0.2.</span> <span class="nav-text">将公钥复制到远程目录</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#配置完成进行测试"><span class="nav-number">1.0.0.3.</span> <span class="nav-text">配置完成进行测试</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sshpass-工具"><span class="nav-number">2.</span> <span class="nav-text">sshpass 工具</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#通过公钥与私钥"><span class="nav-number">1.</span> <span class="nav-text">通过公钥与私钥</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#创建公钥与私钥对"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">创建公钥与私钥对</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#将公钥复制到远程目录"><span class="nav-number">1.0.0.2.</span> <span class="nav-text">将公钥复制到远程目录</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#多公钥的配置"><span class="nav-number">1.0.0.3.</span> <span class="nav-text">多公钥的配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#配置完成进行测试"><span class="nav-number">1.0.0.4.</span> <span class="nav-text">配置完成进行测试</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sshpass-工具"><span class="nav-number">2.</span> <span class="nav-text">sshpass 工具</span></a></li></ol></div>
             
 
           </div>
