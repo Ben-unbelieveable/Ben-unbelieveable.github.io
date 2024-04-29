@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Machine-Learning," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="趋势预测：对于预测问题，回归中最简单的线性回归，是以线性的方法拟合出数据的趋势。但是对于有周期性，波动性的数据，并不能简单以线性的方式拟合，否则模型会偏差较大，而局部加权回归（lowess）能较好的处理这种问题。可以拟合出一条符合整体趋势的线，进而做预测。  平滑问题：局部加权回归（lowess）也能较好的解决平滑问题。在做数据平滑的时候，会有遇到有趋势或者季节性的数据，对于这样的数据，我们不能">
+<meta name="keywords" content="Machine-Learning">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据预处理方法-局部加权回归(LOWESS)">
+<meta property="og:url" content="http://ben-air.cn/0001.知识-10.机器学习/01.数据预处理-局部加权回归LOWESS/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="趋势预测：对于预测问题，回归中最简单的线性回归，是以线性的方法拟合出数据的趋势。但是对于有周期性，波动性的数据，并不能简单以线性的方式拟合，否则模型会偏差较大，而局部加权回归（lowess）能较好的处理这种问题。可以拟合出一条符合整体趋势的线，进而做预测。  平滑问题：局部加权回归（lowess）也能较好的解决平滑问题。在做数据平滑的时候，会有遇到有趋势或者季节性的数据，对于这样的数据，我们不能">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LWM5ZDMwMTc4YTY5NGQ3YzIucG5n?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LTY1MGE0ZWEwNzRkZWYyZDUucG5n?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LTgwMjVlOTBmNmZkMGRjNjYucG5n?x-oss-process=image/format,png">
+<meta property="og:updated_time" content="2024-04-29T01:58:17.231Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="数据预处理方法-局部加权回归(LOWESS)">
+<meta name="twitter:description" content="趋势预测：对于预测问题，回归中最简单的线性回归，是以线性的方法拟合出数据的趋势。但是对于有周期性，波动性的数据，并不能简单以线性的方式拟合，否则模型会偏差较大，而局部加权回归（lowess）能较好的处理这种问题。可以拟合出一条符合整体趋势的线，进而做预测。  平滑问题：局部加权回归（lowess）也能较好的解决平滑问题。在做数据平滑的时候，会有遇到有趋势或者季节性的数据，对于这样的数据，我们不能">
+<meta name="twitter:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LWM5ZDMwMTc4YTY5NGQ3YzIucG5n?x-oss-process=image/format,png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/0001.知识-10.机器学习/01.数据预处理-局部加权回归LOWESS/"/>
+
+
+
+
+
+  <title>数据预处理方法-局部加权回归(LOWESS) | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/0001.知识-10.机器学习/01.数据预处理-局部加权回归LOWESS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">数据预处理方法-局部加权回归(LOWESS)</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-04-19T10:30:55+08:00">
+                2024-04-19
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/机器学习/" itemprop="url" rel="index">
+                    <span itemprop="name">机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/机器学习/数据预处理/" itemprop="url" rel="index">
+                    <span itemprop="name">数据预处理</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <ul>
+<li><p>趋势预测：<br>对于预测问题，回归中最简单的线性回归，是以线性的方法拟合出数据的趋势。但是对于有周期性，波动性的数据，并不能简单以线性的方式拟合，否则模型会偏差较大，而局部加权回归（lowess）能较好的处理这种问题。可以拟合出一条符合整体趋势的线，进而做预测。</p>
+</li>
+<li><p>平滑问题：<br>局部加权回归（lowess）也能较好的解决平滑问题。在做数据平滑的时候，会有遇到有趋势或者季节性的数据，对于这样的数据，我们不能使用简单的均值正负3倍标准差以外做异常值剔除，需要考虑到趋势性等条件。使用局部加权回归，可以拟合一条趋势线，将该线作为基线，偏离基线距离较远的则是真正的异常值点。<br>实际上，局部加权回归（Lowess）主要还是处理平滑问题的多，因为预测问题，可以有更多模型做的更精确。但就平滑来说，Lowess很直观而且很有说服力。</p>
+</li>
+</ul>
+<h1 id="算法讲解"><a href="#算法讲解" class="headerlink" title="算法讲解"></a>算法讲解</h1><h2 id="2-1-算法思想"><a href="#2-1-算法思想" class="headerlink" title="2.1 算法思想"></a>2.1 算法思想</h2><p>局部加权回归（Lowess）的大致思路是：以一个点 x 为中心，向前后截取一段长度（步长）为 frac 的数据，对于该段数据用权值函数 w 做一个加权的线性回归，记 ( x , y<sup>^</sup> ) 为该回归线的中心值，其中 y^ ​为拟合后曲线对应值。对于所有的 n 个数据点则可以做出 n 条加权回归线，每条回归线的中心值的连线则为这段数据的Lowess曲线。</p>
+<h2 id="2-2-参数讲解"><a href="#2-2-参数讲解" class="headerlink" title="2.2 参数讲解"></a>2.2 参数讲解</h2><p>在这个思路中，能提取出的可调参数则是：</p>
+<ol>
+<li>长度 frac ，应该截取多长的作为局部处理，frac 为原数据量的比例；</li>
+<li>权值函数 w ，使用什么样的权值函数 w 合适；</li>
+<li>迭代次数 it ，在进行一次局部回归后，是否需要迭代，再次做回归；</li>
+<li>delta回归间隔，是否真的每个点都需要算一次加权回归，能否隔 delta 距离算一次，中间没算的用插值替换即可。</li>
+</ol>
+<p>在了解了算法算法的大致思想和可调参数以后，你可以马上上手使用<code>statsmodels.api.nonparametric.lowess</code>了。使用方法如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> statsmodels.api <span class="keyword">as</span> sm</span><br><span class="line">lowess = sm.nonparametric.lowess</span><br><span class="line">result = lowess(y, x, frac=<span class="number">0.2</span>, it=<span class="number">3</span>, delta=<span class="number">0.0</span>)</span><br></pre></td></tr></table></figure>
+<p>但是，在statsmodels中，你会发现：1、权值 w 函数你是不可调的；2、在用了 delta 之后，插值函数你是不可调的。<br>总之就是，黑盒子，很多你都不可调的。而且它还有一个非常严重的问题，具体可看本文3.3效果对比。<br>接下来就是看相关文档，了解思路，之后，你可以自己写一个lowess，而且速度不会慢。</p>
+<p>相关文档，statsmodels就给出了比较权威的参考：《Cleveland, W.S. (1979) “Robust Locally Weighted Regression and Smoothing Scatterplots”. Journal of the American Statistical Association 74 (368): 829-836.》。<br>文章是《鲁棒性的加权回归》，即原始加权基础上迭代，增加鲁棒性。网上还有一些其他的lowess讲解，我看了，和这个不太一样，可以选择性阅读。</p>
+<h2 id="2-3-权值函数"><a href="#2-3-权值函数" class="headerlink" title="2.3 权值函数"></a>2.3 权值函数</h2><p>理解了lowess之后，可以明白，其实权值函数并不是固定的，只要满足一定的规则条件即可（当然并也非强制），条件如下：</p>
+<ol>
+<li>W(x) &gt; 0  for  ∣x∣&lt;1 ;</li>
+<li>W(−x)=W(x);</li>
+<li>W(x) is a nonincreasing function for x ⩾ 0 ;</li>
+<li>W(x) = 0 for ∣x∣⩾1</li>
+</ol>
+<p>选择该类函数大致思路是：希望 W(x) 大于0，且作用域为[-1,1]，且为对称函数，该函数对于中间(0处)的值较大，两边(-1\1)处值较小。<br>选择思路是，中间的权值较高，对于加权回归的影响较大；[-1,1]的原因是，对于任意不规则的数据段，可以压缩映射到[-1,1]，方便处理。</p>
+<p>权值函数如，B函数（二次函数）：<br>B(x) = ${ (1− x^2)^2 , for ∣x∣ &lt; 1 \choose 0 , for ∣x∣⩾ 1}$</p>
+<p>W函数（三次函数）：<br>W(x) = ${ (1−|x∣^3 )^3, for ∣x∣&lt;1 \choose  0 , for ∣x∣⩾ 1}$</p>
+<p>二次与三次函数的区别在于，三次函数对于周围权值降速更快，在平滑最初时候效果好，且适用于大多数分布，但增加了残差的方差。<br>对于权值函数选取，第一次迭代适用W函数（三次函数），之后迭代使用B函数（二次函数）。权值函数的使用：</p>
+<ol>
+<li>使用权值函数 W(x)；</li>
+<li>数据段 [d1​,d2​]，映射成 [−1,1] 对应的坐标；</li>
+<li>带入函数 W(x)，计算出每个点对应的 $w_i$​；</li>
+<li>使用加权回归得出模型：$ \hat{Y}=X(X^{T}w X)^{-1}X^{T}wY$</li>
+</ol>
+<h2 id="2-4-回归迭代"><a href="#2-4-回归迭代" class="headerlink" title="2.4 回归迭代"></a>2.4 回归迭代</h2><p>上面讲了权值函数的选取和使用，提到了迭代，这里讲解怎么迭代。<br>首先，原值为 y，预测值为 $\hat{y} $​，残差为$ e=y-\hat{y} $​，记 s 为 $|e_{i}|$的中位数。鲁棒性的权值调整附加值 $ \delta_{k}=W(\frac{e_{k}}{6s})$ ，修正后的权值为 $ \delta_{k}w_{k} $​。<br>迭代过程为：<br>1.使用W函数（三次函数）作为权值函数，求出 $w_{i} $​。<br>2.将 $ w_{i} $​带入加权回归计算出 $ \hat{y}$​<br>3.求出$ e=y-\hat{y}$​和 $ s$<br>4.以B函数作为修正权值函数，求出$ \delta_{k}=B(\frac{e_{k}}{6s})$，计算出$ \delta_{k}w_{k} $<br>5.将 $\delta_{k}w_{k} $​作为修正权值，重复2、3、4步骤</p>
+<p>该迭代没有明确的终止条件，据大量实验得知，原文中提到是2次迭代就基本收敛了，我做实验的时候，3次左右基本收敛，根文中描述差不多。</p>
+<h2 id="2-5-间隔回归，中间插值"><a href="#2-5-间隔回归，中间插值" class="headerlink" title="2.5 间隔回归，中间插值"></a>2.5 间隔回归，中间插值</h2><p>在使用局部加权回归的时候，如果每个点都使用一次加权回归，则会比较耗时，所以有了，对于部分点使用加权回归，而未使用加权回归的点采用插值法处理，速度会增快很多，同时不会影响太大效果。<br>可以每间隔$ delta $个点使用一次加权回归，中间点采用：线性插值、二次插值、三次插值等方法。<br>statsmodels推荐当数据点$ N &gt; 5000 $的时候，选择 $ delta = 0.01 * N $<br>而我一般是设置 $ delta=4 $，同时，我的插值函数是线性插值，因为我不希望插值出负数，大家可以根据自己需求选择。</p>
+<h2 id="2-6-其他参数"><a href="#2-6-其他参数" class="headerlink" title="2.6 其他参数"></a>2.6 其他参数</h2><p>长度 $ frac $比例，文章给出的适用比例是：0.49，statsmodels默认的是：0.666。<br>同时，文章中还有一个参数是，使用的是多项式加权回归进行拟合，最高次是 $ d $，而进行讨论给出的结论是 $ d=1 $<br>时候，即为线性回归，适合基本大多数场景。所以本博客一开始就使用线性加权回归介绍，感兴趣的可以去看看原文。</p>
+<h1 id="三、实验效果"><a href="#三、实验效果" class="headerlink" title="三、实验效果"></a>三、实验效果</h1><h2 id="3-1-效果"><a href="#3-1-效果" class="headerlink" title="3.1 效果"></a>3.1 效果</h2><p>上面讲了整个思路，和详细的参数意义等，看了之后写出代码应该不难。这里作个伪代码总结：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">data_x <span class="comment"># x轴数据</span></span><br><span class="line">data_y <span class="comment"># y轴数据</span></span><br><span class="line">map(x <span class="keyword">in</span> data_x):               <span class="comment"># 对每个x</span></span><br><span class="line">    x_list = getRange(x, data_x, frac)  <span class="comment"># 以x为中心，按照frac的比例截取数据</span></span><br><span class="line">    w = calFuncW(x_list)                <span class="comment"># 以w函数计算权值函数</span></span><br><span class="line">    y_hat = weightRegression(x_list, data_y[x_list], w)         <span class="comment"># 计算y_hat</span></span><br><span class="line">    <span class="keyword">for</span> it <span class="keyword">in</span> iters:                    <span class="comment"># 迭代iters次</span></span><br><span class="line">        err, s, new_w = calNewWeight(y_hat, data_y[x_list], B)  <span class="comment"># 使用B函数计算,迭代的new_w</span></span><br><span class="line">        y_hat = weightRegression(x_list, data_y[x_list], new_w) <span class="comment"># 使用new_w计算y_hat</span></span><br><span class="line">    result = y_hat[x]                   <span class="comment"># 取结果中心点</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="3-2-效率"><a href="#3-2-效率" class="headerlink" title="3.2 效率"></a>3.2 效率</h2><p>上面自写的lowess，在spark上运行，executors15g4cores，计算30W8数据，每条数据90的数据条长度，10分钟即可完成（包括数据读写），个人觉得效率已经挺高的。</p>
+<h2 id="3-3-效果对比"><a href="#3-3-效果对比" class="headerlink" title="3.3 效果对比"></a>3.3 效果对比</h2><p>与statsmodels进行对比，右图为使用statsmodels的函数的结果，左图为自己根据文章写的运行结果，都是同一数据。</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LWM5ZDMwMTc4YTY5NGQ3YzIucG5n?x-oss-process=image/format,png" alt="image"></p>
+<p>可以看出，对于一些特殊数据，直接使用statsmodels会有非常意外的结果，而且随着迭代进行，依旧不会收敛。</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LTY1MGE0ZWEwNzRkZWYyZDUucG5n?x-oss-process=image/format,png" alt="image"></p>
+<p>有的甚至会出现平滑结果很意外，如右图绿线最低部。</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8zMzQxMzU4LTgwMjVlOTBmNmZkMGRjNjYucG5n?x-oss-process=image/format,png" alt="image.png"><br>随着迭代进行，产生了更加剧烈的震荡。<br>所以有时候，成熟的代码块可能会给我们节省时间，但是也会把我们莫名其妙的带到沟里？</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p>[1] <a href="https://blog.csdn.net/longgb123/article/details/79520982" target="_blank" rel="noopener">局部加权回归</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Machine-Learning/" rel="tag"><i class="fa fa-tag"></i> Machine-Learning</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/0002.开发-08.Go/GO-05.go_test/" rel="next" title="配置go test">
+                <i class="fa fa-chevron-left"></i> 配置go test
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/0002.开发-00.编程辅助工具/MobaXterm配置/" rel="prev" title="MobaXterm 配置">
+                MobaXterm 配置 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">280</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#算法讲解"><span class="nav-number">1.</span> <span class="nav-text">算法讲解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-算法思想"><span class="nav-number">1.1.</span> <span class="nav-text">2.1 算法思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-参数讲解"><span class="nav-number">1.2.</span> <span class="nav-text">2.2 参数讲解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-权值函数"><span class="nav-number">1.3.</span> <span class="nav-text">2.3 权值函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-回归迭代"><span class="nav-number">1.4.</span> <span class="nav-text">2.4 回归迭代</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-间隔回归，中间插值"><span class="nav-number">1.5.</span> <span class="nav-text">2.5 间隔回归，中间插值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-6-其他参数"><span class="nav-number">1.6.</span> <span class="nav-text">2.6 其他参数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、实验效果"><span class="nav-number">2.</span> <span class="nav-text">三、实验效果</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-效果"><span class="nav-number">2.1.</span> <span class="nav-text">3.1 效果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-效率"><span class="nav-number">2.2.</span> <span class="nav-text">3.2 效率</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-效果对比"><span class="nav-number">2.3.</span> <span class="nav-text">3.3 效果对比</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
