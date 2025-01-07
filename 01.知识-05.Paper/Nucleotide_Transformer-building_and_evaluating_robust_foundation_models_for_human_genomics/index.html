@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Tobeinsert," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Nucleotide Transformer 是一个 DNA 序列预训练基础模型，参数范围从 5000 万到 25 亿个参数，并集成了来自 3,202 个人类基因组的信息和850各其他物种的基因组信息。期实例包括在蛋白质序列上训练语言模型，他们的任务是预测大型蛋白质序列数据集中的隐藏氨基酸。当使用迁移学习将这些蛋白质 LM 应用于下游任务时，即使在数据稀缺的情况下，也表现出了与以前的方法竞争甚至超">
+<meta name="keywords" content="Tobeinsert">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics">
+<meta property="og:url" content="http://ben-air.cn/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Nucleotide Transformer 是一个 DNA 序列预训练基础模型，参数范围从 5000 万到 25 亿个参数，并集成了来自 3,202 个人类基因组的信息和850各其他物种的基因组信息。期实例包括在蛋白质序列上训练语言模型，他们的任务是预测大型蛋白质序列数据集中的隐藏氨基酸。当使用迁移学习将这些蛋白质 LM 应用于下游任务时，即使在数据稀缺的情况下，也表现出了与以前的方法竞争甚至超">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://ben-air.cn/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/1735269392628.png">
+<meta property="og:updated_time" content="2025-01-07T01:24:49.653Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics">
+<meta name="twitter:description" content="Nucleotide Transformer 是一个 DNA 序列预训练基础模型，参数范围从 5000 万到 25 亿个参数，并集成了来自 3,202 个人类基因组的信息和850各其他物种的基因组信息。期实例包括在蛋白质序列上训练语言模型，他们的任务是预测大型蛋白质序列数据集中的隐藏氨基酸。当使用迁移学习将这些蛋白质 LM 应用于下游任务时，即使在数据稀缺的情况下，也表现出了与以前的方法竞争甚至超">
+<meta name="twitter:image" content="http://ben-air.cn/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/1735269392628.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/"/>
+
+
+
+
+
+  <title>Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-12-27T10:57:06+08:00">
+                2024-12-27
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Tobeinsert/" itemprop="url" rel="index">
+                    <span itemprop="name">Tobeinsert</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>Nucleotide Transformer 是一个 DNA 序列预训练基础模型，参数范围从 5000 万到 25 亿个参数，并集成了来自 3,202 个人类基因组的信息和850各其他物种的基因组信息。<br><img src="/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/1735269392628.png" alt="alt text"><br>期实例包括在蛋白质序列上训练语言模型，他们的任务是预测大型蛋白质序列数据集中的隐藏氨基酸。当使用迁移学习将这些蛋白质 LM 应用于下游任务时，即使在数据稀缺的情况下，也表现出了与以前的方法竞争甚至超越预测蛋白质结构和功能等任务的能力。</p>
+<p>除了蛋白质序列之外，DNA 序列中编码的依赖性模式在理解基因组过程中发挥着重要作用，从表征调控区域到评估单个变体在单倍型环境中的影响。在此背景下，专门的深度学习 (DL) 模型经过训练可以发现有意义的 DNA 模式。例如，DL 模型已被用于根据 DNA 序列预测基因表达，最近的进展将卷积神经网络和 Transformer 架构相结合，实现编码上游 100 KB 处调控元件。现代基因组学研究产生的大量数据既带来了机遇，也带来了挑战。<strong>一方面，跨物种和种群的自然变异的复杂模式很容易获得；另一方面，为了从未标记的数据集中准确提取信号，需要能够处理大规模数据的强大深度学习方法</strong>。在核苷酸序列上训练的大型基础模型似乎是应对这一挑战的值得探索的方法。</p>
+<p>构建了强大的基础模型来编码基因组序列，称为核苷酸转化器（NT），并提出了系统研究和基准来评估其性能。我们通过构建四个不同大小的不同 LM 开始我们的研究，参数范围从 5 亿到 25 亿不等。这些模型在三个不同的数据集上进行了预训练，包括人类参考基因组、3,202 个不同人类基因组的集合以及来自不同物种的 850 个基因组。训练后，我们以两种方式利用每个模型的表示（嵌入）。为了评估 NT 在适应各种任务时性能的稳定性，我们在一组不同的 18 个基因组策划的预测任务上训练每个模型，并将它们与三个替代 DNA 基础模型以及一个最先进的非基础模型进行比较，使用系统的十倍交叉验证程序。此外，为了扩大我们的评估范围，我们比较了我们表现最好的模型和三个最先进的监督基线模型，这些模型已经针对当前的特定任务进行了优化。为了破译在预训练期间学到的序列特征，我们探索了模型的注意力图和困惑度，并对它们的嵌入进行了数据降维。此外，我们还评估了嵌入通过基于零样本的评分来模拟人类功能上重要的遗传变异影响的能力。扩展了第一组实验的结果，我们开发了第二组四个 LM，参数大小从 5 亿减少到 5000 万，以研究此类模型的缩放定律。 我们成功构建了一个模型，该模型仅用十分之一的参数数量就实现了之前最佳模型的性能，同时感知域大小增加了一倍。</p>
+<h1 id="Result"><a href="#Result" class="headerlink" title="Result"></a>Result</h1><p>构建了具有不同参数大小和数据集的 Transformer 模型：</p>
+<ol>
+<li>一个 <strong>5 亿参数</strong>模型，根据从<strong>人类参考基因组中提取的序列进行训练</strong>（’人类参考 500M’); </li>
+<li><strong>5 亿参数</strong>模型（“1000G 500M”）在 <strong>3,202 个遗传多样性人类基因组</strong>上进行训练；</li>
+<li><strong>25 亿参数</strong>模型（“1000G 2.5B”）在 <strong>3,202 个遗传多样性人类基因组</strong>上进行训练；</li>
+<li><strong>25 亿参数</strong>模型，<strong>涵盖来自不同门的 850 个物种</strong>（“Multispecies 2.5B”），其中包括 11 种模型生物（图 1c 和补充表 1-4）。<br>为了评估这些模型在预测不同分子表型方面的功效，我们从公开资源中整理了 <strong>18 个基因组数据集，包括剪接位点预测任务 (GENCODE)、启动子任务 (真核启动子数据库) 以及组蛋白修饰和增强子任务 (ENCODE)</strong>，每个数据集都设计了具有合理的大小，以实现快速和严格的交叉验证程序。</li>
+</ol>
+<h3 id="通过两种不同的技术评估了我们的变压器模型：probing-and-fine-tuning。"><a href="#通过两种不同的技术评估了我们的变压器模型：probing-and-fine-tuning。" class="headerlink" title="通过两种不同的技术评估了我们的变压器模型：probing and fine-tuning。"></a>通过两种不同的技术评估了我们的变压器模型：<strong>probing and fine-tuning</strong>。</h3><p><strong>probing</strong>是指使用学习过的LM嵌入来简化 DNA序列作为预测基因组标记模型的输入特征。具体来说，我们使用逻辑回归或由最多两个隐藏层组成的小型多层感知器（MLP）来探测LMs的十个任意选择的层。在微调的情况下，LM头部被替换为分类或回归头部，并使用参数有效技术进行再训练（方法）。为了确保不同模型之间的公平和准确的比较，我们实施了十倍交叉验证策略。</p>
+<p>为了将我们预先训练的基础模型方案与该领域的标准监督方法进行比较，我们在 18 个任务（方法）中的每一个上从头开始训练 BPNet 卷积架构的不同变体。 BPNet 架构已广泛应用于基因组学领域，并代表了一种非常强大的默认架构，用于通过监督学习从头开始对小型数据集进行建模。我们观察到原始 BPNet 模型跨任务的强大性能（平均 Matthews 相关系数 (MCC) 为 0.665），我们可以通过将其大小增加到 2800 万个参数（平均 MCC 为 0.683）来改进，这证实了直接监督卷积架构的性能非常好非常适合基因组学任务（图2a，b）。接下来，我们在基准数据集上评估了 NT 模型的探测和微调与这些监督基线模型的比较。如果所得的两个标准差分别重叠或优于报告的基线值，我们认为该模型相当于或优于其他模型。</p>
+<p>使用此标准，NT 模型在 5 个任务中与基线 BPNet 模型相匹配，并在 18 个任务中的 8 个中通过单独探测（补充图 1 和补充表 6）超过了基线 BPNet 模型，并且显着优于原始标记的探测。与最近的工作一致，我们观察到最佳性能既依赖于模型又依赖于层（补充表 8）。我们还注意到，如早期工作所示，通过使用最后一层的嵌入永远无法实现最高的模型性能。例如，在增强子类型预测任务中，我们观察到性能最高层和性能最低层之间的相对差异高达 38%，这表明各层学习表示存在显着差异（补充图 3）。与我们的探测策略相比，我们的微调模型要么匹配（n = 6），要么超越（n = 12）18 个基线模型（图 2a、b 和补充表 7 和 9）。值得注意的是，经过微调的 NT 模型优于所探测的模型，而更大且更多样化的模型始终优于较小的模型。这些结果支持针对特定任务微调 NT 基础模型以实现卓越性能的必要性。我们的结果还表明，在以 Multispecies 2.5B 模型为代表的多样化数据集上进行训练，在源自人类检测的多项任务上优于或匹配 1000G 2.5B 模型（图 2a、b）。这意味着增加序列多样性的策略，而不仅仅是增加模型大小，可能会提高预测性能，特别是当计算资源有限时。</p>
+<pre><code>微调在之前的工作中尚未得到广泛探索，可能是由于其苛刻的计算要求。我们通过采用最新的参数高效微调技术克服了这一限制，该技术仅需要总模型参数的 0.1%（图 1b 和方法）。这种方法可以在单个 GPU 上进行更快的微调，将所有微调参数的存储需求减少 1,000 倍，同时仍然提供可比的性能。在实践中，我们观察到，尽管在嵌入上使用简单的下游模型明显很简单，但严格的探测比微调更慢且计算量更大。这种差异是由于层选择、下游模型选择和这个 18 个基因组数据集的汇编提供了多样化和强大的选择，可以以统计上严格的方式审查模型在不同任务中的适应性，并与其他 DNA 自监督基础模型超参数的性能进行比较。此外，微调表现出较小的性能差异，增强了该方法的稳健性。总的来说，这种通用方法是通用的，可以适应各种任务，无需调整模型架构或超参数。这与监督模型形成鲜明对比，监督模型通常具有不同的架构，并且需要从头开始对每个任务进行训练。
+</code></pre><h2 id="以无人监督的方式检测已知的基因组元件"><a href="#以无人监督的方式检测已知的基因组元件" class="headerlink" title="以无人监督的方式检测已知的基因组元件"></a>以无人监督的方式检测已知的基因组元件</h2><p>NT 模型在没有任何监督的情况下学会了区分基因间、内含子、编码和非翻译区（UTR）的基因组序列，尽管不同层的熟练程度不同。<br>Multispecies 2.5B 模型中，在第 1 层观察到基因间区域和基因区域之间的分离最强，其次是第 5 层上的 5’UTR 区域，以及第 21 层上大多数区域之间的分离<br>![[01.知识-05.Paper/attachments/1735609530286.png]]</p>
+<h1 id="模型优化成本和性能收益预测"><a href="#模型优化成本和性能收益预测" class="headerlink" title="模型优化成本和性能收益预测"></a>模型优化成本和性能收益预测</h1><p> 250M 和 500M 参数模型的训练持续时间延长到包含 1 万亿个令牌，与文献中最近的建议保持一致。<br> ![[01.知识-05.Paper/attachments/Pasted image 20250103150343.png]]</p>
+<p>相同的物种训练集上训练后，都使用18个任务的下游数据进行微调和评估，4个不同大小的模型表现（训练迭代过程的表现）如下图：</p>
+<p>![[01.知识-05.Paper/attachments/Pasted image 20250103150356.png]]</p>
+<h1 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h1><h2 id="model"><a href="#model" class="headerlink" title="model"></a>model</h2><p>LM 主要是在 NLP 中开发的，用于对口语进行建模。 LM 是给定任意单词序列的标记序列（通常是单词）的概率分布； LM 将返回该句子存在的概率。语言模型之所以受欢迎，是因为它们能够利用大量未标记的数据集来生成通用表示，即使在可用的监督数据很少的情况下，也可以解决下游任务。一种训练 LM 任务模型以预测序列中屏蔽位置最有可能的标记的技术通常称为 <strong>masked language modeling</strong> (MLM)。受蛋白质研究领域 MLM 获得的结果（其中蛋白质被视为句子，氨基酸被视为单词）的启发，我们应用 MLM 来训练基因组学中的 LM 转换器，将核苷酸序列视为句子和 k 聚体（k = 6）作为单词。 <strong>Transformers</strong> 是一类在机器学习领域（包括 NLP 和计算机视觉）取得突破的 DL 模型。它们<strong>由一个初始嵌入层组成，该初始嵌入层将输入序列中的位置转换为嵌入向量，然后是一系列自注意力层，这些层依次细化这些嵌入。使用 MLM 训练 LM Transformer 的主要技术称为 Transformer 的双向编码器表示 (BERT)</strong>。在 BERT 中，序列中的所有位置都可以相互关联，从而允许信息双向流动，这在 DNA 序列的背景下至关重要。在训练过程中，网络的最终嵌入被输入到语言模型头，将其转换为输入序列上的概率分布。</p>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p>我们所有的模型都遵循 <strong>encoder-only transformer</strong> 架构。嵌入层将输入的序列转换为嵌入向量，然后添加位置编码到每个嵌入向量中，用来向模型提供位置信息。使用科学系的位置编码，最多接受1000个tokens。使用了6-mer的tokens作为序列长度（最多可以处理 6KB =6*1000的序列）。<br>token的向量化由transformer的嵌入层实现。每个transformer层，通过一个标准化层和一个多头自注意力层来转化输入的数据。自注意力层得到的结果和transformer的输入进行整合相加后，数据经过一个新的归一化层和具有GELU激活的两层感知器处理。每个模型的多头自注意力头数、向量为度、隐藏层的神经元数和总层数如下表。<br>![[01.知识-05.Paper/attachments/Pasted image 20250103174622.png]]</p>
+<p>感知器最后返回的向量是语言模型头转换成序列中每个位置的现有标记的概率分布。</p>
+<h3 id="NT-v2"><a href="#NT-v2" class="headerlink" title="NT-v2"></a>NT-v2</h3><p>在第二个版本，对模型进行了一系列更改，被证明是有效的：</p>
+<ol>
+<li>每个自注意力层，位置向量不使用学习的位置向量，使用旋转向量；</li>
+<li>使用门控线性单元和无偏差的swish激活<br>这个改动，让模型接受的token数目提升到2048个，可以支持12kb的上下文。</li>
+</ol>
+<h2 id="训练"><a href="#训练" class="headerlink" title="训练"></a>训练</h2><p>这些模型按照 BERT 方法进行训练。在每个训练步骤中，都会对一批标记化序列进行采样。批量大小根据可用的硬件和模型大小进行调整。我们在 A100 GPU 集群上进行了所有实验，并分别以大小为 14 和 2 的序列批量训练“500M”和“2.5B”参数模型。在序列中，15% 令牌的子集中的 80% 被特殊掩码（“MASK”）令牌替换。用于在人类参考基因组和多物种数据集上进行训练，15% 令牌子集中的另外 10% 被随机选择的标准令牌（与类（‘CLS’）、填充（‘PAD’）或 MASK 令牌不同的任何令牌）替换，如 BERT 中执行的那样。</p>
+<p>对于 1000G 数据集上的训练运行，我们<strong>跳过了额外的数据增强</strong>，因为添加的噪声大于人类基因组中存在的自然突变频率。对于每个批次，<strong>损失函数计算为每个选定位置的标记预测概率和真实标记之间的交叉熵损失之和</strong>。累积梯度以达到每批 100 万个代币的有效批次大小。我们使用了 Adam 优化器，该优化器具有学习率计划以及指数衰减率和 epsilon 常数的标准值，β= 0.9、β= 0.999 和 ϵ = 1 × 10 。在第一个预热期间，学习率在 16,000 个步骤中在 5 × 10 和 1 × 10 之间线性增加，然后按照平方根衰减下降，直到训练结束。<br>我们稍微修改了 NT-v2 模型的超参数：<strong>优化器和学习率计划保持不变</strong>；然而，我们将<strong>批次大小增加到 512（每批次 100 万个代币）</strong>。受 Chinchilla 缩放定律的启发，与其他 DL 模型相比，我们还对 NT-v2 模型进行了更长的持续时间训练。具体来说，我们针对 3000 亿个代币预训练了 NT-v2 50M 和 250M 参数模型，而我们的“250M”和“500M”参数模型则针对多达 1 万亿个代币进行了训练，以了解起作用的缩放法则。相比之下，NT-v1 2.5B 参数模型接受了 3000 亿个令牌的训练，而其 5 亿模型则接受了 500 亿个令牌的训练。最后，我们对 NT-v2 模型使用了以下模型检查点：“50M”和“100M”模型检查点 3000 亿代币，“250M”模型检查点 8000 亿代币，“500M”模型检查点 9000 亿代币’ 模型。</p>
+<h2 id="Probing"><a href="#Probing" class="headerlink" title="Probing"></a>Probing</h2><p>为了探索模型向量化的质量，评估已解决下游任务，训练后，对于每个任务，都会探索模型的每一层，并比较几种下游方法，以评估模型的表示能力。换句话说，给定下游任务的核苷酸序列数据集，我们计算并存储模型10层中每层返回的嵌入向量，然后用每层的嵌入向量作为输入，训练多个下游的模型来解决对应的下游任务。我们测试了逻辑回归（基于scikit-learn默认的超参数）和MLP。作者发现选择超参数的选择，比如学习率、激活函数、隐藏层的层数都会影响最终的表现，我们还对每个下游模型进行了超参数扫描。<br>我们使用了十折交叉验证，训练数据集被分成10分，进行10次训练验证（轮流将其中9份作为<a href="https://baike.baidu.com/item/%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE/20956451?fromModule=lemma_inlink" target="_blank" rel="noopener">训练数据</a>，1份作为<a href="https://baike.baidu.com/item/%E6%B5%8B%E8%AF%95%E6%95%B0%E6%8D%AE/12727809?fromModule=lemma_inlink" target="_blank" rel="noopener">测试数据</a>，进行试验）。经过处理后，会产生10个模型，然后对10个模型的性能表现取平均。在评估测试集上性能最佳的模型集之前，使用树结构 Parzen Estimator 求解器运行该过程 100 次，引导超参数空间上的搜索。<br>因此，对于每个下游任务，对于每个预训练模型的十层，在超参数搜索结束时记录测试集上的性能。补充表 8 报告了预训练模型及其层中性能最佳探针的超参数。 这种探索策略训练了 760,000 个下游模型，提供了对训练和使用 LM 的各个方面的详细分析，例如不同层对下游任务性能的作用。</p>
+<p>作为基线，我们评估了逻辑回归模型的性能，该模型在将标记传递到转换器层之前将标记化序列作为输入。使用原始标记化序列作为输入比使用向量（其中标记 ID 被单热编码并通过池化层（在序列长度轴上求和或平均））产生了更好的性能。</p>
+<h2 id="Fine-tuning"><a href="#Fine-tuning" class="headerlink" title="Fine-tuning"></a>Fine-tuning</h2><p>除了嵌入向量的探索，还通过 IA technique 进行参数高效的微调。使用这种策略，基于要处理的不同任务，使用一个分类器或者回归头替换大语言模型的head。transformer底层和向量嵌入层的权重参数都是被冻结的，并引入一个新的可以学习权重，对每一个transformer层，我们引入三个科学系的向量 $l_k$, $l_v$ ,$l_{ff}$ ，也就是自注意力机制中的三个向量参数。<br>$$softmax ( \frac{Q(l_k) ⊙  K^T }{\sqrt{d_k}}) (l_v ⊙ V)$$</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Tobeinsert/" rel="tag"><i class="fa fa-tag"></i> Tobeinsert</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/" rel="next" title="Sequence modeling and design from molecular to genome scale with Evo">
+                <i class="fa fa-chevron-left"></i> Sequence modeling and design from molecular to genome scale with Evo
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">149</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">90</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">125</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Result"><span class="nav-number">1.</span> <span class="nav-text">Result</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#通过两种不同的技术评估了我们的变压器模型：probing-and-fine-tuning。"><span class="nav-number">1.0.1.</span> <span class="nav-text">通过两种不同的技术评估了我们的变压器模型：probing and fine-tuning。</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#以无人监督的方式检测已知的基因组元件"><span class="nav-number">1.1.</span> <span class="nav-text">以无人监督的方式检测已知的基因组元件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#模型优化成本和性能收益预测"><span class="nav-number">2.</span> <span class="nav-text">模型优化成本和性能收益预测</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Method"><span class="nav-number">3.</span> <span class="nav-text">Method</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#model"><span class="nav-number">3.1.</span> <span class="nav-text">model</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#架构"><span class="nav-number">3.2.</span> <span class="nav-text">架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NT-v2"><span class="nav-number">3.2.1.</span> <span class="nav-text">NT-v2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#训练"><span class="nav-number">3.3.</span> <span class="nav-text">训练</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Probing"><span class="nav-number">3.4.</span> <span class="nav-text">Probing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Fine-tuning"><span class="nav-number">3.5.</span> <span class="nav-text">Fine-tuning</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

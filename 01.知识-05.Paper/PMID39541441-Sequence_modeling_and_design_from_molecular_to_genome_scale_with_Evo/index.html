@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="机器学习," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="DNA是遗传物质，其重要性不言而喻，针对DNA、RNA和蛋白的研究也层出不穷。之前有很多基于Transformer的DNA模型，受限于起本身上下文长度的限制，经常采用寡居核苷酸而不是单碱基所谓模型训练/学习的基本单位。而本问开发的Evo模型，是一个包含7-billion-参数 的模型，训练以用来在全基因尺度上进行DNA序列的生成。该模型的基础架构是基于 StripedHyena architect">
+<meta name="keywords" content="机器学习">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sequence modeling and design from molecular to genome scale with Evo">
+<meta property="og:url" content="http://ben-air.cn/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="DNA是遗传物质，其重要性不言而喻，针对DNA、RNA和蛋白的研究也层出不穷。之前有很多基于Transformer的DNA模型，受限于起本身上下文长度的限制，经常采用寡居核苷酸而不是单碱基所谓模型训练/学习的基本单位。而本问开发的Evo模型，是一个包含7-billion-参数 的模型，训练以用来在全基因尺度上进行DNA序列的生成。该模型的基础架构是基于 StripedHyena architect">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://ben-air.cn/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/Hyena_layers.png">
+<meta property="og:image" content="http://ben-air.cn/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/Training_loss.png">
+<meta property="og:updated_time" content="2025-01-07T01:24:49.672Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Sequence modeling and design from molecular to genome scale with Evo">
+<meta name="twitter:description" content="DNA是遗传物质，其重要性不言而喻，针对DNA、RNA和蛋白的研究也层出不穷。之前有很多基于Transformer的DNA模型，受限于起本身上下文长度的限制，经常采用寡居核苷酸而不是单碱基所谓模型训练/学习的基本单位。而本问开发的Evo模型，是一个包含7-billion-参数 的模型，训练以用来在全基因尺度上进行DNA序列的生成。该模型的基础架构是基于 StripedHyena architect">
+<meta name="twitter:image" content="http://ben-air.cn/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/Hyena_layers.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/"/>
+
+
+
+
+
+  <title>Sequence modeling and design from molecular to genome scale with Evo | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Sequence modeling and design from molecular to genome scale with Evo</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-12-26T10:45:26+08:00">
+                2024-12-26
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/算法/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>DNA是遗传物质，其重要性不言而喻，针对DNA、RNA和蛋白的研究也层出不穷。之前有很多基于Transformer的DNA模型，受限于起本身上下文长度的限制，经常采用寡居核苷酸而不是单碱基所谓模型训练/学习的基本单位。而本问开发的Evo模型，是一个包含7-billion-参数 的模型，训练以用来在全基因尺度上进行DNA序列的生成。该模型的基础架构是基于 <a href="https://github.com/togethercomputer/stripedhyena" target="_blank" rel="noopener">StripedHyena architecture</a>。 该模型结合了注意力模型和针对数据的卷积核，来高效的处理长序列数据。Evo的训练集是由 300 bilion 原核全基因组的核酸组成的全基因组数据集上进行训练的，并对输入数据进行单碱基层面的分词。并且发现预测表现伴随着数据规模的增大而获益。</p>
+<h2 id="Materials-and-method"><a href="#Materials-and-method" class="headerlink" title="Materials and method"></a>Materials and method</h2><p>Evo 基于 <a href="https://github.com/togethercomputer/stripedhyena" target="_blank" rel="noopener">StripedHyena</a>。</p>
+<ul>
+<li>Evo包含32个block，模型宽度为4096维。</li>
+<li>每个<strong>块</strong>包含一个<strong>序列混合层</strong>，负责沿序列维度处理信息，以及一个<strong>通道混合层</strong>，侧重于沿模型宽度维度处理信息。</li>
+<li>在<strong>序列混合层</strong>中，Evo使用<strong>29个鬣狗层</strong>，并在其中等间隔的穿插交错着<strong>3个旋转自关注层</strong>交错。我们使用参考文献中描述的模态规范形式参数化鬣狗算子中的卷积。</li>
+<li>对于<strong>通道混合层</strong>，Evo使用门控线性单元。</li>
+<li>使用均方根归一化每个输入层。</li>
+</ul>
+<h3 id="Hyena-layers-鬣狗层"><a href="#Hyena-layers-鬣狗层" class="headerlink" title="Hyena layers/鬣狗层"></a>Hyena layers/鬣狗层</h3><p>鬣狗 是一个序列混合器，由短卷积、长卷积和一个数据控制门 构成，结构如下：<br><img src="/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/Hyena_layers.png" alt="alt text"></p>
+<h3 id="Self-attention-layers-自注意力层"><a href="#Self-attention-layers-自注意力层" class="headerlink" title="Self-attention layers / 自注意力层"></a>Self-attention layers / 自注意力层</h3><p>自注意力将输出序列构造为输入元素的加权组合，其中的权重由输入决定。</p>
+<h3 id="Positional-embeddings-位置嵌入"><a href="#Positional-embeddings-位置嵌入" class="headerlink" title="Positional embeddings / 位置嵌入"></a>Positional embeddings / 位置嵌入</h3><p>自注意算子对输入序列中输入嵌入的不同位置没有任何概念。<br>出于这个原因，它通常会辅以位置编码机制。StripedHyena的注意层使用<strong>旋转位置嵌入机制</strong>（RoPE）来模拟相对位置信息<br>在我们的第二个预训练阶段，我们应用线性位置插值来扩展在第一个预训练阶段（8k序列长度）应用的旋转位置嵌入[<a href="https://arxiv.org/abs/2306.15595" target="_blank" rel="noopener">Extending context window of large language models via positional interpolation</a>]。当应用于比最初训练时更长的序列时，插值使模型能够继续利用其学习到的表示。我们还测试了其他位置插值方法，但发现它们在数据上的表现略差于线性插值</p>
+<h3 id="Tokenization-分词器"><a href="#Tokenization-分词器" class="headerlink" title="Tokenization / 分词器"></a>Tokenization / 分词器</h3><p>Evo使用Python中实现的UTF-8编码，以<strong>单核苷酸分辨率对DNA序列进行标记</strong>。在预训练期间，Evo使用了一个有效的词汇表，包含<strong>四个标记，每个碱基一个，总共有512个字符</strong>，这允许在后续的下游任务中扩展词汇表。我们使用额外的字符来启用在使用微调模型生成过程中使用特殊令牌的提示</p>
+<h3 id="OpenGenome-datasets"><a href="#OpenGenome-datasets" class="headerlink" title="OpenGenome datasets"></a>OpenGenome datasets</h3><p>(i)  the Genome Taxonomy Database (GTDB) 的细菌和古细菌数据；<br>(ii) theIMG/VR v4 database (36) 的筛选后的原核病毒；<br>(iii) IMG/PR database (37) 的质粒序列数据。<br>所有的数据均表示直接拿来使用的， 数据均进行过相应的筛选和过滤。因为这部分实际用途不大，有需求查看原文，此处略过。</p>
+<h3 id="Training-procedure"><a href="#Training-procedure" class="headerlink" title="Training procedure"></a>Training procedure</h3><p>整个Evo的训练过程分两个阶段，第一阶段是使用80k token的上下文，第二阶段上下文提升到131B token（分阶段是为了提高训练的效率）。累计训练了4周 * 2线程 (we trained Evo in stage 1 on 64 NVIDIA H100 GPUs for 2 weeks and on 128 NVIDIA A100 GPUs in stage 2 for an additional 2 weeks.)</p>
+<h3 id="Dataloading"><a href="#Dataloading" class="headerlink" title="Dataloading"></a>Dataloading</h3><p>序列打包生成训练数据，每个特定上下文的序列是从完整的序列数据集中随机采样的。<br>一些DNA序列比上下文长度短，这时把多个DNA的序列连接起来，直至长度满足预期（8k 或 131k）。如果DNA序列比上下文长度长，就会截取基因组的子序列。</p>
+<h3 id="Hyperparameter-tuning-and-direct-model-comparisons"><a href="#Hyperparameter-tuning-and-direct-model-comparisons" class="headerlink" title="Hyperparameter tuning and direct model comparisons"></a>Hyperparameter tuning and direct model comparisons</h3><p>测试了 <code>7B Transformer++</code>,<code>Hyena</code> 和 <code>StripedHyena</code>,  <code>StripedHyena</code>具有整体最低的困惑度和损失函数。<br><img src="/01.知识-05.Paper/PMID39541441-Sequence_modeling_and_design_from_molecular_to_genome_scale_with_Evo/Training_loss.png" alt="alt text"></p>
+<h3 id="Scaling-laws"><a href="#Scaling-laws" class="headerlink" title="Scaling laws"></a>Scaling laws</h3><p>我们通过计算最优协议比较不同类型的架构，旨在评估计算最优前沿的结果。计算优化分析研究给定计算预算（通常以浮点运算（FLOPs）表示）的预训练运行的最佳性能，并通过将部分计算预算优化分配给模型大小和数据集大小来实现。体系结构类型在计算效率以及如何分配计算预算方面有所不同。我们首先通过网格搜索调优Transformer++的学习率和批处理大小等超参数，然后对所有架构使用相同的值，除了观察到数值不稳定的设置。为了解决不稳定性问题，我们逐渐降低学习率并重复实验直到收敛。在所有实验中，我们训练了上下文长度为8192个令牌的模型。对于由总FLOP计数定义的每个计算预算，我们改变了模型大小（600万到10亿个参数）和训练的令牌数量。为了测量模型性能，我们使用困惑度度量，它表明自回归模型在预测序列的下一个标记方面的表现如何，并且与下游任务的性能高度相关。perplexity值越低，性能越好。</p>
+<h3 id="Scaling-laws-procedure"><a href="#Scaling-laws-procedure" class="headerlink" title="Scaling laws procedure"></a>Scaling laws procedure</h3><p>1) 确定预算. We use $8 × 10^{18}, 2 × 10^{19}, 4 × 10^{19}, and 8 × 10^{19}$ FLOPs (floating point operations)<br>2) 计算要使用的模型架构处理输入数据所需要的 FLOPs<br>3) 确定每个计算预算下模型的最优分配：<br>   a) 模型的大小，选择比较宽的范围，然后计算每个模型大小计算需要处理的相应令牌数量以达到计算预算。根据表S3选择其他超参数。我们通常观察到模型拓扑结构（深度，宽度）的微小变化只会最小程度地影响perplexity。<br>   b) 训练每种大小的模型并记录其表现（例如，在困惑度方面）。<br>   c) 确定最优计算分配：根据之前的分析，我们拟合一个二阶多项式作为（log）模型大小与perplexity的函数，并提取得到的计算最优点作为其最小值。计算最优点在给定的计算预算下确定模型大小和训练令牌的最佳分配。<br>在得出计算最优缩放率之后，我们比较了体系结构并计算了令牌和模型大小的最优分配（图S5）。在图S3中，我们还显示了按架构计算次优模型尺寸的比率。我们量化了计算预算分配到模型或数据集大小的次优分配（例如，为更多令牌训练较小的模型）对困惑缩放的影响。我们估计每个计算预算的计算最优模型大小，然后将其减少一个百分比（偏移量）。相应的perplexity通过IsoFLOP曲线得到（图1F）。与Hyena和StripedHyena相比，Transformer++的复杂度缩放在计算最优边界之外迅速退化。表S3提供了为我们的缩放律分析而训练的模型的架构细节</p>
+<h4 id="Transformer"><a href="#Transformer" class="headerlink" title="Transformer++"></a>Transformer++</h4><p>我们使用具有<strong>旋转位置嵌入</strong>、<strong>均方根层归一化</strong>的预处理和<strong>SwiGLU</strong>作为激活函数的现代 <strong>decoder-only Transformer</strong>架构。SwiGLU的内部宽度是模型宽度的4/3。我们对分组查询注意（GQA）进行了实验（117），发现最终损失的差异很小，这表明该技术可能适合DNA序列建模，以进一步减少推理过程中的内存占用。所有使用Transformer++的缩放结果都不使用GQA。</p>
+<h4 id="Hyena"><a href="#Hyena" class="headerlink" title="Hyena"></a>Hyena</h4><p>Hyena基线的设计采用了与Transformer++模型相同的体系结构改进。我们将所有多头自注意层替换为鬣狗层，并对状态维为8的长卷积使用模态规范参数化</p>
+<h3 id="Protein-function-prediction"><a href="#Protein-function-prediction" class="headerlink" title="Protein function prediction"></a>Protein function prediction</h3><p>我们使用DMS数据集来测试蛋白质和核苷酸语言模型预测蛋白质功能突变效应的能力。在所有情况下，我们都使用了原始研究作者报告的核苷酸序列。我们的分析仅限于<strong>原核和人类蛋白质</strong>，其中值得注意的是Evo训练数据集仅包含原核蛋白质序列。<br>为了编译来自原核生物DMS研究的核苷酸信息，我们使用了ProteinGym基准中列出的所有“原核生物”数据集，我们也可以找到原始研究作者报告的核苷酸水平信息。这导致了9项研究：Firnberg等人（118）的黑酰胺酶DMS， Jacquier等人（119）的黑酰胺酶DMS， CcdB DMS(120)，多蛋白热稳定性数据集（121），IF-1 DMS (122), Rnc DMS (123), HaeIII DMS (124), VIM-2 DMS（125）和APH(3 ‘)II DMS（126）。<br>为了编译来自人类DMS研究的核苷酸信息，我们将人类基准中使用的数据集的范围缩小到参考文献（45）中用于基准突变效应预测因子的人类数据集。我们还将分析限制在我们也可以找到原始研究作者报告的核苷酸水平信息的研究中。这导致了六项研究：CBS DMS (127), GDI1 DMS (128), PDE3A DMS (129)， Kotler等人的P53 DMS (130)， Giacomelli等人的P53 DMS（131）和BRCA1 DMS（132）。</p>
+<p>我们将Evo（在8k背景下进行预训练）与两个基因组DNA语言模型进行了比较：GenSLM 2.5B，前者使用原核生物基因组序列的密码子词汇表进行训练（15），而Nucleotide Transformer 2B5_multi_species则使用原核和真核生物基因组序列的6 mer核苷酸词汇表进行训练（16）。我们还将Evo与几种在非冗余的蛋白质序列通用语料上训练的蛋白质语言模型进行了比较：CARP 640M（46）、ESM-1v（41）、esm - 2650m、esm - 23b（47）、ProGen2 large和ProGen2 xlarge（48）。对于提供具有多个参数大小的模型的研究，我们选择了可以在不超过GPU内存的情况下使用80 GB NVIDIA H100 GPU对所有基准研究序列进行推理的最大大小。我们还纳入了ESM-2 650M和ProGen2 large，因为这些模型有时在功能预测方面比这些模型的大版本表现得更好（44）。</p>
+<p>为了比较核苷酸和蛋白质语言模型，我们使用了原始研究报告的所有独特的核苷酸序列及其相应的适应度值。偶尔，我们观察到报告的核苷酸序列的适应度值与报告的蛋白质序列的适应度值不同；在这种情况下，我们使用报告的核苷酸序列的适应度值，并使用翻译的序列评估蛋白质语言模型。如果由于密码子的使用不同，单个蛋白质序列存在多个核苷酸序列，则在每个唯一核苷酸序列上评估核苷酸语言模型，并在每个唯一核苷酸序列对应的编码序列上评估蛋白质语言模型；这意味着一个蛋白质语言模型可以在一个给定的研究中对相同的蛋白质序列进行多次评估。一些研究报告了涉及终止密码子的突变的适应度值；在这种情况下，我们评估了包含停止密码子的序列的核苷酸语言模型，并将这些例子从蛋白质语言模型基准中排除。我们计算了实验适应度值与序列似然（用于自回归语言模型）或序列伪似然（用于掩码语言模型）之间的Spearman相关性。当使用Evo序列似然对序列进行评分时，我们还将EOS令牌（在预训练数据中用于划分不同序列）前置到完整序列，我们从经验上发现这可以提高零射击性能。我们在零假设下评估了Spearman相关系数的统计显著性，即相关系数来自具有N - 2个自由度的t分布，其中N是我们计算相关性的样本数量。我们使用这个零分布来根据观察到的相关性计算P值。我们使用scipy Python库（<a href="https://scipy.org/）来计算这些值。" target="_blank" rel="noopener">https://scipy.org/）来计算这些值。</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/机器学习/" rel="tag"><i class="fa fa-tag"></i> 机器学习</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.知识-05.Paper/PMC11637760-Detection_of_germline_CNVs_from_gene_panel_data/" rel="next" title="Detection of germline CNVs from gene panel data benchmarking the state of the art">
+                <i class="fa fa-chevron-left"></i> Detection of germline CNVs from gene panel data benchmarking the state of the art
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.知识-05.Paper/Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics/" rel="prev" title="Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics">
+                Nucleotide_Transformer-building_and_evaluating_robust_foundation_models_for_human_genomics <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">149</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">90</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">125</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Materials-and-method"><span class="nav-number">1.</span> <span class="nav-text">Materials and method</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hyena-layers-鬣狗层"><span class="nav-number">1.1.</span> <span class="nav-text">Hyena layers/鬣狗层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Self-attention-layers-自注意力层"><span class="nav-number">1.2.</span> <span class="nav-text">Self-attention layers / 自注意力层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Positional-embeddings-位置嵌入"><span class="nav-number">1.3.</span> <span class="nav-text">Positional embeddings / 位置嵌入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tokenization-分词器"><span class="nav-number">1.4.</span> <span class="nav-text">Tokenization / 分词器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OpenGenome-datasets"><span class="nav-number">1.5.</span> <span class="nav-text">OpenGenome datasets</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Training-procedure"><span class="nav-number">1.6.</span> <span class="nav-text">Training procedure</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dataloading"><span class="nav-number">1.7.</span> <span class="nav-text">Dataloading</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hyperparameter-tuning-and-direct-model-comparisons"><span class="nav-number">1.8.</span> <span class="nav-text">Hyperparameter tuning and direct model comparisons</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scaling-laws"><span class="nav-number">1.9.</span> <span class="nav-text">Scaling laws</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scaling-laws-procedure"><span class="nav-number">1.10.</span> <span class="nav-text">Scaling laws procedure</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Transformer"><span class="nav-number">1.10.1.</span> <span class="nav-text">Transformer++</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hyena"><span class="nav-number">1.10.2.</span> <span class="nav-text">Hyena</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Protein-function-prediction"><span class="nav-number">1.11.</span> <span class="nav-text">Protein function prediction</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
