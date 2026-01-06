@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="machine_learning,特征工程," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="奇异值分解(Singular Value Decomposition，以下简称SVD)是在机器学习领域广泛应用的算法，它不光可以用于降维算法中的特征分解，还可以用于推荐系统，以及自然语言处理等领域。是很多机器学习算法的基石。本文就对SVD的原理做一个总结，并讨论在在PCA降维算法中是如何运用运用SVD的。 回顾特征值和特征向量我们首先回顾下特征值和特征向量的定义如下：$$Ax=λx$$其中A是一">
+<meta name="keywords" content="machine_learning,特征工程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据预处理-特征降维">
+<meta property="og:url" content="http://ben-air.cn/02.开发-20.MachineLearn/1004.特征工程-特征降维-SVD/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="奇异值分解(Singular Value Decomposition，以下简称SVD)是在机器学习领域广泛应用的算法，它不光可以用于降维算法中的特征分解，还可以用于推荐系统，以及自然语言处理等领域。是很多机器学习算法的基石。本文就对SVD的原理做一个总结，并讨论在在PCA降维算法中是如何运用运用SVD的。 回顾特征值和特征向量我们首先回顾下特征值和特征向量的定义如下：$$Ax=λx$$其中A是一">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://images2015.cnblogs.com/blog/1042406/201701/1042406-20170105115457425-1545975626.png">
+<meta property="og:image" content="https://images2015.cnblogs.com/blog/1042406/201701/1042406-20170105140822191-1774139119.png">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.159Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="数据预处理-特征降维">
+<meta name="twitter:description" content="奇异值分解(Singular Value Decomposition，以下简称SVD)是在机器学习领域广泛应用的算法，它不光可以用于降维算法中的特征分解，还可以用于推荐系统，以及自然语言处理等领域。是很多机器学习算法的基石。本文就对SVD的原理做一个总结，并讨论在在PCA降维算法中是如何运用运用SVD的。 回顾特征值和特征向量我们首先回顾下特征值和特征向量的定义如下：$$Ax=λx$$其中A是一">
+<meta name="twitter:image" content="https://images2015.cnblogs.com/blog/1042406/201701/1042406-20170105115457425-1545975626.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/1004.特征工程-特征降维-SVD/"/>
+
+
+
+
+
+  <title>数据预处理-特征降维 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-20.MachineLearn/1004.特征工程-特征降维-SVD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">数据预处理-特征降维</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-08-07T10:25:55+08:00">
+                2024-08-07
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/machine-learning/" itemprop="url" rel="index">
+                    <span itemprop="name">machine_learning</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>　奇异值分解(Singular Value Decomposition，以下简称SVD)是在机器学习领域广泛应用的算法，它不光可以用于降维算法中的特征分解，还可以用于推荐系统，以及自然语言处理等领域。是很多机器学习算法的基石。本文就对SVD的原理做一个总结，并讨论在在PCA降维算法中是如何运用运用SVD的。</p>
+<h2 id="回顾特征值和特征向量"><a href="#回顾特征值和特征向量" class="headerlink" title="回顾特征值和特征向量"></a>回顾特征值和特征向量</h2><p>我们首先回顾下特征值和特征向量的定义如下：$$Ax=λx$$<br>其中A是一个$n×n$的实对称矩阵，$x$是一个$n$维向量，则我们说$λ$是矩阵$A$的一个特征值，而 $x$ 是矩阵 $A$ 的特征值$λ$所对应的特征向量。<br>求出特征值和特征向量有什么好处呢？ 就是我们可以将矩阵A特征分解。如果我们求出了矩阵A的n<br>个特征值$λ1≤λ2≤…≤λn$,以及这n个特征值所对应的特征向量${w1,w2,…wn}$，，如果这n个特征向量线性无关，那么矩阵A就可以用下式的特征分解表示：$$A=WΣW−1$$</p>
+<p>其中$W$是这$n$个特征向量所张成的$n×n$维矩阵，而$Σ$为这$n$个特征值为主对角线的$n×n$维矩阵。<br>一般我们会把 $W$ 的这 $n$ 个特征向量标准化，即满足$||w_i||_2=1$, 或者说$w^T_iw_i=1$，此时$W$的$n$个特征向量为标准正交基，满足$W^TW=I$，即$W^T=W^{−1}$, 也就是说W为酉矩阵。<br>这样我们的特征分解表达式可以写成$A=WΣW^T$</p>
+<p>注意到要进行特征分解，矩阵$A$必须为方阵。那么如果$A$不是方阵，即行和列不相同时，我们还可以对矩阵进行分解吗？答案是可以，此时我们的SVD登场了。</p>
+<h2 id="SVD的定义"><a href="#SVD的定义" class="headerlink" title="SVD的定义"></a>SVD的定义</h2><p>SVD也是对矩阵进行分解，但是和特征分解不同，SVD并不要求要分解的矩阵为方阵。假设我们的矩阵A是一个$m×n$的矩阵，那么我们定义矩阵$A$的SVD为：$$A=UΣV^T$$</p>
+<ul>
+<li>$U$是一个$m×m$ 的矩阵，</li>
+<li>$Σ$是一个$m×n$的矩阵，除了主对角线上的元素以外全为0，主对角线上的每个元素都称为奇异值，</li>
+<li>$V$是一个$n×n$的矩阵。$U$和$V$都是酉矩阵，即满足$U^TU=I$,$V^TV=I$。</li>
+</ul>
+<p>SVD的几何意义是：任何线性变换都可以分解为三个基本变换的组合：</p>
+<ul>
+<li>旋转（U）：在输出空间中旋转坐标系</li>
+<li>缩放（Σ）：沿坐标轴进行不同比例的缩放</li>
+<li>旋转（Vᵀ）：在输入空间中旋转坐标系</li>
+</ul>
+<p>下图可以很形象的看出上面SVD的定义：<br><img src="https://images2015.cnblogs.com/blog/1042406/201701/1042406-20170105115457425-1545975626.png" alt="IMAGE"></p>
+<p>那么我们如何求出SVD分解后的$U,Σ,V$ 这三个矩阵呢？</p>
+<ul>
+<li>如果我们将A的转置和A做矩阵乘法，那么会得到$n×n$的一个方阵$A^TA$。既然$A^TA$是方阵，那么我们就可以进行特征分解，得到的特征值和特征向量满足下式：$$(A^TA)v_i=λ_iv_i$$这样我们就可以得到矩阵$A^TA$ 的$n$个特征值和对应的$n$个特征向量$v$了。将$A^TA$的所有特征向量张成一个$n×n$ 的矩阵$V$，就是我们SVD公式里面的$V$矩阵了。一般我们<strong>将$V$中的每个特征向量叫做$A$的右奇异向量</strong>。</li>
+<li>如果我们将$A$和$A$的转置做矩阵乘法，那么会得到$m×m$的一个方阵$AA^T$。既然$AA^T$是方阵，那么我们就可以进行特征分解，得到的特征值和特征向量满足下式：$$(AA^T)u_i=λ_iu_i$$这样我们就可以得到矩阵$AA^T$的$m$个特征值和对应的$m$个特征向量$u$了。将$AA^T$的所有特征向量张成一个$m×m$ 的矩阵$U$，就是我们SVD公式里面的$U$矩阵了。一般我们<strong>将$U$中的每个特征向量叫做$A$的左奇异向量</strong>。</li>
+</ul>
+<p>$U$和$V$我们都求出来了，现在就剩下奇异值矩阵$Σ$ 没有求出了。由于$Σ$除了对角线上是奇异值其他位置都是0，那我们只需要求出每个奇异值$σ$就可以了。<br>我们注意到:$A=UΣV^T⇒AV=UΣV^TV⇒AV=UΣ⇒Av_i=σ_iu_i⇒σ_i=Av_i/u_i$</p>
+<p>这样我们可以求出我们的每个奇异值，进而求出奇异值矩阵$Σ$。<br>上面还有一个问题没有讲，就是我们说$A^TA$ 的特征向量组成的就是我们SVD中的$V$矩阵，而$AA^T$的特征向量组成的就是我们SVD中的$U$矩阵，这有什么根据吗？这个其实很容易证明，我们以$V$矩阵的证明为例。$$A=UΣV^T⇒A^T=VΣ^TU^T⇒A^TA=VΣ^TU^TUΣV^T=VΣ^2V^T$$</p>
+<p>上式证明使用了:$U^TU=I,Σ^TΣ=Σ^2$。可以看出ATA的特征向量组成的的确就是我们SVD中的$V$矩阵。类似的方法可以得到$AA^T$ 的特征向量组成的就是我们SVD中的$U$矩阵。</p>
+<p>进一步我们还可以看出我们的特征值矩阵等于奇异值矩阵的平方，也就是说特征值和奇异值满足如下关系：$σ_i=\sqrt{λ_i}$</p>
+<p>这样也就是说，我们可以不用$σ_i=Av_i/u_i$ 来计算奇异值，也可以通过求出$A^TA$的特征值取平方根来求奇异值。</p>
+<h2 id="奇异值计算"><a href="#奇异值计算" class="headerlink" title="奇异值计算"></a>奇异值计算</h2><p>假设我们要处理的矩阵是：<br>$$<br>A = \left(<br>  \begin{matrix}<br>   0 &amp; 1 \<br>   1 &amp; 1 \<br>   1 &amp; 0<br>  \end{matrix}<br>  \right) \tag{1}<br>$$</p>
+<ul>
+<li>我们首先求出$A^TA$和$AA^T$</li>
+</ul>
+<p>$$<br>A^TA=\left(<br>  \begin{matrix}<br>   0 &amp; 1 &amp; 1\<br>   1 &amp; 1 &amp; 0\<br>  \end{matrix}<br>  \right) \left(<br>  \begin{matrix}<br>   0 &amp; 1 \<br>   1 &amp; 1 \<br>   1 &amp; 0<br>  \end{matrix}<br>  \right) =<br>  \left(<br>  \begin{matrix}<br>   2 &amp; 1\<br>   1 &amp; 2\<br>  \end{matrix}<br>  \right)<br>$$<br>$$<br>AA^T=\left(<br>  \begin{matrix}<br>   0 &amp; 1 \<br>   1 &amp; 1 \<br>   1 &amp; 0<br>  \end{matrix}<br>  \right)<br>  \left(<br>  \begin{matrix}<br>   0 &amp; 1 &amp; 1\<br>   1 &amp; 1 &amp; 0\<br>  \end{matrix}<br>  \right) =<br>  \left(<br>  \begin{matrix}<br>   1 &amp; 1 &amp; 0\<br>   1 &amp; 2 &amp; 1 \<br>   0 &amp; 1 &amp; 1<br>  \end{matrix}<br>  \right)<br>$$</p>
+<ul>
+<li>进而求出方阵 $A^TA$的特征值和特征向量</li>
+</ul>
+<p>$$<br>AA^T - \lambda I =\left(<br>\begin{matrix}<br>  2 &amp; 1\<br>  1 &amp; 2\<br>\end{matrix}<br>\right) - \lambda \left(<br>\begin{matrix}<br>  1 &amp; 0\<br>  0 &amp; 1\<br>\end{matrix}<br>\right) = \left(<br>\begin{matrix}<br>  2-\lambda &amp; 1\<br>  1 &amp; 2-\lambda\<br>\end{matrix}<br>\right) = 0<br>$$</p>
+<p>$$<br>a_{11}<em>a_{22} -a_{12}</em>a_{21}=0<br>-&gt;<br>(2-\lambda)<em>(2-\lambda) -1</em>1= 4-4\lambda+\lambda^2-1=\lambda^2-4\lambda+3 =0<br>$$<br>$$<br>λ_1=3;u_1=\left(<br>  \begin{matrix}<br>  1/\sqrt{2} \<br>  1/\sqrt{2}<br>    \end{matrix}<br>  \right)<br>;<br> λ_2=1;u_2=\left(<br>  \begin{matrix}<br>  -1/\sqrt{2} \<br>  1/\sqrt{2}<br>\end{matrix}<br>  \right)<br>$$</p>
+<ul>
+<li>接着求方阵 $AA^T$的特征值和特征向量<br>$$<br>λ_1=3;u_1=\left(<br>\begin{matrix}<br>1/\sqrt{6} \<br>2/\sqrt{6} \<br>1/\sqrt{6}<br>  \end{matrix}<br>\right)<br>;<br>λ_2=1;u_2=\left(<br>\begin{matrix}<br>1/\sqrt{2} \<br>0 \<br>−1/\sqrt{2}<br>\end{matrix}<br>\right)<br>;<br>λ_3=0;u_3=\left(<br>\begin{matrix}<br>1/\sqrt{3} \<br>−1/\sqrt{3} \<br>1/\sqrt{3}<br>\end{matrix}<br>\right)<br>$$</li>
+<li>利用Avi=σiui,i=1,2求奇异值：<br>$$<br>\left(<br>\begin{matrix}<br>0 &amp; 1 \<br>1 &amp; 1 \<br>1 &amp; 0<br>\end{matrix}<br>\right)<br>\left(<br>\begin{matrix}<br>1/\sqrt{2} \<br>1/\sqrt{2}<br>\end{matrix}<br>\right)=\sigma_1<br>\left(<br>\begin{matrix}<br>1/\sqrt{6} \<br>2/\sqrt{6} \<br>1/\sqrt{6}<br>\end{matrix}<br>\right) =&gt;<br>\sigma_1=\sqrt{3}<br>$$<br>$$<br>\left(<br>\begin{matrix}<br>0 &amp; 1 \<br>1 &amp; 1 \<br>1 &amp; 0<br>\end{matrix}<br>\right)<br>\left(<br>\begin{matrix}<br>-1/\sqrt{2} \<br>1/\sqrt{2}<br>\end{matrix}<br>\right)=\sigma_2<br>\left(<br>\begin{matrix}<br>1/\sqrt{2} \<br>0 \<br>−1/\sqrt{2}<br>\end{matrix}<br>\right) =&gt;<br>\sigma_2=1<br>$$</li>
+</ul>
+<p>最终得到A的奇异值分解为：<br>$$<br>A=UΣV^T =<br>  \left(<br>  \begin{matrix}<br>  1/\sqrt{6} &amp; 1/\sqrt{2} &amp;   1/\sqrt{3}\<br>  2/\sqrt{6} &amp; 0 &amp; −1/\sqrt{3}\<br>  1/\sqrt{6} &amp; −1/\sqrt{2} &amp; 1/\sqrt{3}<br>  \end{matrix}<br>  \right)<br>\left(<br>  \begin{matrix}<br>  1/\sqrt{3} &amp; 0\<br>  0 &amp; 1 \<br>  0 &amp; 0<br>  \end{matrix}<br>  \right)<br>  \left(<br>  \begin{matrix}<br>  1/\sqrt{2} &amp; 1/\sqrt{2}\<br>  -1/\sqrt{2} &amp; 1/\sqrt{2}<br>  \end{matrix}<br>  \right)<br>$$</p>
+<h2 id="SVD的性质"><a href="#SVD的性质" class="headerlink" title="SVD的性质"></a>SVD的性质</h2><p>对于奇异值,它跟我们特征分解中的特征值类似，在奇异值矩阵中也是按照从大到小排列，而且奇异值的减少特别的快，在很多情况下，前10%甚至1%的奇异值的和就占了全部的奇异值之和的99%以上的比例。也就是说，我们也可以用最大的k个的奇异值和对应的左右奇异向量来近似描述矩阵。也就是说：<br>$$A_{m×n}=U_{m×m}Σ<em>{m×n}V^T</em>{n×n}≈U_{m×k}Σ<em>{k×k}V^T</em>{k×n}$$</p>
+<p>其中$k$要比$n$小很多，也就是一个大的矩阵$A$可以用三个小的矩阵$U_{m×k},Σ<em>{k×k},V^T</em>{k×n}$ 来表示。如下图所示，现在我们的矩阵A只需要灰色的部分的三个小矩阵就可以近似描述了。<br><img src="https://images2015.cnblogs.com/blog/1042406/201701/1042406-20170105140822191-1774139119.png" alt="image"><br>由于这个重要的性质，SVD可以用于PCA降维，来做数据压缩和去噪。也可以用于推荐算法，将用户和喜好对应的矩阵做特征分解，进而得到隐含的用户需求来做推荐。同时也可以用于NLP中的算法，比如潜在语义索引（LSI）。下面我们就对SVD用于PCA降维做一个介绍。</p>
+<h1 id="reference"><a href="#reference" class="headerlink" title="reference"></a>reference</h1><p>[1]. <a href="https://www.cnblogs.com/pinard/p/6251584.html" target="_blank" rel="noopener">https://www.cnblogs.com/pinard/p/6251584.html</a><br>[2]. <a href="https://www.cnblogs.com/marsggbo/p/10155801.html" target="_blank" rel="noopener">奇异值计算</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/machine-learning/" rel="tag"><i class="fa fa-tag"></i> machine_learning</a>
+          
+            <a href="/tags/特征工程/" rel="tag"><i class="fa fa-tag"></i> 特征工程</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-20.MachineLearn/1004.特征工程-特征降维/" rel="next" title="数据预处理-特征降维">
+                <i class="fa fa-chevron-left"></i> 数据预处理-特征降维
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.开发-20.MachineLearn/1004.特征工程-特征降维-PCA/" rel="prev" title="数据预处理-特征降维 - PCA">
+                数据预处理-特征降维 - PCA <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#回顾特征值和特征向量"><span class="nav-number">1.</span> <span class="nav-text">回顾特征值和特征向量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SVD的定义"><span class="nav-number">2.</span> <span class="nav-text">SVD的定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#奇异值计算"><span class="nav-number">3.</span> <span class="nav-text">奇异值计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SVD的性质"><span class="nav-number">4.</span> <span class="nav-text">SVD的性质</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#reference"><span class="nav-number"></span> <span class="nav-text">reference</span></a></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

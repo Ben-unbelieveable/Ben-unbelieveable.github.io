@@ -85,15 +85,18 @@
 
 
 
+<meta name="description" content="bedtools是一个针对bed进行处理的工具，算是类似bwa一样，接触该行业不会陌生的一个软件。再次介绍一下bedtools的一些常用的功能。 单个bed文件的处理 对原始bed进行排序1bedtools sort -i BedPrePare/Pancancer_v2.bed  &amp;gt; BedPrePare/Pancancer_v2.sort.bed   对原始bed区域进行合并(合并有交集的">
 <meta name="keywords" content="变异检测">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Bedtools 的使用">
 <meta property="og:url" content="http://ben-air.cn/03.应用-01.software_in_NGS/Software-bedtools/index.html">
 <meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="bedtools是一个针对bed进行处理的工具，算是类似bwa一样，接触该行业不会陌生的一个软件。再次介绍一下bedtools的一些常用的功能。 单个bed文件的处理 对原始bed进行排序1bedtools sort -i BedPrePare/Pancancer_v2.bed  &amp;gt; BedPrePare/Pancancer_v2.sort.bed   对原始bed区域进行合并(合并有交集的">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2025-01-07T01:38:13.196Z">
+<meta property="og:updated_time" content="2025-05-16T09:54:33.606Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Bedtools 的使用">
+<meta name="twitter:description" content="bedtools是一个针对bed进行处理的工具，算是类似bwa一样，接触该行业不会陌生的一个软件。再次介绍一下bedtools的一些常用的功能。 单个bed文件的处理 对原始bed进行排序1bedtools sort -i BedPrePare/Pancancer_v2.bed  &amp;gt; BedPrePare/Pancancer_v2.sort.bed   对原始bed区域进行合并(合并有交集的">
 
 
 
@@ -418,7 +421,41 @@
       
 
       
-        
+        <p>bedtools是一个针对bed进行处理的工具，算是类似bwa一样，接触该行业不会陌生的一个软件。再次介绍一下bedtools的一些常用的功能。</p>
+<h1 id="单个bed文件的处理"><a href="#单个bed文件的处理" class="headerlink" title="单个bed文件的处理"></a>单个bed文件的处理</h1><ul>
+<li>对原始bed进行排序<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bedtools sort -i BedPrePare/Pancancer_v2.bed  &gt; BedPrePare/Pancancer_v2.sort.bed</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="对原始bed区域进行合并-合并有交集的区域"><a href="#对原始bed区域进行合并-合并有交集的区域" class="headerlink" title="对原始bed区域进行合并(合并有交集的区域)"></a>对原始bed区域进行合并(合并有交集的区域)</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bedtools merge -i BedPrePare/Pancancer_v2.sort.bed &gt; BedPrePare/Pancancer_v2.merge.bed</span><br></pre></td></tr></table></figure>
+<h1 id="多个bed文件的处理处理"><a href="#多个bed文件的处理处理" class="headerlink" title="多个bed文件的处理处理"></a>多个bed文件的处理处理</h1><ul>
+<li><p>保留两个 bed 的交集部分</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bedtools  intersect -a Pancancer_v2.anno.Oldtrans.bed  -b Pancancer_v2.anno.Newtrans.bed  &gt; old_new.overlap.bed</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>基于结构文件(-b)对原始bed区域进行注释,保留-b文件的注释列(-wb)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bedtools intersect -a BedPrePare/Pancancer_v2.merge.bed -b NCBI.gff2bed.bed -wb |  cut -f1-3,7-10 &gt; BedPrePare/Pancancer_v2.anno.bed</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>评估相关基因的覆盖情况</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bedtools intersect -b BedPrePare/Pancancer_v2.merge.bed -a NCBI.gff2bed.bed -wao &gt; BedPrePare/Pancancer_v2.covercheck.bed</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>保留 -a文件的所有区域，并记录交集区域的注释信息<br><code>$ bedtools intersect -a WESv5withSafeRisk.bed -b GeneTranscript_RD_Tumor.NewTrans.20231109.bed -wao | head
+chr1    65498   65638   chr1    65434   65519   OR4F5   NM_001005484.2  IU      IVS1    +       -       21
+chr1    65498   65638   chr1    65565   65573   OR4F5   NM_001005484.2  C1      EX2     +       -       8
+chr1    65498   65638   chr1    65574   69036   OR4F5   NM_001005484.2  IC1     IVS2    +       -       64
+chr1    65498   65638   chr1    65520   65564   OR4F5   NM_001005484.2  5&#39;UTR   EX2     +       -       44
+chr1    69036   70008   chr1    69037   70008   OR4F5   NM_001005484.2  C2      EX3     +       -       971
+chr1    367648  368607  chr1    367659  368597  OR4F29  NM_001005221.2  C1      EX1     +       -       938
+chr1    564537  564657  .       -1      -1      .       .       .       .       .       .       0
+chr1    621085  622044  chr1    621096  622034  OR4F16  NM_001005277.1  C1      EX1     -       -       938</code></p>
+<ul>
+<li>获得两个 bed 的差集, B(-b) 产品比 A(-A) 产品缺少的区域<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bedtools  subtract -a Pancancer_v2.anno.Oldtrans.bed -b Pancancer_v2.anno.Newtrans.bed &gt;  old.subtract.new.bed</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="bed文件的注释"><a href="#bed文件的注释" class="headerlink" title="bed文件的注释"></a>bed文件的注释</h1><ul>
+<li>使用参考基因组进行bed的注释<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">bedtools nuc -fi $hg19 -bed /jdfstj6/B2C_RD/liubo4/product/cWES/src/db/Hyper_ExMit_TR/cns_region_GRCh37_bychr/WESv5withSafeRisk.bed</span><br><span class="line"></span><br><span class="line"># 结果前面几列是bed输入字段，后面是区域内各个碱基的情况统计结果，示例如下：</span><br><span class="line">#1_usercol      2_usercol       3_usercol       4_pct_at        5_pct_gc        6_num_A 7_num_C 8_num_G 9_num_T 10_num_N        11_num_oth      12_seq_len</span><br><span class="line">chr1    65498   65638   0.692857        0.307143        49      19      24      48      0       0       140</span><br><span class="line">chr1    69036   70008   0.573045        0.426955        231     228     187     326     0       0       972</span><br><span class="line">chr1    367648  368607  0.541189        0.458811        204     245     195     315     0       0       959</span><br><span class="line">chr1    564537  564657  0.608333        0.391667        43      40      7       30      0       0       120</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+
       
     </div>
     
@@ -458,8 +495,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/03.应用-01.software_in_NGS/Software-GATK4初探-1/" rel="next" title="GATK4初探 - 1">
-                <i class="fa fa-chevron-left"></i> GATK4初探 - 1
+              <a href="/03.应用-01.software_in_NGS/Software-MSI-MANTIS调研/" rel="next" title="Software-MANTIS调研">
+                <i class="fa fa-chevron-left"></i> Software-MANTIS调研
               </a>
             
           </div>
@@ -468,8 +505,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/03.应用-01.software_in_NGS/Software-CNV检测-调研/" rel="prev" title="CNV检测-调研">
-                CNV检测-调研 <i class="fa fa-chevron-right"></i>
+              <a href="/02.开发-03.R/R-安装/" rel="prev" title="R安装">
+                R安装 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -547,8 +584,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/uploads/avatar.jpg"
@@ -563,7 +609,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">211</span>
+                <span class="site-state-item-count">466</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -574,7 +620,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">69</span>
+                <span class="site-state-item-count">97</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -585,7 +631,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">93</span>
+                <span class="site-state-item-count">143</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -679,6 +725,22 @@
       </section>
 
       
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#单个bed文件的处理"><span class="nav-number">1.</span> <span class="nav-text">单个bed文件的处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#对原始bed区域进行合并-合并有交集的区域"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">对原始bed区域进行合并(合并有交集的区域)</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#多个bed文件的处理处理"><span class="nav-number">2.</span> <span class="nav-text">多个bed文件的处理处理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bed文件的注释"><span class="nav-number">3.</span> <span class="nav-text">bed文件的注释</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
 
       
 
@@ -695,7 +757,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2025</span>
+  <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

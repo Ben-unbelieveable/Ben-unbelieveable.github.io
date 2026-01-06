@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,transformer," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="conda 环境配置1conda create -n transformer python=3.8 下载模型1git clone https://github.com/meta-llama/llama3.git 示例代码基于pipeline 调用使用pipeline的方式，可以很好的帮助我们快速实现模型的调用。尤其是其中 prompt 的构建。 12345678910111213141516171">
+<meta name="keywords" content="LLM,transformer">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大模型-部署工具-transformer">
+<meta property="og:url" content="http://ben-air.cn/02.开发-25.LLM-算法知识/5003.大模型-架构-transformer-1.pipeline/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="conda 环境配置1conda create -n transformer python=3.8 下载模型1git clone https://github.com/meta-llama/llama3.git 示例代码基于pipeline 调用使用pipeline的方式，可以很好的帮助我们快速实现模型的调用。尤其是其中 prompt 的构建。 12345678910111213141516171">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://transformers.run/assets/img/transformers-note-1/full_nlp_pipeline.png">
+<meta property="og:image" content="https://transformers.run/assets/img/transformers-note-1/transformer_and_head.png">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.486Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="大模型-部署工具-transformer">
+<meta name="twitter:description" content="conda 环境配置1conda create -n transformer python=3.8 下载模型1git clone https://github.com/meta-llama/llama3.git 示例代码基于pipeline 调用使用pipeline的方式，可以很好的帮助我们快速实现模型的调用。尤其是其中 prompt 的构建。 12345678910111213141516171">
+<meta name="twitter:image" content="https://transformers.run/assets/img/transformers-note-1/full_nlp_pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-25.LLM-算法知识/5003.大模型-架构-transformer-1.pipeline/"/>
+
+
+
+
+
+  <title>大模型-部署工具-transformer | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-25.LLM-算法知识/5003.大模型-架构-transformer-1.pipeline/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">大模型-部署工具-transformer</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-08-21T10:55:34+08:00">
+                2024-08-21
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <h1 id="conda-环境配置"><a href="#conda-环境配置" class="headerlink" title="conda 环境配置"></a>conda 环境配置</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conda create -n transformer python=3.8</span><br></pre></td></tr></table></figure>
+<h1 id="下载模型"><a href="#下载模型" class="headerlink" title="下载模型"></a>下载模型</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/meta-llama/llama3.git</span><br></pre></td></tr></table></figure>
+<h1 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h1><h2 id="基于pipeline-调用"><a href="#基于pipeline-调用" class="headerlink" title="基于pipeline 调用"></a>基于pipeline 调用</h2><p>使用pipeline的方式，可以很好的帮助我们快速实现模型的调用。尤其是其中 prompt 的构建。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> transformers</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">model_name=<span class="string">"/data1/tf_data/model/llama3/Meta-Llama-3-8B-Instruct"</span></span><br><span class="line"></span><br><span class="line">pipeline = transformers.pipeline(</span><br><span class="line">    <span class="string">"text-generation"</span>,</span><br><span class="line">    model=model_name,</span><br><span class="line">    model_kwargs=&#123;<span class="string">"torch_dtype"</span>: torch.float16&#125;,</span><br><span class="line">    device=<span class="string">"cuda"</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">messages = [</span><br><span class="line">    &#123;<span class="string">"role"</span>: <span class="string">"system"</span>, <span class="string">"content"</span>: <span class="string">"hello,You are a helpful human assistant!"</span>&#125;,</span><br><span class="line">    &#123;<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: <span class="string">"介绍一下中国,请用中文回答"</span>&#125;,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">prompt = pipeline.tokenizer.apply_chat_template(</span><br><span class="line">    messages,</span><br><span class="line">    tokenize=<span class="keyword">False</span>,</span><br><span class="line">    add_generation_prompt=<span class="keyword">True</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">terminators = [</span><br><span class="line">    pipeline.tokenizer.eos_token_id,</span><br><span class="line">    pipeline.tokenizer.convert_tokens_to_ids(<span class="string">"&lt;|eot_id|&gt;"</span>)</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">outputs = pipeline(</span><br><span class="line">    prompt,</span><br><span class="line">    max_new_tokens=<span class="number">256</span>,</span><br><span class="line">    eos_token_id=terminators,</span><br><span class="line">    do_sample=<span class="keyword">True</span>,</span><br><span class="line">    temperature=<span class="number">0.6</span>,</span><br><span class="line">    top_p=<span class="number">0.9</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h2 id="直接调用"><a href="#直接调用" class="headerlink" title="直接调用"></a>直接调用</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer, AutoModelForCausalLM</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载模型</span></span><br><span class="line">model_name=<span class="string">"/data1/tf_data/model/llama3/Meta-Llama-3-8B-Instruct"</span></span><br><span class="line">model = AutoModelForCausalLM.from_pretrained(model_name)</span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(model_name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 文本生成函数</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">generate_response</span><span class="params">(prompt)</span>:</span></span><br><span class="line">    <span class="comment"># 对输入进行分词</span></span><br><span class="line">    inputs = tokenizer(prompt, return_tensors=<span class="string">"pt"</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 生成响应，相应的token数目和答复的数目。</span></span><br><span class="line">    outputs = model.generate(**inputs, max_length=<span class="number">200</span>, num_return_sequences=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 解码输出</span></span><br><span class="line">    response = tokenizer.decode(outputs[<span class="number">0</span>], skip_special_tokens=<span class="keyword">True</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> response</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输入处理包装函数</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">preprocess_input</span><span class="params">(input)</span>:</span></span><br><span class="line">    messages = [</span><br><span class="line">        &#123;<span class="string">"role"</span>: <span class="string">"system"</span>, <span class="string">"content"</span>: <span class="string">"hello,You are a helpful human assistant!"</span>&#125;,</span><br><span class="line">        &#123;<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: input&#125;, ]</span><br><span class="line">    tokenizer_input = tokenizer.apply_chat_template(messages,</span><br><span class="line">                                                    tokenize=<span class="keyword">False</span>, <span class="comment"># tokenize需要设置 False，否则反馈会和预期有很大出入。测试的时候，反馈的是拼音和翻译成英文的句子┑(￣Д ￣)┍。</span></span><br><span class="line">                                                    add_generation_prompt=<span class="keyword">True</span>)</span><br><span class="line">    <span class="keyword">return</span> tokenizer_input</span><br><span class="line"></span><br><span class="line"><span class="comment"># 示例对话</span></span><br><span class="line">user_input = <span class="string">"介绍一下中国"</span></span><br><span class="line">response = generate_response(preprocess_input(user_input))</span><br><span class="line">print(<span class="string">"模型回答:"</span>, response)</span><br></pre></td></tr></table></figure>
+<p>更多调用示例，参考<a href="https://transformers.run/c2/2021-12-08-transformers-note-1/#%E5%BC%80%E7%AE%B1%E5%8D%B3%E7%94%A8%E7%9A%84-pipelines" target="_blank" rel="noopener">开箱即用的-pipelines</a></p>
+<h1 id="背后原理"><a href="#背后原理" class="headerlink" title="背后原理"></a>背后原理</h1><p>这些简单易用的 pipeline 模型实际上封装了许多操作，下面我们就来了解一下它们背后究竟做了啥。以情感分析 pipeline 为例，我们运行下面的代码<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> pipeline</span><br><span class="line"></span><br><span class="line">classifier = pipeline(<span class="string">"sentiment-analysis"</span>)</span><br><span class="line">result = classifier(<span class="string">"I've been waiting for a HuggingFace course my whole life."</span>)</span><br><span class="line">print(result)</span><br></pre></td></tr></table></figure></p>
+<p>就会得到结果：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[&#123;<span class="string">'label'</span>: <span class="string">'POSITIVE'</span>, <span class="string">'score'</span>: <span class="number">0.9598048329353333</span>&#125;]</span><br></pre></td></tr></table></figure></p>
+<p>实际上它的背后经过了三个步骤：</p>
+<ul>
+<li>预处理 (preprocessing)，将原始文本转换为模型可以接受的输入格式；</li>
+<li>将处理好的输入送入模型；</li>
+<li>对模型的输出进行后处理 (postprocessing)，将其转换为人类方便阅读的格式。<br><img src="https://transformers.run/assets/img/transformers-note-1/full_nlp_pipeline.png" alt=""></li>
+</ul>
+<h2 id="使用分词器进行预处理"><a href="#使用分词器进行预处理" class="headerlink" title="使用分词器进行预处理"></a>使用分词器进行预处理</h2><p>因为神经网络模型无法直接处理文本，因此首先需要通过预处理环节将文本转换为模型可以理解的数字。具体地，我们会使用每个模型对应的分词器 (tokenizer) 来进行：</p>
+<ol>
+<li>将输入切分为词语、子词或者符号（例如标点符号），统称为 tokens；</li>
+<li>根据模型的词表将每个 token 映射到对应的 token 编号（就是一个数字）；</li>
+<li>根据模型的需要，添加一些额外的输入。</li>
+</ol>
+<p>我们对输入文本的预处理需要与模型自身预训练时的操作完全一致，只有这样模型才可以正常地工作。注意，每个模型都有特定的预处理操作，如果对要使用的模型不熟悉，可以通过 <a href="https://huggingface.co/models" target="_blank" rel="noopener">Model Hub</a> 查询。这里我们使用 <code>AutoTokenizer</code> 类和它的 <code>from_pretrained()</code> 函数，它可以自动根据模型 checkpoint 名称来获取对应的分词器。</p>
+<p>情感分析 pipeline 的默认 <code>checkpoint</code> 是 <code>distilbert-base-uncased-finetuned-sst-2-english</code>，下面我们手工下载并调用其分词器：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer</span><br><span class="line"></span><br><span class="line">checkpoint = <span class="string">"distilbert-base-uncased-finetuned-sst-2-english"</span></span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(checkpoint)</span><br><span class="line"></span><br><span class="line">raw_inputs = [</span><br><span class="line">    <span class="string">"I've been waiting for a HuggingFace course my whole life."</span>,</span><br><span class="line">    <span class="string">"I hate this so much!"</span>,</span><br><span class="line">]</span><br><span class="line">inputs = tokenizer(raw_inputs, padding=<span class="keyword">True</span>, truncation=<span class="keyword">True</span>, return_tensors=<span class="string">"pt"</span>)</span><br><span class="line">print(inputs)</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &apos;input_ids&apos;: tensor([</span><br><span class="line">        [  101,  1045,  1005,  2310,  2042,  3403,  2005,  1037, 17662, 12172, 2607,  2026,  2878,  2166,  1012,   102],</span><br><span class="line">        [  101,  1045,  5223,  2023,  2061,  2172,   999,   102,     0,     0,</span><br><span class="line">             0,     0,     0,     0,     0,     0]</span><br><span class="line">    ]), </span><br><span class="line">    &apos;attention_mask&apos;: tensor([</span><br><span class="line">        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],</span><br><span class="line">        [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]</span><br><span class="line">    ])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，输出中包含两个键 <code>input_ids</code> 和 <code>attention_mask</code>，其中 <code>input_ids</code> 对应分词之后的 <code>tokens</code> 映射到的数字编号列表，而 <code>attention_mask</code> 则是用来标记哪些 <code>tokens</code> 是被填充的（这里“1”表示是原文，“0”表示是填充字符）。</p>
+<blockquote>
+<p>先不要关注 <code>padding</code>、<code>truncation</code> 这些参数，以及 attention_mask 项，后面我们会详细介绍:)。</p>
+</blockquote>
+<h2 id="将预处理好的输入送入模型"><a href="#将预处理好的输入送入模型" class="headerlink" title="将预处理好的输入送入模型"></a>将预处理好的输入送入模型</h2><p>预训练模型的下载方式和分词器 <code>tokenizer</code> 类似，<code>Transformers</code> 包提供了一个 <code>AutoModel</code> 类和对应的 <code>from_pretrained()</code> 函数。下面我们手工下载这个 <code>distilbert-base</code> 模型：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoModel</span><br><span class="line"></span><br><span class="line">checkpoint = <span class="string">"distilbert-base-uncased-finetuned-sst-2-english"</span></span><br><span class="line">model = AutoModel.from_pretrained(checkpoint)</span><br></pre></td></tr></table></figure></p>
+<p>预训练模型的本体只包含基础的 <code>Transformer</code> 模块，对于给定的输入，它会输出一些神经元的值，称为 <code>hidden states</code> 或者特征 (features)。对于 NLP 模型来说，可以理解为是文本的高维语义表示。这些 <code>hidden states</code> 通常会被输入到其他的模型部分（称为 head），以完成特定的任务，例如送入到分类头中完成文本分类任务。</p>
+<blockquote>
+<p>其实前面我们举例的所有 pipelines 都具有类似的模型结构，只是模型的最后一部分会使用不同的 head 以完成对应的任务。<br>    <img src="https://transformers.run/assets/img/transformers-note-1/transformer_and_head.png" alt="IMAGE"><br>    transformer_and_head<br>    Transformers 库封装了很多不同的结构，常见的有：<br>    <em>Model （返回 hidden states）
+    </em>ForCausalLM （用于条件语言模型）<br>    <em>ForMaskedLM （用于遮盖语言模型）
+    </em>ForMultipleChoice （用于多选任务）<br>    <em>ForQuestionAnswering （用于自动问答任务）
+    </em>ForSequenceClassification （用于文本分类任务）<br>    *ForTokenClassification （用于 token 分类任务，例如 NER）</p>
+</blockquote>
+<p><code>Transformer</code> 模块的输出是一个维度为 (Batch size, Sequence length, Hidden size) 的三维张量，其中 <code>Batch size</code> 表示每次输入的样本（文本序列）数量，即每次输入多少个句子，上例中为 2；<code>Sequence length</code> 表示文本序列的长度，即每个句子被分为多少个 token，上例中为 16；<code>Hidden size</code> 表示每一个 token 经过模型编码后的输出向量（语义表示）的维度。</p>
+<blockquote>
+<p>预训练模型编码后的输出向量的维度通常都很大，例如 Bert 模型 base 版本的输出为 768 维，一些大模型的输出维度为 3072 甚至更高。</p>
+</blockquote>
+<p>我们可以打印出这里使用的 <code>distilbert-base</code> 模型的输出维度：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer, AutoModel</span><br><span class="line"></span><br><span class="line">checkpoint = <span class="string">"distilbert-base-uncased-finetuned-sst-2-english"</span></span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(checkpoint)</span><br><span class="line">model = AutoModel.from_pretrained(checkpoint)</span><br><span class="line"></span><br><span class="line">raw_inputs = [</span><br><span class="line">    <span class="string">"I've been waiting for a HuggingFace course my whole life."</span>,</span><br><span class="line">    <span class="string">"I hate this so much!"</span>,</span><br><span class="line">]</span><br><span class="line">inputs = tokenizer(raw_inputs, padding=<span class="keyword">True</span>, truncation=<span class="keyword">True</span>, return_tensors=<span class="string">"pt"</span>)</span><br><span class="line">outputs = model(**inputs)</span><br><span class="line">print(outputs.last_hidden_state.shape)</span><br><span class="line"></span><br><span class="line">torch.Size([<span class="number">2</span>, <span class="number">16</span>, <span class="number">768</span>])</span><br></pre></td></tr></table></figure></p>
+<p><code>Transformers</code> 模型的输出格式类似 <code>namedtuple</code> 或字典，可以像上面那样通过属性访问，也可以通过键（outputs[“last_hidden_state”]），甚至索引访问（outputs[0]）。</p>
+<p>对于情感分析任务，很明显我们最后需要使用的是一个文本分类 head。因此，实际上我们不会使用 <code>AutoModel</code> 类，而是使用 <code>AutoModelForSequenceClassification</code>：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer</span><br><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoModelForSequenceClassification</span><br><span class="line"></span><br><span class="line">checkpoint = <span class="string">"distilbert-base-uncased-finetuned-sst-2-english"</span></span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(checkpoint)</span><br><span class="line">model = AutoModelForSequenceClassification.from_pretrained(checkpoint)</span><br><span class="line"></span><br><span class="line">raw_inputs = [</span><br><span class="line">    <span class="string">"I've been waiting for a HuggingFace course my whole life."</span>,</span><br><span class="line">    <span class="string">"I hate this so much!"</span>,</span><br><span class="line">]</span><br><span class="line">inputs = tokenizer(raw_inputs, padding=<span class="keyword">True</span>, truncation=<span class="keyword">True</span>, return_tensors=<span class="string">"pt"</span>)</span><br><span class="line">outputs = model(**inputs)</span><br><span class="line">print(outputs.logits.shape)</span><br><span class="line"></span><br><span class="line">torch.Size([<span class="number">2</span>, <span class="number">2</span>])</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，对于 <code>batch</code> 中的每一个样本，模型都会输出一个两维的向量（每一维对应一个标签，positive 或 negative）。<br>对模型输出进行后处理</p>
+<p>由于模型的输出只是一些数值，因此并不适合人类阅读。例如我们打印出上面例子的输出：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer</span><br><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoModelForSequenceClassification</span><br><span class="line"></span><br><span class="line">checkpoint = <span class="string">"distilbert-base-uncased-finetuned-sst-2-english"</span></span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(checkpoint)</span><br><span class="line">model = AutoModelForSequenceClassification.from_pretrained(checkpoint)</span><br><span class="line"></span><br><span class="line">raw_inputs = [</span><br><span class="line">    <span class="string">"I've been waiting for a HuggingFace course my whole life."</span>,</span><br><span class="line">    <span class="string">"I hate this so much!"</span>,</span><br><span class="line">]</span><br><span class="line">inputs = tokenizer(raw_inputs, padding=<span class="keyword">True</span>, truncation=<span class="keyword">True</span>, return_tensors=<span class="string">"pt"</span>)</span><br><span class="line">outputs = model(**inputs)</span><br><span class="line">print(outputs.logits)</span><br><span class="line"></span><br><span class="line">tensor([[<span class="number">-1.5607</span>,  <span class="number">1.6123</span>],</span><br><span class="line">        [ <span class="number">4.1692</span>, <span class="number">-3.3464</span>]], grad_fn=&lt;AddmmBackward0&gt;)</span><br></pre></td></tr></table></figure></p>
+<p>模型对第一个句子输出 $[-1.5607, 1.6123]$，对第二个句子输出 $[ 4.1692, -3.3464]$，它们并不是概率值，而是模型最后一层输出的 logits 值。要将他们转换为概率值，还需要让它们经过一个 <code>SoftMax</code> 层，例如：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line">predictions = torch.nn.functional.softmax(outputs.logits, dim=<span class="number">-1</span>)</span><br><span class="line">print(predictions)</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tensor([[<span class="number">4.0195e-02</span>, <span class="number">9.5980e-01</span>],</span><br><span class="line">        [<span class="number">9.9946e-01</span>, <span class="number">5.4418e-04</span>]], grad_fn=&lt;SoftmaxBackward0&gt;)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>所有 Transformers 模型都会输出 logits 值，因为训练时的损失函数通常会自动结合激活函数（例如 SoftMax）与实际的损失函数（例如交叉熵 cross entropy）。</p>
+</blockquote>
+<p>这样模型的预测结果就是容易理解的概率值：第一个句子 $[0.0402, 0.9598]$，第二个句子 $[0.9995, 0.0005]$。最后，为了得到对应的标签，可以读取模型 config 中提供的 id2label 属性：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">print(model.config.id2label)</span><br><span class="line"></span><br><span class="line">&#123;<span class="number">0</span>: <span class="string">'NEGATIVE'</span>, <span class="number">1</span>: <span class="string">'POSITIVE'</span>&#125;</span><br></pre></td></tr></table></figure></p>
+<p>于是我们可以得到最终的预测结果：</p>
+<ul>
+<li>第一个句子: NEGATIVE: 0.0402, POSITIVE: 0.9598</li>
+<li>第二个句子: NEGATIVE: 0.9995, POSITIVE: 0.0005</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/transformer/" rel="tag"><i class="fa fa-tag"></i> transformer</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-25.LLM-算法知识/5030.大模型-数据集-数据格式/" rel="next" title="大模型-数据集-数据格式">
+                <i class="fa fa-chevron-left"></i> 大模型-数据集-数据格式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.开发-25.LLM-算法知识/4031.大模型-编程基础-使用GPU/" rel="prev" title="4031.大模型-编程基础-使用GPU">
+                4031.大模型-编程基础-使用GPU <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#conda-环境配置"><span class="nav-number">1.</span> <span class="nav-text">conda 环境配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#下载模型"><span class="nav-number">2.</span> <span class="nav-text">下载模型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#示例代码"><span class="nav-number">3.</span> <span class="nav-text">示例代码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基于pipeline-调用"><span class="nav-number">3.1.</span> <span class="nav-text">基于pipeline 调用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#直接调用"><span class="nav-number">3.2.</span> <span class="nav-text">直接调用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#背后原理"><span class="nav-number">4.</span> <span class="nav-text">背后原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用分词器进行预处理"><span class="nav-number">4.1.</span> <span class="nav-text">使用分词器进行预处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将预处理好的输入送入模型"><span class="nav-number">4.2.</span> <span class="nav-text">将预处理好的输入送入模型</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="流程开发," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="上一篇文章，我们介绍了 run 模式，并且针对常见的分析场景 SGE &amp;amp; docker 介绍了基本配置文件的撰写方式，及指定配置文件进行任务投递的方法。1java -Dconfig.file=/path/to/yourOverrides.conf cromwell.jar  run pipeline.wdl -i input.json 但是其实除了后端任务调度平台的相关配置，我们也提到还有">
+<meta name="keywords" content="流程开发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="cromwell 配置文件-设置任务投递模式">
+<meta property="og:url" content="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-cromwell-02.配置文件-/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="上一篇文章，我们介绍了 run 模式，并且针对常见的分析场景 SGE &amp;amp; docker 介绍了基本配置文件的撰写方式，及指定配置文件进行任务投递的方法。1java -Dconfig.file=/path/to/yourOverrides.conf cromwell.jar  run pipeline.wdl -i input.json 但是其实除了后端任务调度平台的相关配置，我们也提到还有">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.085Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="cromwell 配置文件-设置任务投递模式">
+<meta name="twitter:description" content="上一篇文章，我们介绍了 run 模式，并且针对常见的分析场景 SGE &amp;amp; docker 介绍了基本配置文件的撰写方式，及指定配置文件进行任务投递的方法。1java -Dconfig.file=/path/to/yourOverrides.conf cromwell.jar  run pipeline.wdl -i input.json 但是其实除了后端任务调度平台的相关配置，我们也提到还有">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-cromwell-02.配置文件-/"/>
+
+
+
+
+
+  <title>cromwell 配置文件-设置任务投递模式 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-cromwell-02.配置文件-/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">cromwell 配置文件-设置任务投递模式</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-09-25T11:33:50+08:00">
+                2022-09-25
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pipeline/" itemprop="url" rel="index">
+                    <span itemprop="name">pipeline</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pipeline/framework/" itemprop="url" rel="index">
+                    <span itemprop="name">framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/编程拾慧/" itemprop="url" rel="index">
+                    <span itemprop="name">编程拾慧</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/任务调度/" itemprop="url" rel="index">
+                    <span itemprop="name">任务调度</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/编程拾慧/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>上一篇文章，我们介绍了 <code>run</code> 模式，并且针对常见的分析场景 <strong>SGE &amp; docker</strong> 介绍了基本配置文件的撰写方式，及指定配置文件进行任务投递的方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Dconfig.file=/path/to/yourOverrides.conf cromwell.jar  run pipeline.wdl -i input.json</span><br></pre></td></tr></table></figure></p>
+<p>但是其实除了后端任务调度平台的相关配置，我们也提到还有其他的一些内容比如：资源限制，调用缓存，文件系统等，我们都可以通过配置文件进行管理，今天我们来介绍一下其他的常用配置项。</p>
+<h2 id="文件格式"><a href="#文件格式" class="headerlink" title="文件格式"></a>文件格式</h2><p>我们在之前的示例中提供了json格式的文件，但是实际上，配置文件还有其他方式提供给<code>Cromwell</code>， 比如下列几种格式其实是等价的：</p>
+<h4 id="JSON-like-stanza-类似-JSON-的节："><a href="#JSON-like-stanza-类似-JSON-的节：" class="headerlink" title="JSON-like stanza: 类似 JSON 的节："></a>JSON-like stanza: 类似 JSON 的节：</h4><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">include required(classpath("application"))</span><br><span class="line">webservice &#123;</span><br><span class="line">  port = 8000</span><br><span class="line">  interface = 0.0.0.0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Dot-separated-values-点分隔值："><a href="#Dot-separated-values-点分隔值：" class="headerlink" title="Dot-separated values: 点分隔值："></a>Dot-separated values: 点分隔值：</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">include required(classpath(&quot;application&quot;))</span><br><span class="line">webservice.port = 8000</span><br><span class="line">webservice.interface = 0.0.0.0</span><br></pre></td></tr></table></figure>
+<h4 id="通过命令行进行配置"><a href="#通过命令行进行配置" class="headerlink" title="通过命令行进行配置"></a>通过命令行进行配置</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Dwebservice.port=8080 Dwebservice.interface=0.0.0.0 cromwell.jar ...</span><br></pre></td></tr></table></figure>
+<h2 id="system"><a href="#system" class="headerlink" title="system"></a>system</h2><h3 id="I-O-管理"><a href="#I-O-管理" class="headerlink" title="I/O 管理"></a>I/O 管理</h3><p>我们的Pipelines的中会有一些任务会访问后端请求，为了保证后端服务的稳定不至于过载爆掉，我们有时候需要对API每秒可以进行的查询数施加配额。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">system.io &#123;</span><br><span class="line">  number-of-requests = 100000 # 设置访问请求数目</span><br><span class="line">  per = 100 seconds  # 设置访问等待时间</span><br><span class="line">  number-of-attempts = 5 # 设置失败重试次数</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="工作流"><a href="#工作流" class="headerlink" title="工作流"></a>工作流</h3><p>除了 API 的请求，我们也许要对我们的执行任务数进行管理。</p>
+<ul>
+<li><code>Cromwell</code>对一次运行的工作流数量有一个可配置的上限。您可以通过设置以下设置来调整默认 5000 限制</li>
+<li><code>Cromwell</code>也会以固定的时间（单位<code>s</code>)建个进行轮询，查看是否有新的工作流出现，默认时间时 <code>20s</code>：</li>
+<li><code>Cromwell</code>默认只会同时接受1个工作流的提交，如果需要同时启动多个工作流也可以进行设置。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">system.max-concurrent-workflows = 5000  #并行任务数</span><br><span class="line">system.new-workflow-poll-rate = 20</span><br><span class="line">system.max-workflow-launch-count = 1</span><br></pre></td></tr></table></figure>
+<h3 id="资源管理"><a href="#资源管理" class="headerlink" title="资源管理"></a>资源管理</h3><p>我们进行任务投递的集群，往往是共享资源，有些时候任务紧急，也许我们可以一个人占用所有的分析资源，但是大多数情况下这可能会被公用资源的其他同学暴打一顿。所以大多时间，我们需要限制任务对资源的使用，从而让其他同学的任务也可以运行，所以在<code>v35</code>版本， <code>Cromwell</code> 提供了配置参数，让我们可以对流程调用的资源进行管理和限制。<br>我们可以通过 3个参数对资源调度情况进行管理。</p>
+<h4 id="Hog-Group"><a href="#Hog-Group" class="headerlink" title="Hog Group"></a>Hog Group</h4><p>对提交的不同工作流（独立的<code>WDL</code>）进行分组，从而帮助我们对多个不同的工作流进行分组，从而实现同一组内所有工作流程的资源管理，对整组的资源进行限制。</p>
+<ul>
+<li>调用的所有子任务（task）都会继承主流程的<code>hog-group</code></li>
+<li>不同的主流程，可以划分到同一个<code>hog-group</code>。每个pipeline都对应一个唯一的工作组，每个工作组可包含多个pipeline。<br>配置文件中指定的是关键字（wdl中赋值的信息），而不是具体分组。</li>
+</ul>
+<h4 id="Hog-Factor"><a href="#Hog-Factor" class="headerlink" title="Hog Factor"></a>Hog Factor</h4><p><code>Hog Factor</code> 是大于或等于 1 的整数。表示所有资源会被<strong>多少个 group 平均分配</strong>。它代表了以下两者之间的权衡：</p>
+<ol>
+<li>Cromwell可以使用所有的资源完成工作，设置 Hog Factor = 1 时。</li>
+<li>为其他分组预留资源，只使用其中一部分（1/Hog Factor）资源进行分析。 Hog Factor=2，则每个分组可以使用一半的资源进行分析。</li>
+</ol>
+<h4 id="Hog-Limit"><a href="#Hog-Limit" class="headerlink" title="Hog Limit"></a>Hog Limit</h4><p><code>Hog Limit</code> 是 Cromwell内部计算的，每个分组所能运行的最大任务数，这部分不需要我们进行手动的配置。</p>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">system &#123;</span><br><span class="line">  hog-safety &#123;</span><br><span class="line">    hog-factor = 1</span><br><span class="line">    workflow-option = &quot;hogGroup&quot; </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在对应的<code>WDL</code>中，应该提供对应的group 关键字，如果未提供对应关键字，会使用pipeline的名称作为默认值。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;hogGroup&quot;: &quot;hogGroupA&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>为了整体保持资源在所有工作组之间的均匀分配，Cromwell在执行任务时，不同工作组间轮转的任务运行，组内按先先后顺序进行任务运行</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">system &#123;</span><br><span class="line">  abort &#123;</span><br><span class="line">    scan-frequency: 30 seconds</span><br><span class="line">    cache &#123;</span><br><span class="line">      enabled: true</span><br><span class="line">      concurrency: 1</span><br><span class="line">      ttl: 20 minutes</span><br><span class="line">      size: 100000</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  dns-cache-ttl: 3 minutes</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="中止任务"><a href="#中止任务" class="headerlink" title="中止任务"></a>中止任务</h3><p>对于支持中止作业的后端，可以将 Cromwell 配置为在收到 Control-C（也称为 SIGINT）时自动尝试中止所有调用。所有当前正在运行的调用也会将其状态设置为 <code>Aborted</code>。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">system &#123;</span><br><span class="line">  abort-jobs-on-terminate=true</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="database"><a href="#database" class="headerlink" title="database"></a>database</h2><p><code>Cromwell</code> 跟踪工作流的执行，并将任务调用的输出存储在 SQL 数据库中。默认情况下，Cromwell 使用内存数据库，该数据库仅在 JVM 期间存在。这提供了一种无需设置 MySQL 即可在本地运行工作流的快速方法，尽管它也使工作流执行有些短暂。<br><code>Cromwell</code> 也支持外部 MySQL 数据库。若要将 Cromwell 配置为指向 MySQL 数据库，请首先创建空数据库。使用Singularity 创建Mysql数据库可以参考文档<a href="pipeline-container-Singularity-启动mysql配置.md">Mysql服务启动-基于Singularity</a></p>
+<p>在下面的示例中，数据库名称为 cromwell 。<br>然后，编辑配置文件 database 节，如下所示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">database &#123;</span><br><span class="line">  profile = &quot;slick.jdbc.MySQLProfile$&quot;</span><br><span class="line">  db &#123;</span><br><span class="line">    driver = &quot;com.mysql.cj.jdbc.Driver&quot;</span><br><span class="line">    url = &quot;jdbc:mysql://host/cromwell?rewriteBatchedStatements=true&quot;</span><br><span class="line">    user = &quot;user&quot;</span><br><span class="line">    password = &quot;pass&quot;</span><br><span class="line">    connectionTimeout = 5000</span><br><span class="line">  &#125;</span><br><span class="line">  # For batch inserts the number of inserts to send to the DB at a time</span><br><span class="line">  insert-batch-size = 2000</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这部分数据库除了mysql还会存在其他各类数据库的支持，因为我个人在使用过程中并没有涉及到各种不同类型的数据库需求，如果有复杂数据库配置需求，可以参考<a href="https://cromwell.readthedocs.io/en/develop/Configuring/#Database" target="_blank" rel="noopener">官方文档</a></p>
+<h1 id="调用缓存"><a href="#调用缓存" class="headerlink" title="调用缓存"></a>调用缓存</h1><p>调整个参数，重新分析一遍，在研究性项目和流程开发阶段不可避免的工作，这时候我们会对数据进行多次任务分析，每次都从头进行分析会带来很大的开销，所以<code>Cromwell</code>提供了缓存功能。<code>Cromwell</code>可以在以前运行的作业缓存中搜索具有完全相同的命令和完全相同的输入的作业。如果在缓存中找到以前运行的作业，Cromwell 将使用上一个作业的结果，而不是重新运行它。利用缓存默认时关闭的，为了更好的调用缓存利用以前运行的作业，最好将 Cromwell 配置为指向 MySQL 数据库，而不是默认的内存中数据库。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">call-caching &#123;</span><br><span class="line">  enabled = true # 引用或复制以前运行的作业的结果</span><br><span class="line">  invalidate-bad-cache-results = true # 使任何缓存结果无效</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="本地文件系统选项"><a href="#本地文件系统选项" class="headerlink" title="本地文件系统选项"></a>本地文件系统选项</h2><p>在 Config（共享文件系统）后端运行作业时，Cromwell 在后端的 config 部分提供了一些附加选项，可以进行文件系统相关的配置。<br>比如使用缓存或者容器时，文件的需要调用到新的目录进行使用，这时候，我们时采用硬链接、软连接还是拷贝整个文件。以及我们在类似call-cache阶段校验文件一致性的方案。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">config &#123;</span><br><span class="line">  filesystems &#123;</span><br><span class="line">    local &#123;</span><br><span class="line">      localization: [</span><br><span class="line">        &quot;hard-link&quot;, &quot;soft-link&quot;, &quot;copy&quot;</span><br><span class="line">      ]</span><br><span class="line">      caching &#123;</span><br><span class="line">        duplication-strategy: [</span><br><span class="line">          &quot;hard-link&quot;, &quot;soft-link&quot;, &quot;copy&quot;</span><br><span class="line">        ]</span><br><span class="line">        hashing-strategy: &quot;md5&quot;</span><br><span class="line">        fingerprint-size: 10485760</span><br><span class="line">        check-sibling-md5: false</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="工作流日志目录"><a href="#工作流日志目录" class="headerlink" title="工作流日志目录"></a>工作流日志目录</h2><p><code>WDL</code> 执行过程中会产生大量的工作日志，为了更好的访问和管理这些日志文件，我们可以通过 <code>workflow-options.workflow-log-dir=&quot;target_log_dir&quot;</code> 设置日志保存目录,</p>
+<p>默认情况下，工作流完成时，Cromwell 会擦除每个工作流日志，以减少磁盘使用量。我们可以通过设置 <code>workflow-options.workflow-log-temporary = false</code> 来保存对应的日志。</p>
+<h2 id="shell-配置"><a href="#shell-配置" class="headerlink" title="shell 配置"></a>shell 配置</h2><p>默认在执行工作流程时，使用的是 <code>/bin/bash</code> ，但是有些时候，可能我们需要使用其他的 <code>shell</code> 调用,那我们可以通过设置系统层面的配置键或后端对应的配置键实现，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># system-wide setting, all backends get this</span><br><span class="line">-Dsystem.job-shell=/bin/sh</span><br><span class="line"></span><br><span class="line"># override for just the Local backend</span><br><span class="line">-Dbackend.providers.Local.config.job-shell=/bin/sh</span><br></pre></td></tr></table></figure></p>
+<h2 id="流程的心跳检测"><a href="#流程的心跳检测" class="headerlink" title="流程的心跳检测"></a>流程的心跳检测</h2><h3 id="Cromwell-ID"><a href="#Cromwell-ID" class="headerlink" title="Cromwell ID"></a>Cromwell ID</h3><p>每个 <code>Cromwell</code> 实例都被分配了一个 <code>cromwell_id</code>，默认生成的格式是 <code>cromid-&lt;7_digit_random_hex&gt;</code>。如果需要，我们可以自定义标识符可以替换字符串的“cromid”部分。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">system &#123;</span><br><span class="line">  cromwell_id = &quot;main&quot; # 自定义cromwell_id前缀</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>生成id的格式会变更为 <code>main-&lt;7_digit_random_hex&gt;</code>，当然有些情况下，我们不需要生成随机后缀，也可以通过对应的配置实现。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">system &#123;</span><br><span class="line">  cromwell_id_random_suffix = false # 禁用cromwell_id_random_suffix</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="Heartbeat-TTL"><a href="#Heartbeat-TTL" class="headerlink" title="Heartbeat TTL"></a>Heartbeat TTL</h3><p>为了确保工作流正常执行，<code>Cromwell</code> 会以固定的时间间隔检测任务的状态，并将任务状态更新到对应的存储数据库中。以便我们确认任务状态，同时也方便任务以外中断后，通过其他的方式进行恢复。<br>这部分一半采用默认配置即可，所以在此进行简单说明就不展开介绍了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">system.workflow-heartbeats &#123;</span><br><span class="line">  ttl = 10 minutes # 过期时间，超时后会启动另一个Cromwel示例恢复任务。</span><br><span class="line">  heartbeat-interval = 2 minutes # 检测的间隔，必须比TTL时间短</span><br><span class="line">  write-failure-shutdown-duration = 5 minutes # Cromwell在超过一定时间无法写入心跳时自动关机</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过这些配置，已经可以帮助我们应对大多数场景了，</p>
+<h1 id="reference"><a href="#reference" class="headerlink" title="reference"></a>reference</h1><p><a href="https://cromwell.readthedocs.io/en/stable/backends/SGE/" target="_blank" rel="noopener">Cromwell ReadtheDoc SGE</a><br><a href="https://github.com/broadinstitute/cromwell/blob/505a3702147bd27d4be73033fcb289f9af620f53/cromwell.example.backends/README.md" target="_blank" rel="noopener">Cromwell Example Backends</a><br>[<a href="https://blog.csdn.net/tanzuozhev/article/details/120629170]" target="_blank" rel="noopener">https://blog.csdn.net/tanzuozhev/article/details/120629170]</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/流程开发/" rel="tag"><i class="fa fa-tag"></i> 流程开发</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-04.pipeline/pipeline-container-docker-查看日志/" rel="next" title="docker - 常用命令 - 查看日志">
+                <i class="fa fa-chevron-left"></i> docker - 常用命令 - 查看日志
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.开发-04.pipeline/pipeline-frameworks-cromwell-01.配置-backend/" rel="prev" title="cromwell介绍 - 后端配置">
+                cromwell介绍 - 后端配置 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#文件格式"><span class="nav-number">1.</span> <span class="nav-text">文件格式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#JSON-like-stanza-类似-JSON-的节："><span class="nav-number">1.0.1.</span> <span class="nav-text">JSON-like stanza: 类似 JSON 的节：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Dot-separated-values-点分隔值："><span class="nav-number">1.0.2.</span> <span class="nav-text">Dot-separated values: 点分隔值：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通过命令行进行配置"><span class="nav-number">1.0.3.</span> <span class="nav-text">通过命令行进行配置</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#system"><span class="nav-number">2.</span> <span class="nav-text">system</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#I-O-管理"><span class="nav-number">2.1.</span> <span class="nav-text">I/O 管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#工作流"><span class="nav-number">2.2.</span> <span class="nav-text">工作流</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#资源管理"><span class="nav-number">2.3.</span> <span class="nav-text">资源管理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Hog-Group"><span class="nav-number">2.3.1.</span> <span class="nav-text">Hog Group</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hog-Factor"><span class="nav-number">2.3.2.</span> <span class="nav-text">Hog Factor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hog-Limit"><span class="nav-number">2.3.3.</span> <span class="nav-text">Hog Limit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#示例"><span class="nav-number">2.3.4.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#中止任务"><span class="nav-number">2.4.</span> <span class="nav-text">中止任务</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#database"><span class="nav-number">3.</span> <span class="nav-text">database</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调用缓存"><span class="nav-number"></span> <span class="nav-text">调用缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#本地文件系统选项"><span class="nav-number">1.</span> <span class="nav-text">本地文件系统选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#工作流日志目录"><span class="nav-number">2.</span> <span class="nav-text">工作流日志目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#shell-配置"><span class="nav-number">3.</span> <span class="nav-text">shell 配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流程的心跳检测"><span class="nav-number">4.</span> <span class="nav-text">流程的心跳检测</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Cromwell-ID"><span class="nav-number">4.1.</span> <span class="nav-text">Cromwell ID</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Heartbeat-TTL"><span class="nav-number">4.2.</span> <span class="nav-text">Heartbeat TTL</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#reference"><span class="nav-number"></span> <span class="nav-text">reference</span></a></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

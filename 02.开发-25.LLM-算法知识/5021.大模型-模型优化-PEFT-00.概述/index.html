@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,微调," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="微调的方法分类参数规模从参数规模的角度，大模型的微调分成两条技术路线：  全量微调FFT(Full Fine Tuning)，是对全量的参数，进行全量的训练。用特定的数据，对大模型进行训练，将W 变成W’ ，W’相比W ，最大的优点就是上述特定数据领域的表现会好很多。主要问题： 一个是训练的成本会比较高，因为微调的参数量跟预训练的是一样的多的； 一个是叫灾难性遗忘(Catastrophic For">
+<meta name="keywords" content="LLM,微调">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大模型 - 微调方法 - PEFT">
+<meta property="og:url" content="http://ben-air.cn/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="微调的方法分类参数规模从参数规模的角度，大模型的微调分成两条技术路线：  全量微调FFT(Full Fine Tuning)，是对全量的参数，进行全量的训练。用特定的数据，对大模型进行训练，将W 变成W’ ，W’相比W ，最大的优点就是上述特定数据领域的表现会好很多。主要问题： 一个是训练的成本会比较高，因为微调的参数量跟预训练的是一样的多的； 一个是叫灾难性遗忘(Catastrophic For">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://ben-air.cn/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/5020.大模型-模型优化/2a3b836fa0ac81ad5990567bded14df0.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/ca71b4ea2a99ca22ad07fc7d5525d698.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/fce8db074d61204ae9446b2a7dd8973d.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/dcce0e13c992a95c2121979cd87fb925.png">
+<meta property="og:image" content="https://img2023.cnblogs.com/blog/1335117/202304/1335117-20230413101238396-1780632053.png">
+<meta property="og:image" content="https://img2023.cnblogs.com/blog/1335117/202304/1335117-20230413100234103-1569753378.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/3552a554128a8ac498727c7463247dbe.png">
+<meta property="og:image" content="https://img2023.cnblogs.com/blog/1335117/202304/1335117-20230412174418117-981597638.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/62d52d26689d25f91c68e9e490795762.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/a42b15126dd0c4ecb059ac6272b61b02.png">
+<meta property="og:image" content="http://ben-air.cn/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/5002.大模型-微调方法-PEFT/image.png">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.499Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="大模型 - 微调方法 - PEFT">
+<meta name="twitter:description" content="微调的方法分类参数规模从参数规模的角度，大模型的微调分成两条技术路线：  全量微调FFT(Full Fine Tuning)，是对全量的参数，进行全量的训练。用特定的数据，对大模型进行训练，将W 变成W’ ，W’相比W ，最大的优点就是上述特定数据领域的表现会好很多。主要问题： 一个是训练的成本会比较高，因为微调的参数量跟预训练的是一样的多的； 一个是叫灾难性遗忘(Catastrophic For">
+<meta name="twitter:image" content="http://ben-air.cn/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/5020.大模型-模型优化/2a3b836fa0ac81ad5990567bded14df0.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/"/>
+
+
+
+
+
+  <title>大模型 - 微调方法 - PEFT | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">大模型 - 微调方法 - PEFT</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-07-08T16:35:34+08:00">
+                2024-07-08
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/微调/" itemprop="url" rel="index">
+                    <span itemprop="name">微调</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <h1 id="微调的方法分类"><a href="#微调的方法分类" class="headerlink" title="微调的方法分类"></a>微调的方法分类</h1><h3 id="参数规模"><a href="#参数规模" class="headerlink" title="参数规模"></a>参数规模</h3><p>从参数规模的角度，大模型的微调分成两条技术路线：</p>
+<ul>
+<li><strong>全量微调FFT(Full Fine Tuning)</strong>，是对全量的参数，进行全量的训练。用特定的数据，对大模型进行训练，将W 变成W’ ，W’相比W ，最大的优点就是上述特定数据领域的表现会好很多。主要问题：<ol>
+<li>一个是训练的成本会比较高，因为微调的参数量跟预训练的是一样的多的；</li>
+<li>一个是叫灾难性遗忘(Catastrophic Forgetting)，用特定训练数据去微调可能会把这个领域的表现变好，但也可能会把原来表现好的别的领域的能力变差。</li>
+</ol>
+</li>
+<li><strong>PEFT(Parameter-Efficient Fine Tuning)</strong>，旨在通过最小化微调参数数量和计算复杂度，提升预训练模型在新任务上的表现，从而减轻大型预训练模型的训练负担。PEFT的出现就是为了解决 FFT中存在的主要问题。 PEFT 是目前比较主流的微调方案。</li>
+</ul>
+<h3 id="训练的方法"><a href="#训练的方法" class="headerlink" title="训练的方法"></a>训练的方法</h3><ul>
+<li><strong>监督式微调SFT(Supervised Fine Tuning)</strong> 主要是用人工标注的数据，用传统机器学习中监督学习的方法，对大模型进行微调；</li>
+<li><strong>基于人类反馈的强化学习微调RLHF(Reinforcement Learning with Human Feedback)</strong> 是把人类的反馈，通过强化学习的方式，引入到对大模型的微调中去，让大模型生成的结果，更加符合人类的一些期望；</li>
+<li><strong>基于AI反馈的强化学习微调RLAIF(Reinforcement Learning with AI Feedback)</strong> 大致跟RLHF类似，但是反馈的来源是AI。这里是想解决反馈系统的效率问题，因为收集人类反馈，相对来说成本会比较高、效率比较低。</li>
+</ul>
+<h3 id="技术路径"><a href="#技术路径" class="headerlink" title="技术路径"></a>技术路径</h3><p>每种微调，都要对 权衡参数效率、内存效率、训练速度、模型质量和推理成本 进行权衡。针对微调，一些路径技术会<strong>冻结大部分模型权重</strong>，并专注于微调现有模型参数的子集，例如特定的层或组件，比如PEFT。<br>其他技术根本<strong>不会触及原始模型的权重</strong>，而是<strong>添加少量新参数或层</strong>，只<strong>对新组件进行微调</strong>。</p>
+<ul>
+<li><p><strong>Selective</strong><br>仅微调原始 LLM 参数子集的方法。您可以采用多种方法来确定要更新的参数。您可以选择仅训练模型或特定层的某些组件，甚至可以选择单独的参数类型。研究人员发现，这些方法的性能好坏参半，参数效率和计算效率之间存在显著的权衡取舍。</p>
+</li>
+<li><p><strong>Reparameterization</strong><br>重新参数化方法也可以使用原始的 LLM 参数，但是通过创建原始网络权重的新的低等级变换来减少要训练的参数数量。这种常用的技术是LoRa。</p>
+</li>
+<li><p><strong>Additive</strong><br>通过冻结所有原始 LLM 权重并引入新的可训练组件来进行微调。这里有两种主要方法。</p>
+<ul>
+<li><strong>Adapters</strong>在模型架构中添加了新的可训练层，通常位于注意层或前馈层之后的编码器或解码器组件内。</li>
+<li><strong>Soft Prompts</strong> 可以保持模型架构的固定和冻结，并专注于操纵输入以实现更好的性能。这可以通过在提示嵌入中添加可训练的参数或保持输入固定并重新训练嵌入权重来实现。 </li>
+</ul>
+</li>
+</ul>
+<h1 id="微调的步骤"><a href="#微调的步骤" class="headerlink" title="微调的步骤"></a>微调的步骤</h1><ul>
+<li>数据准备：与全面微调相同。</li>
+<li>冻结大部分参数：在训练过程中冻结模型的大部分参数。</li>
+<li>训练设置：设定需要调整的参数部分的学习率。</li>
+<li>训练过程：只更新选定的参数。</li>
+<li>评估与迭代：与全面微调类似，但聚焦于微调参数的</li>
+</ul>
+<h1 id="基于PEFT的相关技术方法"><a href="#基于PEFT的相关技术方法" class="headerlink" title="基于PEFT的相关技术方法"></a>基于PEFT的相关技术方法</h1><p>PEFT（Parameter-Efficient Fine-Tuning）是hugging face开源的一个参数高效微调大模型的工具，里面集成了4中微调大模型的方法，可以通过微调少量参数就达到接近微调全量参数的效果，使得在GPU资源不足的情况下也可以微调大模型。</p>
+<p>PEFT技术 即使在计算资源受限的情况下，也能够利用预训练模型的知识快速适应新任务，实现有效的迁移学习。因此，PEFT不仅能提升模型效果，还能显著缩短训练时间和计算成本，使更多研究者能够参与到深度学习的研究中。<br>PEFT包括LoRA、QLoRA、适配器调整(Adapter Tuning)、前缀调整(Prefix Tuning)、提示调整(Prompt Tuning)、P-Tuning及P-Tuning v2等多种方法。</p>
+<p>以下图表示了7种主流微调方法在Transformer网络架构中的作用位置及其简要说明，接下来将详细介绍每一种方法。</p>
+<p><img src="/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/5020.大模型-模型优化/2a3b836fa0ac81ad5990567bded14df0.png" alt="alt text"></p>
+<h3 id="1-LoRA（基于新数据训练一个地址分解矩阵，使用时加到原模型矩阵上）"><a href="#1-LoRA（基于新数据训练一个地址分解矩阵，使用时加到原模型矩阵上）" class="headerlink" title="1. LoRA（基于新数据训练一个地址分解矩阵，使用时加到原模型矩阵上）"></a>1. LoRA（基于新数据训练一个地址分解矩阵，使用时加到原模型矩阵上）</h3><p>LoRA 背后有一个<strong>假设：我们现在看到的这些大语言模型，它们都是被过度参数化的。而过度参数化的大模型背后，都有一个低维的本质模型。</strong>。也就是说 大模型中有其中一部分参数，是非常重要的，是影响大模型生成结果的关键参数，这部分关键参数就是上面提到的低维的本质模型。<br>LoRA（Low-Rank Adaptation）是一种旨在微调大型预训练语言模型（如GPT-3或BERT）的技术。其核心理念在于，在模型的决定性层次中引入一个额外的小型矩阵(“旁路”用A、B两个矩阵组合表示，维度分别是d × r和 r × d，其中r远小于d，A随机初始化，B初始化为0)，来实现模型行为的微调，而无需对整个模型结构进行大幅度修改。在微调模型的过程中，左边的W不更新，只更新右边的A和B的参数。前向传播时是左右的输出和，反向传播时只更新右边，因此计算的梯度以及优化器的中间值也只和右边有关，最终右边的参数会单独保存下来。LORA这种训练方式不会改变大模型的参数，且针对每个下游任务生成自己的LORA参数，在预测阶段只要将大模型的参数和LORA参数叠加在一起即可。</p>
+<p>LoRA的基本思路，包括以下几步：</p>
+<ol>
+<li>首先, 要适配特定的下游任务，要训练一个特定的模型，将 $Y=WX$ 变成 $Y=(W+∆W)X$ ，这里面 $∆W$ 主是我们要微调得到的结果；</li>
+<li>其次，将 $∆W$进行低维分解 $∆W=AB$ (∆W为m <em> n维，A为m </em> r维，B为r * n维，r就是上述假设中的低维)；</li>
+<li>接下来，用特定的训练数据，训练出A和B即可得到∆W，在推理的过程中直接将∆W加到W上去，再没有额外的成本。</li>
+<li>另外，如果要用LoRA适配不同的场景，切换也非常方便，做简单的矩阵加法即可：(W + ∆W) - ∆W + ∆W`。</li>
+</ol>
+<p>该方法认为模型权重矩阵在特定微调后具有较低的本征秩，故基于秩分解的概念，将预训练模型的现有权重矩阵分成两个较小的矩阵。<br><img src="https://img-blog.csdnimg.cn/img_convert/ca71b4ea2a99ca22ad07fc7d5525d698.png" alt="image"><br>LoRA的特点</p>
+<ol>
+<li>将矩阵乘积BA加到原模型参数矩阵W上可以避免推理延迟。</li>
+<li>可插拔的低秩分解矩阵模块，方便切换到不同的任务。</li>
+<li>不显著增加额外计算负担的前提下，能够有效地微调模型，同时保留模型原有的性能水准。</li>
+</ol>
+<p>LoRA的实验结果<br>使用的模型是RoBERTa、DeBERTa、GPT-2、GPT-3 175B。在多个数据集上，LoRA在性能上能和全量微调相近，且在某些任务上优于全量微调。</p>
+<h3 id="2、QLoRA（低精度加载高精度重训练）"><a href="#2、QLoRA（低精度加载高精度重训练）" class="headerlink" title="2、QLoRA（低精度加载高精度重训练）"></a>2、QLoRA（低精度加载高精度重训练）</h3><p>QLoRA（Quantized Low-Rank Adaptation）是一种结合了<strong>LoRA（Low-Rank Adaptation）方法与深度量化</strong>技术的高效模型微调手段。QLoRA的核心在于：</p>
+<ul>
+<li><p>量化技术：QLoRA采用创新的技术将<strong>预训练模型量化为4位</strong>。这一技术包括低精度存储数据类型（4-bit NormalFloat，简称NF4）和计算数据类型（16-bit BrainFloat）。这种做法极大地减少了模型存储需求，同时保持了模型精度的最小损失。</p>
+</li>
+<li><p>量化操作：在4位量化中，每个权重由4个比特表示，量化过程中需选择最重要的值并将它们映射到16个可能的值之一。首先确定量化范围（例如-1到1），然后将这个范围分成16个区间，每个区间对应一个4-bit值。然后，原始的32位浮点数值将映射到最近的量化区间值上。</p>
+</li>
+</ul>
+<p>微调阶段：在训练期间，QLoRA先<strong>以4-bit格式加载模型，训练时将数值反量化到bf16进行训练</strong>，这样大幅减少了训练所需的显存。例如，33B的LLaMA模型可以在24 GB的显卡上进行训练。</p>
+<p>量化过程的挑战在于设计合适的映射和量化策略，以最小化精度损失对性能的影响。在大型模型中，这种方法可以显著减少内存和计算需求，使得在资源有限的环境下部署和训练成为可能。<br><a href="https://www.cnblogs.com/jiangxinyang/p/17310667.html" target="_blank" rel="noopener">大模型入门（二）—— PEFT</a></p>
+<h3 id="3-适配器调整-Adapter-Tuning（增加一个Adapter层，"><a href="#3-适配器调整-Adapter-Tuning（增加一个Adapter层，" class="headerlink" title="3.适配器调整 Adapter Tuning（增加一个Adapter层，"></a>3.适配器调整 Adapter Tuning（增加一个Adapter层，</h3><p>与LoRA技术类似，适配器调整的目标是在保留预训练模型原始参数不变的前提下，使模型能够适应新的任务。适配器调整的方法是在模型的每个层或选定层之间插入小型神经网络模块，称为“适配器”。这些适配器是可训练的，而原始模型的参数则保持不变。</p>
+<p>Adapter的架构如下：<br><img src="https://img-blog.csdnimg.cn/img_convert/fce8db074d61204ae9446b2a7dd8973d.png" alt="image"></p>
+<p>在每一个Transformer层中的每个子层之后插入两个串行的Adapter。在Adapter微调期间，绿色层是根据下游数据进行训练的，而预训练模型的原参数保持不变。<br>Adapter 模块主要由两个前馈（Feed-forward）子层组成。</p>
+<ol>
+<li>第一个前馈子层将原始特征的维度d投影到一个更小的维度m，应用非线性函数，再投影回维度d的特征（作为Adapter模块的输出）。</li>
+<li>总参数量为2md + d + m。通过设置m &lt; d，我们限制了每个任务添加的参数数量。</li>
+<li>当投影层的参数初始化接近零时，根据一个skip-connection，将该模块就初始化为近似恒等函数，以确保微调的有效性。</li>
+</ol>
+<p><strong>LoRA</strong> 与 <strong>Adapter Tuning</strong> 的主要区别在于：</p>
+<ul>
+<li>LoRA：在模型的权重矩阵中引入低秩矩阵来实现微调。这些低秩矩阵作为原有权重矩阵的修改项，在实际计算时对原有权重矩阵进行调整。</li>
+<li>适配器调整：通过在模型各层中添加小型神经网络模块，即“适配器”，来实现微调。适配器独立于模型的主体结构，仅适配器的参数在微调过程中更新，而模型的其他预训练参数保持不变。</li>
+</ul>
+<p><code>早期的**提示微调**通过修改输入文本来控制语言模型的行为，称为硬提示（Hard Prompts）微调。这些方法很难优化，且受到最大模型输入长度的限制。下图为离散的人工设计的Prompt示例：
+![image](https://img-blog.csdnimg.cn/img_convert/d8cb7200c1a4dd1d2f24ea020554babe.png)
+软提示（Soft Prompts）将离散的“提示”问题转为连续的“提示”问题，通过过反向传播和梯度下降更新参数来学习Prompts，而不是人工设计Prompts。
+硬提示和软提示之间的区别在于，**硬提示提供了明确的指令来指导模型的响应，并且可能需要针对不同的任务定制模型**，而软提示通过**调整提示参数**来指导模型的行为，提供更通用和更有效的策略跨越各种任务。
+有仅对输入层进行训练，也有对所有层进行训练的类型。下面将介绍几种热门的Soft Prompts微调方法。</code></p>
+<h3 id="4-前缀调整-Prefix-Tuning"><a href="#4-前缀调整-Prefix-Tuning" class="headerlink" title="4.前缀调整 Prefix Tuning()"></a>4.前缀调整 Prefix Tuning()</h3><p><strong>Prefix Tuning</strong>的灵感来源是，基于<strong>Prompt Engineering</strong>的实践表明，在不改变大模型的前提下，在Prompt上下文中添加适当的条件，可以引导大模型有更加出色的表现。<br>前缀调整提出了一种新的策略，即在预训练的语言模型（LM）输入序列前<strong>添加可训练、任务特定的前缀（添加的是参数或矩阵）</strong>，从而实现针对<strong>不同任务的微调</strong>。除了在embedding层加入这个前缀之外，还在其他的<strong>所有层都添加这样一个前缀</strong>。最后微调时<strong>只调整前缀的参数</strong>，大模型的参数保持不变。这意味着我们只需要为不同任务保存各自特异的前缀部分的参数，而不是为每个任务保存一整套微调后的模型权重，从而节省了大量的存储空间和微调成本。<br><img src="https://img-blog.csdnimg.cn/img_convert/dcce0e13c992a95c2121979cd87fb925.png" alt="image"></p>
+<p><img src="https://img2023.cnblogs.com/blog/1335117/202304/1335117-20230413101238396-1780632053.png" alt="alt"></p>
+<p>前缀实际上是一种连续可微的虚拟标记（Soft Prompt/Continuous Prompt），与离散的<strong>Token</strong>相比，它们更易于优化并且效果更佳。这种方法的优势在于<strong>不需要调整模型的所有权重（基座不变）</strong>，而是通过<strong>在输入中添加前缀来调整模型的行为</strong>，从而节省大量的计算资源，同时使得单一模型能够适应多种不同的任务。前缀可以是固定的（即手动设计的静态提示）或可训练的（即模型在训练过程中学习的动态提示）</p>
+<p>Prefix Tuning的特点</p>
+<ol>
+<li>冻结预训练语言模型的参数，为每个任务存储特定的连续可微的前缀，节省空间。</li>
+<li>训练间增加MLP层以达到稳定。</li>
+<li>对于不同模型构造不同的Prefix。</li>
+</ol>
+<p>Prefix Tuning的实验结果：<br>对于表格到文本任务，使用GPT-2MEDIUM和GPT-2LARGE模型。在表格到文本任务上，Prefix Tuning优于Fine-Tuning（全量微调）和Adapter-Tuning。对于摘要任务，使用BART-LARGE模型。在摘要任务上，Prefix Tuning比全量微调弱。</p>
+<h3 id="5-提示调整（Prompt-Tuning）"><a href="#5-提示调整（Prompt-Tuning）" class="headerlink" title="5.提示调整（Prompt Tuning）"></a>5.提示调整（Prompt Tuning）</h3><p>Prompt Tuning的出发点，是基座模型(Foundation Model)的参数不变，为<strong>每个特定任务，训练一个少量参数的小模型</strong>，在具体执行特定任务的时候按需调用。这些可训练的<strong>提示向量在训练过程中更新，以指导模型输出更适合特定任务的响应</strong>。</p>
+<p>　　像GPT3中那种，通过人工构造一些token作为前缀输入到模型中，因为这些token是从vocab中选择的，因此会受到大模型的参数的影响，所以要取得好的结果的话，人工构造的提示语必须要符合模型训练语料的特性。而Prompt tuning是为Prompt单独生成一份参数，在微调的过程中大模型的参数冻结不变，只更新Prompt的参数。且文章实验表明对于Prompt的参数使用大模型的vocab中的一些token 的embedding初始化，或者使用标签词的嵌入（当标签词的token数大于1时，对所有token取平均，即将一个标签词看作一个整体）初始化要比随机初始化的效果要好。此外Prompt的长度对结果也会有影响，长度越长效果会越好，但随着模型的规模变大，不同长度或者不同初始化的Prompt之间的差距会被缩小。</p>
+<p><img src="https://img2023.cnblogs.com/blog/1335117/202304/1335117-20230413100234103-1569753378.png" alt="alt"></p>
+<p><strong>Prompt Tuning</strong>与<strong>Prefix Tuning</strong>都涉及在输入数据中添加可学习的向量，这些向量是在输入层添加的，但两者的策略和目的不同：</p>
+<ul>
+<li>提示调整：旨在模仿自然语言中的提示形式，将可学习向量（通常称为提示标记）设计为模型针对特定任务生成特定类型输出的引导。这些向量通常被视为任务指导信息的一部分，倾向于使用较少的向量来模仿传统的自然语言提示。</li>
+<li>前缀调整：可学习前缀更多地用于提供输入数据的直接上下文信息，作为模型内部表示的一部分，可以影响整个模型的行为。</li>
+</ul>
+<p>Prompt Tuning的基本原理是在输入序列X之前，增加一些特定长度的特殊<strong>Token</strong>，以增大生成期望序列的概率。<br>如果将大模型比做一个函数：Y=f(X)，那么Prompt Tuning就是在保证函数本身不变的前提下，在X前面加上了一些特定的内容，而这些内容可以影响X生成期望中Y的概率。</p>
+<p>其结构如下：<br><img src="https://img-blog.csdnimg.cn/img_convert/3552a554128a8ac498727c7463247dbe.png" alt="image"><br>上图中，仅Virtual Token部分会由梯度下降法去更新参数。</p>
+<p>Prompt Tuning的实验结果:<br>使用的是预训练的各种T5模型。在流行的SuperGLUE基准测试中，Prompt Tuning的任务性能与传统的模型调优相当，且随着模型规模的增加，差距逐渐减小。在零样本领域迁移中，Prompt Tuning可以改善泛化性能。</p>
+<p>Prompt Tuning 是在 Embedding环节，往输入序列X前面加特定的<strong>Token</strong>。<br>而Prefix Tuning是在Transformer的Encoder和Decoder的网络中都加了一些特定的前缀。</p>
+<p>具体来说，就是将Y=WX中的W，变成W<code>= [Wp; W]，Y=W</code>X。</p>
+<h3 id="6-P-Tuning的特点"><a href="#6-P-Tuning的特点" class="headerlink" title="6. P-Tuning的特点"></a>6. P-Tuning的特点</h3><p>　　一般在通过Prompt的方式使用大模型时，通常需要人工构造一些模板，P-tuning将自然语言模板的构建转换成连续参数优化的问题，用一些特殊的token替代人工构造的自然语言模板，让模型自己去学习这些连续的token，在学习的过程中只微调这些token的embedding参数，并且为了保证token之间的联系，并不是随机初始化embedding，而是通过lstm层学习这些token的embedding。</p>
+<p><img src="https://img2023.cnblogs.com/blog/1335117/202304/1335117-20230412174418117-981597638.png" alt="alt"></p>
+<p>P-Tuning（基于提示的微调）和提示调整都是为了调整大型预训练语言模型（如GPT系列）以适应特定任务而设计的技术。两者都利用预训练的语言模型执行特定的下游任务，如文本分类、情感分析等，并使用某种形式的“提示”或“指导”来引导模型输出，以更好地适应特定任务。</p>
+<p>提示调整与P-Tuning的主要区别在于：</p>
+<ul>
+<li>提示调整：使用静态的、可训练的虚拟标记嵌入，在初始化后保持固定，除非在训练过程中更新。这种方法相对简单，因为它只涉及调整一组固定的嵌入参数，在处理多种任务时表现良好，但可能在处理特别复杂或需要细粒度控制的任务时受限。</li>
+<li>P-Tuning：使用一个可训练的LSTM模型（称为提示编码器prompt_encoder）来动态生成虚拟标记嵌入，允许根据输入数据的不同生成不同的嵌入，提供更高的灵活性和适应性，适合需要精细控制和理解复杂上下文的任务。这种方法相对复杂，因为它涉及一个额外的LSTM模型来生成虚拟标记嵌入。</li>
+</ul>
+<p>P-Tuning中使用LSTM（长短期记忆网络）作为生成虚拟标记嵌入的工具，利用了LSTM的以下优势：</p>
+<ul>
+<li>更好的适应性和灵活性：LSTM可以捕捉输入数据中的时间序列特征，更好地理解和适应复杂的、顺序依赖的任务，如文本生成或序列标注。</li>
+<li>改进的上下文理解：LSTM因其循环结构，擅长处理和理解长期依赖关系和复杂的上下文信息。</li>
+<li>参数共享和泛化能力：在P-Tuning中，LSTM模型的参数可以在多个任务之间共享，这提高了模型的泛化能力，并减少了针对每个单独任务的训练需求。而在提示调整中，每个任务通常都有其独立的虚拟标记嵌入，这可能限制了跨任务泛化的能力。</li>
+</ul>
+<p>其结构如下：<br><img src="https://img-blog.csdnimg.cn/img_convert/62d52d26689d25f91c68e9e490795762.png" alt="image"></p>
+<ol>
+<li>P-Tuning<strong>只在输入层</strong>加入可微的Virtual Token，其会自动插入到文本提示的离散Token嵌入中。</li>
+<li>Virtual Token<strong>不一定作为前缀，其插入位置是可选的</strong>。</li>
+</ol>
+<p>P-Tuning的实验结果</p>
+<p>使用的是GPT系列和BERT系列的模型。P-Tuning与全参数效果相当，且在一些任务上优于全参数微调，可以显著提高GPT模型在自然语言理解方面的性能，并且BERT风格的模型也可以获得较小的增益。</p>
+<h3 id="7-P-Tuning-v2"><a href="#7-P-Tuning-v2" class="headerlink" title="7.P-Tuning v2"></a>7.P-Tuning v2</h3><p>P-Tuning v2是P-Tuning的进一步改进版，在P-Tuning中，连续提示被插入到输入序列的嵌入层中，除了语言模型的输入层，其他层的提示嵌入都来自于上一层。这种设计存在两个问题：</p>
+<ul>
+<li>第一，它限制了优化参数的数量。由于模型的输入文本长度是固定的，通常为512，因此提示的长度不能过长。</li>
+<li>第二，当模型层数很深时，微调时模型的稳定性难以保证；模型层数越深，第一层输入的提示对后面层的影响难以预测，这会影响模型的稳定性。</li>
+</ul>
+<p>其结构如下：<br><img src="https://img-blog.csdnimg.cn/img_convert/a42b15126dd0c4ecb059ac6272b61b02.png" alt="image"></p>
+<p>P-Tuning v2的改进在于，不仅在第一层插入连续提示，而是在多层都插入连续提示，且层与层之间的连续提示是相互独立的。这样，在模型微调时，可训练的参数量增加了，P-Tuning v2在应对复杂的自然语言理解(NLU)任务和小型模型方面，相比原始P-Tuning具有更出色的效能。</p>
+<p>P-Tuning v2的实验结果:<br>使用的是BERT系列和GLM系列模型。P-Tuning v2是一种在不同规模和任务中都可与微调相媲美的提示方法。在NLU任务中，整体上P-Tuning v2与全量微调的性能相差很小。</p>
+<p>除了上述方法外，随着大模型行业的发展，也有一些新的微调方法相继涌现</p>
+<h3 id="8-BitFit"><a href="#8-BitFit" class="headerlink" title="8.BitFit"></a>8.BitFit</h3><p>属于选择性方法，是对模型的现有参数进行微调，可以根据层的深度、层类型或者甚至是个别参数进行选择。<br>2022年9月5日，BitFit出现，这是一种稀疏微调方法，仅修改模型的Bias（偏置项）或其中的子集。</p>
+<p>BitFit的特点</p>
+<ol>
+<li>冻结大部分Transformer编码器的参数，只训练偏置项和任务特定的分类层。</li>
+<li>优化的偏置项参数包括Attention模块中计算Query、Key、Value时，计算MLP层时，计算Layernormalization层时遇到的偏置项参数。</li>
+<li>每个新任务只需要存储偏置项参数向量（占总参数数量的不到0.1%）和任务特定的最终线性分类器层。</li>
+</ol>
+<p>BitFit的实验结果</p>
+<p>使用公开可用的预训练BERTBASE、BERTLARGE和RoBERTaBA模型。BitFit微调结果不及全量参数微调，但在极少数参数可更新的情况下，远超Frozen（冻结模型参数）方式。</p>
+<h3 id="9-AdaLoRA"><a href="#9-AdaLoRA" class="headerlink" title="9.AdaLoRA"></a>9.AdaLoRA</h3><p>该方法<strong>基于权重矩阵的重要性而自适应调整不同模块的秩</strong>，节省计算量，可理解为LoRA的升级版。<br>AdaLoRA的做法是让模型学习SVD分解的近似。在损失函数中增加了惩罚项，防止矩阵P和Q偏离正交性太远，以实现稳定训练。<br>AdaLoRA的实验结果:<br>使用的模型是DeBERTaV3-base 和BART-large模型。AdaLoRA的性能通常高于参数量更高的方法。其中，AdaLoRA在0.32M微调参数时，在CoLA数据集上达到了70.04的Mcc分数。</p>
+<h1 id="其他方法"><a href="#其他方法" class="headerlink" title="其他方法"></a>其他方法</h1><h2 id="RLHF-Reinforcement-Learning-fromHuman-feedback"><a href="#RLHF-Reinforcement-Learning-fromHuman-feedback" class="headerlink" title="RLHF (Reinforcement Learning fromHuman feedback)"></a>RLHF (Reinforcement Learning fromHuman feedback)</h2><p>RLHF使用强化学习（简称RL）使用人类反馈数据对LLM进行微调，从而生成更符合人类偏好的模型。您可以使用 RLHF 来确保模型生成的输出能够最大限度地提高输入提示的实用性和相关性。也许最重要的是，RLHF可以帮助最大限度地减少可能的伤害。你可以训练你的模型，让它给出承认其局限性的注意事项，并避免使用有害的语言和话题。 </p>
+<h2 id="PPO-Proximal-Policy-Optimization"><a href="#PPO-Proximal-Policy-Optimization" class="headerlink" title="PPO(Proximal Policy Optimization)"></a>PPO(Proximal Policy Optimization)</h2><p><img src="/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-00.概述/5002.大模型-微调方法-PEFT/image.png" alt="alt text"></p>
+<h3 id="KL-Kullback-Leibler-发散"><a href="#KL-Kullback-Leibler-发散" class="headerlink" title="KL(Kullback-Leibler)发散"></a>KL(Kullback-Leibler)发散</h3><p>KL发散是PPO算法中一个重要的概念，它表示两个概率分布之间的差异。在PPO算法中，我们希望新的策略（新的策略）与旧的策略（旧的策略）之间的差异尽可能小，避免单纯的提高强化评分的结果，而生成无效的文本输出，从而实现策略的可靠更新。</p>
+<h1 id="FLAN"><a href="#FLAN" class="headerlink" title="FLAN"></a>FLAN</h1>
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/微调/" rel="tag"><i class="fa fa-tag"></i> 微调</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-25.LLM-算法知识/5001.大模型-概述-基本概念/" rel="next" title="基本概念">
+                <i class="fa fa-chevron-left"></i> 基本概念
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.开发-25.LLM-算法知识/5021.大模型-模型优化-PEFT-01/" rel="prev" title="大模型 - 微调方法 - PEFT">
+                大模型 - 微调方法 - PEFT <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#微调的方法分类"><span class="nav-number">1.</span> <span class="nav-text">微调的方法分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参数规模"><span class="nav-number">1.0.1.</span> <span class="nav-text">参数规模</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#训练的方法"><span class="nav-number">1.0.2.</span> <span class="nav-text">训练的方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#技术路径"><span class="nav-number">1.0.3.</span> <span class="nav-text">技术路径</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#微调的步骤"><span class="nav-number">2.</span> <span class="nav-text">微调的步骤</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基于PEFT的相关技术方法"><span class="nav-number">3.</span> <span class="nav-text">基于PEFT的相关技术方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-LoRA（基于新数据训练一个地址分解矩阵，使用时加到原模型矩阵上）"><span class="nav-number">3.0.1.</span> <span class="nav-text">1. LoRA（基于新数据训练一个地址分解矩阵，使用时加到原模型矩阵上）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2、QLoRA（低精度加载高精度重训练）"><span class="nav-number">3.0.2.</span> <span class="nav-text">2、QLoRA（低精度加载高精度重训练）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-适配器调整-Adapter-Tuning（增加一个Adapter层，"><span class="nav-number">3.0.3.</span> <span class="nav-text">3.适配器调整 Adapter Tuning（增加一个Adapter层，</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-前缀调整-Prefix-Tuning"><span class="nav-number">3.0.4.</span> <span class="nav-text">4.前缀调整 Prefix Tuning()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-提示调整（Prompt-Tuning）"><span class="nav-number">3.0.5.</span> <span class="nav-text">5.提示调整（Prompt Tuning）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-P-Tuning的特点"><span class="nav-number">3.0.6.</span> <span class="nav-text">6. P-Tuning的特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-P-Tuning-v2"><span class="nav-number">3.0.7.</span> <span class="nav-text">7.P-Tuning v2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-BitFit"><span class="nav-number">3.0.8.</span> <span class="nav-text">8.BitFit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-AdaLoRA"><span class="nav-number">3.0.9.</span> <span class="nav-text">9.AdaLoRA</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他方法"><span class="nav-number">4.</span> <span class="nav-text">其他方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RLHF-Reinforcement-Learning-fromHuman-feedback"><span class="nav-number">4.1.</span> <span class="nav-text">RLHF (Reinforcement Learning fromHuman feedback)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PPO-Proximal-Policy-Optimization"><span class="nav-number">4.2.</span> <span class="nav-text">PPO(Proximal Policy Optimization)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#KL-Kullback-Leibler-发散"><span class="nav-number">4.2.1.</span> <span class="nav-text">KL(Kullback-Leibler)发散</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#FLAN"><span class="nav-number">5.</span> <span class="nav-text">FLAN</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

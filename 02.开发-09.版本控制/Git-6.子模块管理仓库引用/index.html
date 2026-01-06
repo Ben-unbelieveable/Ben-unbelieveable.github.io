@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="培训,Git," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="随着git的使用，我们开始习惯性的用git进行项目的管理，但是作为天选牛马，我们往往需要参与不同的项目，这些项目中的某些功能是相同的。这时出于解耦和模块代码独立运维管理的需求，我们一般会针对一些功能实现进行独立的子仓库管理，当然除了自己的，我们可能也会用到一些第三方的仓库。 他们的一个共同特点是有一个独立的仓库进行管理，同时作为一个相对独立的功能实现在我们的仓库中被使用。 丑陋一点的方法把所需模块">
+<meta name="keywords" content="培训,Git">
+<meta property="og:type" content="article">
+<meta property="og:title" content="git submodule的场景和应用">
+<meta property="og:url" content="http://ben-air.cn/02.开发-09.版本控制/Git-6.子模块管理仓库引用/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="随着git的使用，我们开始习惯性的用git进行项目的管理，但是作为天选牛马，我们往往需要参与不同的项目，这些项目中的某些功能是相同的。这时出于解耦和模块代码独立运维管理的需求，我们一般会针对一些功能实现进行独立的子仓库管理，当然除了自己的，我们可能也会用到一些第三方的仓库。 他们的一个共同特点是有一个独立的仓库进行管理，同时作为一个相对独立的功能实现在我们的仓库中被使用。 丑陋一点的方法把所需模块">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.088Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="git submodule的场景和应用">
+<meta name="twitter:description" content="随着git的使用，我们开始习惯性的用git进行项目的管理，但是作为天选牛马，我们往往需要参与不同的项目，这些项目中的某些功能是相同的。这时出于解耦和模块代码独立运维管理的需求，我们一般会针对一些功能实现进行独立的子仓库管理，当然除了自己的，我们可能也会用到一些第三方的仓库。 他们的一个共同特点是有一个独立的仓库进行管理，同时作为一个相对独立的功能实现在我们的仓库中被使用。 丑陋一点的方法把所需模块">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-09.版本控制/Git-6.子模块管理仓库引用/"/>
+
+
+
+
+
+  <title>git submodule的场景和应用 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-09.版本控制/Git-6.子模块管理仓库引用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">git submodule的场景和应用</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-04-28T17:51:54+08:00">
+                2024-04-28
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/编程拾慧/" itemprop="url" rel="index">
+                    <span itemprop="name">编程拾慧</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/编程拾慧/Git/" itemprop="url" rel="index">
+                    <span itemprop="name">Git</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>随着git的使用，我们开始习惯性的用git进行项目的管理，但是作为天选牛马，我们往往需要参与不同的项目，这些项目中的某些功能是相同的。这时出于解耦和模块代码独立运维管理的需求，我们一般会针对一些功能实现进行独立的子仓库管理，当然除了自己的，我们可能也会用到一些第三方的仓库。 他们的一个共同特点是有一个独立的仓库进行管理，同时作为一个相对独立的功能实现在我们的仓库中被使用。</p>
+<p>丑陋一点的方法把所需模块的源代码都拷贝到主项目里，这样主项目就变成一个完整的项目了。但是显而易见的，如果子仓库有一些独立的优化或性能升级，那么在我们主项目进行同步，或者我们的一些开发需要同步到子项目这些工作都会非常麻烦，甚至随着项目增加而成为灾难。</p>
+<p>显然，我们需要一个更好的解决方案。而git submodule 模块就是为了解决这个问题而生的，submodule 让我们可以将一个 Git 仓库作为另一个 Git 仓库的子目录。 它能让你将另一个仓库克隆到自己的项目中，同时还保持提交的独立。</p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>首先介绍一些配置可以在后续使用中减少键盘的敲击~~， 因为后续可能是复用比较多的配置代码，所以卸载最前面<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 使用git status 直接显示你的子模块的更改摘要</span><br><span class="line">git config status.submodulesummary 1 </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> git diff 显示子模块的区别，不需要额外输入 --submodule</span><br><span class="line">git config --global diff.submodule log</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 推送主项目更改时，会自动检查所有子仓库的更改是否已经推送，并自动尝试推送未推送的子项目仓库</span><br><span class="line">git config push.recurseSubmodules on-demand </span><br><span class="line"><span class="meta">#</span> 配置子模块的仓库分支</span><br><span class="line">git config -f .gitmodules submodule.DbConnector.branch stable</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 让 Git 为每个拥有 --recurse-submodules 选项的命令（除了 git clone） 总是递归地在子模块中执行。</span><br><span class="line">git config submodule.recurse true</span><br></pre></td></tr></table></figure></p>
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><h2 id="添加子模块"><a href="#添加子模块" class="headerlink" title="添加子模块"></a>添加子模块</h2><p>我们首先将一个已存在的 Git 仓库添加为正在工作的仓库的子模块。 你可以通过在 <code>git submodule add</code> 命令后面加上想要跟踪的项目的相对或绝对 URL 来添加新的子模块。 在本例中，我们将会添加一个名为 “DbConnector” 的库。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git submodule add https://github.com/chaconinc/DbConnector</span><br><span class="line">Cloning into 'DbConnector'...</span><br><span class="line">remote: Counting objects: 11, done.</span><br><span class="line">remote: Compressing objects: 100% (10/10), done.</span><br><span class="line">remote: Total 11 (delta 0), reused 11 (delta 0)</span><br><span class="line">Unpacking objects: 100% (11/11), done.</span><br><span class="line">Checking connectivity... done.</span><br></pre></td></tr></table></figure></p>
+<h2 id="添加子模块并指定目录"><a href="#添加子模块并指定目录" class="headerlink" title="添加子模块并指定目录"></a>添加子模块并指定目录</h2><p>默认情况下，子模块会将子项目放到一个与仓库同名的目录中，本例中是 “DbConnector”。 如果你想要放到其他地方，那么可以在命令结尾添加一个不同的路径(eg:scripts/DbConnector)。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git submodule add https://github.com/chaconinc/DbConnector  scripts/DbConnector</span><br></pre></td></tr></table></figure></p>
+<p>如果这时运行 <code>git status</code>，你会注意到几件事。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git status</span><br><span class="line">On branch master</span><br><span class="line">Your branch is up-to-date with 'origin/master'.</span><br><span class="line"></span><br><span class="line">Changes to be committed:</span><br><span class="line">  (use "git reset HEAD &lt;file&gt;..." to unstage)</span><br><span class="line"></span><br><span class="line">	new file:   .gitmodules</span><br><span class="line">	new file:   DbConnector</span><br></pre></td></tr></table></figure></p>
+<h2 id="gitmodules"><a href="#gitmodules" class="headerlink" title=".gitmodules"></a>.gitmodules</h2><p>我们通过 <code>git submodule add</code> 拉取子仓库后，会增加了一个 <code>.gitmodules</code> 文件。 该配置文件保存了项目 <code>URL</code> 与已经拉取的本地目录之间的映射：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[submodule &quot;DbConnector&quot;]</span><br><span class="line">	path = DbConnector</span><br><span class="line">	url = https://github.com/chaconinc/DbConnector</span><br></pre></td></tr></table></figure></p>
+<p>如果有多个子模块，该文件中就会有多条记录。 要重点注意的是，该文件也像 <strong>.gitignore</strong> 文件一样受到版本控制。 它会和该项目的其他部分一同被拉取推送。 这就是克隆该项目的人知道去哪获得子模块的原因。</p>
+<h2 id="变更子仓库的配置"><a href="#变更子仓库的配置" class="headerlink" title="变更子仓库的配置"></a>变更子仓库的配置</h2><ol>
+<li>修改 <code>.gitmodules</code>    文件中对应模块的url属性;</li>
+<li>使用 <code>git submodule sync</code>    命令，将新的URL更新到文件.git/config；<br>再使用命令初始化子模块：<code>git submodule init</code><br>最后使用命令更新子模块：<code>git submodule update</code></li>
+</ol>
+<h2 id="子仓库信息"><a href="#子仓库信息" class="headerlink" title="子仓库信息"></a>子仓库信息</h2><p>在 <code>git status</code> 输出中列出的另一个是项目文件夹记录。 如果你运行 git diff，会看到类似下面的信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ git diff --cached DbConnector</span><br><span class="line">diff --git a/DbConnector b/DbConnector</span><br><span class="line">new file mode 160000</span><br><span class="line">index 0000000..c3f01dc</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/DbConnector</span><br><span class="line">@@ -0,0 +1 @@</span><br><span class="line">+Subproject commit c3f01dc8862123d317dd46284b05b6892c7b29bc</span><br></pre></td></tr></table></figure></p>
+<p>虽然 <code>DbConnector</code> 是工作目录中的一个子目录，但 Git 还是会将它视作一个子模块。当你不在那个目录中时，Git 并不会跟踪它的内容， 而是将它看作子模块仓库中的某个具体的提交。</p>
+<p>如果你想看到更漂亮的差异输出，可以给 git diff 传递 <code>--submodule</code> 选项，可以在diff的时候，展示更详细的模块信息（远程仓库和版本变动）。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git diff --cached --submodule</span><br><span class="line">diff --git a/.gitmodules b/.gitmodules</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..71fc376</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/.gitmodules</span><br><span class="line">@@ -0,0 +1,3 @@</span><br><span class="line">+[submodule "DbConnector"]</span><br><span class="line">+       path = DbConnector</span><br><span class="line">+       url = https://github.com/chaconinc/DbConnector</span><br><span class="line">Submodule DbConnector 0000000...c3f01dc (new submodule)</span><br></pre></td></tr></table></figure>
+<h2 id="提交"><a href="#提交" class="headerlink" title="提交"></a>提交</h2><p>整体而言，提交带子仓库的模块和普通的提交推送所需要的操作是一样的.<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 提交时，会看到类似下面的信息：</span><br><span class="line"><span class="meta">$</span> git commit -am 'added DbConnector module'</span><br><span class="line">[master fb9093c] added DbConnector module</span><br><span class="line"> 2 files changed, 4 insertions(+)</span><br><span class="line"> create mode 100644 .gitmodules</span><br><span class="line"> create mode 160000 DbConnector</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span>最后，推送这些更改：</span><br><span class="line"><span class="meta">$</span> git push origin master</span><br></pre></td></tr></table></figure></p>
+<p> 只不过注意看的化会发现 <code>DbConnector</code> 记录的文件类型是 <code>160000</code> 模式。 这是 Git 中的一种特殊模式，它本质上意味着你是将一次提交记作一项目录记录的，而非将它记录成一个子目录或者一个文件。</p>
+<h2 id="子项目获取"><a href="#子项目获取" class="headerlink" title="子项目获取"></a>子项目获取</h2><h3 id="直接初始化并拉取子项目"><a href="#直接初始化并拉取子项目" class="headerlink" title="直接初始化并拉取子项目"></a>直接初始化并拉取子项目</h3><p>这是一个更为简单的方式， 在执行 <code>git clone</code> 命令时，传递 –recurse-submodules 选项，它就会自动初始化并更新仓库中的每一个子模块， 包括可能存在的嵌套子模块。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git clone --recurse-submodules https://github.com/chaconinc/MainProject</span><br><span class="line">Cloning into 'MainProject'...</span><br><span class="line">remote: Counting objects: 14, done.</span><br><span class="line">remote: Compressing objects: 100% (13/13), done.</span><br><span class="line">remote: Total 14 (delta 1), reused 13 (delta 0)</span><br><span class="line">Unpacking objects: 100% (14/14), done.</span><br><span class="line">Checking connectivity... done.</span><br><span class="line">Submodule 'DbConnector' (https://github.com/chaconinc/DbConnector) registered for path 'DbConnector'</span><br><span class="line">Cloning into 'DbConnector'...</span><br><span class="line">remote: Counting objects: 11, done.</span><br><span class="line">remote: Compressing objects: 100% (10/10), done.</span><br><span class="line">remote: Total 11 (delta 0), reused 11 (delta 0)</span><br><span class="line">Unpacking objects: 100% (11/11), done.</span><br><span class="line">Checking connectivity... done.</span><br><span class="line">Submodule path 'DbConnector': checked out 'c3f01dc8862123d317dd46284b05b6892c7b29bc'</span><br></pre></td></tr></table></figure></p>
+<h3 id="单独拉取子项目"><a href="#单独拉取子项目" class="headerlink" title="单独拉取子项目"></a>单独拉取子项目</h3><p>如果准备单独拉取子项目内容，那么我们开始的初始项目克隆和正常项目是一致的，只不过我们拉取下来的项目中，子项目只会是一个空目录，里面没有完整的子项目内容。<br>我们需要运行两个命令：<code>git submodule init</code> 用来初始化本地配置文件,<code>git submodule update</code> 则从该项目中抓取所有数据并检出父项目中列出的合适的提交。<br>或者我们也可以使用 <code>git submodule update --init</code> 命令一次性完成初始化并更新操作。<br>如果还要初始化、抓取并检出任何<strong>嵌套的子模块</strong>， 请使用简明的<code>git submodule update --init --recursive</code>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git submodule init</span><br><span class="line">Submodule 'DbConnector' (https://github.com/chaconinc/DbConnector) registered for path 'DbConnector'</span><br><span class="line"><span class="meta">$</span> git submodule update</span><br><span class="line">Cloning into 'DbConnector'...</span><br><span class="line">remote: Counting objects: 11, done.</span><br><span class="line">remote: Compressing objects: 100% (10/10), done.</span><br><span class="line">remote: Total 11 (delta 0), reused 11 (delta 0)</span><br><span class="line">Unpacking objects: 100% (11/11), done.</span><br><span class="line">Checking connectivity... done.</span><br><span class="line">Submodule path 'DbConnector': checked out 'c3f01dc8862123d317dd46284b05b6892c7b29bc'</span><br></pre></td></tr></table></figure>
+<p>现在 <code>DbConnector</code> 子目录是处在和之前提交时相同的状态了。</p>
+<h2 id="子项目同步"><a href="#子项目同步" class="headerlink" title="子项目同步"></a>子项目同步</h2><p>我们有一份包含子模块的项目时，我们将会同时在主项目和子模块项目上与队员协作。</p>
+<h3 id="从远程仓库中同步子项目"><a href="#从远程仓库中同步子项目" class="headerlink" title="从远程仓库中同步子项目"></a>从远程仓库中同步子项目</h3><p>项目中使用子模块的最简模型，就是只使用子项目并不时地获取更新，而并不在你的检出中进行任何更改。 我们来看一个简单的例子。</p>
+<h4 id="直接操作子仓库"><a href="#直接操作子仓库" class="headerlink" title="直接操作子仓库"></a>直接操作子仓库</h4><p>如果想要在子模块中查看新工作，可以进入到目录中运行 git fetch 与 git merge，合并上游分支来更新本地代码。这和我们在主项目中运行 fetch 与 merge 的方式完全相同。</p>
+<h4 id="通过submodule管理"><a href="#通过submodule管理" class="headerlink" title="通过submodule管理"></a>通过submodule管理</h4><p>你不想在子目录中手动抓取与合并，那么还有种更容易的方式。 运行 <code>git submodule update --remote</code>，Git 将会进入子模块然后抓取并更新。默认会更新所有的子模块。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 更新指定子模块，默认使用 master 分枝</span><br><span class="line"><span class="meta">$</span> git submodule update --remote DbConnector </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> DbConnector 子模块跟踪仓库的 “stable” 分支，</span><br><span class="line">git config  submodule.DbConnector.branch stable # 指定远程仓库的分枝，仅为自己配置，不会推送相关分值信息</span><br><span class="line">git config -f .gitmodules submodule.DbConnector.branch stable # 指定远程仓库的分枝，相关分支信息会推送的远程同步给其他用户。</span><br><span class="line">git submodule update --remote  # 更新子仓库内容</span><br></pre></td></tr></table></figure></p>
+<h3 id="子仓库冲突处理"><a href="#子仓库冲突处理" class="headerlink" title="子仓库冲突处理"></a>子仓库冲突处理</h3><p>你和其他人同时改动了一个子模块引用，那么可能会遇到一些问题。 也就是说，如果子模块的历史已经分叉并且在父项目中分别提交到了分叉的分支上，那么你需要做一些工作来修复它。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git pull</span><br><span class="line">remote: Counting objects: 2, done.</span><br><span class="line">remote: Compressing objects: 100% (1/1), done.</span><br><span class="line">remote: Total 2 (delta 1), reused 2 (delta 1)</span><br><span class="line">Unpacking objects: 100% (2/2), done.</span><br><span class="line">From https://github.com/chaconinc/MainProject</span><br><span class="line">   9a377d1..eb974f8  master     -&gt; origin/master</span><br><span class="line">Fetching submodule DbConnector</span><br><span class="line">warning: Failed to merge submodule DbConnector (merge following commits not found)</span><br><span class="line">Auto-merging DbConnector</span><br><span class="line">CONFLICT (submodule): Merge conflict in DbConnector</span><br><span class="line">Automatic merge failed; fix conflicts and then commit the result.</span><br></pre></td></tr></table></figure></p>
+<p>Git 在这里指出了子模块历史中的两个分支记录点，并且不能自动进行合并。这是你可以通过 <code>git diff</code> 查看具体的差异<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git diff</span><br><span class="line">diff --cc DbConnector</span><br><span class="line">index eb41d76,c771610..0000000</span><br><span class="line">--- a/DbConnector</span><br><span class="line">+++ b/DbConnector</span><br></pre></td></tr></table></figure></p>
+<p><code>eb41d76</code> 是我们的子模块中大家共有的提交，而 <code>c771610</code> 是上游子仓库进行的提交。这时候我们需要单独进行子仓库的冲突处理（处理方式和正常仓库的处理一样，只是我们需要进入到子仓库进行操作。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 进入子仓库的目录，后续相关操作都是针对子仓库的</span><br><span class="line"><span class="meta">$</span> cd DbConnector</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 将子仓库回退到父项目记录的节点，</span><br><span class="line"><span class="meta">$</span> git rev-parse HEAD</span><br><span class="line">eb41d764bccf88be77aced643c13a7fa86714135</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 拉取子项目的远程最新的代码，并创建一个分支 try-merge</span><br><span class="line"><span class="meta">$</span> git branch try-merge c771610</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 进行代码的合并，将远程新代码合并到本地主分支上，</span><br><span class="line">(DbConnector) $ git merge try-merge</span><br></pre></td></tr></table></figure></p>
+<p>当然可能在merge的时候，会存在一些文件冲突，这时候，就是正常的处理冲突文件，提交推送即可。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> vim $conflict_File</span><br><span class="line"><span class="meta">$</span> git add $conflict_File</span><br><span class="line"><span class="meta">$</span> git commit -am 'merged our changes'</span><br></pre></td></tr></table></figure></p>
+<h2 id="父项目同步"><a href="#父项目同步" class="headerlink" title="父项目同步"></a>父项目同步</h2><h3 id="拉取"><a href="#拉取" class="headerlink" title="拉取"></a>拉取</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 默认拉取父项目</span><br><span class="line"><span class="meta">$</span> git pull</span><br><span class="line">From https://github.com/chaconinc/MainProject</span><br><span class="line">   fb9093c..0a24cfc  master     -&gt; origin/master</span><br><span class="line">Fetching submodule DbConnector</span><br><span class="line">From https://github.com/chaconinc/DbConnector</span><br><span class="line">   c3f01dc..c87d55d  stable     -&gt; origin/stable</span><br><span class="line">Updating fb9093c..0a24cfc</span><br><span class="line">Fast-forward</span><br><span class="line"> .gitmodules         | 2 +-</span><br><span class="line"> DbConnector         | 2 +-</span><br><span class="line"> 2 files changed, 2 insertions(+), 2 deletions(-)</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 会显示其中子项目的更改，但是不会自动同步子项目中的更改</span><br><span class="line"><span class="meta">$</span> git status</span><br><span class="line"> On branch master</span><br><span class="line">Your branch is up-to-date with 'origin/master'.</span><br><span class="line">Changes not staged for commit:</span><br><span class="line">  (use "git add &lt;file&gt;..." to update what will be committed)</span><br><span class="line">  (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)</span><br><span class="line"></span><br><span class="line">	modified:   DbConnector (new commits)</span><br><span class="line"></span><br><span class="line">Submodules changed but not updated:</span><br><span class="line"></span><br><span class="line">* DbConnector c87d55d...c3f01dc (4):</span><br><span class="line">  &lt; catch non-null terminated lines</span><br><span class="line">  &lt; more robust error handling</span><br><span class="line">  &lt; more efficient db routine</span><br><span class="line">  &lt; better connection routine</span><br><span class="line"></span><br><span class="line">no changes added to commit (use "git add" and/or "git commit -a")</span><br></pre></td></tr></table></figure>
+<p>默认情况下，<code>git pull</code> 命令会递归地抓取子模块的更改，如上面第一个命令的输出所示。 然而，它不会 <strong>更新</strong> 子模块。这点可通过 <code>git status</code> 命令看到，它会显示子模块“已修改”，且“有新的提交”。 此外，左边的尖括号（&lt;）指出了新的提交，表示这些提交已在 <code>MainProject</code> 中记录，但尚未在本地的 <code>DbConnector</code> 中检出。 为了完成更新，你需要运行 <code>git submodule update</code>：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git submodule update --init --recursive</span><br><span class="line">Submodule path 'vendor/plugins/demo': checked out '48679c6302815f6c76f1fe30625d795d9e55fc56'</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span> git status</span><br><span class="line"> On branch master</span><br><span class="line">Your branch is up-to-date with 'origin/master'.</span><br><span class="line">nothing to commit, working tree clean</span><br></pre></td></tr></table></figure></p>
+<h3 id="推送"><a href="#推送" class="headerlink" title="推送"></a>推送</h3><p>如果我们的子模块目录中有一些改动。如果我们针对父项目进行提交并推送但并不推送子模块上的改动，其他人因为他们无法得到依赖的子模块改动，他们在执行项目的时候会遇到麻烦，<br>为了避免这个问题，可以让 Git 在推送到主项目前检查所有子模块是否已推送。 git push 命令接受可以设置为 <code>check</code>（检查是否推送） 或 <code>on-demand</code>（自动推送未推送的子模块） 的 <code>--recurse-submodules</code> 参数。 如果任何提交的子模块改动没有推送那么 <code>check</code> 选项会直接使 push 操作失败。<code>on-demand</code>会尝试推送子模块<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 推送主项目更改时，会自动检查所有子仓库的更改是否已经推送</span><br><span class="line">git push --recurse-submodules=check</span><br><span class="line"></span><br><span class="line">git push --recurse-submodules=on-demand</span><br></pre></td></tr></table></figure></p>
+<h1 id="子模块的技巧性操作"><a href="#子模块的技巧性操作" class="headerlink" title="子模块的技巧性操作"></a>子模块的技巧性操作</h1><h2 id="遍历"><a href="#遍历" class="headerlink" title="遍历"></a>遍历</h2><p>有一个 <code>foreach</code> 子模块命令，它能在每一个子模块中运行任意命令。 如果项目中包含了大量子模块，这会非常有用。<br><code>git submodule foreach &quot;$git_command&quot;</code> 可以让我们对任何一个子模块执行某个相同的命令。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 将所有子模块的更改进行暂存</span><br><span class="line"><span class="meta">$</span> git submodule foreach 'git stash'</span><br><span class="line">Entering 'CryptoLibrary'</span><br><span class="line">No local changes to save</span><br><span class="line">Entering 'DbConnector'</span><br><span class="line">Saved working directory and index state WIP on stable: 82d2ad3 Merge from origin/stable</span><br><span class="line">HEAD is now at 82d2ad3 Merge from origin/stable</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 对所有子模块都创建一个新的分支，并切换过去。</span><br><span class="line"><span class="meta">$</span> git submodule foreach 'git checkout -b featureA'</span><br><span class="line">Entering 'CryptoLibrary'</span><br><span class="line">Switched to a new branch 'featureA'</span><br><span class="line">Entering 'DbConnector'</span><br><span class="line">Switched to a new branch 'featureA'</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span> 查看所有子项目的改动</span><br><span class="line">git submodule foreach 'git diff'</span><br></pre></td></tr></table></figure></p>
+<h2 id="别名"><a href="#别名" class="headerlink" title="别名"></a>别名</h2><p>可以看到很多命令的参数非常长，尤其是在使用子模块后，额外增加了一些参数，但是 <code>git</code> 并不支持将这些选项作为它们的默认选项。<br>我们可以通过为这些命令设置<a href="https://git-scm.com/book/zh/v2/Git-%E5%9F%BA%E7%A1%80-Git-%E5%88%AB%E5%90%8D#_git_aliases" target="_blank" rel="noopener">别名</a>来简化我们的操作命令，这里有一些例子。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git config alias.sdiff &apos;!&apos;&quot;git diff &amp;&amp; git submodule foreach &apos;git diff&apos;&quot;</span><br><span class="line">$ git config alias.spush &apos;push --recurse-submodules=on-demand&apos;</span><br><span class="line">$ git config alias.supdate &apos;submodule update --remote --merge&apos;</span><br></pre></td></tr></table></figure></p>
+<h2 id="从子目录切换到子模块"><a href="#从子目录切换到子模块" class="headerlink" title="从子目录切换到子模块"></a>从子目录切换到子模块</h2><p>有时候我们想把项目中的一部分工作或者功能，独立抽象出来，形成一个单独的模块（改成子仓库单独保存），那么我们需要先取消暂存对应子模块代码所在的目录（否则会由于目录以存在产生冲突）。 然后才可以添加子模块<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span> git rm -r subFunction</span><br><span class="line"><span class="meta">$</span> git submodule add https://github.com/****/subFunction</span><br></pre></td></tr></table></figure></p>
+<p>现在假设你在一个分支下做了这样的工作。 当你切换到其他分支（文件还在子目录而非子模块中）时——你会得到这个错误，所以在切换时，需要进行强制（<code>-f</code>）切换分支 ：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 正常切换由于模块目录在目标分支是父项目的一个目录存在冲突会报错</span><br><span class="line"><span class="meta">$</span> git checkout master</span><br><span class="line">error: The following untracked working tree files would be overwritten by checkout:</span><br><span class="line">  CryptoLibrary/Makefile</span><br><span class="line">  CryptoLibrary/includes/crypto.h</span><br><span class="line">  ...</span><br><span class="line">Please move or remove them before you can switch branches.</span><br><span class="line">Aborting</span><br><span class="line"><span class="meta">#</span> 强制切换分支</span><br><span class="line">git checkout -f master</span><br></pre></td></tr></table></figure></p>
+<h1 id="子模块的注意事项"><a href="#子模块的注意事项" class="headerlink" title="子模块的注意事项"></a>子模块的注意事项</h1><h2 id="切换分支"><a href="#切换分支" class="headerlink" title="切换分支"></a>切换分支</h2><p>在切换分支使用 <code>git checkout</code> 命令时，最好添加 <code>--recurse-submodules</code>(git ≥2.14),来确保父项目分支切换后，子项目会和分支实际情况保持一致。<br>通过 <code>git config submodule.recurse true</code> 设置 <code>submodule.recurse</code> 选项， 告诉 Git（&gt;=2.14）总是使用 <code>--recurse-submodules</code>。 如上所述，这也会让 Git 为每个拥有 <code>--recurse-submodules</code> 选项的命令（除了 <code>git clone</code>） 总是递归地在子模块中执行。<br>如果使用了子模块，直接进行相关的设置吧，旧版本的一些潜在风险笔记多，但是我们似乎在这也不需要再去过度纠结旧版本的问题了，毕竟此刻，刚开始的你和我可以直接使用新版本。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>起始就是边看边抄了一遍 <a href="https://git-scm.com/book/zh/v2/Git-%E5%B7%A5%E5%85%B7-%E5%AD%90%E6%A8%A1%E5%9D%97" target="_blank" rel="noopener">git doc:git-submodule</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/培训/" rel="tag"><i class="fa fa-tag"></i> 培训</a>
+          
+            <a href="/tags/Git/" rel="tag"><i class="fa fa-tag"></i> Git</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-04.pipeline/pipeline-container-docker-demo.携带者/" rel="next" title="pipeline-container-docker-demo01.md">
+                <i class="fa fa-chevron-left"></i> pipeline-container-docker-demo01.md
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.知识-11.遗传病/遗传病-先天性肾上腺皮质增生/" rel="prev" title="遗传病-先天性肾上腺皮质增生">
+                遗传病-先天性肾上腺皮质增生 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#配置"><span class="nav-number">1.</span> <span class="nav-text">配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用"><span class="nav-number">2.</span> <span class="nav-text">使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#添加子模块"><span class="nav-number">2.1.</span> <span class="nav-text">添加子模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加子模块并指定目录"><span class="nav-number">2.2.</span> <span class="nav-text">添加子模块并指定目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gitmodules"><span class="nav-number">2.3.</span> <span class="nav-text">.gitmodules</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#变更子仓库的配置"><span class="nav-number">2.4.</span> <span class="nav-text">变更子仓库的配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子仓库信息"><span class="nav-number">2.5.</span> <span class="nav-text">子仓库信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提交"><span class="nav-number">2.6.</span> <span class="nav-text">提交</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子项目获取"><span class="nav-number">2.7.</span> <span class="nav-text">子项目获取</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#直接初始化并拉取子项目"><span class="nav-number">2.7.1.</span> <span class="nav-text">直接初始化并拉取子项目</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#单独拉取子项目"><span class="nav-number">2.7.2.</span> <span class="nav-text">单独拉取子项目</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子项目同步"><span class="nav-number">2.8.</span> <span class="nav-text">子项目同步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#从远程仓库中同步子项目"><span class="nav-number">2.8.1.</span> <span class="nav-text">从远程仓库中同步子项目</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#直接操作子仓库"><span class="nav-number">2.8.1.1.</span> <span class="nav-text">直接操作子仓库</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通过submodule管理"><span class="nav-number">2.8.1.2.</span> <span class="nav-text">通过submodule管理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#子仓库冲突处理"><span class="nav-number">2.8.2.</span> <span class="nav-text">子仓库冲突处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#父项目同步"><span class="nav-number">2.9.</span> <span class="nav-text">父项目同步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#拉取"><span class="nav-number">2.9.1.</span> <span class="nav-text">拉取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#推送"><span class="nav-number">2.9.2.</span> <span class="nav-text">推送</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#子模块的技巧性操作"><span class="nav-number">3.</span> <span class="nav-text">子模块的技巧性操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#遍历"><span class="nav-number">3.1.</span> <span class="nav-text">遍历</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#别名"><span class="nav-number">3.2.</span> <span class="nav-text">别名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从子目录切换到子模块"><span class="nav-number">3.3.</span> <span class="nav-text">从子目录切换到子模块</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#子模块的注意事项"><span class="nav-number">4.</span> <span class="nav-text">子模块的注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#切换分支"><span class="nav-number">4.1.</span> <span class="nav-text">切换分支</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

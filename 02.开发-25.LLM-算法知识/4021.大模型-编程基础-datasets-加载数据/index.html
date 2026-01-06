@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="在我们进行大模型的训练或微调的过程中，第一步就是要准备自己的训练数据集并导入到代码中。而 datasets 是huggingface开发的一个数据集python库，可以很方便的从Hugging Face Hub里下载数据，也可很方便的从本地加载数据集，本文主要对load_dataset方法的使用进行详细说明。 load_dataset的参数说明如下：123456789101112131415def">
+<meta name="keywords" content="LLM">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大模型-应用-加载数据">
+<meta property="og:url" content="http://ben-air.cn/02.开发-25.LLM-算法知识/4021.大模型-编程基础-datasets-加载数据/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="在我们进行大模型的训练或微调的过程中，第一步就是要准备自己的训练数据集并导入到代码中。而 datasets 是huggingface开发的一个数据集python库，可以很方便的从Hugging Face Hub里下载数据，也可很方便的从本地加载数据集，本文主要对load_dataset方法的使用进行详细说明。 load_dataset的参数说明如下：123456789101112131415def">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.440Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="大模型-应用-加载数据">
+<meta name="twitter:description" content="在我们进行大模型的训练或微调的过程中，第一步就是要准备自己的训练数据集并导入到代码中。而 datasets 是huggingface开发的一个数据集python库，可以很方便的从Hugging Face Hub里下载数据，也可很方便的从本地加载数据集，本文主要对load_dataset方法的使用进行详细说明。 load_dataset的参数说明如下：123456789101112131415def">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-25.LLM-算法知识/4021.大模型-编程基础-datasets-加载数据/"/>
+
+
+
+
+
+  <title>大模型-应用-加载数据 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-25.LLM-算法知识/4021.大模型-编程基础-datasets-加载数据/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">大模型-应用-加载数据</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-07-26T15:01:40+08:00">
+                2024-07-26
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>在我们进行大模型的训练或微调的过程中，第一步就是要准备自己的训练数据集并导入到代码中。<br>而 datasets 是huggingface开发的一个数据集python库，可以很方便的从Hugging Face Hub里下载数据，也可很方便的从本地加载数据集，本文主要对load_dataset方法的使用进行详细说明。</p>
+<p>load_dataset的参数说明如下：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">load_dataset</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    path: str,</span></span></span><br><span class="line"><span class="function"><span class="params">    name: Optional[str] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    data_dir: Optional[str] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    data_files: Union[Dict, List] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    split: Optional[Union[str, Split]] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    cache_dir: Optional[str] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    features: Optional[Features] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    download_config: Optional[DownloadConfig] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    download_mode: Optional[GenerateMode] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    ignore_verifications: bool = False,</span></span></span><br><span class="line"><span class="function"><span class="params">    save_infos: bool = False,</span></span></span><br><span class="line"><span class="function"><span class="params">    script_version: Optional[Union[str, Version]] = None,</span></span></span><br><span class="line"><span class="function"><span class="params">    **config_kwargs,</span></span></span><br><span class="line"><span class="function"><span class="params">)</span> -&gt; Union[DatasetDict, Dataset]:</span></span><br></pre></td></tr></table></figure></p>
+<p>常用且比较重要的参数如下：</p>
+<ul>
+<li><p>path<br>参数path表示数据集的名字或者路径。可以是如下几种形式（每种形式的使用方式后面会详细说明）<br>  数据集的名字，比如imdb、glue<br>  数据集文件格式，比如json、csv、parquet、txt<br>  数据集目录中的处理数据集的脚本（.py)文件，比如“glue/glue.py”</p>
+</li>
+<li><p>name：参数name表示数据集中的子数据集，当一个数据集包含多个数据集时，就需要这个参数，比如glue数据集下就包含”sst2”、“cola”、”qqp”等多个子数据集，此时就需要指定name来表示加载哪一个子数据集</p>
+</li>
+<li>data_dir：数据集所在的目录</li>
+<li>data_files：数据集文件</li>
+<li>cache_dir：构建的数据集缓存目录，方便下次快速加载</li>
+</ul>
+<h1 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h1><h2 id="查看数据集"><a href="#查看数据集" class="headerlink" title="查看数据集"></a>查看数据集</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">from datasets import list_datasets</span><br><span class="line"></span><br><span class="line">datasets_list = list_datasets()</span><br><span class="line">print( len(datasets_list))</span><br><span class="line">print(datasets_list[:10])</span><br></pre></td></tr></table></figure>
+<p>我们就可以得到 hugging Face上的所有数据集列表<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">47660</span><br><span class="line">[&apos;acronym_identification&apos;, &apos;ade_corpus_v2&apos;, &apos;adversarial_qa&apos;, &apos;aeslc&apos;, &apos;afrikaans_ner_corpus&apos;, &apos;ag_news&apos;, &apos;ai2_arc&apos;, &apos;air_dialogue&apos;, &apos;ajgt_twitter_ar&apos;, &apos;allegro_reviews&apos;]</span><br></pre></td></tr></table></figure></p>
+<h2 id="下载数据集"><a href="#下载数据集" class="headerlink" title="下载数据集"></a>下载数据集</h2><h3 id="官方下载"><a href="#官方下载" class="headerlink" title="官方下载"></a>官方下载</h3><p>后面通过直接指定 <em>path</em> 等于相关数据集的名字就能下载并加载相关数据集<br>    <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">from datasets import load_dataset</span><br><span class="line">dataset = load_dataset(path=&apos;squad&apos;, split=&apos;train&apos;)</span><br></pre></td></tr></table></figure></p>
+<h3 id="本地加载数据集"><a href="#本地加载数据集" class="headerlink" title="本地加载数据集"></a>本地加载数据集</h3><h4 id="加载指定格式的文件"><a href="#加载指定格式的文件" class="headerlink" title="加载指定格式的文件"></a>加载指定格式的文件</h4><pre><code>用path参数指定数据集格式
+- son格式，path=&quot;json&quot;
+- csv格式， path=&quot;csv&quot;
+- 纯文本格式, path=&quot;text&quot;
+- dataframe格式， path=&quot;panda&quot;
+- 图片，path=&quot;imagefolder&quot;
+
+然后用data_files指定文件名称，data_files可以是字符串，列表或者字典，data_dir指定数据集目录。如下case
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> datasets <span class="keyword">import</span> load_dataset</span><br><span class="line">dataset = load_dataset(<span class="string">'csv'</span>, data_files=<span class="string">'my_file.csv'</span>) <span class="comment">#加载一个文件，默认数据集名称为 train</span></span><br><span class="line">dataset = load_dataset(<span class="string">'csv'</span>, data_files=[<span class="string">'my_file_1.csv'</span>, <span class="string">'my_file_2.csv'</span>, <span class="string">'my_file_3.csv'</span>]) <span class="comment"># 所有数据都会汇集到 train 数据集中</span></span><br><span class="line">dataset = load_dataset(<span class="string">'csv'</span>, data_files=&#123;<span class="string">'train'</span>:[<span class="string">'my_train_file_1.csv'</span>,<span class="string">'my_train_file_2.csv'</span>],<span class="string">'test'</span>: <span class="string">'my_test_file.csv'</span>&#125;) <span class="comment"># 加载多个文件并指定数据集名称</span></span><br><span class="line">dataset = load_dataset(<span class="string">"csv"</span>,data_dir=<span class="string">"path/2/data/"</span>) <span class="comment"># 加载目录下的所有csv类型文件，文件名前缀作为数据集名称</span></span><br></pre></td></tr></table></figure>
+</code></pre><h4 id="加载图片"><a href="#加载图片" class="headerlink" title="加载图片"></a>加载图片</h4><p>如下我们通过打开指定图片目录进行加载图片数据集<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">dataset = load_dataset(path=&quot;imagefolder&quot;,</span><br><span class="line">                       data_dir=&quot;D:\Desktop\workspace\code\loaddataset\data\images&quot;)</span><br><span class="line">print(dataset)</span><br><span class="line">print(dataset[&quot;train&quot;][0])</span><br></pre></td></tr></table></figure></p>
+<p>很多情况下加载图片并非只要图片，还会有对应的文本，比如在图片分类的时候，每张图片都对应一个类别。这种情况我们需要在图片所在文件夹中加入一个<em>metadata.jsonl</em>的文件，来指定每个图片对应的类别，格式如下，注意<em>file_name</em>字段必须要有，其他字段可自行命名</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"file_name"</span>: <span class="string">"1.jpg"</span>,</span><br><span class="line">  <span class="attr">"class"</span>: <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line">&#123;</span><br><span class="line">  <span class="attr">"file_name"</span>: <span class="string">"2.png"</span>,</span><br><span class="line">  <span class="attr">"class"</span>: <span class="number">0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="复杂数据加载"><a href="#复杂数据加载" class="headerlink" title="复杂数据加载"></a>复杂数据加载</h4><p>一些情况下加载数据集的逻辑较为复杂，需要自定义加载方式。比如训练ControlNet时，输入有原始图片，边缘图，以及prompt，这时候我们就需要通过在图片所在的目录下写一个python脚本来处理数据加载方式。<br>如下所示，我们数据处理需要是，每条数据包括两张图片，一个文本。<br>step1: 首先我们先创建一个json文件train.jsonl，把图片和文本对应起来，json文件的格式如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;text&quot;: &quot;pale golden rod circle with old lace background&quot;, &quot;image&quot;: &quot;images/0.png&quot;, &quot;conditioning_image&quot;: &quot;conditioning_images/0.png&quot;&#125;</span><br><span class="line">&#123;&quot;text&quot;: &quot;light coral circle with white background&quot;, &quot;image&quot;: &quot;images/1.png&quot;, &quot;conditioning_image&quot;: &quot;conditioning_images/1.png&quot;&#125;</span><br><span class="line">&#123;&quot;text&quot;: &quot;aqua circle with light pink background&quot;, &quot;image&quot;: &quot;images/2.png&quot;, &quot;conditioning_image&quot;: &quot;conditioning_images/2.png&quot;&#125;</span><br></pre></td></tr></table></figure></p>
+<p>step2：创建一个python脚本fill50k.py根据json文件中的对应关系加载图片，python脚本如下所示，这个脚本中定义一个 Fill50k类，并继承datasets.GeneratorBasedBuilder，在类中重写_info(self): _split_generators(self, dl_manager)和_split_generators(self, dl_manager)这三个方法<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> datasets</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"></span><br><span class="line"><span class="comment"># 数据集路径设置</span></span><br><span class="line">META_DATA_PATH = <span class="string">"D:\Desktop\workspace\code\loaddataset\\fill50k\\train.jsonl"</span></span><br><span class="line">IMAGE_DIR = <span class="string">"D:\Desktop\workspace\code\loaddataset\\fill50k"</span></span><br><span class="line">CONDITION_IMAGE_DIR = <span class="string">"D:\Desktop\workspace\code\loaddataset\\fill50k"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义数据集中有哪些特征，及其类型</span></span><br><span class="line">_FEATURES = datasets.Features(</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">"image"</span>: datasets.Image(),</span><br><span class="line">        <span class="string">"conditioning_image"</span>: datasets.Image(),</span><br><span class="line">        <span class="string">"text"</span>: datasets.Value(<span class="string">"string"</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义数据集</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Fill50k</span><span class="params">(datasets.GeneratorBasedBuilder)</span>:</span></span><br><span class="line">    BUILDER_CONFIGS = [datasets.BuilderConfig(name=<span class="string">"default"</span>, version=datasets.Version(<span class="string">"0.0.2"</span>))]</span><br><span class="line">    DEFAULT_CONFIG_NAME = <span class="string">"default"</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_info</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> datasets.DatasetInfo(</span><br><span class="line">            description=<span class="string">"None"</span>,</span><br><span class="line">            features=_FEATURES,</span><br><span class="line">            supervised_keys=<span class="keyword">None</span>,</span><br><span class="line">            homepage=<span class="string">"None"</span>,</span><br><span class="line">            license=<span class="string">"None"</span>,</span><br><span class="line">            citation=<span class="string">"None"</span>,</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_split_generators</span><span class="params">(self, dl_manager)</span>:</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> [</span><br><span class="line">            datasets.SplitGenerator(</span><br><span class="line">                name=datasets.Split.TRAIN,</span><br><span class="line">                <span class="comment"># These kwargs will be passed to _generate_examples</span></span><br><span class="line">                gen_kwargs=&#123;</span><br><span class="line">                    <span class="string">"metadata_path"</span>: META_DATA_PATH,</span><br><span class="line">                    <span class="string">"images_dir"</span>: IMAGE_DIR,</span><br><span class="line">                    <span class="string">"conditioning_images_dir"</span>: CONDITION_IMAGE_DIR,</span><br><span class="line">                &#125;,</span><br><span class="line">            ),</span><br><span class="line">        ]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_generate_examples</span><span class="params">(self, metadata_path, images_dir, conditioning_images_dir)</span>:</span></span><br><span class="line">        metadata = pd.read_json(metadata_path, lines=<span class="keyword">True</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> _, row <span class="keyword">in</span> metadata.iterrows():</span><br><span class="line">            text = row[<span class="string">"text"</span>]</span><br><span class="line"></span><br><span class="line">            image_path = row[<span class="string">"image"</span>]</span><br><span class="line">            image_path = os.path.join(images_dir, image_path)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 打开文件错误时直接跳过</span></span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                image = open(image_path, <span class="string">"rb"</span>).read()</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                logging.error(e)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">            conditioning_image_path = os.path.join(</span><br><span class="line">                conditioning_images_dir, row[<span class="string">"conditioning_image"</span>]</span><br><span class="line">            )</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 打开文件错误直接跳过</span></span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                conditioning_image = open(conditioning_image_path, <span class="string">"rb"</span>).read()</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                logging.error(e)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">yield</span> row[<span class="string">"image"</span>], &#123;</span><br><span class="line">                <span class="string">"text"</span>: text,</span><br><span class="line">                <span class="string">"image"</span>: &#123;</span><br><span class="line">                    <span class="string">"path"</span>: image_path,</span><br><span class="line">                    <span class="string">"bytes"</span>: image,</span><br><span class="line">                &#125;,</span><br><span class="line">                <span class="string">"conditioning_image"</span>: &#123;</span><br><span class="line">                    <span class="string">"path"</span>: conditioning_image_path,</span><br><span class="line">                    <span class="string">"bytes"</span>: conditioning_image,</span><br><span class="line">                &#125;,</span><br><span class="line">            &#125;</span><br></pre></td></tr></table></figure></p>
+<p>step3: 通过load_dataset加载数据集<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">dataset = load_dataset(path=&quot;D:\Desktop\workspace\code\loaddataset\\fill50k\\fill50k.py&quot;,</span><br><span class="line">                       cache_dir=&quot;D:\Desktop\workspace\code\loaddataset\\fill50k\cache&quot;)</span><br><span class="line">print(dataset)</span><br><span class="line">print(dataset[&quot;train&quot;][0])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 历史问题及相关处理记录</span><br><span class="line">## datasets-2.11.0 本地文件系统不支持</span><br><span class="line">```python</span><br><span class="line">&gt;&gt;&gt; dataset = load_dataset(&quot;csv&quot;,data_dir=data_dir,data_files=data_files)</span><br><span class="line">Downloading and preparing dataset csv/default to file:///home/phoenix/.cache/huggingface/datasets/csv/default-df2512f4672b5719/0.0.0/6954658bab30a358235fa864b05cf819af0e179325c740e4bc853bcc7ec513e1...</span><br><span class="line">Downloading data files: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00&lt;00:00, 7839.82it/s]</span><br><span class="line">Extracting data files: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00&lt;00:00, 1653.91it/s]</span><br><span class="line">Dataset csv downloaded and prepared to file:///home/phoenix/.cache/huggingface/datasets/csv/default-df2512f4672b5719/0.0.0/6954658bab30a358235fa864b05cf819af0e179325c740e4bc853bcc7ec513e1. Subsequent calls will reuse this data.</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;/home/phoenix/anaconda3/envs/liubo_llm/lib/python3.8/site-packages/datasets/load.py&quot;, line 1804, in load_dataset</span><br><span class="line">    ds = builder_instance.as_dataset(split=split, verification_mode=verification_mode, in_memory=keep_in_memory)</span><br><span class="line">  File &quot;/home/phoenix/anaconda3/envs/liubo_llm/lib/python3.8/site-packages/datasets/builder.py&quot;, line 1108, in as_dataset</span><br><span class="line">    raise NotImplementedError(f&quot;Loading a dataset cached in a &#123;type(self._fs).__name__&#125; is not supported.&quot;)</span><br><span class="line">NotImplementedError: Loading a dataset cached in a LocalFileSystem is not supported.</span><br></pre></td></tr></table></figure></p>
+<p>datasets 新版本已解决，安装旧版本datasets导致，进行版本升级即可 <code>pip install -U datasets</code> 。测试升级至 datasets-2.20.0 问题解决。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-20.MachineLearn/2105.神经网络-Transformer/" rel="next" title="2105.神经网络-Transformer">
+                <i class="fa fa-chevron-left"></i> 2105.神经网络-Transformer
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.开发-20.MachineLearn/1204.机器学习-集成学习-0.概述/" rel="prev" title="机器学习-算法-集成学习">
+                机器学习-算法-集成学习 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#示例"><span class="nav-number">1.</span> <span class="nav-text">示例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查看数据集"><span class="nav-number">1.1.</span> <span class="nav-text">查看数据集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下载数据集"><span class="nav-number">1.2.</span> <span class="nav-text">下载数据集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#官方下载"><span class="nav-number">1.2.1.</span> <span class="nav-text">官方下载</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#本地加载数据集"><span class="nav-number">1.2.2.</span> <span class="nav-text">本地加载数据集</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加载指定格式的文件"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">加载指定格式的文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#加载图片"><span class="nav-number">1.2.2.2.</span> <span class="nav-text">加载图片</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#复杂数据加载"><span class="nav-number">1.2.2.3.</span> <span class="nav-text">复杂数据加载</span></a></li></ol></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

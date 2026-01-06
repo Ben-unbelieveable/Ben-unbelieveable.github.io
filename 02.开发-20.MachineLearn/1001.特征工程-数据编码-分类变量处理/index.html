@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="machine_learning,数据预处理,特征工程," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="往往我们需要进行训练时，读取的特征是多种多样的，数值类型的变量可能只是其中的一部分（比如年龄），但是还会有一些其他类型的分类变量（比如性别，比如月份）。而我们这里讨论的分类变量/特征是指任何特征类型，可分为两大类：  无序变量: 是指有两个或两个以上类别的变量，这些类别没有任何相关顺序。例如，如果将性别分为两组，即男性和女性，则可将其视为名义变量。 有序变量: 则有 “等级 “或类别，并有特定的顺">
+<meta name="keywords" content="machine_learning,数据预处理,特征工程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="特征工程 数据预处理-分类变量处理">
+<meta property="og:url" content="http://ben-air.cn/02.开发-20.MachineLearn/1001.特征工程-数据编码-分类变量处理/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="往往我们需要进行训练时，读取的特征是多种多样的，数值类型的变量可能只是其中的一部分（比如年龄），但是还会有一些其他类型的分类变量（比如性别，比如月份）。而我们这里讨论的分类变量/特征是指任何特征类型，可分为两大类：  无序变量: 是指有两个或两个以上类别的变量，这些类别没有任何相关顺序。例如，如果将性别分为两组，即男性和女性，则可将其视为名义变量。 有序变量: 则有 “等级 “或类别，并有特定的顺">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2026-01-06T07:45:21.148Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="特征工程 数据预处理-分类变量处理">
+<meta name="twitter:description" content="往往我们需要进行训练时，读取的特征是多种多样的，数值类型的变量可能只是其中的一部分（比如年龄），但是还会有一些其他类型的分类变量（比如性别，比如月份）。而我们这里讨论的分类变量/特征是指任何特征类型，可分为两大类：  无序变量: 是指有两个或两个以上类别的变量，这些类别没有任何相关顺序。例如，如果将性别分为两组，即男性和女性，则可将其视为名义变量。 有序变量: 则有 “等级 “或类别，并有特定的顺">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/1001.特征工程-数据编码-分类变量处理/"/>
+
+
+
+
+
+  <title>特征工程 数据预处理-分类变量处理 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.开发-20.MachineLearn/1001.特征工程-数据编码-分类变量处理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ben-air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">特征工程 数据预处理-分类变量处理</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-08-07T15:25:14+08:00">
+                2024-08-07
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/machine-learning/" itemprop="url" rel="index">
+                    <span itemprop="name">machine_learning</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>往往我们需要进行训练时，读取的特征是多种多样的，数值类型的变量可能只是其中的一部分（比如年龄），但是还会有一些其他类型的分类变量（比如性别，比如月份）。<br>而我们这里讨论的<strong>分类变量/特征</strong>是指任何特征类型，可分为两大类：</p>
+<ul>
+<li><strong>无序变量</strong>: 是指有两个或两个以上类别的变量，这些类别没有任何相关顺序。例如，如果将性别分为两组，即男性和女性，则可将其视为名义变量。</li>
+<li><strong>有序变量</strong>: 则有 “等级 “或类别，并有特定的顺序。例如，一个顺序分类变量可以是一个具有低、中、高三个不同等级的特征。顺序很重要。</li>
+</ul>
+<p>计算机无法理解文本数据，因此我们需要将这些类别转换为数字。为了便于理解这里使用<a href="https://www.kaggle.com/code/shahules/an-overview-of-encoding-techniques#Method-1:-Label-encoding-" target="_blank" rel="noopener">kaggle项目的一个数据</a></p>
+<table>
+<thead>
+<tr>
+<th>index</th>
+<th>id</th>
+<th>bin_0</th>
+<th>bin_1</th>
+<th>bin_2</th>
+<th>bin_3</th>
+<th>bin_4</th>
+<th>nom_0</th>
+<th>nom_1</th>
+<th>nom_2</th>
+<th>nom_3</th>
+<th>…</th>
+<th>nom_9</th>
+<th>ord_0</th>
+<th>ord_1</th>
+<th>ord_2</th>
+<th>ord_3</th>
+<th>ord_4</th>
+<th>ord_5</th>
+<th>day</th>
+<th>month</th>
+<th>target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>T</td>
+<td>Y</td>
+<td>Green</td>
+<td>Triangle</td>
+<td>Snake</td>
+<td>Finland</td>
+<td>…</td>
+<td>2f4cb3d51</td>
+<td>2</td>
+<td>Grandmaster</td>
+<td>Cold</td>
+<td>h</td>
+<td>D</td>
+<td>kr</td>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>T</td>
+<td>Y</td>
+<td>Green</td>
+<td>Trapezoid</td>
+<td>Hamster</td>
+<td>Russia</td>
+<td>…</td>
+<td>f83c56c21</td>
+<td>1</td>
+<td>Grandmaster</td>
+<td>Hot</td>
+<td>a</td>
+<td>A</td>
+<td>bF</td>
+<td>7</td>
+<td>8</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>F</td>
+<td>Y</td>
+<td>Blue</td>
+<td>Trapezoid</td>
+<td>Lion</td>
+<td>Russia</td>
+<td>…</td>
+<td>ae6800dd0</td>
+<td>1</td>
+<td>Expert</td>
+<td>Lava Hot</td>
+<td>h</td>
+<td>R</td>
+<td>Jc</td>
+<td>7</td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>F</td>
+<td>Y</td>
+<td>Red</td>
+<td>Trapezoid</td>
+<td>Snake</td>
+<td>Canada</td>
+<td>…</td>
+<td>8270f0d71</td>
+<td>1</td>
+<td>Grandmaster</td>
+<td>Boiling Hot</td>
+<td>i</td>
+<td>D</td>
+<td>kW</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>F</td>
+<td>N</td>
+<td>Red</td>
+<td>Trapezoid</td>
+<td>Lion</td>
+<td>Canada</td>
+<td>…</td>
+<td>b164b72a7</td>
+<td>1</td>
+<td>Grandmaster</td>
+<td>Freezing</td>
+<td>a</td>
+<td>R</td>
+<td>qP</td>
+<td>7</td>
+<td>8</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>这份输入数据中有 </p>
+<ul>
+<li>5个二元变量</li>
+<li>10个无序变量</li>
+<li>6个有序变量</li>
+<li>2个循环变量</li>
+<li>1个目标变量<h1 id="编码"><a href="#编码" class="headerlink" title="编码"></a>编码</h1><h2 id="标签编码"><a href="#标签编码" class="headerlink" title="标签编码"></a>标签编码</h2>让我们来看看数据集中的 ord_2 特征。它包括6个不同的类别： <strong>Cold、Hot、Lava Hot、Boiling Hot、Freezing</strong> 等。<br>计算机无法理解文本数据，因此我们需要将这些类别转换为数字。一个简单的方法是创建一个字典，将这些值映射为从 0 到 N-1 的数字，其中 N 是给定特征中类别的总数。<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 映射字典</span></span><br><span class="line">mapping = &#123;</span><br><span class="line"><span class="string">"Freezing"</span>: <span class="number">0</span>, </span><br><span class="line"><span class="string">"Warm"</span>: <span class="number">1</span>, </span><br><span class="line"><span class="string">"Cold"</span>: <span class="number">2</span>,</span><br><span class="line"><span class="string">"Boiling Hot"</span>: <span class="number">3</span>, </span><br><span class="line"><span class="string">"Hot"</span>: <span class="number">4</span>,</span><br><span class="line"><span class="string">"Lava Hot"</span>: <span class="number">5</span> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>然后我们可以读取数据，并将这些类别转换为数字。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="comment"># 读取数据</span></span><br><span class="line">df = pd.read_csv(<span class="string">"../input/cat_train.csv"</span>) </span><br><span class="line"><span class="comment"># 取*ord_2*列，并使用映射将类别转换为数字</span></span><br><span class="line">df.loc[:, <span class="string">"*ord_2*"</span>] = df.*ord_2*.map(mapping)</span><br></pre></td></tr></table></figure></p>
+<p>这种分类变量的编码方式被称为<strong>标签编码</strong>（Label Encoding）我们将每个类别编码为一个数字标签。</p>
+<p>我们也可以使用 scikit-learn 中的 LabelEncoder 进行编码。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">from</span> sklearn <span class="keyword">import</span> preprocessing </span><br><span class="line"><span class="comment"># 读取数据</span></span><br><span class="line">df = pd.read_csv(<span class="string">"../input/cat_train.csv"</span>) </span><br><span class="line"><span class="comment"># 将缺失值填充为"NONE"  scikit-learn 的 LabelEncoder 无法处理 NaN 值,所以需要提前处理。</span></span><br><span class="line">df.loc[:, <span class="string">"*ord_2*"</span>] = df.*ord_2*.fillna(<span class="string">"NONE"</span>) </span><br><span class="line"><span class="comment"># LabelEncoder编码</span></span><br><span class="line">lbl_enc = preprocessing.LabelEncoder()</span><br><span class="line"><span class="comment"># 转换数据</span></span><br><span class="line">df.loc[:, <span class="string">"*ord_2*"</span>] = lbl_enc.fit_transform(df.*ord_2*.values)</span><br></pre></td></tr></table></figure></p>
+<p>我们可以在许多基于树的模型中直接使用它：决策树、随机森林、XGBoost 、GBM、LightGBM等。<br>但是这种编码方式不能用于线性模型、支持向量机或神经网络，因为它们希望数据是标准化的。</p>
+<h2 id="二值化的稀疏矩阵"><a href="#二值化的稀疏矩阵" class="headerlink" title="二值化的稀疏矩阵"></a>二值化的稀疏矩阵</h2><p>为了对分类数据的处理能适用于线性模型、支持向量机或神经网络。对于这些类型的模型，我们可以对数据进行二值化（binarize）处理。二值化不是二分类，我们可以通过特征拆解，将一个特征用多个特征表示，实现多分类。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Freezing    --&gt; 0 --&gt; 0 0 0</span><br><span class="line">Warm        --&gt; 1 --&gt; 0 0 1 </span><br><span class="line">Cold        --&gt; 2 --&gt; 0 1 0 </span><br><span class="line">Boiling Hot --&gt; 3 --&gt; 0 1 1 </span><br><span class="line">Hot         --&gt; 4 --&gt; 1 0 0 </span><br><span class="line">Lava Hot    --&gt; 5 --&gt; 1 0 1</span><br></pre></td></tr></table></figure>
+<p>这只是将类别转换为数字，然后再转换为二值化表示。这样，我们就把一个特征分成了三个（在本例中）特征（或列）。如果我们有更多的类别，最终可能会分成更多的列。对应的特征 <strong>Feature</strong> 就可以由  <strong>Feature_0、Feature_1、Feature_2</strong> 表示。<br>| Feature  | Feature_0 | Feature_1 | Feature_2 |<br>| ——– | ——— | ——— | ——— |<br>| Warm     | 0         | 0         | 1         |<br>| Hot      | 1         | 0         | 0         |<br>| Lava Hot | 1         | 0         | 1         |</p>
+<p>由于我们只关注其中的非0值（对应特征为1 的值）所以将上述特征格式转换成稀疏矩阵会进一步减少内存使用。用 1 表示矩阵的一种方法是某种字典方法，其中键是行和列的索引，值是 1。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(<span class="number">0</span>, <span class="number">2</span>)      <span class="number">1</span></span><br><span class="line">(<span class="number">1</span>, <span class="number">0</span>)      <span class="number">1</span></span><br><span class="line">(<span class="number">2</span>, <span class="number">0</span>)      <span class="number">1</span></span><br><span class="line">(<span class="number">2</span>, <span class="number">2</span>)      <span class="number">1</span></span><br><span class="line"><span class="comment"># 占用32字节</span></span><br></pre></td></tr></table></figure></p>
+<p>在大数据矩阵中，稀疏矩阵可以减少内存的效果会更加明显。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> scipy <span class="keyword">import</span> sparse</span><br><span class="line">n_rows = <span class="number">10000</span></span><br><span class="line">n_cols = <span class="number">100000</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成符合伯努利分布的随机数组，维度为[10000, 100000]</span></span><br><span class="line">example = np.random.binomial(<span class="number">1</span>, p=<span class="number">0.05</span>, size=(n_rows, n_cols))</span><br><span class="line">print(<span class="string">f"Size of dense array: <span class="subst">&#123;example.nbytes&#125;</span>"</span>) </span><br><span class="line"><span class="comment"># Size of dense array: 8000000000 </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 将随机矩阵转换为稀疏矩阵</span></span><br><span class="line">sparse_example = sparse.csr_matrix(example)</span><br><span class="line">print(<span class="string">f"Size of sparse array: <span class="subst">&#123;sparse_example.data.nbytes&#125;</span>"</span>) </span><br><span class="line"><span class="comment"># Size of sparse array: 399932496</span></span><br><span class="line"></span><br><span class="line">full_size = (</span><br><span class="line">    sparse_example.data.nbytes +</span><br><span class="line">    sparse_example.indptr.nbytes +</span><br><span class="line">    sparse_example.indices.nbytes </span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">print(<span class="string">f"Full size of sparse array: <span class="subst">&#123;full_size&#125;</span>"</span>)</span><br><span class="line"><span class="comment"># Full size of sparse array: 599938748</span></span><br></pre></td></tr></table></figure></p>
+<p>因此，密集阵列需要 ~8000MB 或大约 8GB 内存。而稀疏阵列只占用 399MB 内存。当我们的特征中有越多零时，稀疏阵列对内存的降低效果越显著。</p>
+<h2 id="独热编码"><a href="#独热编码" class="headerlink" title="独热编码"></a>独热编码</h2><p>二值化特征的稀疏表示比其密集表示所占用的内存要少得多，但对于分类变量来说，还有一种转换所占用的内存更少。这就是所谓的 “独热编码”。<br>独热编码也是一种二值编码，因为只有 0 和 1 两个值。但必须注意的是，它并不是二值表示法。我们可以通过下面的例子来理解它的表示法。<br>假设我们用一个向量来表示 ord_2 变量的每个类别。这个<strong>向量的大小与 ord_2 变量的类别数相同</strong>。在这种特定情况下，每个向量的大小都是 6，并且<strong>除了一个位置外，其他位置都是 0</strong>。让我们来看看这个特殊的向量表。<br>| Category    | Fea_0 | Fea_1 | Fea_2 | Fea_3 | Fea_4 | Fea_5 |<br>| ———– | :—: | :—: | :—: | :—: | :—: | :—: |<br>| Freezing    |   0   |   0   |   0   |   0   |   0   |   1   |<br>| Warm        |   0   |   0   |   0   |   0   |   1   |   0   |<br>| Cold        |   0   |   0   |   0   |   1   |   0   |   0   |<br>| Boiling Hot |   0   |   0   |   1   |   0   |   0   |   0   |<br>| Hot         |   0   |   1   |   0   |   0   |   0   |   0   |<br>| Lava Hot    |   1   |   0   |   0   |   0   |   0   |   0   |</p>
+<p>使用热独编码相比二值化编码，在进行稀疏化后，可以更加节省内存，还是以之前的例子，我们表示 Warm、Hot、Lava Hot 这三个类别的稀疏表示如下：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(<span class="number">1</span>, <span class="number">4</span>)      <span class="number">1</span></span><br><span class="line">(<span class="number">4</span>, <span class="number">1</span>)      <span class="number">1</span></span><br><span class="line">(<span class="number">5</span>, <span class="number">0</span>)      <span class="number">1</span></span><br><span class="line"><span class="comment"># 直接少了一个非零值，仅占用24字节</span></span><br></pre></td></tr></table></figure></p>
+<p>二值化中示例的更大的数据，我们来看看变化<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> sklearn <span class="keyword">import</span> preprocessing</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成符合均匀分布的随机整数，维度为[1000000, 10000000]</span></span><br><span class="line">example = np.random.randint(<span class="number">1000</span>, size=<span class="number">1000000</span>)</span><br><span class="line"><span class="comment"># 独热编码，非稀疏矩阵</span></span><br><span class="line">ohe = preprocessing.OneHotEncoder(sparse=<span class="keyword">False</span>)</span><br><span class="line"><span class="comment"># 将随机数组展平</span></span><br><span class="line">ohe_example = ohe.fit_transform(example.reshape(<span class="number">-1</span>, <span class="number">1</span>))</span><br><span class="line">print(<span class="string">f"Size of dense array: <span class="subst">&#123;ohe_example.nbytes&#125;</span>"</span>) </span><br><span class="line"><span class="comment"># Size of dense array: 8000000000 </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 独热编码，稀疏矩阵</span></span><br><span class="line">ohe = preprocessing.OneHotEncoder(sparse=<span class="keyword">True</span>)</span><br><span class="line"><span class="comment"># 将随机数组展平</span></span><br><span class="line">ohe_example = ohe.fit_transform(example.reshape(<span class="number">-1</span>, <span class="number">1</span>))</span><br><span class="line">print(<span class="string">f"Size of sparse array: <span class="subst">&#123;ohe_example.data.nbytes&#125;</span>"</span>) </span><br><span class="line"><span class="comment"># Size of sparse array: 8000000 </span></span><br><span class="line"></span><br><span class="line">full_size = (</span><br><span class="line">    ohe_example.data.nbytes +</span><br><span class="line">    ohe_example.indptr.nbytes + </span><br><span class="line">    ohe_example.indices.nbytes </span><br><span class="line">)</span><br><span class="line">print(<span class="string">f"Full size of sparse array: <span class="subst">&#123;full_size&#125;</span>"</span>)</span><br><span class="line"><span class="comment"># Full size of sparse array: 16000004</span></span><br></pre></td></tr></table></figure></p>
+<p>这里的密集阵列大小约为 8GB，稀疏阵列在二值化时是300MB，使用热独编码的稀疏矩阵只有 8MB。</p>
+<h1 id="罕见类"><a href="#罕见类" class="headerlink" title="罕见类"></a>罕见类</h1><p>有时候<br>罕见类是指在数据集中出现次数少于一定阈值的类别。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/machine-learning/" rel="tag"><i class="fa fa-tag"></i> machine_learning</a>
+          
+            <a href="/tags/数据预处理/" rel="tag"><i class="fa fa-tag"></i> 数据预处理</a>
+          
+            <a href="/tags/特征工程/" rel="tag"><i class="fa fa-tag"></i> 特征工程</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.开发-20.MachineLearn/1020.性能评估-/" rel="next" title="1020.性能评估-">
+                <i class="fa fa-chevron-left"></i> 1020.性能评估-
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.开发-20.MachineLearn/1001.特征工程-数据编码-时间周期处理/" rel="prev" title="特征工程-时间周期处理">
+                特征工程-时间周期处理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/uploads/avatar.jpg"
+               alt="Ben-air" />
+          <p class="site-author-name" itemprop="name">Ben-air</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">466</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">97</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">143</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/Ben-unbelieveable" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-twitter-url" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="2432065975" target="_blank" title="Wechat">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      Wechat
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-weibo-url" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="your-douban-url" target="_blank" title="DouBan">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      DouBan
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/dan-mo-39/activities" target="_blank" title="ZhiHu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      ZhiHu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#编码"><span class="nav-number">1.</span> <span class="nav-text">编码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#标签编码"><span class="nav-number">1.1.</span> <span class="nav-text">标签编码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二值化的稀疏矩阵"><span class="nav-number">1.2.</span> <span class="nav-text">二值化的稀疏矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#独热编码"><span class="nav-number">1.3.</span> <span class="nav-text">独热编码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#罕见类"><span class="nav-number">2.</span> <span class="nav-text">罕见类</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
