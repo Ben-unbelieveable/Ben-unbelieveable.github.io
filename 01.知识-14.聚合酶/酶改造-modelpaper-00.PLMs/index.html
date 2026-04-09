@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,蛋白质语言模型,PLM," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="蛋白质语言模型（PLMs）的发表脉络、Transformer 框架结构、代表模型的参数与训练数据、典型训练成果及在酶工程等领域的应用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-04.模型架构-PLMs">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-00.PLMs/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="蛋白质语言模型（PLMs）的发表脉络、Transformer 框架结构、代表模型的参数与训练数据、典型训练成果及在酶工程等领域的应用。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-03-30T07:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-09T13:37:42.181Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="PLM">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-14.聚合酶/酶改造-modelpaper-00.PLMs/"/>
+
+
+
+
+
+  <title>酶改造-04.模型架构-PLMs | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-00.PLMs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-04.模型架构-PLMs</h1>
+        
+
+        <div class="post-meta">
+	  
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-30T15:00:00+08:00">
+                2026-03-30
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  蛋白质语言模型（PLMs）的发表脉络、Transformer 框架结构、代表模型的参数与训练数据、典型训练成果及在酶工程等领域的应用。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>缩写体例</strong>：缩写<strong>首次出现</strong>写「中文全称（英文全称，缩写）」；在该段末尾用 <strong>段末注释</strong> 框简要解释概念，后文沿用缩写。</p>
+<h2 id="1-PLMs-指什么"><a href="#1-PLMs-指什么" class="headerlink" title="1. PLMs 指什么"></a>1. PLMs 指什么</h2><p>在生物信息学与酶工程语境下，<strong>蛋白质语言模型（Protein Language Model，PLM）</strong> 常复数写作 <strong>PLMs</strong>：把蛋白质序列视为「由氨基酸字母组成的文本」，用<strong>自然语言处理（Natural Language Processing，NLP）</strong> 中成熟的 <strong>自监督学习</strong> 在大规模序列上预训练，再用于表征学习、结构预测、适应性（fitness）估计等下游任务。</p>
+<p>它是一类<strong>方法论与模型族</strong>（如 ESM、ProtBERT&#x2F;ProtT5 等），而不是某一个单一商业软件名称；工业界与论文中也常简称 <strong>PLM</strong>（与 NLP 里「预训练语言模型」的简称同名，需结合上下文区分）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PLM&#x2F;PLMs</strong> 指在蛋白质序列上预训练、输出序列表征或掩码预测的模型族；<strong>NLP</strong> 为自然语言处理，此处强调借用其 Transformer&#x2F;BERT 等技术与训练范式。</p>
+</blockquote>
+<h3 id="为何正文未把-AlphaFold-当作「PLM-主线」展开"><a href="#为何正文未把-AlphaFold-当作「PLM-主线」展开" class="headerlink" title="为何正文未把 AlphaFold 当作「PLM 主线」展开"></a>为何正文未把 AlphaFold 当作「PLM 主线」展开</h3><p><strong>AlphaFold</strong>（<strong>AlphaFold2</strong>，2021；<strong>AlphaFold3</strong>，2024 等）在文献与工程里通常归入 <strong>蛋白质结构预测</strong>：输入序列与 <strong>多序列比对（Multiple Sequence Alignment，MSA）</strong> 等，经 <strong>Evoformer</strong>（AlphaFold2 核心模块的专有名，常不拆写）等模块输出 <strong>三维坐标 &#x2F; 置信度</strong>，优化目标与「在氨基酸序列上做 <strong>掩码语言建模（Masked Language Modeling，MLM）</strong> &#x2F; <strong>因果语言建模（Causal Language Modeling，CLM）</strong> 自监督、得到通用序列表征」的 <strong>PLM</strong> 不是同一条技术谱系。换言之，<strong>AlphaFold 不是典型的蛋白质语言模型</strong>，故本篇以 ESM、ProtBERT、ProtT5、Ankh 等为时间线与参数表的主线；<strong>ESMFold</strong> 因在 <strong>ESM-2</strong> 同工作中与序列表征强绑定，放在 <strong>§2、§6.3</strong> 作为「PLM + 结构头」的代表。</p>
+<p>酶改造实践中 <strong>PLM（突变效应、相似度、嵌入）</strong> 与 <strong>AlphaFold&#x2F;ESMFold（结构先验、口袋与界面）</strong> 常 <strong>联用</strong>：<strong>§7</strong> 已把 <strong>AlphaFold2</strong> 写在「结构先验」一行。若需与结构预测文献对齐，可按下表与 <strong>§2</strong> 时间线对照（<strong>并列参考，非 PLM 定义内条目</strong>）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MSA</strong> 将多条同源蛋白序列按位对齐，提供共进化约束；<strong>MLM</strong> 为遮盖残基再预测、<strong>CLM</strong> 为按序预测下一残基，二者是序列 PLM 常见预训练目标；<strong>PLM</strong> 侧重序列表征，与以三维坐标为输出的结构预测路线不同。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>代表时间与出处（常见引用）</th>
+<th>与 PLM 的分工（一句话）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>AlphaFold2</strong></td>
+<td>2021，<em>Nature</em>（Jumper 等）</td>
+<td><strong>MSA + Evoformer → 单体结构</strong>；社区事实标准之一，主流用法是结构&#x2F;置信度而非替代 ESM 类序列表征。</td>
+</tr>
+<tr>
+<td><strong>AlphaFold3</strong></td>
+<td>2024，<em>Nature</em>（Abramson 等）</td>
+<td><strong>复合物、核酸、小分子</strong>等更广的折叠与相互作用；仍是 <strong>结构预测</strong> 路线，与「纯序列 PLM」范畴不同。</td>
+</tr>
+<tr>
+<td><strong>ESMFold</strong></td>
+<td>与 <strong>ESM-2</strong> 同篇 <em>Science</em>（2023）</td>
+<td><strong>单序列</strong>折叠，与 <strong>ESM-2</strong> 共享预训练；本篇已在 PLM 演进与 <strong>§6.3</strong> 中收录。</td>
+</tr>
+</tbody></table>
+<h3 id="结构预测侧：开源与工程实现（ColabFold、OpenFold-等）"><a href="#结构预测侧：开源与工程实现（ColabFold、OpenFold-等）" class="headerlink" title="结构预测侧：开源与工程实现（ColabFold、OpenFold 等）"></a>结构预测侧：开源与工程实现（ColabFold、OpenFold 等）</h3><p>下列项目<strong>不改变</strong>「PLM vs 结构预测」的学科划分，但决定你在实验室里<strong>能否批量、低成本、可复现地</strong>拿到结构，与 <strong>§7「结构先验」</strong> 直接衔接；权重与论文仍以 <strong>AlphaFold2 &#x2F; ESMFold</strong> 等为准，工具链负责 <strong>MSA、推理部署与二次开发</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>常见用途与特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ColabFold</strong></td>
+<td>以 <strong>MMseqs2</strong>（开源快速序列搜索与聚类套件，常用于 MSA 与同源聚类）等加速 <strong>MSA</strong> 构建，在 <strong>Google Colaboratory（Colab）</strong> 或本地环境调用 <strong>AlphaFold、AlphaFold-Multimer、ESMFold</strong> 等；降低单条序列结构预测的使用门槛，论文常引用 Mirdita 等（<em>Nature Methods</em> <strong>2022</strong>）。</td>
+</tr>
+<tr>
+<td><strong>LocalColabFold</strong></td>
+<td><strong>ColabFold</strong> 的<strong>本地&#x2F;命令行</strong>封装与安装方案（社区常称 localcolabfold），适合 <strong>批量预测、集群任务与 Snakemake&#x2F;Nextflow 工作流</strong> 接入。</td>
+</tr>
+<tr>
+<td><strong>OpenFold</strong></td>
+<td><strong>AlphaFold2</strong> 的<strong>开源、可训练</strong> <strong>PyTorch</strong>（开源深度学习框架）复现（Ahdritz 等，<em>Nature Methods</em> <strong>2024</strong>），便于 <strong>从头训练、微调、消融与架构改动</strong>；与官方推理栈并行存在，选型时以任务（推理 vs 研究训练）为准。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ColabFold</strong> 把 MSA 构建与结构预测推理打包成易用管线；<strong>MMseqs2</strong> 用于加速同源搜索以生成 MSA；<strong>OpenFold</strong> 侧重可复现训练与算法研究；<strong>Colab</strong> 为谷歌托管的 Jupyter 式笔记本环境，便于零安装试用。</p>
+</blockquote>
+<hr>
+<h2 id="2-发表与演进（时间线概览）"><a href="#2-发表与演进（时间线概览）" class="headerlink" title="2. 发表与演进（时间线概览）"></a>2. 发表与演进（时间线概览）</h2><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>代表工作</th>
+<th>发布时间</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>早期表征学习</td>
+<td>UniRep 等基于 RNN&#x2F;LSTM 的序列模型</td>
+<td><strong>2019-10</strong>（<em>Nature Methods</em>）</td>
+<td>用无标签序列学习向量表示，为后续 Transformer 铺路</td>
+</tr>
+<tr>
+<td>基准与任务标准化</td>
+<td>TAPE（Tasks Assessing Protein Embeddings）</td>
+<td><strong>2019</strong>（NeurIPS 2019；arXiv:1906.08230）</td>
+<td>统一评估二级结构、接触图、remote homology 等，推动可比性</td>
+</tr>
+<tr>
+<td>BERT 路线</td>
+<td><strong>ProtBERT</strong>（Rostlab 等）</td>
+<td><strong>2020-07</strong>（bioRxiv，ProtTrans 总论文）</td>
+<td>将 BERT 式 MLM 用于蛋白质序列</td>
+</tr>
+<tr>
+<td>编码器–解码器 &#x2F; T5 路线</td>
+<td><strong>ProtT5</strong>、ProtTrans 系列</td>
+<td><strong>2020-07</strong>（bioRxiv 10.1101&#x2F;2020.07.12.199554；arXiv:2007.06225）</td>
+<td>文本到文本框架，便于序列到序列任务</td>
+</tr>
+<tr>
+<td>大规模缩放</td>
+<td><strong>ESM-1</strong>（Rives 等）</td>
+<td><strong>2021-04</strong>（<em>PNAS</em>；预印本约 2020-12）</td>
+<td>规模化无监督学习，接触与结构信息从表征中涌现</td>
+</tr>
+<tr>
+<td>大规模缩放</td>
+<td><strong>ESM-1b</strong> 与零样本突变效应</td>
+<td><strong>2021-12</strong>（NeurIPS 2021，Meier 等）</td>
+<td>650M 参数量级 checkpoint 广泛沿用；零样本突变效应预测</td>
+</tr>
+<tr>
+<td>高效通用 PLM</td>
+<td><strong>Ankh</strong>（Elnaggar 等，Rost 组）</td>
+<td><strong>2023-01</strong>（bioRxiv 10.1101&#x2F;2023.01.16.524265；arXiv:2301.06568）</td>
+<td>在<strong>远小于</strong>同期巨型 PLM 的参数量与算力下做架构与预训练策略优化；ProtTrans 路线延续，适合资源受限场景</td>
+</tr>
+<tr>
+<td>规模化 PLM 与结构预测</td>
+<td><strong>ESM-2</strong>、<strong>ESMFold</strong>、<strong>ESM Metagenomic Atlas</strong>（Lin 等）</td>
+<td><strong>2023-03</strong>（<em>Science</em>，10.1126&#x2F;science.ade2574；预印本 <strong>2022-07-20</strong>，bioRxiv:2022.07.20.500902）</td>
+<td>多档至 15B 级 Transformer（ESM-2）；单序列原子级结构预测（ESMFold，不依赖 MSA）；宏基因组大规模结构图谱</td>
+</tr>
+<tr>
+<td>酶动力学与改造</td>
+<td><strong>DeepEnzyme</strong>（Wang 等）</td>
+<td><strong>2023-12</strong>（bioRxiv 10.1101&#x2F;2023.12.09.570923；<em>Briefings in Bioinformatics</em> <strong>2024-08</strong>）</td>
+<td><strong>非</strong>通用预训练基座，而是面向 <strong>kcat</strong> 的监督学习：<strong>Transformer + 图卷积</strong>，融合序列与 <strong>3D 结构</strong>特征，并可评估点突变对催化活性的影响</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>TAPE</strong>（Tasks Assessing Protein Embeddings）为蛋白质嵌入基准；表内 <strong>RNN&#x2F;LSTM</strong> 分别为循环神经网络与长短期记忆网络；<strong>NeurIPS</strong> 为神经信息处理系统会议；<strong>BERT&#x2F;T5</strong> 为 NLP 预训练架构，Prot 系列为其蛋白序列变体；<strong>Transformer</strong> 为自注意力堆叠网络；<strong>kcat</strong> 为催化周转数（每秒每活性位点转化底物分子数）。</p>
+</blockquote>
+<p>综述类文献（例如近年 arXiv 上对 protein language models 的系统综述）常从<strong>架构、位置编码、缩放律、数据集与下游应用</strong>几方面整理 PLM 全貌，适合作为文献入口。</p>
+<hr>
+<h2 id="3-框架结构（典型-PLM-在做什么）"><a href="#3-框架结构（典型-PLM-在做什么）" class="headerlink" title="3. 框架结构（典型 PLM 在做什么）"></a>3. 框架结构（典型 PLM 在做什么）</h2><p>绝大多数 PLM 共享同一套 <strong>NLP Transformer</strong> 骨架，差异主要在目标函数与是否因果。</p>
+<h3 id="3-1-骨干网络"><a href="#3-1-骨干网络" class="headerlink" title="3.1 骨干网络"></a>3.1 骨干网络</h3><ul>
+<li><strong>多头自注意力（Multi-Head Self-Attention，MHSA）</strong>：全序列建模长程依赖（活性位点、远端接触等）。</li>
+<li><strong>前馈层 + 残差 + 层归一化（Layer Normalization，LayerNorm）</strong>：与 <strong>双向编码器表示（Bidirectional Encoder Representations from Transformers，BERT）</strong> &#x2F; <strong>生成式预训练 Transformer（Generative Pre-trained Transformer，GPT）</strong> 类模型结构同族。</li>
+<li><strong>位置信息</strong>：一维序列位置编码（可学习或正弦等），把「序列顺序」注入模型。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MHSA</strong> 在多个子空间并行计算注意力再拼接；<strong>LayerNorm</strong> 对每层激活做归一化以稳定训练；<strong>BERT&#x2F;GPT</strong> 为 NLP 中两类经典预训练骨架，蛋白质 PLM 常与之同构。</p>
+</blockquote>
+<h3 id="3-2-预训练目标（最常见两类）"><a href="#3-2-预训练目标（最常见两类）" class="headerlink" title="3.2 预训练目标（最常见两类）"></a>3.2 预训练目标（最常见两类）</h3><ol>
+<li><p><strong>掩码语言建模（Masked Language Modeling，MLM；BERT&#x2F;ESM-2 类）</strong><br>随机遮盖部分氨基酸，根据上下文预测被掩位置的真实残基类型。强调<strong>双向上下文</strong>，适合提取整条序列的表征。</p>
+</li>
+<li><p><strong>因果语言建模（Causal Language Modeling，CLM；自回归类）</strong><br>按序列方向预测下一个氨基酸。更贴近「生成」设定，部分工作研究蛋白质上的 <strong>缩放律（scaling laws）</strong> 时会对比 MLM 与 CLM。</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MLM</strong> 同时利用左右上下文；<strong>CLM</strong> 仅利用一侧上下文（类似文本从左生成）；<strong>scaling laws</strong> 描述模型规模、数据量与性能之间的经验关系。</p>
+</blockquote>
+<h3 id="3-3-输入表示"><a href="#3-3-输入表示" class="headerlink" title="3.3 输入表示"></a>3.3 输入表示</h3><ul>
+<li>词表通常以 <strong>20 种标准氨基酸</strong>为主，外加特殊 token（起始、掩码、未知等）；部分模型将稀有残基映射到 <code>X</code> 等统一符号。</li>
+<li>序列长度上限由显存与训练策略决定（常见数百到上千残基；长序列会配合截断、滑动窗口或 Longformer 类思路，依具体实现而定）。</li>
+</ul>
+<h3 id="3-4-输出怎么用"><a href="#3-4-输出怎么用" class="headerlink" title="3.4 输出怎么用"></a>3.4 输出怎么用</h3><ul>
+<li><strong>序列级</strong>：池化得到整条酶的嵌入向量，用于分类、聚类、相似度检索。  </li>
+<li><strong>残基级</strong>：每个位置一个向量，用于接触预测、溶剂可及性、突变效应（如用 embedding 差分或专用头）。  </li>
+<li><strong>与结构&#x2F;功能头结合</strong>：在 PLM 之上接小型网络做微调或零样本启发式评分。</li>
+</ul>
+<hr>
+<h2 id="4-模型参数与代表模型族（量级与可复现资源）"><a href="#4-模型参数与代表模型族（量级与可复现资源）" class="headerlink" title="4. 模型参数与代表模型族（量级与可复现资源）"></a>4. 模型参数与代表模型族（量级与可复现资源）</h2><p>以下为文献与官方发布中常见的<strong>数量级</strong>（具体层数、hidden size、checkpoint 名称以各模型 Card 为准）。</p>
+<table>
+<thead>
+<tr>
+<th>系列</th>
+<th>参数量级（示例）</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ESM-2</strong></td>
+<td>约 <strong>8M～15B</strong> 等多档 checkpoint</td>
+<td>家族内从小到大多规格，便于在精度与算力间折中；大模型用于更强表征与 ESMFold 相关研究</td>
+</tr>
+<tr>
+<td><strong>ProtBERT</strong></td>
+<td>约 <strong>420M</strong> 量级（BERT-large 类配置）</td>
+<td>Hugging Face <code>Rostlab/prot_bert</code> 等便于直接调用</td>
+</tr>
+<tr>
+<td><strong>ProtT5</strong></td>
+<td>较大 T5 变体（如 <strong>XL</strong> 档约 <strong>3B</strong>）</td>
+<td><strong>ProtTrans</strong>；编码器—解码器骨架与 <strong>UniRef50</strong> checkpoint 构建细节见《<a href="./%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3.md">酶改造-modelpaper-ProtT5框架详解</a>》</td>
+</tr>
+<tr>
+<td><strong>Ankh</strong>（Base &#x2F; Large 等）</td>
+<td>刻意<strong>小型化</strong>的通用 PLM（论文称在显著更少参数下达到有竞争力表现，具体以 Hugging Face 卡为准）</td>
+<td>Rost 组在 ProtBERT&#x2F;ProtT5 之后的「高效」路线；<code>agemagician/Ankh</code></td>
+</tr>
+</tbody></table>
+<p>选择建议（实践向）：<strong>先从中等体量 ESM-2、ProtBERT 或 Ankh 做基线</strong>，再按需换大模型；聚合酶等长序列酶需注意<strong>最大长度</strong>与<strong>批大小</strong>对显存的限制。</p>
+<hr>
+<h2 id="5-训练数据（从哪来、长什么样）"><a href="#5-训练数据（从哪来、长什么样）" class="headerlink" title="5. 训练数据（从哪来、长什么样）"></a>5. 训练数据（从哪来、长什么样）</h2><p>PLM 的通用范式是：<strong>无监督或弱监督、海量序列</strong>。</p>
+<p>常见数据来源包括：</p>
+<ul>
+<li><strong>UniRef</strong>（如 UniRef50&#x2F;UniRef100）：聚类去冗余后的序列库，控制冗余度、扩大覆盖。</li>
+<li><strong>大型宏基因组序列库（Big Fantastic Database，BFD）</strong> 等<strong>宏基因组</strong>补充数据：提升多样性，缓解对模式生物的过拟合。</li>
+<li>部分研究在 <strong>数亿～数十亿条序列、千亿级氨基酸 token</strong> 规模上讨论 <strong>缩放律（scaling law）</strong> 与算力最优训练。</li>
+</ul>
+<p>数据预处理通常包括：去重、按相似度聚类、长度过滤、以及（在部分工作中）与结构数据库对齐用于多任务学习——<strong>纯序列预训练</strong>仍是最普遍的配置。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>BFD</strong> 为面向宏基因组的大规模蛋白序列资源，常与 MSA&#x2F;折叠管线一并提及；<strong>token</strong> 指模型词表中的最小单元（此处多为单残基或特殊符号）；<strong>scaling law</strong> 见 <strong>§3.2</strong> 段末注释。</p>
+</blockquote>
+<hr>
+<h2 id="6-训练成果（模型到底学到了什么）"><a href="#6-训练成果（模型到底学到了什么）" class="headerlink" title="6. 训练成果（模型到底学到了什么）"></a>6. 训练成果（模型到底学到了什么）</h2><h3 id="6-1-在标准基准上的表现"><a href="#6-1-在标准基准上的表现" class="headerlink" title="6.1 在标准基准上的表现"></a>6.1 在标准基准上的表现</h3><p>在 <strong>TAPE</strong> 等任务上，PLM 嵌入在<strong>接触预测、远程同源性、二级结构</strong>等任务上相对早期手工特征与浅层模型有明显提升；不同 PLM 互有胜负，与<strong>模型大小、微调方式、任务是否匹配</strong>强相关。</p>
+<h3 id="6-2-表征层面的发现"><a href="#6-2-表征层面的发现" class="headerlink" title="6.2 表征层面的发现"></a>6.2 表征层面的发现</h3><ul>
+<li><strong>层次语义</strong>：较深层往往更偏向<strong>功能与结构 motif</strong>；有工作指出取<strong>中间层或多层融合</strong>有时优于仅用最后一层。</li>
+<li><strong>与进化信息的关系</strong>：大模型在一定程度上<strong>内隐地编码共进化与约束</strong>，故可用于突变效应排序、稳定性粗估等。</li>
+</ul>
+<h3 id="6-3-与结构预测结合"><a href="#6-3-与结构预测结合" class="headerlink" title="6.3 与结构预测结合"></a>6.3 与结构预测结合</h3><p><strong>ESMFold</strong> 等表明：在足够规模下，<strong>单一序列输入</strong>即可推断合理折叠，极大加速<strong>宏基因组蛋白</strong>的结构覆盖；<strong>ESM Metagenomic Atlas</strong> 类资源为未知蛋白家族提供了可检索的结构假设。</p>
+<hr>
+<h2 id="7-应用领域（与酶改造的直接关系）"><a href="#7-应用领域（与酶改造的直接关系）" class="headerlink" title="7. 应用领域（与酶改造的直接关系）"></a>7. 应用领域（与酶改造的直接关系）</h2><table>
+<thead>
+<tr>
+<th>应用方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>序列嵌入与相似度检索</strong></td>
+<td>用 PLM 向量做聚类、同源家族划分、候选序列库筛选。</td>
+</tr>
+<tr>
+<td><strong>突变效应与适应性预测</strong></td>
+<td>零样本或轻量微调：对位点突变打分，辅助定向进化位点优先级排序。</td>
+</tr>
+<tr>
+<td><strong>稳定性与可溶性</strong></td>
+<td>作为特征输入下游回归&#x2F;分类模型，或与实验数据联合建模。</td>
+</tr>
+<tr>
+<td><strong>结构先验</strong></td>
+<td>对接 <strong>AlphaFold2、ESMFold</strong> 等（工程上常用 <strong>ColabFold &#x2F; LocalColabFold</strong> 跑推理，<strong>OpenFold</strong> 多用于可训练复现），为聚合酶催化域、指状结构域等提供<strong>初始结构假设</strong>。</td>
+</tr>
+<tr>
+<td><strong>功能注释与定位</strong></td>
+<td>结合 ProtBERT&#x2F;ProtT5 文献中的任务：亚细胞定位、膜蛋白 vs 可溶蛋白等，辅助重组表达设计。</td>
+</tr>
+<tr>
+<td><strong>聚合酶专项</strong></td>
+<td>在 <strong>保真度（fidelity）、延伸速率、热稳定性、引物延伸</strong> 等目标上，PLM 常作为<strong>通用序列先验</strong>，与实验筛选、高通量测序标签联合使用；具体聚合酶变体仍需<strong>实验验证</strong>。</td>
+</tr>
+<tr>
+<td><strong>高效嵌入与下游</strong></td>
+<td><strong>Ankh</strong> 等轻量 PLM 可在<strong>有限图形处理器（Graphics Processing Unit，GPU）</strong> 上提取序列嵌入，再接任务头做分类、生成或变异分析。</td>
+</tr>
+<tr>
+<td><strong>周转数与催化效率</strong></td>
+<td><strong>DeepEnzyme</strong> 针对 <strong>kcat</strong>（及突变效应）显式建模，<strong>序列 + 结构</strong>联合输入，与「仅序列 PLM」互补；适用于关心 <strong>催化周转</strong> 的酶改造评估（含聚合酶相关催化步骤的类比思路，仍以任务定义与数据为准）。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><ul>
+<li><strong>PLMs</strong> 是以 <strong>Transformer + 大规模蛋白质序列自监督预训练</strong>为核心的技术体系，<strong>ESM-2、ProtBERT、ProtT5、Ankh</strong> 等是开放权重中较常用的代表；<strong>AlphaFold2&#x2F;3</strong> 属 <strong>结构预测</strong> 谱系，与 PLM 定义不同但常与 PLM 联用（见 <strong>§1</strong> 模型对照表与 <strong>ColabFold &#x2F; OpenFold</strong> 等工程表）。酶学场景还可对接 <strong>DeepEnzyme</strong> 等<strong>序列–结构联合</strong>的监督模型以预测 <strong>kcat</strong> 等动力学指标。  </li>
+<li><strong>框架</strong>上主要是 <strong>MLM 或 CLM</strong> 目标 + <strong>可缩放 Transformer</strong>；<strong>参数</strong>从百万级到百亿级可选；<strong>数据</strong>以 UniRef&#x2F;BFD&#x2F;宏基因组等海量序列为主。  </li>
+<li><strong>成果</strong>体现在基准任务、隐式结构&#x2F;进化信息、以及与折叠模型结合的大规模结构资源。  </li>
+<li>在 <strong>酶与聚合酶改造</strong>中，PLM 适合作为<strong>序列表征与突变优先级</strong>的通用引擎，与<strong>实验与领域指标</strong>（见本系列其他篇）结合使用最为稳妥。</li>
+</ul>
+<hr>
+<h2 id="9-延伸阅读（检索关键词）"><a href="#9-延伸阅读（检索关键词）" class="headerlink" title="9. 延伸阅读（检索关键词）"></a>9. 延伸阅读（检索关键词）</h2><ul>
+<li>论文关键词：<code>protein language model</code>, <code>ESM-2</code>, <code>ProtBERT</code>, <code>ProtTrans</code>, <code>Ankh</code>, <code>DeepEnzyme</code>, <code>kcat</code>, <code>TAPE benchmark</code>, <code>ESMFold</code>, <code>AlphaFold2</code>, <code>AlphaFold3</code>, <code>ColabFold</code>, <code>OpenFold</code>, <code>MMseqs2</code>, <code>zero-shot protein fitness</code>  </li>
+<li>开源实现：GitHub <code>facebookresearch/esm</code>，Hugging Face <code>Rostlab/prot_*</code>，<code>agemagician/ProtTrans</code>，<code>agemagician/Ankh</code>，<code>hongzhonglu/DeepEnzyme</code>；结构预测工具链 <strong><code>sokrypton/ColabFold</code></strong>，<strong><code>YoshitakaMo/localcolabfold</code></strong>（或同类本地封装），<strong><code>aqlaboratory/openfold</code></strong></li>
+</ul>
+<p><strong>本系列</strong>：<a href="/%E9%85%B6%E6%94%B9%E9%80%A0-01.%E8%81%9A%E5%90%88%E9%85%B6%E7%9A%84%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/">评估指标</a> · <a href="/%E9%85%B6%E6%94%B9%E9%80%A0-02.%E8%81%9A%E5%90%88%E9%85%B6%E7%AD%9B%E9%80%89%E6%96%B9%E6%B3%95%E7%9A%84%E5%8F%91%E5%B1%95%E8%84%89%E7%BB%9C/">筛选脉络</a> · <a href="/%E9%85%B6%E6%94%B9%E9%80%A0-03.%E8%81%9A%E5%90%88%E9%85%B6%E7%AD%9B%E9%80%89%E7%9A%84%E5%BC%80%E6%BA%90%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%E6%B1%87%E6%80%BB/">开源数据</a> · <a href="/%E9%85%B6%E6%94%B9%E9%80%A0-05.ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/">ESM 框架详解</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/PLM/" rel="tag"><i class="fa fa-tag"></i> PLM</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-03.%E8%81%9A%E5%90%88%E9%85%B6%E7%AD%9B%E9%80%89%E7%9A%84%E5%BC%80%E6%BA%90%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%E6%B1%87%E6%80%BB/" rel="next" title="酶改造-03.聚合酶筛选的开源训练数据汇总">
+                <i class="fa fa-chevron-left"></i> 酶改造-03.聚合酶筛选的开源训练数据汇总
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/" rel="prev" title="酶改造-05.ESM 框架详解">
+                酶改造-05.ESM 框架详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">550</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">101</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">182</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-PLMs-%E6%8C%87%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">1. PLMs 指什么</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BD%95%E6%AD%A3%E6%96%87%E6%9C%AA%E6%8A%8A-AlphaFold-%E5%BD%93%E4%BD%9C%E3%80%8CPLM-%E4%B8%BB%E7%BA%BF%E3%80%8D%E5%B1%95%E5%BC%80"><span class="nav-number">1.1.</span> <span class="nav-text">为何正文未把 AlphaFold 当作「PLM 主线」展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E9%A2%84%E6%B5%8B%E4%BE%A7%EF%BC%9A%E5%BC%80%E6%BA%90%E4%B8%8E%E5%B7%A5%E7%A8%8B%E5%AE%9E%E7%8E%B0%EF%BC%88ColabFold%E3%80%81OpenFold-%E7%AD%89%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">结构预测侧：开源与工程实现（ColabFold、OpenFold 等）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%8F%91%E8%A1%A8%E4%B8%8E%E6%BC%94%E8%BF%9B%EF%BC%88%E6%97%B6%E9%97%B4%E7%BA%BF%E6%A6%82%E8%A7%88%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. 发表与演进（时间线概览）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A1%86%E6%9E%B6%E7%BB%93%E6%9E%84%EF%BC%88%E5%85%B8%E5%9E%8B-PLM-%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 框架结构（典型 PLM 在做什么）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E9%AA%A8%E5%B9%B2%E7%BD%91%E7%BB%9C"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 骨干网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%A2%84%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87%EF%BC%88%E6%9C%80%E5%B8%B8%E8%A7%81%E4%B8%A4%E7%B1%BB%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 预训练目标（最常见两类）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%BE%93%E5%85%A5%E8%A1%A8%E7%A4%BA"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 输入表示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E8%BE%93%E5%87%BA%E6%80%8E%E4%B9%88%E7%94%A8"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 输出怎么用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%A8%A1%E5%9E%8B%E5%8F%82%E6%95%B0%E4%B8%8E%E4%BB%A3%E8%A1%A8%E6%A8%A1%E5%9E%8B%E6%97%8F%EF%BC%88%E9%87%8F%E7%BA%A7%E4%B8%8E%E5%8F%AF%E5%A4%8D%E7%8E%B0%E8%B5%84%E6%BA%90%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. 模型参数与代表模型族（量级与可复现资源）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%EF%BC%88%E4%BB%8E%E5%93%AA%E6%9D%A5%E3%80%81%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 训练数据（从哪来、长什么样）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%AE%AD%E7%BB%83%E6%88%90%E6%9E%9C%EF%BC%88%E6%A8%A1%E5%9E%8B%E5%88%B0%E5%BA%95%E5%AD%A6%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 训练成果（模型到底学到了什么）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%9C%A8%E6%A0%87%E5%87%86%E5%9F%BA%E5%87%86%E4%B8%8A%E7%9A%84%E8%A1%A8%E7%8E%B0"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 在标准基准上的表现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E8%A1%A8%E5%BE%81%E5%B1%82%E9%9D%A2%E7%9A%84%E5%8F%91%E7%8E%B0"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 表征层面的发现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E4%B8%8E%E7%BB%93%E6%9E%84%E9%A2%84%E6%B5%8B%E7%BB%93%E5%90%88"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 与结构预测结合</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%BA%94%E7%94%A8%E9%A2%86%E5%9F%9F%EF%BC%88%E4%B8%8E%E9%85%B6%E6%94%B9%E9%80%A0%E7%9A%84%E7%9B%B4%E6%8E%A5%E5%85%B3%E7%B3%BB%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 应用领域（与酶改造的直接关系）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB%EF%BC%88%E6%A3%80%E7%B4%A2%E5%85%B3%E9%94%AE%E8%AF%8D%EF%BC%89"><span class="nav-number">9.</span> <span class="nav-text">9. 延伸阅读（检索关键词）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

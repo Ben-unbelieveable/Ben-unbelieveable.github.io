@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,蛋白质语言模型,SMILES,酶动力学,底物表征," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="整理酶功能&#x2F;动力学预测大模型中与 SMILES 相关的角色：底物线性编码、典型双支路架构、代表工作（UniKP、DLKcat、DeepEnzyme 等）、数据与清洗注意；附 RDKit&#x2F;PyTorch 实践实例。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-酶功能大模型与SMILES表征">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-%E9%85%B6%E5%8A%9F%E8%83%BD%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%B8%8ESMILES%E8%A1%A8%E5%BE%81/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="整理酶功能&#x2F;动力学预测大模型中与 SMILES 相关的角色：底物线性编码、典型双支路架构、代表工作（UniKP、DLKcat、DeepEnzyme 等）、数据与清洗注意；附 RDKit&#x2F;PyTorch 实践实例。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-04-02T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-09T13:37:42.186Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="SMILES">
+<meta property="article:tag" content="底物表征">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta property="article:tag" content="酶动力学">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-14.聚合酶/酶改造-酶功能大模型与SMILES表征/"/>
+
+
+
+
+
+  <title>酶改造-酶功能大模型与SMILES表征 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-%E9%85%B6%E5%8A%9F%E8%83%BD%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%B8%8ESMILES%E8%A1%A8%E5%BE%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-酶功能大模型与SMILES表征</h1>
+        
+
+        <div class="post-meta">
+	  
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-04-02T18:00:00+08:00">
+                2026-04-02
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  整理酶功能/动力学预测大模型中与 SMILES 相关的角色：底物线性编码、典型双支路架构、代表工作（UniKP、DLKcat、DeepEnzyme 等）、数据与清洗注意；附 RDKit/PyTorch 实践实例。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>简化分子线性输入规范（Simplified Molecular Input Line Entry System，SMILES）</strong> 用<strong>单行 ASCII 字符串</strong>描述<strong>小分子（及可表达的部分聚合物片段）<strong>的</strong>分子图</strong>（原子、键、芳香性、支链等），是化学信息学里<strong>最常用</strong>的「可机读结构」之一。酶学机器学习里，<strong>酶功能&#x2F;动力学大模型</strong>若要同时吃「<strong>蛋白质序列</strong>」与「<strong>底物化学结构</strong>」，通常会把底物统一成 <strong>SMILES</strong>（或由其派生的<strong>分子图</strong>），再经 <strong>Transformer</strong>、<strong>图神经网络（Graph Neural Network，GNN）</strong> 或 <strong>指纹</strong> 等编码，与 <strong>蛋白质语言模型（Protein Language Model，PLM）</strong> 支路对齐。本文<strong>只做脉络整理</strong>，不展开各模型公式。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SMILES</strong> 与 <strong>InChI</strong> 等同为标识符体系，<strong>SMILES</strong> 更短、便于当「序列」喂给字符级模型；<strong>GNN</strong> 在分子上常以原子为节点、化学键为边。</p>
+</blockquote>
+<hr>
+<h2 id="1-为什么在「酶-大模型」里总看到-SMILES？"><a href="#1-为什么在「酶-大模型」里总看到-SMILES？" class="headerlink" title="1. 为什么在「酶 + 大模型」里总看到 SMILES？"></a>1. 为什么在「酶 + 大模型」里总看到 SMILES？</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th><strong>SMILES 能提供的</strong></th>
+<th><strong>局限（工程上常踩坑）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>把<strong>底物结构</strong>与<strong>氨基酸序列</strong>拼在同一套深度学习管线里</td>
+<td>一维字符串，易与 <strong>ProtT5 &#x2F; ESM</strong> 等「序列模型」<strong>并列</strong>为两条支路</td>
+<td>同一结构可有多种合法 <strong>SMILES</strong>（需 <strong>canonicalize</strong> 规范化）</td>
+</tr>
+<tr>
+<td>与公开数据库对接</td>
+<td><strong>PubChem</strong>、<strong>ChEBI</strong>、<strong>KEGG</strong> 等常提供或可转换 <strong>SMILES</strong> &#x2F; <strong>CID</strong></td>
+<td><strong>盐</strong>、<strong>溶剂合物</strong>、<strong>多组分</strong>（见 <strong>§4</strong>）</td>
+</tr>
+<tr>
+<td>下游任务：k<sub>cat</sub>、K<sub>m</sub>、选择性等</td>
+<td>结构决定相互作用，比「底物名称字符串」可泛化</td>
+<td>对<strong>金属配位</strong>、<strong>大肽底物</strong>等，<strong>SMILES</strong> 未必是唯一或最佳表示</td>
+</tr>
+</tbody></table>
+<p>一句话：<strong>SMILES 是「底物分支」的通用输入语言</strong>；<strong>酶分支</strong>则多为 <strong>PLM</strong> 或 <strong>CNN&#x2F;n-gram</strong> 序列编码。</p>
+<hr>
+<h2 id="2-典型信息流（双支路）"><a href="#2-典型信息流（双支路）" class="headerlink" title="2. 典型信息流（双支路）"></a>2. 典型信息流（双支路）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">底物 SMILES → [RDKit 解析] 或 [Tokenizer] → 分子图 / SMILES 字符序列</span><br><span class="line">                    ↓</span><br><span class="line">            底物嵌入（Transformer / GCN / 指纹）</span><br><span class="line">                    ↓</span><br><span class="line">              与酶向量拼接/融合 → 读出头（kcat、Km、…）</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>序列式 SMILES 模型</strong>：把 <strong>SMILES 当字符序列</strong>，用 <strong>Transformer</strong> 编码（如 <strong>UniKP</strong> 中的 <strong>SMILES Transformer</strong>）。  </li>
+<li><strong>图式模型</strong>：<code>MolFromSmiles</code> → <strong>原子&#x2F;键特征</strong> + <strong>邻接矩阵</strong> → <strong>GCN &#x2F; GAT</strong>（如 <strong>DeepEnzyme</strong> 底物支路；<strong>DLKcat</strong> 用 <strong>GNN</strong> 作用于分子图，图由 <strong>SMILES</strong> 派生）。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>GCN</strong> 为图卷积网络；<strong>GAT</strong> 为图注意力网络；<strong>RDKit</strong> 为开源化学信息学工具包。</p>
+</blockquote>
+<hr>
+<h2 id="3-代表工作一览（与-SMILES-的关系）"><a href="#3-代表工作一览（与-SMILES-的关系）" class="headerlink" title="3. 代表工作一览（与 SMILES 的关系）"></a>3. 代表工作一览（与 SMILES 的关系）</h2><table>
+<thead>
+<tr>
+<th>工作（常见简称）</th>
+<th>底物侧如何用 <strong>SMILES</strong></th>
+<th>酶侧</th>
+<th>站内长文</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>UniKP</strong></td>
+<td><strong>SMILES Transformer</strong>（预训练），字符级嵌入 + <strong>pooling</strong> 拼成 <strong>1024</strong> 维分子向量，与 <strong>ProtT5</strong> 酶向量拼接</td>
+<td><strong>ProtT5-XL-UniRef50</strong> 嵌入</td>
+<td><a href="./%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP.md">酶改造-modelpaper-UniKP</a></td>
+</tr>
+<tr>
+<td><strong>EF-UniKP</strong></td>
+<td>同上 + 环境因子（<strong>pH</strong>、温度等）重加权扩展</td>
+<td>同上</td>
+<td>同上</td>
+</tr>
+<tr>
+<td><strong>DeepEnzyme</strong></td>
+<td><strong>SMILES → RDKit 分子对象</strong> → <strong>指纹</strong> + <strong>分子图 GCN</strong></td>
+<td><strong>Transformer</strong>（序列）+ <strong>蛋白接触图 GCN</strong>（结构）</td>
+<td><a href="./%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-DeepEnzyme.md">酶改造-modelpaper-DeepEnzyme</a></td>
+</tr>
+<tr>
+<td><strong>DLKcat</strong></td>
+<td>底物 <strong>SMILES → 分子图 → GNN</strong></td>
+<td>序列 <strong>CNN（n-gram）</strong></td>
+<td>可对照 <em>Nature Catalysis</em> 原文与 <a target="_blank" rel="noopener" href="https://www.tamarind.bio/tools/dlkcat">Tamarind DLKcat</a></td>
+</tr>
+<tr>
+<td><strong>TurNuP</strong> 等</td>
+<td>文献中常以 <strong>SMILES&#x2F;InChI</strong> 统一底物（具体以各文 <strong>Methods</strong> 为准）</td>
+<td>多样</td>
+<td>可在 <code>酶改造-03</code> 数据篇交叉检索</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>EF-UniKP</strong> 为 UniKP 的环境因子扩展版；<strong>TurNuP</strong> 为另一套 <strong>k<sub>cat</sub></strong> 预测代表工作，底物编码方式以论文为准。</p>
+</blockquote>
+<hr>
+<h2 id="4-数据与清洗：做数据集时建议统一规则"><a href="#4-数据与清洗：做数据集时建议统一规则" class="headerlink" title="4. 数据与清洗：做数据集时建议统一规则"></a>4. 数据与清洗：做数据集时建议统一规则</h2><p>以下与 <strong>UniKP</strong> 等文<strong>剔除规则</strong>及常见实践一致，便于复现与对齐。</p>
+<ol>
+<li><strong>规范化</strong>：同一底物尽量用 <strong>RDKit</strong> <code>MolToSmiles(MolFromSmiles(s), canonical=True)</code> 得到 <strong>canonical SMILES</strong>，减少「字符串不同、分子相同」带来的伪多样性。  </li>
+<li><strong>多底物&#x2F;反应混合物</strong>：<strong>SMILES</strong> 中用 <strong>「.」</strong> 分隔的<strong>多组分</strong>（如辅因子、双底物未写成反应式）在监督学习里常被<strong>整条剔除</strong>或<strong>拆分为多任务</strong>，需在论文&#x2F;README 中<strong>显式声明</strong>（UniKP 对含 <strong>「.」</strong> 样本的处理见站内 <a href="./%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP.md">UniKP 文</a>）。  </li>
+<li><strong>稀有氨基酸 &#x2F; 非标准片段</strong>：蛋白质侧用 <strong>X</strong> 等约定；<strong>小分子侧</strong>对无法解析的 <strong>SMILES</strong> 应丢弃或手工策展。  </li>
+<li><strong>立体化学</strong>：若任务对<strong>手性</strong>敏感，需在 <strong>SMILES</strong> 中保留 <strong>@ &#x2F; @@</strong> 等标记，并在划分训练&#x2F;测试时避免<strong>数据泄漏</strong>（同一<strong>不同 SMILES 写法</strong>的重复）。</li>
+</ol>
+<hr>
+<h2 id="5-与其它分子编码的并列（可选）"><a href="#5-与其它分子编码的并列（可选）" class="headerlink" title="5. 与其它分子编码的并列（可选）"></a>5. 与其它分子编码的并列（可选）</h2><table>
+<thead>
+<tr>
+<th>表示</th>
+<th>特点</th>
+<th>在模型中的常见用法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>SMILES</strong></td>
+<td>紧凑、序列化友好</td>
+<td><strong>Transformer</strong>、<strong>RNN</strong>、字符级 <strong>tokenizer</strong></td>
+</tr>
+<tr>
+<td><strong>SELFIES</strong></td>
+<td>语法上更「可合法化」，利于生成式模型</td>
+<td>部分生成&#x2F;设计工作流</td>
+</tr>
+<tr>
+<td><strong>分子图（原子为节点）</strong></td>
+<td>与化学键拓扑一致</td>
+<td><strong>GNN</strong>（输入常由 <strong>SMILES</strong> 或 <strong>SDF</strong> 解析）</td>
+</tr>
+<tr>
+<td><strong>Morgan 等指纹</strong></td>
+<td>固定长度向量</td>
+<td>传统机器学习 + 轻量深度模型</td>
+</tr>
+</tbody></table>
+<p>酶功能「大模型」语境下，<strong>SMILES</strong> 仍是<strong>数据交换与复现</strong>的<strong>事实标准</strong>；真正进网络的是 <strong>SMILES 派生的张量</strong>（嵌入或图）。</p>
+<hr>
+<h2 id="6-实践实例：从-SMILES-与条件到张量（Python）"><a href="#6-实践实例：从-SMILES-与条件到张量（Python）" class="headerlink" title="6. 实践实例：从 SMILES 与条件到张量（Python）"></a>6. 实践实例：从 SMILES 与条件到张量（Python）</h2><p>以下用<strong>乙醇</strong>为底物、<strong>pH</strong> 与<strong>温度</strong>为条件，演示与 <strong>§2</strong> 一致的管线：<strong>规范化 SMILES</strong> → <strong>底物向量</strong>（序列嵌入池化 &#x2F; <strong>Morgan 指纹</strong> &#x2F; <strong>图张量</strong>）→ <strong>条件向量</strong> → <strong>拼接</strong>。依赖：<strong>RDKit</strong>（化学信息学工具包，常用 <strong>RDKit</strong> 指代）与 <strong>PyTorch</strong>（深度学习框架，<strong>PyTorch</strong>）。安装示例：<code>pip install rdkit torch</code>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PyTorch</strong> 中 <strong>张量（tensor）</strong> 即多维数组；下文维度与 <strong>UniKP</strong> 的 <strong>1024</strong> 维不必强行一致，重在<strong>流程可复现</strong>。</p>
+</blockquote>
+<h3 id="6-1-场景与目标"><a href="#6-1-场景与目标" class="headerlink" title="6.1 场景与目标"></a>6.1 场景与目标</h3><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>取值（示例）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>底物</td>
+<td>乙醇，原始 <strong>SMILES</strong> 可写 <code>CCO</code> 或 <code>C(C)O</code></td>
+</tr>
+<tr>
+<td>条件</td>
+<td><strong>pH</strong> &#x3D; 7.4，热力学温度 <strong>T</strong> &#x3D; 298 K（约 25 °C）</td>
+</tr>
+<tr>
+<td>目标</td>
+<td>得到可供 <strong>MLP</strong> 读出头的 <strong>底物向量 s</strong>、<strong>条件向量 c</strong> 及拼接示例 <strong>z</strong></td>
+</tr>
+</tbody></table>
+<h3 id="6-2-步骤-1：规范化-canonical-SMILES"><a href="#6-2-步骤-1：规范化-canonical-SMILES" class="headerlink" title="6.2 步骤 1：规范化 canonical SMILES"></a>6.2 步骤 1：规范化 <strong>canonical SMILES</strong></h3><p>同一分子多种写法时，用 <strong>RDKit</strong> 统一为 <strong>canonical SMILES</strong>，与 <strong>§4</strong> 一致。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> rdkit <span class="keyword">import</span> Chem</span><br><span class="line"></span><br><span class="line">raw_smiles = <span class="string">&quot;C(C)O&quot;</span>  <span class="comment"># 与 &quot;CCO&quot; 等价的一种写法</span></span><br><span class="line">mol = Chem.MolFromSmiles(raw_smiles)</span><br><span class="line"><span class="keyword">if</span> mol <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">    <span class="keyword">raise</span> ValueError(<span class="string">&quot;无法解析 SMILES&quot;</span>)</span><br><span class="line"></span><br><span class="line">canon_smiles = Chem.MolToSmiles(mol, canonical=<span class="literal">True</span>)</span><br><span class="line"><span class="comment"># 乙醇常见输出: &quot;CCO&quot;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;canonical:&quot;</span>, canon_smiles)</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-3-步骤-2A：序列式——字符-id-→-Embedding-→-mean-pooling"><a href="#6-3-步骤-2A：序列式——字符-id-→-Embedding-→-mean-pooling" class="headerlink" title="6.3 步骤 2A：序列式——字符 id → Embedding → mean pooling"></a>6.3 步骤 2A：序列式——字符 <strong>id</strong> → <strong>Embedding</strong> → <strong>mean pooling</strong></h3><p>与 <strong>UniKP</strong> 的 <strong>SMILES Transformer</strong> 同型：<strong>字符序列 → 嵌入 → 编码器（此处用池化代替预训练 <strong>Transformer</strong> 以减小依赖）</strong>。生产环境应替换为<strong>预训练</strong>的 <strong>SMILES Transformer</strong> 与论文一致词表。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn</span><br><span class="line"></span><br><span class="line"><span class="comment"># 词表：当前分子字符 + 常见 SMILES 字符（真实项目应从全库统计）</span></span><br><span class="line">charset = <span class="built_in">sorted</span>(<span class="built_in">set</span>(canon_smiles) | <span class="built_in">set</span>(<span class="string">&quot;CNOSPFclBrI@+-=#$%0123456789()[]\\.:/&quot;</span>))</span><br><span class="line">stoi = &#123;c: i + <span class="number">1</span> <span class="keyword">for</span> i, c <span class="keyword">in</span> <span class="built_in">enumerate</span>(charset)&#125;  <span class="comment"># 0 保留给 padding</span></span><br><span class="line">pad_idx = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">ids = torch.tensor([stoi[c] <span class="keyword">for</span> c <span class="keyword">in</span> canon_smiles], dtype=torch.long)</span><br><span class="line">emb = nn.Embedding(num_embeddings=<span class="built_in">len</span>(stoi) + <span class="number">1</span>, embedding_dim=<span class="number">256</span>, padding_idx=pad_idx)</span><br><span class="line">torch.manual_seed(<span class="number">0</span>)</span><br><span class="line"><span class="comment"># (L, d_model)</span></span><br><span class="line">x = emb(ids)</span><br><span class="line">s_seq = x.mean(dim=<span class="number">0</span>)  <span class="comment"># mean pooling -&gt; 底物向量 s_seq ∈ R^256</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;s_seq shape:&quot;</span>, <span class="built_in">tuple</span>(s_seq.shape))</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-4-步骤-2B：指纹式——Morgan-指纹-固定维向量"><a href="#6-4-步骤-2B：指纹式——Morgan-指纹-固定维向量" class="headerlink" title="6.4 步骤 2B：指纹式——Morgan 指纹 固定维向量"></a>6.4 步骤 2B：指纹式——<strong>Morgan 指纹</strong> 固定维向量</h3><p><strong>DeepEnzyme</strong> 等路线常用 <strong>SMILES → Mol → 指纹</strong>，得到<strong>固定长度</strong>二值或浮点向量，便于与传统机器学习或浅层网络拼接。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> rdkit.Chem <span class="keyword">import</span> AllChem</span><br><span class="line"><span class="keyword">from</span> rdkit.Chem <span class="keyword">import</span> DataStructs</span><br><span class="line"></span><br><span class="line">n_bits = <span class="number">2048</span></span><br><span class="line">fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=<span class="number">2</span>, nBits=n_bits)</span><br><span class="line">s_fp = np.zeros((n_bits,), dtype=np.float32)</span><br><span class="line">DataStructs.ConvertToNumpyArray(fp, s_fp)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;s_fp shape:&quot;</span>, s_fp.shape, <span class="string">&quot;sum(bits):&quot;</span>, <span class="built_in">int</span>(s_fp.<span class="built_in">sum</span>()))</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-5-步骤-2C：图式——邻接矩阵与节点标量特征（供-GNN-使用）"><a href="#6-5-步骤-2C：图式——邻接矩阵与节点标量特征（供-GNN-使用）" class="headerlink" title="6.5 步骤 2C：图式——邻接矩阵与节点标量特征（供 GNN 使用）"></a>6.5 步骤 2C：图式——邻接矩阵与节点标量特征（供 <strong>GNN</strong> 使用）</h3><p><strong>DLKcat</strong> 等：<strong>SMILES</strong> 解析为 <strong>Mol</strong> 后构造<strong>分子图</strong>。此处仅导出 <strong>PyTorch</strong> 可用的 <strong>节点特征</strong>与<strong>邻接</strong>；<strong>GNN</strong> 前向需另写 <code>torch_geometric</code> 或自实现消息传递。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> rdkit.Chem <span class="keyword">import</span> rdmolops</span><br><span class="line"></span><br><span class="line">n = mol.GetNumAtoms()</span><br><span class="line"><span class="comment"># 节点特征示例：原子序数归一化（真实工作常用 one-hot 原子类型、价、芳香性等）</span></span><br><span class="line">node_feat = torch.zeros(n, <span class="number">1</span>, dtype=torch.float32)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n):</span><br><span class="line">    node_feat[i, <span class="number">0</span>] = mol.GetAtomWithIdx(i).GetAtomicNum() / <span class="number">100.0</span></span><br><span class="line"></span><br><span class="line">adj = torch.from_numpy(rdmolops.GetAdjacencyMatrix(mol).astype(np.float32))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;node_feat:&quot;</span>, <span class="built_in">tuple</span>(node_feat.shape), <span class="string">&quot;adj:&quot;</span>, <span class="built_in">tuple</span>(adj.shape))</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-6-步骤-3：反应条件数值化与拼接"><a href="#6-6-步骤-3：反应条件数值化与拼接" class="headerlink" title="6.6 步骤 3：反应条件数值化与拼接"></a>6.6 步骤 3：反应条件数值化与拼接</h3><p><strong>pH</strong>、<strong>T</strong> 不来自 <strong>SMILES</strong>，需<strong>单独特征</strong>；下列线性缩放仅为<strong>演示</strong>（与 <strong>EF-UniKP</strong> 等论文中的<strong>具体归一化</strong>以原文为准）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ph, T_k = <span class="number">7.4</span>, <span class="number">298.0</span></span><br><span class="line"><span class="comment"># 演示用缩放，非文献唯一标准</span></span><br><span class="line">c = torch.tensor(</span><br><span class="line">    [(ph - <span class="number">7.0</span>) / <span class="number">2.0</span>, (T_k - <span class="number">273.15</span>) / <span class="number">50.0</span>],</span><br><span class="line">    dtype=torch.float32,</span><br><span class="line">)</span><br><span class="line"><span class="comment"># 与序列底物向量拼接，供下游 MLP（酶向量 e 可同理拼接）</span></span><br><span class="line">z_demo = torch.cat([s_seq, c], dim=<span class="number">0</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;c shape:&quot;</span>, <span class="built_in">tuple</span>(c.shape), <span class="string">&quot;z_demo (s_seq||c) shape:&quot;</span>, <span class="built_in">tuple</span>(z_demo.shape))</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-7-单脚本串联（可选）"><a href="#6-7-单脚本串联（可选）" class="headerlink" title="6.7 单脚本串联（可选）"></a>6.7 单脚本串联（可选）</h3><p>将 <strong>6.2–6.6</strong> 置于同一 <code>if __name__ == &quot;__main__&quot;</code> 中时，须<strong>共用同一个 <code>mol</code></strong>（由 <strong>6.2</strong> 解析得到），并按顺序执行；<strong>6.3</strong> 依赖 <strong>6.2</strong> 的 <code>canon_smiles</code>，<strong>6.4–6.5</strong> 依赖 <strong>6.2</strong> 的 <code>mol</code>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>mean pooling</strong> 为对序列维求平均；<strong>Morgan 指纹</strong> 在 <strong>RDKit</strong> 中默认 <strong>ECFP</strong> 类圆形指纹的一种实现。</p>
+</blockquote>
+<hr>
+<h2 id="7-小结"><a href="#7-小结" class="headerlink" title="7. 小结"></a>7. 小结</h2><ul>
+<li><strong>SMILES</strong> 在酶功能&#x2F;动力学模型里几乎总是<strong>底物（或底物侧）<strong>的入口表示，与 <strong>PLM</strong> 负责的</strong>酶序列</strong>并列。  </li>
+<li><strong>UniKP</strong> 用 <strong>SMILES Transformer</strong>；<strong>DeepEnzyme &#x2F; DLKcat</strong> 用 <strong>SMILES → 图&#x2F;指纹</strong>——选型取决于是否要<strong>显式图结构</strong>与<strong>可解释性</strong>。  </li>
+<li><strong>工程关键</strong>：<strong>canonical 化</strong>、<strong>多组分处理</strong>、<strong>立体化学一致性</strong>。  </li>
+<li><strong>实践</strong>：<strong>§6</strong> 给出从 <strong>RDKit</strong> 解析到 <strong>PyTorch</strong> 张量的可运行骨架；替换预训练编码器即可对齐文献级模型。</li>
+</ul>
+<hr>
+<h2 id="8-延伸阅读（检索关键词）"><a href="#8-延伸阅读（检索关键词）" class="headerlink" title="8. 延伸阅读（检索关键词）"></a>8. 延伸阅读（检索关键词）</h2><ul>
+<li><code>enzyme kcat prediction SMILES</code>, <code>SMILES Transformer Honda</code>, <code>UniKP ProtT5</code>, <code>DLKcat molecular graph</code>, <code>RDKit canonical SMILES enzyme</code></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/SMILES/" rel="tag"><i class="fa fa-tag"></i> SMILES</a>
+          
+            <a href="/tags/%E9%85%B6%E5%8A%A8%E5%8A%9B%E5%AD%A6/" rel="tag"><i class="fa fa-tag"></i> 酶动力学</a>
+          
+            <a href="/tags/%E5%BA%95%E7%89%A9%E8%A1%A8%E5%BE%81/" rel="tag"><i class="fa fa-tag"></i> 底物表征</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/" rel="next" title="酶改造-modelpaper-ProtT5框架详解">
+                <i class="fa fa-chevron-left"></i> 酶改造-modelpaper-ProtT5框架详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-00.%E7%BC%96%E7%A8%8B%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7/MobaXterm%E9%85%8D%E7%BD%AE/" rel="prev" title="MobaXterm 配置">
+                MobaXterm 配置 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">550</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">101</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">182</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%9C%A8%E3%80%8C%E9%85%B6-%E5%A4%A7%E6%A8%A1%E5%9E%8B%E3%80%8D%E9%87%8C%E6%80%BB%E7%9C%8B%E5%88%B0-SMILES%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">1. 为什么在「酶 + 大模型」里总看到 SMILES？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%85%B8%E5%9E%8B%E4%BF%A1%E6%81%AF%E6%B5%81%EF%BC%88%E5%8F%8C%E6%94%AF%E8%B7%AF%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. 典型信息流（双支路）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%BB%A3%E8%A1%A8%E5%B7%A5%E4%BD%9C%E4%B8%80%E8%A7%88%EF%BC%88%E4%B8%8E-SMILES-%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 代表工作一览（与 SMILES 的关系）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E4%B8%8E%E6%B8%85%E6%B4%97%EF%BC%9A%E5%81%9A%E6%95%B0%E6%8D%AE%E9%9B%86%E6%97%B6%E5%BB%BA%E8%AE%AE%E7%BB%9F%E4%B8%80%E8%A7%84%E5%88%99"><span class="nav-number">4.</span> <span class="nav-text">4. 数据与清洗：做数据集时建议统一规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%B8%8E%E5%85%B6%E5%AE%83%E5%88%86%E5%AD%90%E7%BC%96%E7%A0%81%E7%9A%84%E5%B9%B6%E5%88%97%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 与其它分子编码的并列（可选）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%AE%9E%E8%B7%B5%E5%AE%9E%E4%BE%8B%EF%BC%9A%E4%BB%8E-SMILES-%E4%B8%8E%E6%9D%A1%E4%BB%B6%E5%88%B0%E5%BC%A0%E9%87%8F%EF%BC%88Python%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 实践实例：从 SMILES 与条件到张量（Python）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%9C%BA%E6%99%AF%E4%B8%8E%E7%9B%AE%E6%A0%87"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 场景与目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E6%AD%A5%E9%AA%A4-1%EF%BC%9A%E8%A7%84%E8%8C%83%E5%8C%96-canonical-SMILES"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 步骤 1：规范化 canonical SMILES</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E6%AD%A5%E9%AA%A4-2A%EF%BC%9A%E5%BA%8F%E5%88%97%E5%BC%8F%E2%80%94%E2%80%94%E5%AD%97%E7%AC%A6-id-%E2%86%92-Embedding-%E2%86%92-mean-pooling"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 步骤 2A：序列式——字符 id → Embedding → mean pooling</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E6%AD%A5%E9%AA%A4-2B%EF%BC%9A%E6%8C%87%E7%BA%B9%E5%BC%8F%E2%80%94%E2%80%94Morgan-%E6%8C%87%E7%BA%B9-%E5%9B%BA%E5%AE%9A%E7%BB%B4%E5%90%91%E9%87%8F"><span class="nav-number">6.4.</span> <span class="nav-text">6.4 步骤 2B：指纹式——Morgan 指纹 固定维向量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-5-%E6%AD%A5%E9%AA%A4-2C%EF%BC%9A%E5%9B%BE%E5%BC%8F%E2%80%94%E2%80%94%E9%82%BB%E6%8E%A5%E7%9F%A9%E9%98%B5%E4%B8%8E%E8%8A%82%E7%82%B9%E6%A0%87%E9%87%8F%E7%89%B9%E5%BE%81%EF%BC%88%E4%BE%9B-GNN-%E4%BD%BF%E7%94%A8%EF%BC%89"><span class="nav-number">6.5.</span> <span class="nav-text">6.5 步骤 2C：图式——邻接矩阵与节点标量特征（供 GNN 使用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-6-%E6%AD%A5%E9%AA%A4-3%EF%BC%9A%E5%8F%8D%E5%BA%94%E6%9D%A1%E4%BB%B6%E6%95%B0%E5%80%BC%E5%8C%96%E4%B8%8E%E6%8B%BC%E6%8E%A5"><span class="nav-number">6.6.</span> <span class="nav-text">6.6 步骤 3：反应条件数值化与拼接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-7-%E5%8D%95%E8%84%9A%E6%9C%AC%E4%B8%B2%E8%81%94%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-number">6.7.</span> <span class="nav-text">6.7 单脚本串联（可选）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">7. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB%EF%BC%88%E6%A3%80%E7%B4%A2%E5%85%B3%E9%94%AE%E8%AF%8D%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">8. 延伸阅读（检索关键词）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,蛋白质语言模型,ESM,ESM-2,ESMFold,ESM3," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="面向无 Transformer 基础的读者：用比喻与示意图说明 ESM 的掩码预训练、编码器结构、自注意力与残差块；并梳理 ESM-1→ESM-2&#x2F;ESMFold→ESM-3 的代际迭代与多模态范式差异。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-05.ESM 框架详解">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="面向无 Transformer 基础的读者：用比喻与示意图说明 ESM 的掩码预训练、编码器结构、自注意力与残差块；并梳理 ESM-1→ESM-2&#x2F;ESMFold→ESM-3 的代际迭代与多模态范式差异。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig01-mlm-flow.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig02-encoder-stack.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig03-self-attention.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig04-transformer-block.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig05-esmfold-pipeline.svg">
+<meta property="article:published_time" content="2026-03-30T08:30:00.000Z">
+<meta property="article:modified_time" content="2026-04-09T13:37:42.183Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="ESM">
+<meta property="article:tag" content="ESM-2">
+<meta property="article:tag" content="ESM3">
+<meta property="article:tag" content="ESMFold">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig01-mlm-flow.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-14.聚合酶/酶改造-modelpaper-ESM框架详解/"/>
+
+
+
+
+
+  <title>酶改造-05.ESM 框架详解 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-05.ESM 框架详解</h1>
+        
+
+        <div class="post-meta">
+	  
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-30T16:30:00+08:00">
+                2026-03-30
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  面向无 Transformer 基础的读者：用比喻与示意图说明 ESM 的掩码预训练、编码器结构、自注意力与残差块；并梳理 ESM-1→ESM-2/ESMFold→ESM-3 的代际迭代与多模态范式差异。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>缩写体例</strong>：缩写<strong>首次出现</strong>写「中文全称（English Full Name，ABB）」；在该段末尾用 <strong>段末注释</strong>（引用块）解释概念；后文沿用缩写。</p>
+<p><strong>进化尺度建模（Evolutionary Scale Modeling，ESM）</strong> 是 Meta（原 Facebook）<strong>基础人工智能研究（Fundamental AI Research，FAIR）</strong> 团队提出的 <strong>蛋白质序列基础模型</strong>系列：用 <strong>Transformer</strong>（以自注意力堆叠为核心的网络结构，见 <strong>§0.4</strong>）<strong>编码器</strong>在大量序列上做 <strong>掩码语言建模（Masked Language Modeling，MLM）</strong> 预训练，再把学到的向量用于嵌入、突变打分、逆折叠或结构预测等。下文先建立<strong>不依赖自然语言处理（Natural Language Processing，NLP）背景</strong>的直观，再进入实现细节与家族对比。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ESM</strong> 为 Meta 开源的序列预训练模型族名称；<strong>FAIR</strong> 为 Meta 人工智能实验室旧称；<strong>MLM</strong> 指随机遮盖残基并预测原残基的自监督目标；<strong>NLP</strong> 为自然语言处理，本文借其 Transformer&#x2F;BERT 类技术处理蛋白「字母串」；<strong>Transformer</strong> 为 Vaswani 等提出的编码器&#x2F;解码器骨干网络。</p>
+</blockquote>
+<h3 id="读前说明"><a href="#读前说明" class="headerlink" title="读前说明"></a>读前说明</h3><ul>
+<li><strong>不必先会「大模型」课</strong>：你只要把蛋白质看成<strong>一排字母</strong>、把神经网络看成<strong>可训练的函数</strong>，就能跟上 <strong>§0</strong> 与 <strong>§2</strong>。  </li>
+<li><strong>插图不单独成章</strong>：<strong>Fig.1～Fig.4</strong> 嵌在 <strong>§1～§2</strong> 对应段落之后，<strong>Fig.5</strong> 嵌在 <strong>§4（ESMFold）</strong> 开头；顺读正文即可图文对照。图为独立 <strong>可缩放矢量图形（Scalable Vector Graphics，SVG）</strong>（<code>酶改造-05.ESM框架详解/esm05-fig0*.svg</code>），白底科研示意风格；图内 <strong>英文标题</strong> 便于字体兼容，释义见各图下中文说明。若站点对 <strong>SVG</strong> 支持不佳，同路径替换为 <strong>便携式网络图形（Portable Network Graphics，PNG）</strong> 即可。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SVG</strong> 为矢量图格式，任意缩放清晰；<strong>PNG</strong> 为栅格图格式，兼容性通常更好；<strong>§</strong> 表示节号。</p>
+</blockquote>
+<hr>
+<h2 id="0-没有-Transformer-基础时：先建立四个直观"><a href="#0-没有-Transformer-基础时：先建立四个直观" class="headerlink" title="0. 没有 Transformer 基础时：先建立四个直观"></a>0. 没有 Transformer 基础时：先建立四个直观</h2><h3 id="0-1-序列就是「一排氨基酸字母」"><a href="#0-1-序列就是「一排氨基酸字母」" class="headerlink" title="0.1 序列就是「一排氨基酸字母」"></a>0.1 序列就是「一排氨基酸字母」</h3><p>一条蛋白质序列可以写成 <code>M K V ...</code>（每个字母是一种氨基酸）。模型<strong>不做化学反应仿真</strong>，而是在计算机里用<strong>数字向量</strong>表示每个位置，再通过层与层之间的运算，让网络学会「哪些位置经常一起出现、哪些组合像真实蛋白」。</p>
+<h3 id="0-2-「模型」在算什么"><a href="#0-2-「模型」在算什么" class="headerlink" title="0.2 「模型」在算什么"></a>0.2 「模型」在算什么</h3><p>可以把预训练理解成：给定一个<strong>很大的、可调的数学函数</strong>（里面成百万上千万个<strong>参数</strong>），用<strong>海量真实序列</strong>做「填空」练习；猜错就按梯度<strong>微调参数</strong>，使得在<strong>没见过的序列</strong>上填空也更准。这个过程<strong>不需要</strong>人工标注每个残基的功能，所以叫 <strong>自监督学习（self-supervised learning）</strong>（标签来自输入序列本身构造的任务）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>自监督学习</strong>指从输入数据自动生成监督信号（如 MLM 的「被掩真实残基」），无需人工逐条标注功能类别。</p>
+</blockquote>
+<h3 id="0-3-「编码器」是什么意思"><a href="#0-3-「编码器」是什么意思" class="headerlink" title="0.3 「编码器」是什么意思"></a>0.3 「编码器」是什么意思</h3><p>**编码器（encoder）**在这里指：<strong>输入一整条序列，输出同样长度（外加可选特殊位）的一串向量</strong>，每个向量概括「当前残基在整条链上下文里」的信息。ESM 主线用的是 <strong>双向编码器表示（Bidirectional Encoder Representations from Transformers，BERT）式编码器</strong>（双向看全序列），而不是 <strong>生成式预训练 Transformer（Generative Pre-trained Transformer，GPT）</strong> 那种「只从左往右生成」的解码器——因此特别适合 <strong>MLM 填空</strong> 与 <strong>每个位置的表征</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>BERT 式</strong>指可同时利用序列两侧上下文的堆叠编码器；<strong>GPT 式</strong>常用于逐残基自左向右生成；二者与 <strong>§1</strong> 中 MLM&#x2F;CLM 目标对应关系见 <strong>酶改造-04</strong> 中 PLM 框架一节。</p>
+</blockquote>
+<h3 id="0-4-「Transformer」可以只记一句"><a href="#0-4-「Transformer」可以只记一句" class="headerlink" title="0.4 「Transformer」可以只记一句"></a>0.4 「Transformer」可以只记一句</h3><p><strong>Transformer</strong> 是一类网络结构的名字：用 <strong>自注意力（self-attention）</strong> 让<strong>每一个位置都能直接看到其他所有位置</strong>（再经多层叠加），比早期 <strong>循环神经网络（Recurrent Neural Network，RNN）&#x2F; 长短期记忆网络（Long Short-Term Memory，LSTM）</strong> 更容易建模<strong>长距离依赖</strong>（例如活性位点与远端残基的共进化线索）。你不需要先会手推所有公式，<strong>Fig.3</strong> 的直觉足够支撑阅读应用文献。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RNN&#x2F;LSTM</strong> 按时间步递归更新隐状态，长链易出现梯度衰减；<strong>自注意力</strong>让任意两位置直接交互，更利于捕捉长程共进化信号。</p>
+</blockquote>
+<hr>
+<h2 id="1-核心范式：把蛋白质序列当作「可掩码的文本」"><a href="#1-核心范式：把蛋白质序列当作「可掩码的文本」" class="headerlink" title="1. 核心范式：把蛋白质序列当作「可掩码的文本」"></a>1. 核心范式：把蛋白质序列当作「可掩码的文本」</h2><h3 id="1-1-训练目标（MLM）"><a href="#1-1-训练目标（MLM）" class="headerlink" title="1.1 训练目标（MLM）"></a>1.1 训练目标（MLM）</h3><p>与 <strong>BERT</strong>（全称见 <strong>§0.3</strong>）同类：对输入序列<strong>随机盖住</strong>一部分位置（视觉上常显示为 <code>[MASK]</code> 或随机字母），模型根据<strong>两侧及远处的上下文</strong>预测「被盖住的原来是哪一种氨基酸」。训练时把预测分布与<strong>真实序列中的字母</strong>对比，用 <strong>交叉熵（cross-entropy）损失</strong> 作为优化目标，在<strong>海量无标签序列</strong>上反复迭代。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig01-mlm-flow.svg" alt="图 1　掩码语言建模：遮盖位置经 ESM 编码器后，在被掩位置输出对 20 种氨基酸的概率；训练时用交叉熵对齐真实残基"></p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>交叉熵</strong>衡量预测分布与真实 one-hot 标签之间的差异，是分类与 MLM 最常用的训练损失。</p>
+</blockquote>
+<p><strong>实现层面的典型设定</strong>（具体比例以各版本代码与论文为准）：</p>
+<ul>
+<li><strong>掩码比例</strong>：常见讨论区间约 <strong>15%</strong> 量级（与 NLP BERT 类似思想；不同 checkpoint 可微调策略略有差异）。  </li>
+<li><strong>掩码策略</strong>：可混合 <strong>替换为 <code>[MASK]</code></strong>、<strong>替换为另一随机氨基酸</strong>、<strong>小概率保持原字母</strong>，减轻「训练时全是掩码、推理时没有掩码」的分布差异（细节见 <code>facebookresearch/esm</code>）。</li>
+</ul>
+<p><strong>推理时</strong>若要做<strong>突变打分</strong>，常见做法不是继续随机掩码整链，而是对<strong>单个位点</strong>尝试替换并看模型赋予的<strong>似然或未归一化对数几率（logits）变化</strong>（与 Meier 等 <strong>神经信息处理系统大会（Conference on Neural Information Processing Systems，NeurIPS）2021</strong> 的零样本设定一致，具体 <strong>应用程序接口（Application Programming Interface，API）</strong> 以仓库为准）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>logits</strong> 为分类层输出的未归一化得分，经 softmax 可得概率；<strong>NeurIPS</strong> 为机器学习顶会；<strong>API</strong> 指软件调用接口（如 Python 函数）。</p>
+</blockquote>
+<h3 id="1-2-词表与序列边界"><a href="#1-2-词表与序列边界" class="headerlink" title="1.2 词表与序列边界"></a>1.2 词表与序列边界</h3><ul>
+<li><strong>词表</strong>：以 <strong>20 种标准氨基酸</strong>为核心，外加 <strong>分类占位符（classification token，<code>[CLS]</code>）&#x2F; 起始、序列结束（End Of Sequence，<code>[EOS]</code>）、填充（padding）、<code>[MASK]</code>、未知残基</strong> 等；不同代际模型 token 集合略有扩展，编程时务必使用<strong>与模型检查点（checkpoint）配套的 alphabet（字母表&#x2F;词表对象）</strong>。  </li>
+<li><strong>长度</strong>：受 <strong>最大序列长度</strong> 与显存限制；超长链常见 <strong>截断、分块或滑动窗口式推理</strong>（依脚本与版本而定）。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong><code>[CLS]</code></strong> 常用于汇聚整条序列信息；<strong><code>[EOS]</code></strong> 标记序列结束；<strong>checkpoint</strong> 指保存的模型权重与优化状态快照。</p>
+</blockquote>
+<hr>
+<h2 id="2-网络结构：从图示到实现要点"><a href="#2-网络结构：从图示到实现要点" class="headerlink" title="2. 网络结构：从图示到实现要点"></a>2. 网络结构：从图示到实现要点</h2><p>以下 <strong>Fig.2～Fig.4</strong> 按「数据从哪进 → 注意力做什么 → 一层里有什么」插在对应小节末尾。若你只关心应用，读到 <strong>2.4</strong> 即可；<strong>2.5</strong> 供需要对照论文或源码的读者。</p>
+<h3 id="2-1-输入：每个字母先变成向量"><a href="#2-1-输入：每个字母先变成向量" class="headerlink" title="2.1 输入：每个字母先变成向量"></a>2.1 输入：每个字母先变成向量</h3><p>计算机不能直接「吃字母」，需要两步查表：</p>
+<ol>
+<li><strong>词元嵌入（token embedding）</strong>：每种氨基酸（及特殊符号）对应 <strong>隐层维度（hidden size，常记为 d_model）维</strong>空间里的一根向量，类似「可学习的字典」。  </li>
+<li><strong>位置嵌入（position embedding）</strong>：再为第 1、2、…、N 个位置各加一段向量，让模型区分「序列第几位」，否则同一字母在链首与链尾无法区分。</li>
+</ol>
+<p>两者相加（或等价实现）后，得到每个位置一个向量，作为 <strong>第 1 层 Transformer 的输入</strong>。下图从「氨基酸 ID」一直画到 <strong>L 层堆叠之后</strong> 每个残基一条 <strong>d 维向量</strong>，便于和上文逐句对照。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>d_model</strong> 为模型隐藏向量宽度；<strong>token</strong> 指词表中的最小符号单位（此处多为单残基或特殊符）。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig02-encoder-stack.svg" alt="图 2　编码器数据流：token + 位置嵌入 → 第 1…L 层 Transformer → 每个残基输出一条隐向量（另可选用 [CLS] 或池化得到序列级向量）"></p>
+<h3 id="2-2-自注意力：每个位置如何「看见」全序列"><a href="#2-2-自注意力：每个位置如何「看见」全序列" class="headerlink" title="2.2 自注意力：每个位置如何「看见」全序列"></a>2.2 自注意力：每个位置如何「看见」全序列</h3><p><strong>一句话</strong>：第 <strong>i</strong> 个残基的新表示，由<strong>所有位置 j</strong> 的旧向量做<strong>加权平均</strong>得到，权重由网络根据 <strong>i 与 j 是否相关</strong>自动学习。</p>
+<p><strong>多头（multi-head）</strong> 是把上述过程在多个<strong>子空间</strong>里并行做几遍，再拼起来，等价于让模型同时捕捉多种关系（局部接触、长程模式等），不必一开始就区分「氢键」「疏水」——这些化学概念是事后解释。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig03-self-attention.svg" alt="图 3　自注意力直觉：位置 i 的新向量由全体位置 j 加权混合；权重由 query–key 相容度经 softmax 得到（多头则为多组并行再拼接）"></p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>query&#x2F;key&#x2F;value</strong> 为注意力三元组，由输入线性映射得到；<strong>softmax</strong> 将权重归一化为概率分布；<strong>多头（multi-head）</strong> 指并行多组注意力再拼接。</p>
+</blockquote>
+<h3 id="2-3-一层里还有哪些块"><a href="#2-3-一层里还有哪些块" class="headerlink" title="2.3 一层里还有哪些块"></a>2.3 一层里还有哪些块</h3><ul>
+<li><strong>残差连接（residual connection，常记为 Add）</strong>：把子层的输入<strong>加回</strong>子层输出上，缓解深层网络难训练的问题，信息更容易跨层传递。  </li>
+<li><strong>层归一化（Layer Normalization，LayerNorm）</strong>：把向量尺度归一，训练更稳。  </li>
+<li><strong>前馈网络（Feed-Forward Network，FFN）</strong>：对每个位置<strong>单独</strong>做两层全连接（中间常加 <strong>高斯误差线性单元（Gaussian Error Linear Unit，GELU）</strong> 激活），相当于在注意力已经「全局沟通过」之后，再做<strong>位置内的非线性变换</strong>。</li>
+</ul>
+<p>下图是<strong>单层</strong>编码块的典型顺序：<strong>多头自注意力 → 残差与 LayerNorm → 逐位置前馈 → 再残差与 LayerNorm</strong>（具体 <strong>前置层归一化（Pre-LayerNorm，Pre-LN）&#x2F; 后置层归一化（Post-LayerNorm，Post-LN）</strong> 依实现而定）。<strong>ESM-2</strong> 将此类层<strong>堆叠 L 次</strong>（如 <strong>t33</strong> 表示 33 层），得到深层表征。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>FFN</strong> 通常为「线性 → 激活 → 线性」的两层 MLP；<strong>GELU</strong> 为光滑非线性激活函数；<strong>Pre-LN&#x2F;Post-LN</strong> 指 LayerNorm 放在残差支路前或后的两种排布。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig04-transformer-block.svg" alt="图 4　单层 Transformer 编码块（概念）：MHSA 与 FFN 各带残差与归一化；深层网络重复此模块"></p>
+<h3 id="2-4-堆叠之后：表征怎么用"><a href="#2-4-堆叠之后：表征怎么用" class="headerlink" title="2.4 堆叠之后：表征怎么用"></a>2.4 堆叠之后：表征怎么用</h3><ul>
+<li><strong>序列级向量</strong>：常用 <strong><code>[CLS]</code> 位</strong>的向量，或对 N 个残基向量做<strong>平均池化</strong>，得到整条酶的嵌入，用于聚类、检索。  </li>
+<li><strong>残基级向量</strong>：第 <strong>l</strong> 层、第 <strong>i</strong> 个位置的 <strong>d 维向量</strong>，可用于接触探针、溶剂可及性、突变效应等。  </li>
+<li><strong>层级</strong>：不少工作发现 <strong>中间层到后段层</strong> 在功能聚类上有时优于<strong>盲目只用最后一层</strong>，与任务相关，需自行验证。</li>
+</ul>
+<h3 id="2-5-进阶：公式与实现细节（可选读）"><a href="#2-5-进阶：公式与实现细节（可选读）" class="headerlink" title="2.5 进阶：公式与实现细节（可选读）"></a>2.5 进阶：公式与实现细节（可选读）</h3><p>以下与 <strong>ESM-1 &#x2F; ESM-1b &#x2F; ESM-2</strong> 公开叙述一致；具体 <strong>层数 L、隐层维度 d_model、头数 h、FFN 中间维</strong> 以官方模型卡为准。</p>
+<p><strong>输入嵌入</strong>（对每个 token）：</p>
+<p>[<br>\mathbf{x}<em>i &#x3D; \mathbf{E}</em>{\text{tok}}(s_i) + \mathbf{E}_{\text{pos}}(i)<br>]</p>
+<p><strong>自注意力</strong>（单头示意；多头为并行多组 (Q,K,V) 再拼接）：</p>
+<p>[<br>\mathrm{Attention}(Q,K,V)&#x3D;\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_h}}\right)V<br>]</p>
+<p>其中 (Q,K,V) 由输入向量经线性层得到。<strong>生物学直觉</strong>：深层中可能隐式编码<strong>长程依赖</strong>（别构、远端接触、功能 motif），但并非显式物理势能。</p>
+<p><strong>从注意力到接触的说明</strong>：早期工作曾用<strong>注意力图对称化</strong>与<strong>后处理</strong>近似接触，属<strong>启发式</strong>；<strong>ESMFold</strong> 出现后，端到端结构预测更依赖 <strong>结构头与几何损失</strong>（见 <strong>§4</strong>），而非手工从 attention 抠接触图。</p>
+<blockquote>
+<p><strong>段末注释</strong>：公式中 <strong>Q&#x2F;K&#x2F;V</strong> 分别称查询、键、值向量，由输入经不同线性层得到；<strong>d_h</strong> 为每个注意力头的维度。</p>
+</blockquote>
+<hr>
+<h2 id="3-ESM-家族谱系与各自分工"><a href="#3-ESM-家族谱系与各自分工" class="headerlink" title="3. ESM 家族谱系与各自分工"></a>3. ESM 家族谱系与各自分工</h2><p>下表便于「选型」：同一品牌下不同模型<strong>目标函数与接口</strong>不同，不可混用训练代码。<strong>预期用途</strong>列概括各模型在部署时<strong>主要用来预测或产出哪类信息</strong>（与训练损失不完全等同）。</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>代表文献&#x2F;时间</th>
+<th>主要任务</th>
+<th>预期用途（主要预测&#x2F;产出什么信息）</th>
+<th>一句话定位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ESM-1</strong></td>
+<td>Rives 等，<em>PNAS</em> <strong>2021</strong></td>
+<td>MLM 预训练 + 表征</td>
+<td><strong>序列表征向量</strong>（残基级&#x2F;序列级）；<strong>被掩位置的氨基酸类别分布</strong>；表征可间接用于接触、远程同源、二级结构等 <strong>TAPE 类探针</strong>（非直接输出坐标）</td>
+<td>证明规模化序列训练可涌现结构相关信息</td>
+</tr>
+<tr>
+<td><strong>ESM-1b</strong></td>
+<td>与 ESM-1 同系列</td>
+<td>同上（更强&#x2F;更稳 checkpoint）</td>
+<td>与 <strong>ESM-1</strong> 同型输出；作为更常用的 <strong>嵌入与 MLM  logits</strong> 来源，供下游分类、聚类、相似度检索</td>
+<td>社区长期使用的 <strong>650M</strong> 级别基线之一</td>
+</tr>
+<tr>
+<td><strong>ESM-1v</strong></td>
+<td>Meier 等，<strong>NeurIPS</strong> <strong>2021</strong>（<em>Language models enable zero-shot prediction of the effects of mutations on protein function</em>）</td>
+<td>基于 <strong>ESM-1</strong> 的 <strong>突变效应</strong> 模型族（零样本打分与相关微调实践）</td>
+<td><strong>单点或多位点突变</strong>的相对<strong>有害性&#x2F;适应性排序</strong>（与 DMS 实验度量对齐；<strong>不直接输出</strong>绝对 <strong>k_cat</strong> 或具体动力学常数）</td>
+<td><strong>变异效应 &#x2F; fitness</strong> 与 DMS 对照的主流基线之一</td>
+</tr>
+<tr>
+<td><strong>ESM-IF1</strong></td>
+<td>Hsu 等，<em>Science</em> <strong>2022</strong></td>
+<td><strong>逆折叠</strong>：给定骨架生成序列</td>
+<td>在给定 <strong>主链&#x2F;骨架几何约束</strong>下的 <strong>氨基酸序列</strong>（条件生成）；用于序列设计而非预测结构</td>
+<td>结构条件序列设计</td>
+</tr>
+<tr>
+<td><strong>ESM-2</strong></td>
+<td>Lin 等，<em>Science</em> <strong>2023</strong></td>
+<td>多规格 MLM（约 <strong>8M～15B</strong>）</td>
+<td><strong>通用序列表征</strong>与 <strong>掩码位置残基分布</strong>；广泛用于 <strong>零样本突变打分</strong>、嵌入检索、与探针结合的 <strong>功能&#x2F;定位&#x2F;稳定性</strong> 等下游（具体头需另接）</td>
+<td>当前序列表征与 <strong>scaling</strong> 主参考</td>
+</tr>
+<tr>
+<td><strong>ESMFold</strong></td>
+<td>Lin 等，同上</td>
+<td><strong>单序列</strong>三维结构预测</td>
+<td><strong>三维结构</strong>（主链&#x2F;全原子坐标）、<strong>置信度</strong>（如 <strong>pLDDT</strong> 等）、<strong>PAE</strong> 类误差估计；<strong>输入为序列</strong>，<strong>输出为结构</strong>而非仅向量</td>
+<td>与 <strong>ESM-2</strong> 共享预训练思想，<strong>结构模块</strong>输出坐标</td>
+</tr>
+<tr>
+<td><strong>ESM Metagenomic Atlas</strong></td>
+<td>同 <em>Science</em> 工作延伸</td>
+<td>宏基因组规模结构覆盖</td>
+<td>对海量 <strong>未知蛋白序列</strong> 批量给出 <strong>结构假设与置信度</strong>，用于宏基因组注释、家族发现、药物&#x2F;酶靶点初筛（<strong>计算资源与数据库版本</strong>依发布说明）</td>
+<td>「序列宇宙」上的结构资源层</td>
+</tr>
+<tr>
+<td><strong>ESM3</strong></td>
+<td>Hayes 等，<em>Science</em> <strong>2025</strong>（<em>Simulating 500 million years of evolution with a language model</em>；DOI <strong>10.1126&#x2F;science.ads0018</strong>）；产品与权重由 <strong>进化规模（EvolutionaryScale，ES）</strong> 运营</td>
+<td><strong>多模态</strong>生成式掩码建模：在<strong>序列（sequence）</strong>、<strong>结构（structure）</strong>、<strong>功能&#x2F;注释（function）</strong> 等轨道上做联合推理与补全</td>
+<td>给定<strong>部分</strong>序列&#x2F;结构&#x2F;功能提示，迭代预测或补全其余轨道；面向<strong>远离天然分布</strong>的蛋白设计与功能探索（具体 API、许可与模型卡以官方为准）</td>
+<td>从「单序列 MLM + 可选结构头」跃迁到「三轨道对齐的生成式生物基础模型」</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>TAPE</strong>（Tasks Assessing Protein Embeddings）为蛋白质嵌入基准任务集；<strong>DMS</strong>（Deep Mutational Scanning，深度突变扫描）为高通量测定大量突变体效应的实验范式；<strong>k_cat</strong> 为催化周转数；<strong>pLDDT</strong>（predicted Local Distance Difference Test）与 <strong>PAE</strong>（Predicted Aligned Error）为结构模型输出的置信度&#x2F;误差类指标；<strong>logits</strong> 见 <strong>§1.1</strong>；<strong>fitness</strong> 为适应度或酶活等实验读数的统称。</p>
+</blockquote>
+<h3 id="3-1-代际迭代：从-ESM-1-到-ESM-3（范式怎么变）"><a href="#3-1-代际迭代：从-ESM-1-到-ESM-3（范式怎么变）" class="headerlink" title="3.1 代际迭代：从 ESM-1 到 ESM-3（范式怎么变）"></a>3.1 代际迭代：从 ESM-1 到 ESM-3（范式怎么变）</h3><p>下面按<strong>时间线与组织主体</strong>概括各代「相对上一代多做了什么」，便于和论文&#x2F;模型卡对照选型。<strong>Meta FAIR</strong> 开源主线（<strong>ESM-1 → ESM-1b → ESM-1v &#x2F; ESM-IF1 → ESM-2 &#x2F; ESMFold</strong>）与 <strong>EvolutionaryScale</strong> 的 <strong>ESM3</strong> 是<strong>同一学术品牌名</strong>下的<strong>两条产品与授权线</strong>：前者以 <strong><code>facebookresearch/esm</code></strong> 与公开权重为主；后者以<strong>多模态生成</strong>与<strong>商业&#x2F;API 条款</strong>为主，<strong>不可</strong>简单当作「ESM-2 的更大 checkpoint」直接替换。</p>
+<table>
+<thead>
+<tr>
+<th align="left">阶段</th>
+<th align="left">代表模型</th>
+<th align="left">相对前一代的主要变化</th>
+<th align="left">典型能力边界（读者预期）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>第一代</strong></td>
+<td align="left"><strong>ESM-1</strong></td>
+<td align="left">把 <strong>Transformer 编码器 + MLM</strong> 推到<strong>亿级参数与大规模 UniRef 类语料</strong>，证明<strong>表征可涌现</strong>接触、远程同源等信号</td>
+<td align="left">输出<strong>序列表征</strong>与 <strong>MLM logits</strong>；<strong>不</strong>内建原子坐标头</td>
+</tr>
+<tr>
+<td align="left"><strong>第一代+</strong></td>
+<td align="left"><strong>ESM-1b</strong></td>
+<td align="left">在同类目标下提供更<strong>稳定、更大</strong>（如 <strong>650M</strong> 量级）的通用 checkpoint，社区工具链更成熟</td>
+<td align="left">同上；常作<strong>嵌入基线</strong>与下游探针</td>
+</tr>
+<tr>
+<td align="left"><strong>变异专精</strong></td>
+<td align="left"><strong>ESM-1v</strong></td>
+<td align="left">在 <strong>ESM-1</strong> 系上聚焦<strong>突变位点似然&#x2F;效应</strong>，与 <strong>DMS</strong> 实验对齐（Meier 等 <strong>NeurIPS 2021</strong>）</td>
+<td align="left"><strong>零样本</strong>突变排序；<strong>不</strong>保证与任意实验读出一一对应</td>
+</tr>
+<tr>
+<td align="left"><strong>结构条件生成</strong></td>
+<td align="left"><strong>ESM-IF1</strong></td>
+<td align="left">目标从「序列填空」转为<strong>给定骨架条件下的序列生成</strong>（逆折叠），<strong>损失与数据形态</strong>与纯 MLM 不同</td>
+<td align="left"><strong>序列设计</strong>；需 <strong>PDB</strong> 等结构–序列对训练</td>
+</tr>
+<tr>
+<td align="left"><strong>第二代主干</strong></td>
+<td align="left"><strong>ESM-2</strong></td>
+<td align="left"><strong>多档缩放</strong>（约 <strong>8M～15B</strong>）、<strong>更大语料</strong>与系统 <strong>scaling</strong> 研究，<strong>TAPE</strong> 等基准整体提升</td>
+<td align="left"><strong>通用嵌入</strong>与 <strong>MLM</strong>；仍是<strong>单序列为主</strong>的表征模型</td>
+</tr>
+<tr>
+<td align="left"><strong>结构预测分支</strong></td>
+<td align="left"><strong>ESMFold</strong></td>
+<td align="left">在 <strong>ESM-2</strong> 表征上接<strong>几何模块</strong>，端到端输出 <strong>3D 坐标</strong>与置信度；推理路径强调<strong>单序列</strong>可用性</td>
+<td align="left"><strong>结构</strong>；与 <strong>AlphaFold2</strong> 范式差异见 <strong>§4</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>宏基因组覆盖</strong></td>
+<td align="left"><strong>ESM Metagenomic Atlas</strong></td>
+<td align="left">将 <strong>ESMFold</strong> 类能力推到<strong>海量序列</strong>的批量预测与资源层建设</td>
+<td align="left"><strong>注释与发现</strong>导向，非单一酶模型微调</td>
+</tr>
+<tr>
+<td align="left"><strong>第三代（多模态）</strong></td>
+<td align="left"><strong>ESM3</strong></td>
+<td align="left">将 <strong>序列 &#x2F; 结构 &#x2F; 功能</strong> 统一进<strong>可掩码、可迭代补全</strong>的生成框架；训练与推理强调<strong>跨轨道一致性</strong>与<strong>远离天然序列</strong>的设计空间</td>
+<td align="left"><strong>联合生成与推理</strong>；部署与许可以 <strong>EvolutionaryScale</strong> 为准，<strong>不等同</strong>于 Meta 仓库里的 <code>esm2_*</code> 权重</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>scaling</strong>（缩放律）指参数量、数据量与下游性能的经验关系；<strong>checkpoint</strong> 为保存的模型权重快照；<strong>ES</strong> 此处为商业主体 <strong>EvolutionaryScale</strong> 的常用简称，与论文中 <strong>ESM</strong> 模型名勿混。</p>
+</blockquote>
+<p><strong>与酶改造阅读的关系</strong>：若你的文献写「用 ESM 做突变打分」，多数指 <strong>ESM-1v &#x2F; ESM-2 logits</strong> 路线；若写「ESM3 生成新酶」，需区分其<strong>多模态提示与采样</strong>与经典 <strong>MLM 掩码</strong>在<strong>接口与许可</strong>上的差异。</p>
+<hr>
+<h2 id="4-延伸一：ESMFold——在-ESM-表征之上的结构头"><a href="#4-延伸一：ESMFold——在-ESM-表征之上的结构头" class="headerlink" title="4. 延伸一：ESMFold——在 ESM 表征之上的结构头"></a>4. 延伸一：ESMFold——在 ESM 表征之上的结构头</h2><p><strong>ESMFold</strong> 在 <strong>ESM-2</strong> 序列表征之上接 <strong>结构模块</strong>，端到端输出 <strong>三维坐标与置信度</strong>；与 <strong>§1～§2</strong> 仅产出向量或 MLM  logits 的用法不同。先总览数据流，再分点与 AlphaFold2 对比。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/esm05-fig05-esmfold-pipeline.svg" alt="图 5　ESMFold 高层管线：单条序列 → ESM-2 编码器（序列表征 + 配对表示）→ 结构模块（IPA、迭代细化等）→ 三维坐标与 pLDDT 等；细节以 Lin 等 *Science* 2023 为准"></p>
+<h3 id="4-1-与-AlphaFold2-的范式差异（为何算「ESM-延伸」）"><a href="#4-1-与-AlphaFold2-的范式差异（为何算「ESM-延伸」）" class="headerlink" title="4.1 与 AlphaFold2 的范式差异（为何算「ESM 延伸」）"></a>4.1 与 AlphaFold2 的范式差异（为何算「ESM 延伸」）</h3><ul>
+<li><strong>输入</strong>：强调 <strong>单条序列</strong> 即可工作（不依赖外部 <strong>多序列比对（Multiple Sequence Alignment，MSA）</strong> 流水线时仍能给可用结构），推理路径与「先搜库做多序列比对再进 Evoformer」的管线不同。  </li>
+<li><strong>骨干</strong>：利用 <strong>ESM-2</strong> 类编码器产生的序列表征，再接 <strong>配对表示、三角更新、不变点注意力（Invariant Point Attention，IPA）</strong> 等<strong>与 AlphaFold2 思想同族</strong>的几何模块，迭代细化 <strong>主链及全原子坐标</strong>（实现细节以论文与附录为准）。上图只画信息流向，模块内部请参阅原文。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MSA</strong> 为多条同源序列的列对齐结果，传统 AlphaFold2 强依赖 MSA 共进化信号；<strong>IPA</strong> 在三维点集上更新刚体&#x2F;主链几何，是结构模块的核心注意力变体之一。</p>
+</blockquote>
+<h3 id="4-2-优势与代价（实践向）"><a href="#4-2-优势与代价（实践向）" class="headerlink" title="4.2 优势与代价（实践向）"></a>4.2 优势与代价（实践向）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>常见观点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>优势</strong></td>
+<td><strong>免 MSA</strong> 的批处理友好；与 <strong>ESM-2</strong> 嵌入体系一致，便于「序列任务 + 结构任务」同一生态。</td>
+</tr>
+<tr>
+<td><strong>代价</strong></td>
+<td>对<strong>极难折叠&#x2F;缺同源</strong>蛋白，<strong>MSA 驱动</strong>方法有时仍更强；<strong>置信度与实验结构</strong>需交叉验证。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-延伸二：ESM-IF1（逆折叠）"><a href="#5-延伸二：ESM-IF1（逆折叠）" class="headerlink" title="5. 延伸二：ESM-IF1（逆折叠）"></a>5. 延伸二：ESM-IF1（逆折叠）</h2><ul>
+<li><strong>目标</strong>：给定 <strong>骨架几何约束</strong>（如主链坐标或侧链 pack 的简化输入，以论文为准），自回归或条件生成 <strong>可折叠、可表达的序列</strong>。  </li>
+<li><strong>与正向 PLM 的关系</strong>：不再是「预测被掩氨基酸」的纯 MLM，而是 <strong>条件生成</strong>；训练数据常依赖 <strong>蛋白质数据银行（Protein Data Bank，PDB）</strong> 等结构–序列对。  </li>
+<li><strong>酶工程意义</strong>：可用于 <strong>活性位点周围序列 redesign</strong>、<strong>稳定性与表达</strong> 的候选序列生成，再经 <strong>蛋白质语言模型（Protein Language Model，PLM）打分 + 实验</strong> 闭环。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PDB</strong> 为实验解析蛋白三维结构的数据库；<strong>PLM</strong> 在此指序列前向模型输出的似然或嵌入，用于筛选候选序列。</p>
+</blockquote>
+<hr>
+<h2 id="6-延伸三：ESM-1v-与突变效应预测"><a href="#6-延伸三：ESM-1v-与突变效应预测" class="headerlink" title="6. 延伸三：ESM-1v 与突变效应预测"></a>6. 延伸三：ESM-1v 与突变效应预测</h2><ul>
+<li><strong>出发点</strong>：Meier 等（<strong>NeurIPS 2021</strong>，会议全称见 <strong>§1.2</strong>）系统展示了用 <strong>ESM-1</strong> 系模型对突变做 <strong>零样本（zero-shot，无任务专用再训练）</strong> 打分即可与 <strong>深度突变扫描（Deep Mutational Scanning，DMS）实验度量</strong> 高度相关；<strong>ESM-1v</strong> 作为面向该任务的模型族命名，常与「掩码位置似然差分」等打分规则一起使用（实现以官方仓库为准）。  </li>
+<li><strong>优势</strong>：无需为每个蛋白重新训练即可做 <strong>位点优先级</strong> 粗排；<strong>局限</strong>：蛋白家族、位点环境与实验 <strong>读出（readout，实验读数&#x2F;表型）</strong> 差异大时 <strong>相关性会掉</strong>，与 <strong>ESM-2 logits 启发式</strong>、<strong>实验筛选</strong> 交叉验证更稳妥。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>DMS</strong> 产出大量「突变—效应」配对，用于检验模型排序是否与实验一致；<strong>readout</strong> 指实验测量的表型（生长、荧光、酶活等）。</p>
+</blockquote>
+<hr>
+<h2 id="7-进阶模型：相对前代「改了什么、好在哪」"><a href="#7-进阶模型：相对前代「改了什么、好在哪」" class="headerlink" title="7. 进阶模型：相对前代「改了什么、好在哪」"></a>7. 进阶模型：相对前代「改了什么、好在哪」</h2><h3 id="7-1-ESM-2-相对-ESM-1b（序列主干）"><a href="#7-1-ESM-2-相对-ESM-1b（序列主干）" class="headerlink" title="7.1 ESM-2 相对 ESM-1b（序列主干）"></a>7.1 ESM-2 相对 ESM-1b（序列主干）</h3><table>
+<thead>
+<tr>
+<th>改进点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>规模谱系</strong></td>
+<td>提供从 <strong>约 8M 到 15B</strong> 多档模型，便于在<strong>精度、延迟、显存</strong>间折中，并系统研究 <strong>缩放律（scaling law）</strong>。</td>
+</tr>
+<tr>
+<td><strong>数据与训练</strong></td>
+<td>在<strong>更大、更多样</strong>的进化相关序列语料上训练（细节见 <em>Science</em> 与补充材料）；提升<strong>远程同源、表示质量</strong>的上限。</td>
+</tr>
+<tr>
+<td><strong>任务表现</strong></td>
+<td>在 <strong>TAPE</strong>、接触&#x2F;结构相关探针、<strong>零样本突变效应</strong> 等基准上整体强于早期 <strong>ESM-1b</strong>（具体任务需看榜单与版本）。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>scaling law</strong>（缩放律）描述参数量、数据量与下游性能之间的经验关系；<strong>TAPE</strong> 全称见 <strong>§3</strong> 表下段末注释。</p>
+</blockquote>
+<h3 id="7-2-ESMFold-相对「仅-ESM-2-嵌入-外接启发式」"><a href="#7-2-ESMFold-相对「仅-ESM-2-嵌入-外接启发式」" class="headerlink" title="7.2 ESMFold 相对「仅 ESM-2 嵌入 + 外接启发式」"></a>7.2 ESMFold 相对「仅 ESM-2 嵌入 + 外接启发式」</h3><table>
+<thead>
+<tr>
+<th>改进点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>端到端结构监督</strong></td>
+<td>直接优化 <strong>三维（3D）坐标&#x2F;辅助损失</strong>，比「从 attention 猜接触」更贴近物理几何。</td>
+</tr>
+<tr>
+<td><strong>推理集成</strong></td>
+<td>一条管线完成 <strong>序列 → 结构</strong>（<strong>Fig.5</strong>），利于宏基因组与高通量 <strong>计算机模拟（in silico）</strong> 筛选。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>in silico</strong> 拉丁语「在硅片上」，指纯计算模拟；相对 <strong>in vitro（体外实验）</strong>、<strong>in vivo（体内&#x2F;细胞实验）</strong>。</p>
+</blockquote>
+<h3 id="7-3-ESM-IF1-相对「仅序列-PLM-做设计」"><a href="#7-3-ESM-IF1-相对「仅序列-PLM-做设计」" class="headerlink" title="7.3 ESM-IF1 相对「仅序列 PLM 做设计」"></a>7.3 ESM-IF1 相对「仅序列 PLM 做设计」</h3><table>
+<thead>
+<tr>
+<th>改进点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>结构条件</strong></td>
+<td>显式利用 <strong>几何信息</strong>，对 <strong>活性口袋、主链约束</strong> 更敏感。</td>
+</tr>
+<tr>
+<td><strong>生成机制</strong></td>
+<td><strong>序列空间搜索</strong> 更贴近「在给定骨架下可制造」的序列流形。</td>
+</tr>
+</tbody></table>
+<h3 id="7-4-ESM3-相对-ESM-2-ESMFold-主线（组织与范式）"><a href="#7-4-ESM3-相对-ESM-2-ESMFold-主线（组织与范式）" class="headerlink" title="7.4 ESM3 相对 ESM-2 &#x2F; ESMFold 主线（组织与范式）"></a>7.4 ESM3 相对 ESM-2 &#x2F; ESMFold 主线（组织与范式）</h3><table>
+<thead>
+<tr>
+<th align="left">维度</th>
+<th align="left"><strong>ESM-2 &#x2F; ESMFold（Meta <code>facebookresearch/esm</code>）</strong></th>
+<th align="left"><strong>ESM3（ES 产品与 API）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>建模对象</strong></td>
+<td align="left">以<strong>单条（或多条）氨基酸序列</strong>为主；<strong>ESMFold</strong> 在序列表征上接<strong>结构头</strong>输出坐标</td>
+<td align="left"><strong>序列、结构、功能&#x2F;注释</strong> 多轨道<strong>联合</strong>建模，强调<strong>跨模态对齐</strong>与<strong>迭代补全</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>训练&#x2F;推理接口</strong></td>
+<td align="left"><strong>MLM</strong> 或 <strong>结构端到端</strong> 等相对<strong>单一</strong>任务头；社区多通过 <strong><code>esm2_*</code> 权重</strong>本地推理</td>
+<td align="left"><strong>多模态提示</strong>与<strong>采样策略</strong>与经典 <strong>MLM 脚本</strong>不互换；权重、<strong>Forge</strong> 类 API 与条款以 <strong>ES</strong> 官方为准</td>
+</tr>
+<tr>
+<td align="left"><strong>读者在酶文献中的典型表述</strong></td>
+<td align="left">「<strong>零样本</strong>突变 logits」「<strong>ESMFold</strong> 结构」</td>
+<td align="left">「<strong>生成&#x2F;设计</strong>」「<strong>功能约束</strong>与 <strong>ESM3</strong>」——需核对是否指 <strong>ES</strong> 产品线而非 Meta 仓库</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Forge</strong> 为 <strong>ES</strong> 侧公开的模型推理&#x2F;实验平台名称（具体能力以官方文档为准）；与 <strong>§8</strong> 中 <strong>HF</strong> 托管的 <strong><code>facebook/esm2_*</code></strong> 不是同一路径。</p>
+</blockquote>
+<hr>
+<h2 id="8-开源资源与复现入口"><a href="#8-开源资源与复现入口" class="headerlink" title="8. 开源资源与复现入口"></a>8. 开源资源与复现入口</h2><ul>
+<li><strong>官方实现</strong>：GitHub <strong><code>facebookresearch/esm</code></strong>（模型权重、推理示例、部分结构预测脚本）。  </li>
+<li><strong>模型标识</strong>：常用命名如 <strong><code>esm2_t33_650M_UR50D</code></strong> 等，<strong><code>t33</code></strong> 表示层数，<strong><code>650M</code></strong> 表示参数量级，<strong><code>UR50D</code></strong> 表示基于 <strong>UniRef</strong> 聚类（50% 相似度等）的训练数据设定；<strong>以仓库说明为准</strong>。  </li>
+<li><strong>Hugging Face</strong>（常简称 <strong>HF</strong>，机器学习模型与数据集托管平台）：社区常封装 <strong><code>facebook/esm2_*</code></strong> 等权重，便于与开源深度学习框架 <strong>PyTorch</strong> 流水线拼接。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PyTorch</strong> 为 Meta 主导的 Python 深度学习框架；<strong>UniRef</strong> 为 UniProt 下的聚类序列库名称；命名中 <strong>UR50D</strong> 等为数据版本&#x2F;聚类阈值缩写，以官方 README 为准。</p>
+</blockquote>
+<hr>
+<h2 id="9-与聚合酶改造相关的使用建议（极简）"><a href="#9-与聚合酶改造相关的使用建议（极简）" class="headerlink" title="9. 与聚合酶改造相关的使用建议（极简）"></a>9. 与聚合酶改造相关的使用建议（极简）</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>可优先考虑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>突变优先级 &#x2F; fitness 粗排</strong></td>
+<td><strong>ESM-2</strong> 零样本 logits 差分，或 <strong>ESM-1v</strong> 系掩码似然打分（与 Meier 等 <strong>NeurIPS 2021</strong> 流程对齐）。</td>
+</tr>
+<tr>
+<td><strong>长程同源与家族划分</strong></td>
+<td><strong>ESM-2</strong> 嵌入聚类 + 传统比对交叉验证。</td>
+</tr>
+<tr>
+<td><strong>催化域结构假设（无 MSA 条件）</strong></td>
+<td><strong>ESMFold</strong>（<strong>Fig.5</strong>）快速出结构，再对接分子对接 &#x2F; <strong>分子动力学（Molecular Dynamics，MD）</strong> 模拟 &#x2F; 实验。</td>
+</tr>
+<tr>
+<td><strong>口袋或主链约束下的序列生成</strong></td>
+<td><strong>ESM-IF1</strong> 类逆折叠 + 实验迭代。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>分子对接（docking）</strong> 指配体&#x2F;底物与蛋白结合姿态的计算预测；<strong>MD</strong>（分子动力学）指在力场下模拟原子运动以考察稳定性或构象变化。</p>
+</blockquote>
+<hr>
+<h2 id="10-小结"><a href="#10-小结" class="headerlink" title="10. 小结"></a>10. 小结</h2><ul>
+<li><strong>ESM</strong> 主线是 <strong>Transformer 编码器 + MLM</strong>，用<strong>进化尺度序列数据</strong>学习通用序列表征；<strong>ESM-2</strong> 通过<strong>多档缩放</strong>成为当前最常用的开放权重序列基座之一。  </li>
+<li><strong>§1～§2</strong> 内嵌 <strong>Fig.1～Fig.4</strong>，分别对应「怎么训、整网数据流、自注意力、单层结构」；<strong>§4</strong> 内嵌 <strong>Fig.5</strong>，对应 <strong>ESMFold</strong> 与纯序列表征的分工。  </li>
+<li><strong>ESMFold、ESM-IF1、ESM-1v</strong> 等是在同一研究脉络上的<strong>任务特化延伸</strong>：分别指向 <strong>结构预测、逆折叠、突变效应</strong>。  </li>
+<li><strong>ESM3</strong>（<strong>§3</strong> 表、<strong>§3.1</strong>、<strong>§7.4</strong>）将范式推向 <strong>序列–结构–功能</strong> 多轨道生成；与 <strong>Meta</strong> 开源 <strong>ESM-2</strong> 线在<strong>权重位置与许可</strong>上分离，阅读文献与选型时需<strong>显式区分</strong>。  </li>
+<li><strong>进阶优势</strong>集中在 <strong>scaling、端到端几何、结构条件生成、多模态联合生成</strong> 四条轴；落地时仍以 <strong>任务匹配度 + 实验验证</strong> 为准绳。</li>
+</ul>
+<hr>
+<h2 id="11-延伸阅读（检索关键词）"><a href="#11-延伸阅读（检索关键词）" class="headerlink" title="11. 延伸阅读（检索关键词）"></a>11. 延伸阅读（检索关键词）</h2><ul>
+<li>论文与报告：<code>ESM-2</code>, <code>ESMFold</code>, <code>ESM-IF1</code>, <code>ESM-1v</code>, <code>ESM3</code>, <code>Hayes Science ads0018</code>, <code>EvolutionaryScale</code>, <code>evolutionary scale modeling</code>, <code>masked language modeling protein</code>, <code>inverse folding</code>, <code>zero-shot mutational effects</code>, <code>multimodal protein generation</code>  </li>
+<li>代码：<code>facebookresearch/esm</code>，关键词 <code>esmfold</code>, <code>esm_if1</code>, <code>esm1v</code>；<strong>ESM3</strong> 以 <strong>EvolutionaryScale</strong> 官方发布与 API 文档为准（与 <code>facebookresearch/esm</code> <strong>非同一</strong>权重路径）</li>
+</ul>
+<p><strong>本系列</strong>：<a href="/%E9%85%B6%E6%94%B9%E9%80%A0-01.%E8%81%9A%E5%90%88%E9%85%B6%E7%9A%84%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/">评估指标</a> · <a href="/%E9%85%B6%E6%94%B9%E9%80%A0-02.%E8%81%9A%E5%90%88%E9%85%B6%E7%AD%9B%E9%80%89%E6%96%B9%E6%B3%95%E7%9A%84%E5%8F%91%E5%B1%95%E8%84%89%E7%BB%9C/">筛选脉络</a> · <a href="/%E9%85%B6%E6%94%B9%E9%80%A0-03.%E8%81%9A%E5%90%88%E9%85%B6%E7%AD%9B%E9%80%89%E7%9A%84%E5%BC%80%E6%BA%90%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%E6%B1%87%E6%80%BB/">开源数据</a> · <a href="/%E9%85%B6%E6%94%B9%E9%80%A0-04.%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84-PLMs/">PLMs 总览</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/ESM/" rel="tag"><i class="fa fa-tag"></i> ESM</a>
+          
+            <a href="/tags/ESM-2/" rel="tag"><i class="fa fa-tag"></i> ESM-2</a>
+          
+            <a href="/tags/ESMFold/" rel="tag"><i class="fa fa-tag"></i> ESMFold</a>
+          
+            <a href="/tags/ESM3/" rel="tag"><i class="fa fa-tag"></i> ESM3</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-00.PLMs/" rel="next" title="酶改造-04.模型架构-PLMs">
+                <i class="fa fa-chevron-left"></i> 酶改造-04.模型架构-PLMs
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-DeepEnzyme/" rel="prev" title="酶改造-modelpaper-DeepEnzyme">
+                酶改造-modelpaper-DeepEnzyme <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">550</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">101</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">182</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E5%89%8D%E8%AF%B4%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">读前说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E6%B2%A1%E6%9C%89-Transformer-%E5%9F%BA%E7%A1%80%E6%97%B6%EF%BC%9A%E5%85%88%E5%BB%BA%E7%AB%8B%E5%9B%9B%E4%B8%AA%E7%9B%B4%E8%A7%82"><span class="nav-number">2.</span> <span class="nav-text">0. 没有 Transformer 基础时：先建立四个直观</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0-1-%E5%BA%8F%E5%88%97%E5%B0%B1%E6%98%AF%E3%80%8C%E4%B8%80%E6%8E%92%E6%B0%A8%E5%9F%BA%E9%85%B8%E5%AD%97%E6%AF%8D%E3%80%8D"><span class="nav-number">2.1.</span> <span class="nav-text">0.1 序列就是「一排氨基酸字母」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-2-%E3%80%8C%E6%A8%A1%E5%9E%8B%E3%80%8D%E5%9C%A8%E7%AE%97%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">0.2 「模型」在算什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-3-%E3%80%8C%E7%BC%96%E7%A0%81%E5%99%A8%E3%80%8D%E6%98%AF%E4%BB%80%E4%B9%88%E6%84%8F%E6%80%9D"><span class="nav-number">2.3.</span> <span class="nav-text">0.3 「编码器」是什么意思</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-4-%E3%80%8CTransformer%E3%80%8D%E5%8F%AF%E4%BB%A5%E5%8F%AA%E8%AE%B0%E4%B8%80%E5%8F%A5"><span class="nav-number">2.4.</span> <span class="nav-text">0.4 「Transformer」可以只记一句</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E8%8C%83%E5%BC%8F%EF%BC%9A%E6%8A%8A%E8%9B%8B%E7%99%BD%E8%B4%A8%E5%BA%8F%E5%88%97%E5%BD%93%E4%BD%9C%E3%80%8C%E5%8F%AF%E6%8E%A9%E7%A0%81%E7%9A%84%E6%96%87%E6%9C%AC%E3%80%8D"><span class="nav-number">3.</span> <span class="nav-text">1. 核心范式：把蛋白质序列当作「可掩码的文本」</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87%EF%BC%88MLM%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">1.1 训练目标（MLM）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E8%AF%8D%E8%A1%A8%E4%B8%8E%E5%BA%8F%E5%88%97%E8%BE%B9%E7%95%8C"><span class="nav-number">3.2.</span> <span class="nav-text">1.2 词表与序列边界</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%BD%91%E7%BB%9C%E7%BB%93%E6%9E%84%EF%BC%9A%E4%BB%8E%E5%9B%BE%E7%A4%BA%E5%88%B0%E5%AE%9E%E7%8E%B0%E8%A6%81%E7%82%B9"><span class="nav-number">4.</span> <span class="nav-text">2. 网络结构：从图示到实现要点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%BE%93%E5%85%A5%EF%BC%9A%E6%AF%8F%E4%B8%AA%E5%AD%97%E6%AF%8D%E5%85%88%E5%8F%98%E6%88%90%E5%90%91%E9%87%8F"><span class="nav-number">4.1.</span> <span class="nav-text">2.1 输入：每个字母先变成向量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%EF%BC%9A%E6%AF%8F%E4%B8%AA%E4%BD%8D%E7%BD%AE%E5%A6%82%E4%BD%95%E3%80%8C%E7%9C%8B%E8%A7%81%E3%80%8D%E5%85%A8%E5%BA%8F%E5%88%97"><span class="nav-number">4.2.</span> <span class="nav-text">2.2 自注意力：每个位置如何「看见」全序列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E4%B8%80%E5%B1%82%E9%87%8C%E8%BF%98%E6%9C%89%E5%93%AA%E4%BA%9B%E5%9D%97"><span class="nav-number">4.3.</span> <span class="nav-text">2.3 一层里还有哪些块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E5%A0%86%E5%8F%A0%E4%B9%8B%E5%90%8E%EF%BC%9A%E8%A1%A8%E5%BE%81%E6%80%8E%E4%B9%88%E7%94%A8"><span class="nav-number">4.4.</span> <span class="nav-text">2.4 堆叠之后：表征怎么用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-%E8%BF%9B%E9%98%B6%EF%BC%9A%E5%85%AC%E5%BC%8F%E4%B8%8E%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%EF%BC%88%E5%8F%AF%E9%80%89%E8%AF%BB%EF%BC%89"><span class="nav-number">4.5.</span> <span class="nav-text">2.5 进阶：公式与实现细节（可选读）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-ESM-%E5%AE%B6%E6%97%8F%E8%B0%B1%E7%B3%BB%E4%B8%8E%E5%90%84%E8%87%AA%E5%88%86%E5%B7%A5"><span class="nav-number">5.</span> <span class="nav-text">3. ESM 家族谱系与各自分工</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%BB%A3%E9%99%85%E8%BF%AD%E4%BB%A3%EF%BC%9A%E4%BB%8E-ESM-1-%E5%88%B0-ESM-3%EF%BC%88%E8%8C%83%E5%BC%8F%E6%80%8E%E4%B9%88%E5%8F%98%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">3.1 代际迭代：从 ESM-1 到 ESM-3（范式怎么变）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%BB%B6%E4%BC%B8%E4%B8%80%EF%BC%9AESMFold%E2%80%94%E2%80%94%E5%9C%A8-ESM-%E8%A1%A8%E5%BE%81%E4%B9%8B%E4%B8%8A%E7%9A%84%E7%BB%93%E6%9E%84%E5%A4%B4"><span class="nav-number">6.</span> <span class="nav-text">4. 延伸一：ESMFold——在 ESM 表征之上的结构头</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%B8%8E-AlphaFold2-%E7%9A%84%E8%8C%83%E5%BC%8F%E5%B7%AE%E5%BC%82%EF%BC%88%E4%B8%BA%E4%BD%95%E7%AE%97%E3%80%8CESM-%E5%BB%B6%E4%BC%B8%E3%80%8D%EF%BC%89"><span class="nav-number">6.1.</span> <span class="nav-text">4.1 与 AlphaFold2 的范式差异（为何算「ESM 延伸」）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%BC%98%E5%8A%BF%E4%B8%8E%E4%BB%A3%E4%BB%B7%EF%BC%88%E5%AE%9E%E8%B7%B5%E5%90%91%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">4.2 优势与代价（实践向）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%BB%B6%E4%BC%B8%E4%BA%8C%EF%BC%9AESM-IF1%EF%BC%88%E9%80%86%E6%8A%98%E5%8F%A0%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">5. 延伸二：ESM-IF1（逆折叠）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%BB%B6%E4%BC%B8%E4%B8%89%EF%BC%9AESM-1v-%E4%B8%8E%E7%AA%81%E5%8F%98%E6%95%88%E5%BA%94%E9%A2%84%E6%B5%8B"><span class="nav-number">8.</span> <span class="nav-text">6. 延伸三：ESM-1v 与突变效应预测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E8%BF%9B%E9%98%B6%E6%A8%A1%E5%9E%8B%EF%BC%9A%E7%9B%B8%E5%AF%B9%E5%89%8D%E4%BB%A3%E3%80%8C%E6%94%B9%E4%BA%86%E4%BB%80%E4%B9%88%E3%80%81%E5%A5%BD%E5%9C%A8%E5%93%AA%E3%80%8D"><span class="nav-number">9.</span> <span class="nav-text">7. 进阶模型：相对前代「改了什么、好在哪」</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-ESM-2-%E7%9B%B8%E5%AF%B9-ESM-1b%EF%BC%88%E5%BA%8F%E5%88%97%E4%B8%BB%E5%B9%B2%EF%BC%89"><span class="nav-number">9.1.</span> <span class="nav-text">7.1 ESM-2 相对 ESM-1b（序列主干）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-ESMFold-%E7%9B%B8%E5%AF%B9%E3%80%8C%E4%BB%85-ESM-2-%E5%B5%8C%E5%85%A5-%E5%A4%96%E6%8E%A5%E5%90%AF%E5%8F%91%E5%BC%8F%E3%80%8D"><span class="nav-number">9.2.</span> <span class="nav-text">7.2 ESMFold 相对「仅 ESM-2 嵌入 + 外接启发式」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-ESM-IF1-%E7%9B%B8%E5%AF%B9%E3%80%8C%E4%BB%85%E5%BA%8F%E5%88%97-PLM-%E5%81%9A%E8%AE%BE%E8%AE%A1%E3%80%8D"><span class="nav-number">9.3.</span> <span class="nav-text">7.3 ESM-IF1 相对「仅序列 PLM 做设计」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4-ESM3-%E7%9B%B8%E5%AF%B9-ESM-2-ESMFold-%E4%B8%BB%E7%BA%BF%EF%BC%88%E7%BB%84%E7%BB%87%E4%B8%8E%E8%8C%83%E5%BC%8F%EF%BC%89"><span class="nav-number">9.4.</span> <span class="nav-text">7.4 ESM3 相对 ESM-2 &#x2F; ESMFold 主线（组织与范式）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%BC%80%E6%BA%90%E8%B5%84%E6%BA%90%E4%B8%8E%E5%A4%8D%E7%8E%B0%E5%85%A5%E5%8F%A3"><span class="nav-number">10.</span> <span class="nav-text">8. 开源资源与复现入口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%B8%8E%E8%81%9A%E5%90%88%E9%85%B6%E6%94%B9%E9%80%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E4%BD%BF%E7%94%A8%E5%BB%BA%E8%AE%AE%EF%BC%88%E6%9E%81%E7%AE%80%EF%BC%89"><span class="nav-number">11.</span> <span class="nav-text">9. 与聚合酶改造相关的使用建议（极简）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E5%B0%8F%E7%BB%93"><span class="nav-number">12.</span> <span class="nav-text">10. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB%EF%BC%88%E6%A3%80%E7%B4%A2%E5%85%B3%E9%94%AE%E8%AF%8D%EF%BC%89"><span class="nav-number">13.</span> <span class="nav-text">11. 延伸阅读（检索关键词）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

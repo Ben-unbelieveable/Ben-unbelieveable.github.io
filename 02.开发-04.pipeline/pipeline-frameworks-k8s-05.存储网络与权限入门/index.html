@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="kubernetes,pipeline," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Kubernetes 系列 05：卷与 PVC&#x2F;PV&#x2F;StorageClass 的声明与供给关系；Service 与 Endpoints、kube-proxy；Ingress 占位说明；RBAC（Role&#x2F;Binding 与 ServiceAccount）及 Pod 访问 API 的直觉。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pipeline-frameworks-k8s-05.存储网络与权限入门">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Kubernetes 系列 05：卷与 PVC&#x2F;PV&#x2F;StorageClass 的声明与供给关系；Service 与 Endpoints、kube-proxy；Ingress 占位说明；RBAC（Role&#x2F;Binding 与 ServiceAccount）及 Pod 访问 API 的直觉。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig01-pvc-pv.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig02-service.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig03-rbac.svg">
+<meta property="article:published_time" content="2026-03-30T02:04:00.000Z">
+<meta property="article:modified_time" content="2026-04-09T13:37:42.233Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="kubernetes">
+<meta property="article:tag" content="pipeline">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig01-pvc-pv.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-k8s-05.存储网络与权限入门/"/>
+
+
+
+
+
+  <title>pipeline-frameworks-k8s-05.存储网络与权限入门 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">pipeline-frameworks-k8s-05.存储网络与权限入门</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-30T10:04:00+08:00">
+                2026-03-30
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%B0%83%E5%BA%A6%E6%A1%86%E6%9E%B6/" itemprop="url" rel="index">
+                    <span itemprop="name">调度框架</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Kubernetes 系列 05：卷与 PVC/PV/StorageClass 的声明与供给关系；Service 与 Endpoints、kube-proxy；Ingress 占位说明；RBAC（Role/Binding 与 ServiceAccount）及 Pod 访问 API 的直觉。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><a href="pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0.md">k8s-01 <strong>图 5</strong></a> 已提到 <strong>kube-proxy</strong> 与卷挂载在总览中的位置。本篇把 <strong>存储</strong>、<strong>Service</strong>、<strong>RBAC</strong> 三个「一碰到环境就千差万别」的主题，收敛成<strong>可迁移的模型</strong>：先理解对象与数据流，再查自己集群的 StorageClass、Ingress Controller、云厂商集成文档。</p>
+<h3 id="本系列与编号约定"><a href="#本系列与编号约定" class="headerlink" title="本系列与编号约定"></a>本系列与编号约定</h3><ul>
+<li><strong>步骤 1～5</strong> 与 <strong>kube-proxy</strong> 在概述中的角色见 k8s-01 <strong>图 5</strong> 与组件表。</li>
+<li>上一篇：<a href="pipeline-frameworks-k8s-04.%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E4%B8%8E%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6.md">k8s-04</a>。</li>
+</ul>
+<h2 id="系列导航"><a href="#系列导航" class="headerlink" title="系列导航"></a>系列导航</h2><table>
+<thead>
+<tr>
+<th align="left">篇目</th>
+<th align="left">链接</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">上一篇</td>
+<td align="left"><a href="pipeline-frameworks-k8s-04.%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E4%B8%8E%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6.md">pipeline-frameworks-k8s-04.工作负载与资源调度</a></td>
+</tr>
+<tr>
+<td align="left">概述</td>
+<td align="left"><a href="pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0.md">pipeline-frameworks-k8s-01.框架概述</a></td>
+</tr>
+<tr>
+<td align="left">相关</td>
+<td align="left"><a href="pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B.md">Argo Workflows 入门</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="1-存储：Volume、PVC、PV-与-StorageClass"><a href="#1-存储：Volume、PVC、PV-与-StorageClass" class="headerlink" title="1. 存储：Volume、PVC、PV 与 StorageClass"></a>1. 存储：Volume、PVC、PV 与 StorageClass</h2><p><strong>Pod 内</strong>声明的是 <strong>Volume</strong>（以及容器里的 <strong>volumeMount</strong>）：挂到哪个路径、用哪种卷类型。需要<strong>持久化且跨 Pod 复用</strong>时，通常不直接写死云盘 ID，而是使用 <strong>PersistentVolumeClaim（PVC）</strong>——用户声明「我要多少容量、什么访问模式、哪类存储类」，由集群中的 <strong>PV</strong> 或 <strong>动态供给器</strong> 满足。</p>
+<h3 id="图-1-PVC-绑定-PV；Pod-通过卷引用-PVC"><a href="#图-1-PVC-绑定-PV；Pod-通过卷引用-PVC" class="headerlink" title="图 1　PVC 绑定 PV；Pod 通过卷引用 PVC"></a>图 1　PVC 绑定 PV；Pod 通过卷引用 PVC</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig01-pvc-pv.svg" alt="图 1　Pod 挂载 volume 时引用 PVC；PVC 与 PV 绑定；StorageClass + provisioner 可动态创建 PV"></p>
+<table>
+<thead>
+<tr>
+<th align="left">对象</th>
+<th align="left">谁创建</th>
+<th align="left">一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>PVC</strong></td>
+<td align="left">用户&#x2F;流水线</td>
+<td align="left">「我要持久卷」的声明</td>
+</tr>
+<tr>
+<td align="left"><strong>PV</strong></td>
+<td align="left">管理员或 <strong>动态供给</strong></td>
+<td align="left">真实存储的一端（与后端实现绑定）</td>
+</tr>
+<tr>
+<td align="left"><strong>StorageClass</strong></td>
+<td align="left">集群管理员</td>
+<td align="left">定义动态供给时用哪个 <strong>provisioner</strong>、参数模板</td>
+</tr>
+</tbody></table>
+<p><strong>访问模式</strong>（如 <code>ReadWriteOnce</code> &#x2F; <code>ReadWriteMany</code>）能否实现，取决于<strong>底层存储</strong>，不是 K8s 单独保证。生信场景常见「大目录、多 Pod 只读共享」——需要 <strong>RWX</strong> 能力时，必须选支持共享的文件系统类存储（如 NFS、部分云文件存储），块存储往往只支持 <strong>RWO</strong>。</p>
+<p><strong>PVC Pending</strong>（未绑定）会导致 Pod 长期 <strong>Pending</strong>，见 <a href="pipeline-frameworks-k8s-04.%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E4%B8%8E%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6.md">k8s-04 图 3</a>。</p>
+<hr>
+<h2 id="2-Service：稳定访问与-kube-proxy"><a href="#2-Service：稳定访问与-kube-proxy" class="headerlink" title="2. Service：稳定访问与 kube-proxy"></a>2. Service：稳定访问与 kube-proxy</h2><p><strong>Pod IP</strong> 会因重启而变化。<strong>Service</strong> 提供一组 <strong>稳定的虚拟 IP（ClusterIP）或 DNS 名</strong>，通过 <strong>label selector</strong> 关联到后端 Pod；<strong>Endpoints</strong>（或 EndpointSlice）对象维护<strong>当前</strong> Pod IP 与端口列表。各节点上的 <strong>kube-proxy</strong> 把到 Service IP 的流量转发到实际 Pod（实现机制常见 <strong>iptables</strong> 或 <strong>IPVS</strong>）。</p>
+<h3 id="图-2-Service-与后端-Pod（示意）"><a href="#图-2-Service-与后端-Pod（示意）" class="headerlink" title="图 2　Service 与后端 Pod（示意）"></a>图 2　Service 与后端 Pod（示意）</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig02-service.svg" alt="图 2　Service 通过 selector 关联 Endpoints；kube-proxy 在节点上实现转发；NodePort&#x2F;LoadBalancer 扩展访问范围"></p>
+<table>
+<thead>
+<tr>
+<th align="left">类型</th>
+<th align="left">直觉</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>ClusterIP</strong></td>
+<td align="left">仅集群内访问（默认）</td>
+</tr>
+<tr>
+<td align="left"><strong>NodePort</strong></td>
+<td align="left">在每个节点开放静态端口，可经节点 IP 访问</td>
+</tr>
+<tr>
+<td align="left"><strong>LoadBalancer</strong></td>
+<td align="left">常由云厂商接入外部负载均衡（需环境支持）</td>
+</tr>
+</tbody></table>
+<p><strong>Ingress</strong> 则在<strong>七层（HTTP）<strong>按</strong>主机名、路径</strong>把流量路由到不同 Service，通常需要集群内安装 <strong>Ingress Controller</strong>（如 nginx、traefik 等）。具体注解、TLS、证书与各厂商实现强相关，本文只保留「<strong>Ingress 资源 + Controller 才生效</strong>」这一占位。</p>
+<hr>
+<h2 id="3-RBAC：谁能对-API-做什么"><a href="#3-RBAC：谁能对-API-做什么" class="headerlink" title="3. RBAC：谁能对 API 做什么"></a>3. RBAC：谁能对 API 做什么</h2><p>Kubernetes 用 <strong>RBAC</strong>（Role-Based Access Control）控制「<strong>哪个身份</strong>可以对<strong>哪些资源</strong>执行<strong>哪些动词</strong>」。</p>
+<ul>
+<li><strong>Subject</strong>：用户、组，或 <strong>ServiceAccount</strong>（给 Pod 用的集群内身份）。</li>
+<li><strong>Role</strong> &#x2F; <strong>ClusterRole</strong>：允许 <code>get</code>、<code>list</code>、<code>create</code> 等对 <strong>pods</strong>、<code>jobs</code> 等资源的操作。</li>
+<li><strong>RoleBinding</strong> &#x2F; <strong>ClusterRoleBinding</strong>：把 Subject 绑到 Role 上；<strong>命名空间内</strong>常用 Role + RoleBinding，<strong>全集群</strong>用 ClusterRole + ClusterRoleBinding。</li>
+</ul>
+<h3 id="图-3-RBAC-绑定关系（示意）"><a href="#图-3-RBAC-绑定关系（示意）" class="headerlink" title="图 3　RBAC 绑定关系（示意）"></a>图 3　RBAC 绑定关系（示意）</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8/k8s05-fig03-rbac.svg" alt="图 3　User 或 ServiceAccount 经 RoleBinding 绑定到 Role；ClusterRole&#x2F;ClusterRoleBinding 用于集群级或跨命名空间"></p>
+<p>流水线控制器（含 <strong>Argo</strong>）常在 <strong>ServiceAccount</strong> 下创建 Pod；若该 SA 没有创建 Job&#x2F;Pod 的权限，你会在 <strong>Workflow</strong> 或 <strong>Pod</strong> 事件里看到 <strong>403 Forbidden</strong>。排障方向：检查 Workflow 使用的 <strong>serviceAccountName</strong>、对应 <strong>RoleBinding</strong> 与 <strong>Role</strong>。</p>
+<hr>
+<h2 id="4-阅读策略：先模型，后环境"><a href="#4-阅读策略：先模型，后环境" class="headerlink" title="4. 阅读策略：先模型，后环境"></a>4. 阅读策略：先模型，后环境</h2><p>存储类名、Ingress 注解、IAM 与 IRSA 等<strong>强依赖厂商与集群版本</strong>。建议：</p>
+<ol>
+<li>用本文三张图建立 <strong>PVC → PV &#x2F; 动态供给</strong>、<strong>Service → Endpoints → kube-proxy</strong>、<strong>Subject → Binding → Role</strong> 的<strong>固定心智</strong>。</li>
+<li>在目标集群执行 <code>kubectl get storageclass</code>、<code>kubectl get ingressclass</code>（或文档中的等价命令）了解<strong>可用能力</strong>。</li>
+<li>再打开具体 YAML 样例与官方「安装 Ingress Controller &#x2F; CSI 驱动」章节。</li>
+</ol>
+<hr>
+<h2 id="5-小结"><a href="#5-小结" class="headerlink" title="5. 小结"></a>5. 小结</h2><ul>
+<li><strong>持久化</strong>：Pod 引用 <strong>PVC</strong>；PVC 绑定 <strong>PV</strong> 或由 <strong>StorageClass</strong> 动态创建 PV；访问模式受<strong>后端存储</strong>约束。</li>
+<li><strong>集群内访问</strong>：<strong>Service</strong> 提供稳定入口；<strong>kube-proxy</strong> 在节点侧实现转发；<strong>Ingress</strong> 需 Controller 才能工作。</li>
+<li><strong>权限</strong>：<strong>RBAC</strong> 将 <strong>ServiceAccount</strong>（或用户）与 <strong>Role</strong> 绑定；Argo&#x2F;流水线问题常涉及 SA 权限不足。</li>
+<li><strong>系列收束</strong>：<strong>k8s-01～05</strong> 从概述、集群来源、<code>kubectl</code>、工作负载与资源，到存储&#x2F;网络&#x2F;RBAC，可与 <a href="pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0.md">概述篇 <strong>图 5</strong></a> 对照，形成一条完整入门路径；进阶请结合云文档与 <a href="pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B.md">Argo</a> 深入。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/kubernetes/" rel="tag"><i class="fa fa-tag"></i> kubernetes</a>
+          
+            <a href="/tags/pipeline/" rel="tag"><i class="fa fa-tag"></i> pipeline</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-04.%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E4%B8%8E%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6/" rel="next" title="pipeline-frameworks-k8s-04.工作负载与资源调度">
+                <i class="fa fa-chevron-left"></i> pipeline-frameworks-k8s-04.工作负载与资源调度
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-01.%E8%81%9A%E5%90%88%E9%85%B6%E7%9A%84%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/" rel="prev" title="酶改造-01.聚合酶的评估指标">
+                酶改造-01.聚合酶的评估指标 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">550</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">101</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">182</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AC%E7%B3%BB%E5%88%97%E4%B8%8E%E7%BC%96%E5%8F%B7%E7%BA%A6%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">本系列与编号约定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E5%88%97%E5%AF%BC%E8%88%AA"><span class="nav-number">2.</span> <span class="nav-text">系列导航</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AD%98%E5%82%A8%EF%BC%9AVolume%E3%80%81PVC%E3%80%81PV-%E4%B8%8E-StorageClass"><span class="nav-number">3.</span> <span class="nav-text">1. 存储：Volume、PVC、PV 与 StorageClass</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-1-PVC-%E7%BB%91%E5%AE%9A-PV%EF%BC%9BPod-%E9%80%9A%E8%BF%87%E5%8D%B7%E5%BC%95%E7%94%A8-PVC"><span class="nav-number">3.1.</span> <span class="nav-text">图 1　PVC 绑定 PV；Pod 通过卷引用 PVC</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Service%EF%BC%9A%E7%A8%B3%E5%AE%9A%E8%AE%BF%E9%97%AE%E4%B8%8E-kube-proxy"><span class="nav-number">4.</span> <span class="nav-text">2. Service：稳定访问与 kube-proxy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-2-Service-%E4%B8%8E%E5%90%8E%E7%AB%AF-Pod%EF%BC%88%E7%A4%BA%E6%84%8F%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">图 2　Service 与后端 Pod（示意）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-RBAC%EF%BC%9A%E8%B0%81%E8%83%BD%E5%AF%B9-API-%E5%81%9A%E4%BB%80%E4%B9%88"><span class="nav-number">5.</span> <span class="nav-text">3. RBAC：谁能对 API 做什么</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-3-RBAC-%E7%BB%91%E5%AE%9A%E5%85%B3%E7%B3%BB%EF%BC%88%E7%A4%BA%E6%84%8F%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">图 3　RBAC 绑定关系（示意）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%98%85%E8%AF%BB%E7%AD%96%E7%95%A5%EF%BC%9A%E5%85%88%E6%A8%A1%E5%9E%8B%EF%BC%8C%E5%90%8E%E7%8E%AF%E5%A2%83"><span class="nav-number">6.</span> <span class="nav-text">4. 阅读策略：先模型，后环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">5. 小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

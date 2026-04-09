@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="kubernetes,pipeline," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="面向零基础读者：先建立 Kubernetes 的整体心智模型（为何需要、三层抓手、最小概念），再展开控制面&#x2F;数据面与图 1～5；辅以 Argo 与生信栈关系及系列阅读路线。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pipeline-frameworks-k8s-01.框架概述">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="面向零基础读者：先建立 Kubernetes 的整体心智模型（为何需要、三层抓手、最小概念），再展开控制面&#x2F;数据面与图 1～5；辅以 Argo 与生信栈关系及系列阅读路线。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig01-single-vs-cluster.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig02-control-plane.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig03-declarative-loop.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig04-stack-argok8s.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig05-architecture-data-flow.svg">
+<meta property="article:published_time" content="2026-03-30T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-09T13:37:42.232Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="kubernetes">
+<meta property="article:tag" content="pipeline">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig01-single-vs-cluster.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-k8s-01.框架概述/"/>
+
+
+
+
+
+  <title>pipeline-frameworks-k8s-01.框架概述 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">pipeline-frameworks-k8s-01.框架概述</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-30T10:00:00+08:00">
+                2026-03-30
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%B0%83%E5%BA%A6%E6%A1%86%E6%9E%B6/" itemprop="url" rel="index">
+                    <span itemprop="name">调度框架</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  面向零基础读者：先建立 Kubernetes 的整体心智模型（为何需要、三层抓手、最小概念），再展开控制面/数据面与图 1～5；辅以 Argo 与生信栈关系及系列阅读路线。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>如果你已经会用 Docker（或 Singularity）在<strong>单机</strong>上跑分析镜像，下一步常常会撞上两类现实：任务一多，就需要<strong>排队与资源限额</strong>；又希望同一套流程在<strong>实验室机器、机房集群或云上</strong>尽量一致地跑。开源容器编排系统 <strong>Kubernetes</strong> 就是为「在很多台机器上<strong>可靠地跑大量容器</strong>」而设计的——你可以把它想成集群的「调度与编排中枢」，而不是又学一门和 Docker 完全无关的技术。</p>
+<p>本文先帮你搭好<strong>整体框架</strong>（它解决什么问题、心智里该放哪几块拼图），再带你用插图与步骤表把<strong>重要组件</strong>串成一条故事线。行文偏科普：少堆砌名词，多给类比与导航，细节留给同系列的后续篇。</p>
+<blockquote>
+<p>段末注释：<strong>Kubernetes</strong> 为该系统常用英文名称；<strong>K8s</strong> 为社区通用缩写，后文沿用 <strong>K8s</strong>。</p>
+</blockquote>
+<hr>
+<h2 id="一、先立骨架：K8s-在你脑子里该长什么样"><a href="#一、先立骨架：K8s-在你脑子里该长什么样" class="headerlink" title="一、先立骨架：K8s 在你脑子里该长什么样"></a>一、先立骨架：K8s 在你脑子里该长什么样</h2><p>读任何技术文档之前，最好先有一个「一屏能装下」的模型。对 K8s 来说，这一屏可以浓缩成三句话。</p>
+<p><strong>第一句：它管的是「很多台机器上的容器」，不是你本机那一次 <code>docker run</code>。</strong></p>
+<p>在单机上，你自己决定何时起容器、用多少 CPU&#x2F;内存、目录挂哪里。机器一多，逐台登录协调会很快失控。可以把 K8s 粗想成：许多物理机或虚拟机（<strong>节点</strong>）组成一个<strong>集群</strong>；你不再 ssh 到某台机去执行 <code>docker run</code>，而是向集群递交一份<strong>声明</strong>（常见形式是 YAML）：希望运行哪些镜像、要多少资源、失败如何重启。集群里的<strong>控制面</strong>负责把这份声明落实成「具体在哪个节点上起 <strong>Pod</strong>、挂了怎么再起」——你关心<strong>期望状态</strong>，而不是每一台机上的进程细节。这和在高性能计算（High Performance Computing，<strong>HPC</strong>）集群上提交作业不完全相同，但<strong>心理模型</strong>可以类比：你递交的是「工作描述」，系统在资源池里找位置执行。</p>
+<blockquote>
+<p>段末注释：<strong>Pod</strong> 是 K8s 调度与网络视角下的最小单元，通常内含一个或多个容器。</p>
+</blockquote>
+<p><strong>第二句：它的工作方式叫「声明式」——你说「我要什么样」，系统负责「变成那样」。</strong></p>
+<p>你不是逐条远程登录敲命令，而是描述<strong>期望</strong>（例如某镜像跑三个副本）；集群通过控制循环，反复把<strong>实际状态</strong>向<strong>期望状态</strong>收敛。体感上接近「只交作业脚本，调度器负责跑」，只是对象从作业脚本换成了集群里的一等公民（Pod、Deployment、Job 等资源对象）。</p>
+<p><strong>第三句：它大致站在「云平台提供的机器与网络」之上、「你的应用与流水线」之下。</strong></p>
+<p>同一套 K8s 概念既出现在自建机房，也出现在各家的托管 Kubernetes。云厂商提供虚拟机、网络、磁盘；<strong>K8s 不负责替你开账单，但负责在已有机器上编排容器</strong>。没有云经验时，只需先记住：<strong>集群 &#x3D; 一组可跑容器的资源池</strong>，外加一个统一的 API 大脑。</p>
+<p>把这三句连起来，你就有了最粗的一条轴：<strong>资源池 + 声明期望 + 控制面落实</strong>。下文所有组件名，都是在这条轴上长出来的枝节。</p>
+<hr>
+<h2 id="二、三个抓手与一张「最小地图」"><a href="#二、三个抓手与一张「最小地图」" class="headerlink" title="二、三个抓手与一张「最小地图」"></a>二、三个抓手与一张「最小地图」</h2><p>为避免概述变成术语表，这里只保留三个足够撑起整体图景的抓手，再给一张「知道名字即可」的小表——细节留给后续篇。</p>
+<ol>
+<li><p><strong>容器编排（Orchestration）</strong><br>在多台机器上调度容器、处理崩溃重启、滚动更新等。你已熟悉的「容器」是积木，K8s 是管理很多积木怎么摆、怎么换的那套规则与控制器。</p>
+</li>
+<li><p><strong>声明式（Declarative）</strong><br>你描述「我想要什么状态」，而不是逐步手写「先 ssh 到 A 机再启动」。集群持续把<strong>实际状态</strong>往<strong>期望状态</strong>靠拢。</p>
+</li>
+<li><p><strong>云无关的一层抽象</strong><br>同一套概念可运行在多种环境；没有云经验时，先把「集群 &#x3D; 资源池 + API」立住即可。</p>
+</li>
+</ol>
+<p>下面几个词在几乎所有入门材料里都会出现，这里只给<strong>一句话定位</strong>：</p>
+<table>
+<thead>
+<tr>
+<th align="left">概念</th>
+<th align="left">一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>集群（Cluster）</strong></td>
+<td align="left">一组协同工作的机器与控制组件，对外像一个「大资源池」。</td>
+</tr>
+<tr>
+<td align="left"><strong>节点（Node）</strong></td>
+<td align="left">集群里真正跑工作负载的机器（工作节点）；控制面节点入门阶段可先与控制面「一整块」混谈，再细分。</td>
+</tr>
+<tr>
+<td align="left"><strong>Pod</strong></td>
+<td align="left"><strong>最小调度单位</strong>，通常内含一个或多个紧密协作的容器，共享网络与部分存储视角。</td>
+</tr>
+<tr>
+<td align="left"><strong>工作负载资源</strong>（如 Deployment、Job 等）</td>
+<td align="left">描述「跑哪些 Pod、几个副本、如何更新」的对象类型；生信批任务常会碰到 <strong>Job&#x2F;CronJob</strong>。</td>
+</tr>
+</tbody></table>
+<p>日常口语里「往 K8s 上丢一个任务」，多数时候最终会落成集群里的一批 <strong>Pod</strong>。</p>
+<hr>
+<h2 id="三、工作原理总览：从「提交声明」到「节点上跑起来」"><a href="#三、工作原理总览：从「提交声明」到「节点上跑起来」" class="headerlink" title="三、工作原理总览：从「提交声明」到「节点上跑起来」"></a>三、工作原理总览：从「提交声明」到「节点上跑起来」</h2><p>有了上面的骨架，可以读一条<strong>主路径故事线</strong>（与下文 <strong>图 5</strong> 及 <strong>步骤 1～5</strong> 一致）：</p>
+<ol>
+<li>你用 <code>kubectl</code>、CI 或别的客户端，把 YAML 里的期望提交给 <strong>kube-apiserver</strong>（集群 API 的唯一正规入口）。  </li>
+<li><strong>etcd</strong> 存下这些对象的权威状态；其它组件主要通过 apiserver <strong>watch&#x2F;list</strong> 变化，而不是各自直连数据库。  </li>
+<li><strong>kube-controller-manager</strong> 里的一堆控制器不断<strong>对账</strong>：例如副本够不够、Job 对应的 Pod 是否该创建或收尾。  </li>
+<li><strong>kube-scheduler</strong> 为还没绑定节点的 Pod <strong>挑选节点并写入绑定</strong>；它只决策「落在哪」，不在节点上替你起进程。  </li>
+<li>各节点上的 <strong>kubelet</strong> 看到分给自己的 Pod，通过 <strong>容器运行时接口</strong>（Container Runtime Interface，<strong>CRI</strong>）调用 <strong>containerd&#x2F;CRI-O</strong> 等运行时真正<strong>拉镜像、起停容器</strong>，并把状态经 apiserver 写回。</li>
+</ol>
+<blockquote>
+<p>段末注释：<strong>CRI</strong> 为 <strong>容器运行时接口</strong> 的通用缩写；<strong>kube-apiserver</strong> 为集群 API 入口，后文可简写为 <strong>apiserver</strong>。</p>
+</blockquote>
+<p>你可以把 <strong>控制面</strong>（apiserver、etcd、控制器、调度器）想成「大脑与记事本」，把 <strong>工作节点</strong>（kubelet、运行时）想成「手脚」。<strong>数据面</strong>上的业务流量（例如 Service 转发）另有 <strong>kube-proxy</strong> 等角色参与，入门阶段先不展开每一条边，抓住「声明 → 持久化 → 对账 → 调度 → 节点执行」这条脊骨即可。</p>
+<p>读完下面五张图，这条脊骨会变得更具体。</p>
+<hr>
+<h2 id="四、导读：五张图怎么读"><a href="#四、导读：五张图怎么读" class="headerlink" title="四、导读：五张图怎么读"></a>四、导读：五张图怎么读</h2><p><strong>建议顺序</strong>：图 1（单机 vs 集群）→ 图 2（控制面与节点）→ 图 3（声明式）→ 图 4（与 Argo&#x2F;生信栈）→ <strong>图 5（总览：组件、信息流、调度）</strong>。图 5 信息密度最高，可与紧随其后的「步骤 1～5 速查表」对照，反复看。</p>
+<h3 id="图-1-单机容器-vs-Kubernetes-集群（角色对比）"><a href="#图-1-单机容器-vs-Kubernetes-集群（角色对比）" class="headerlink" title="图 1　单机容器 vs Kubernetes 集群（角色对比）"></a>图 1　单机容器 vs Kubernetes 集群（角色对比）</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig01-single-vs-cluster.svg" alt="图 1　单机：docker run 直达容器；集群：YAML → API → 控制面 → 多节点上的 Pod（示意）"></p>
+<p>左侧是你直接触达容器；右侧是你<strong>先向 API 声明期望</strong>，由控制面在<strong>多台节点</strong>上落实为 Pod（内再跑容器）。</p>
+<h3 id="图-2-控制面与工作节点（极简）"><a href="#图-2-控制面与工作节点（极简）" class="headerlink" title="图 2　控制面与工作节点（极简）"></a>图 2　控制面与工作节点（极简）</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig02-control-plane.svg" alt="图 2　API Server、Scheduler、Controller 与 worker 节点上的 kubelet &#x2F; Pod（示意）"></p>
+<p>入门阶段不必记清每个组件名称，只需有印象：<strong>调度决定 Pod 落在哪台 Node；控制器负责让实际状态跟上你的 YAML。</strong></p>
+<h3 id="图-3-声明式：期望状态与实际状态"><a href="#图-3-声明式：期望状态与实际状态" class="headerlink" title="图 3　声明式：期望状态与实际状态"></a>图 3　声明式：期望状态与实际状态</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig03-declarative-loop.svg" alt="图 3　声明式控制：期望状态经控制回路与实际状态对齐（示意）"></p>
+<p>你不是逐条 ssh 敲命令，而是描述<strong>期望</strong>；集群反复<strong>收敛</strong>到该状态（与「只提交作业脚本、调度器负责跑」的体感相近）。</p>
+<h3 id="图-4-生信栈：容器镜像-→-Kubernetes-→-Argo-Workflows"><a href="#图-4-生信栈：容器镜像-→-Kubernetes-→-Argo-Workflows" class="headerlink" title="图 4　生信栈：容器镜像 → Kubernetes → Argo Workflows"></a>图 4　生信栈：容器镜像 → Kubernetes → Argo Workflows</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig04-stack-argok8s.svg" alt="图 4　打包层（镜像）— 编排层（K8s）— 应用&#x2F;流程层（Argo）（示意）"></p>
+<p><strong>Argo 不替代 K8s</strong>：它在 K8s 之上声明「第几步跑哪个容器」；<strong>镜像仍是你的生信环境单位</strong>。</p>
+<h3 id="图-5-整体业务逻辑：控制面-数据面、信息流与调度（总览）"><a href="#图-5-整体业务逻辑：控制面-数据面、信息流与调度（总览）" class="headerlink" title="图 5　整体业务逻辑：控制面 &#x2F; 数据面、信息流与调度（总览）"></a>图 5　整体业务逻辑：控制面 &#x2F; 数据面、信息流与调度（总览）</h3><p><img src="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-01.%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/k8s-fig05-architecture-data-flow.svg" alt="图 5　Kubernetes 控制面与数据面、主要组件及信息流（示意）"></p>
+<p>前四张图按主题拆分；<strong>图 5</strong> 把控制面、数据面、<strong>步骤 1～5</strong> 主路径合在一张总览中。</p>
+<h4 id="步骤-1～5-速查表（与-Fig-5-图中标注一致）"><a href="#步骤-1～5-速查表（与-Fig-5-图中标注一致）" class="headerlink" title="步骤 1～5 速查表（与 Fig.5 图中标注一致）"></a>步骤 1～5 速查表（与 Fig.5 图中标注一致）</h4><p>下列顺序与 <strong>Fig.5</strong> 中 <strong>1～5</strong> 及图底英文 <strong>Numbered flow</strong> 一致，便于对照插图阅读。</p>
+<table>
+<thead>
+<tr>
+<th align="left">步骤</th>
+<th align="left">主信息流</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>1</strong></td>
+<td align="left">客户端 → <strong>kube-apiserver</strong></td>
+<td align="left">通过 <code>kubectl</code>、API 客户端或 CI 提交&#x2F;变更资源（Deployment、Job 等）。</td>
+</tr>
+<tr>
+<td align="left"><strong>2</strong></td>
+<td align="left"><strong>kube-apiserver</strong> ↔ <strong>etcd</strong></td>
+<td align="left">对象状态持久化；集群的“单一事实来源”经 apiserver 访问，<strong>典型部署下仅 apiserver 直连 etcd</strong>。其它组件通过 apiserver <strong>watch&#x2F;list</strong> 变化。</td>
+</tr>
+<tr>
+<td align="left"><strong>3</strong></td>
+<td align="left"><strong>kube-controller-manager</strong> ↔ apiserver</td>
+<td align="left"><strong>控制循环（reconcile）</strong>：如 ReplicaSet 按副本数创建&#x2F;删除 Pod；Job 控制器管理 Job&#x2F;Pod 生命周期等。</td>
+</tr>
+<tr>
+<td align="left"><strong>4</strong></td>
+<td align="left"><strong>kube-scheduler</strong> ↔ apiserver</td>
+<td align="left">仅处理<strong>尚未绑定节点</strong>的 Pod：<code>Predicates</code>（可行）→ <code>Priorities</code>（打分）→ <strong>Bind</strong> 写入 <code>spec.nodeName</code>。调度器<strong>不</strong>在节点上起进程。</td>
+</tr>
+<tr>
+<td align="left"><strong>5</strong></td>
+<td align="left"><strong>kubelet</strong> ↔ apiserver；kubelet → <strong>CRI</strong> → <strong>runtime</strong></td>
+<td align="left">各节点 <strong>kubelet</strong> 仅执行<strong>已调度到本节点</strong>的 Pod；经 <strong>CRI</strong> 调用 containerd&#x2F;CRI-O 等<strong>拉镜像、起停容器</strong>；Pod 状态经 apiserver 回写，最终进入 etcd。</td>
+</tr>
+</tbody></table>
+<p><strong>与图 1～4 的关系</strong>：图 1、2 对应上表中<strong>谁在发请求、控制面与节点如何分工</strong>；图 3 对应步骤 2～5 背后的<strong>声明式收敛</strong>；图 4 说明 Argo 在 apiserver <strong>之上</strong>增加工作流语义，<strong>不改变</strong>步骤 1～5 的主干。</p>
+<h4 id="主要组件与职责（与图-5-及步骤对照）"><a href="#主要组件与职责（与图-5-及步骤对照）" class="headerlink" title="主要组件与职责（与图 5 及步骤对照）"></a>主要组件与职责（与图 5 及步骤对照）</h4><table>
+<thead>
+<tr>
+<th align="left">组件</th>
+<th align="left">位置</th>
+<th align="left">职责（一句话）</th>
+<th align="left">常见步骤</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>kube-apiserver</strong></td>
+<td align="left">控制面</td>
+<td align="left">集群 API 统一入口：认证&#x2F;授权&#x2F;准入后持久化对象；提供 watch&#x2F;list。</td>
+<td align="left">1、2 及全程枢纽</td>
+</tr>
+<tr>
+<td align="left"><strong>etcd</strong></td>
+<td align="left">控制面侧</td>
+<td align="left">保存 Kubernetes 对象与集群元数据；高可用多为多副本。</td>
+<td align="left">2</td>
+</tr>
+<tr>
+<td align="left"><strong>kube-controller-manager</strong></td>
+<td align="left">控制面</td>
+<td align="left">内嵌多路控制器，使<strong>实际状态</strong>向<strong>期望 spec</strong> 对齐（副本、Job、Node 等）。</td>
+<td align="left">3</td>
+</tr>
+<tr>
+<td align="left"><strong>kube-scheduler</strong></td>
+<td align="left">控制面</td>
+<td align="left">为未绑定节点的 Pod <strong>选节点并 bind</strong>。</td>
+<td align="left">4</td>
+</tr>
+<tr>
+<td align="left"><strong>kubelet</strong></td>
+<td align="left">工作节点</td>
+<td align="left">本节点 Pod 生命周期：创建容器、探针、卷挂载等。</td>
+<td align="left">5</td>
+</tr>
+<tr>
+<td align="left"><strong>kube-proxy</strong></td>
+<td align="left">工作节点</td>
+<td align="left">实现 <strong>Service</strong> 到 Pod 的节点侧转发（iptables&#x2F;IPVS 等）；<strong>不</strong>在图 5 主路径上逐条画出。</td>
+<td align="left">（并行于业务流量）</td>
+</tr>
+<tr>
+<td align="left"><strong>container runtime</strong></td>
+<td align="left">工作节点</td>
+<td align="left">经 <strong>CRI</strong> 被 kubelet 调用，真正运行容器。</td>
+<td align="left">5</td>
+</tr>
+</tbody></table>
+<h4 id="调度原理（入门版，与步骤-4、5-衔接）"><a href="#调度原理（入门版，与步骤-4、5-衔接）" class="headerlink" title="调度原理（入门版，与步骤 4、5 衔接）"></a>调度原理（入门版，与步骤 4、5 衔接）</h4><ul>
+<li><strong>输入</strong>：<code>spec.nodeName</code> 为空、且可被调度器处理的 Pod。  </li>
+<li><strong>处理链</strong>：<strong>Predicates</strong>（资源、污点&#x2F;容忍、亲和性等硬条件）→ <strong>Priorities</strong>（软偏好打分）→ <strong>Bind</strong>（更新 Pod 与节点绑定）。  </li>
+<li><strong>与 kubelet 分工</strong>：调度器只做<strong>绑定决策</strong>；<strong>拉起容器</strong>在步骤 5 由 <strong>kubelet + runtime</strong> 完成；失败则反映为 Pod 状态，由控制器与 kubelet 协同重试或上报。</li>
+</ul>
+<hr>
+<h2 id="五、和生信流水线、Argo-的关系（为什么总一起出现）"><a href="#五、和生信流水线、Argo-的关系（为什么总一起出现）" class="headerlink" title="五、和生信流水线、Argo 的关系（为什么总一起出现）"></a>五、和生信流水线、Argo 的关系（为什么总一起出现）</h2><p>本系列已有 <a href="pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B.md">Argo Workflows 入门</a>：Argo 把<strong>工作流</strong>定义成 Kubernetes 上的资源，步骤往往是<strong>容器</strong>。因此：</p>
+<ul>
+<li><strong>没有 K8s，通常就没有「标准形态」的 Argo 集群版</strong>（本地 minikube 也算一种小型 K8s）；  </li>
+<li>你会在 Argo 文档里反复看到 Pod、YAML、<code>kubectl</code>——它们不是 Argo 发明的，而是 <strong>K8s 通用语言</strong>。</li>
+</ul>
+<p>关系可以一句话概括：<strong>K8s 提供「在哪、用多少资源、如何跑容器」；Argo 在之上提供「步骤依赖、有向无环图（Directed Acyclic Graph，DAG）、重试、制品传递」等工作流语义</strong>。先建立 K8s 的整体感，再读 Argo 会顺很多。</p>
+<blockquote>
+<p>段末注释：<strong>DAG</strong> 为 <strong>有向无环图</strong> 的通用缩写，用于描述步骤之间的依赖关系。</p>
+</blockquote>
+<hr>
+<h2 id="六、默认你知道什么、为何还要拆成系列"><a href="#六、默认你知道什么、为何还要拆成系列" class="headerlink" title="六、默认你知道什么、为何还要拆成系列"></a>六、默认你知道什么、为何还要拆成系列</h2><ul>
+<li><strong>默认你已了解</strong>：镜像、容器、挂载卷这类<strong>容器级</strong>概念（本目录 Docker &#x2F; Singularity 相关文已覆盖）。  </li>
+<li><strong>不假设你有</strong>：公有云账号、VPC、负载均衡等<strong>云平台</strong>产品经验，也不假设你装过或使用 K8s。  </li>
+<li><strong>阅读目标</strong>：读完能用自己的话说明「K8s 在栈里大概处于哪一层」「为什么 Argo 这类工具总提到它」，并知道后续该补哪类文档。</li>
+</ul>
+<p>K8s 的学习曲线陡，一半来自<strong>概念多</strong>，一半来自<strong>与网络、存储、身份强绑定</strong>。比较稳妥的顺序是：</p>
+<ol>
+<li><strong>概述与心智模型</strong>（本文）：解决「它是什么、为什么要存在」。  </li>
+<li><strong>集群从哪来</strong>：本地 minikube&#x2F;kind、实验室 kubeadm、云托管，各选一两条路径即可。  </li>
+<li><strong>日常交互</strong>：<code>kubectl</code>、命名空间、最基本的查看 Pod&#x2F;日志（与生信「查作业、看日志」对应）。  </li>
+<li><strong>与工作负载相关</strong>：Job、资源请求与限制、调度与排队（和生信资源申请直接相关）。  </li>
+<li><strong>再按需深入</strong>：存储卷、网络、基于角色的访问控制（Role-Based Access Control，<strong>RBAC</strong>）、Ingress 等——用到再查，避免概述里一次性铺开。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th align="left">序号</th>
+<th align="left">文档</th>
+<th align="left">主题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">01</td>
+<td align="left">本文</td>
+<td align="left">概述与心智模型；<strong>图 1～图 5</strong>、<strong>步骤 1～5</strong>（图 5）</td>
+</tr>
+<tr>
+<td align="left">02</td>
+<td align="left"><a href="pipeline-frameworks-k8s-02.%E9%9B%86%E7%BE%A4%E4%B8%8E%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83.md">pipeline-frameworks-k8s-02.集群与运行环境</a></td>
+<td align="left">集群从哪来：本地 kind&#x2F;minikube、常见路径</td>
+</tr>
+<tr>
+<td align="left">03</td>
+<td align="left"><a href="pipeline-frameworks-k8s-03.kubectl%E4%B8%8E%E6%97%A5%E5%B8%B8%E8%A7%82%E6%B5%8B.md">pipeline-frameworks-k8s-03.kubectl与日常观测</a></td>
+<td align="left"><code>kubectl</code>、命名空间、Pod&#x2F;日志</td>
+</tr>
+<tr>
+<td align="left">04</td>
+<td align="left"><a href="pipeline-frameworks-k8s-04.%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E4%B8%8E%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6.md">pipeline-frameworks-k8s-04.工作负载与资源调度</a></td>
+<td align="left">Job、资源请求与限额、调度直觉</td>
+</tr>
+<tr>
+<td align="left">05</td>
+<td align="left"><a href="pipeline-frameworks-k8s-05.%E5%AD%98%E5%82%A8%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%9D%83%E9%99%90%E5%85%A5%E9%97%A8.md">pipeline-frameworks-k8s-05.存储网络与权限入门</a></td>
+<td align="left">卷、Service&#x2F;Ingress 入门、RBAC 概念</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、小结"><a href="#七、小结" class="headerlink" title="七、小结"></a>七、小结</h2><ul>
+<li><strong>整体</strong>：Kubernetes 在多台机器上做<strong>容器编排</strong>，核心可记为 <strong>声明式期望状态 + 控制循环 + 调度 + 节点执行</strong>（<strong>图 3～图 5</strong>，<strong>步骤 1～5</strong>）。  </li>
+<li><strong>与单机 Docker 对比</strong>：从「<code>docker run</code> 直达容器」变为「声明 → <strong>apiserver</strong> → <strong>etcd</strong> → 控制器&#x2F;调度器 → <strong>kubelet</strong> → 运行时」（<strong>图 1、图 5</strong>）。  </li>
+<li><strong>与生信栈</strong>：镜像仍是环境单位；<strong>Argo</strong> 等在 apiserver 之上编排步骤，底层仍走 <strong>图 5</strong> 的主路径（<strong>图 4</strong>）。  </li>
+<li><strong>后续阅读</strong>：系列 <strong>k8s-02～k8s-05</strong> 分别从集群来源、<code>kubectl</code>、工作负载与资源、存储&#x2F;网络&#x2F;RBAC 展开。</li>
+</ul>
+<p><strong>建议动手顺序</strong>：在本地起 <strong>kind&#x2F;minikube</strong> 等最小集群 → 用 <code>kubectl</code> 跑通一个 Pod → 对照 <strong>图 5</strong> 在日志里观察 <strong>Pending &#x2F; Scheduled &#x2F; Running</strong> 与节点绑定——比单纯背组件名更有效。</p>
+<hr>
+<h2 id="附录：阅读与编号约定（全文统一）"><a href="#附录：阅读与编号约定（全文统一）" class="headerlink" title="附录：阅读与编号约定（全文统一）"></a>附录：阅读与编号约定（全文统一）</h2><table>
+<thead>
+<tr>
+<th align="left">符号</th>
+<th align="left">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>图 1～图 5</strong></td>
+<td align="left">本文导读插图；与图中英文标题 <strong>Fig.1～Fig.5</strong> 一一对应（同一图）。</td>
+</tr>
+<tr>
+<td align="left"><strong>图 5 中的 1～5</strong></td>
+<td align="left">从「提交工作负载」到「节点上容器运行」的<strong>主路径步骤</strong>，与上文「步骤 1～5 速查表」及 <strong>Fig.5</strong> 内标注一致。</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/kubernetes/" rel="tag"><i class="fa fa-tag"></i> kubernetes</a>
+          
+            <a href="/tags/pipeline/" rel="tag"><i class="fa fa-tag"></i> pipeline</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-06%E6%A8%A1%E5%9D%97%E8%AF%84%E4%BC%B0-AB-Experiment-RAG/" rel="next" title="RAG-06模块评估-AB-Experiment-RAG">
+                <i class="fa fa-chevron-left"></i> RAG-06模块评估-AB-Experiment-RAG
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-k8s-02.%E9%9B%86%E7%BE%A4%E4%B8%8E%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83/" rel="prev" title="pipeline-frameworks-k8s-02.集群与运行环境">
+                pipeline-frameworks-k8s-02.集群与运行环境 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">550</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">101</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">182</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%AB%8B%E9%AA%A8%E6%9E%B6%EF%BC%9AK8s-%E5%9C%A8%E4%BD%A0%E8%84%91%E5%AD%90%E9%87%8C%E8%AF%A5%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7"><span class="nav-number">1.</span> <span class="nav-text">一、先立骨架：K8s 在你脑子里该长什么样</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%B8%89%E4%B8%AA%E6%8A%93%E6%89%8B%E4%B8%8E%E4%B8%80%E5%BC%A0%E3%80%8C%E6%9C%80%E5%B0%8F%E5%9C%B0%E5%9B%BE%E3%80%8D"><span class="nav-number">2.</span> <span class="nav-text">二、三个抓手与一张「最小地图」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E6%80%BB%E8%A7%88%EF%BC%9A%E4%BB%8E%E3%80%8C%E6%8F%90%E4%BA%A4%E5%A3%B0%E6%98%8E%E3%80%8D%E5%88%B0%E3%80%8C%E8%8A%82%E7%82%B9%E4%B8%8A%E8%B7%91%E8%B5%B7%E6%9D%A5%E3%80%8D"><span class="nav-number">3.</span> <span class="nav-text">三、工作原理总览：从「提交声明」到「节点上跑起来」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%AF%BC%E8%AF%BB%EF%BC%9A%E4%BA%94%E5%BC%A0%E5%9B%BE%E6%80%8E%E4%B9%88%E8%AF%BB"><span class="nav-number">4.</span> <span class="nav-text">四、导读：五张图怎么读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-1-%E5%8D%95%E6%9C%BA%E5%AE%B9%E5%99%A8-vs-Kubernetes-%E9%9B%86%E7%BE%A4%EF%BC%88%E8%A7%92%E8%89%B2%E5%AF%B9%E6%AF%94%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">图 1　单机容器 vs Kubernetes 集群（角色对比）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-2-%E6%8E%A7%E5%88%B6%E9%9D%A2%E4%B8%8E%E5%B7%A5%E4%BD%9C%E8%8A%82%E7%82%B9%EF%BC%88%E6%9E%81%E7%AE%80%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">图 2　控制面与工作节点（极简）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-3-%E5%A3%B0%E6%98%8E%E5%BC%8F%EF%BC%9A%E6%9C%9F%E6%9C%9B%E7%8A%B6%E6%80%81%E4%B8%8E%E5%AE%9E%E9%99%85%E7%8A%B6%E6%80%81"><span class="nav-number">4.3.</span> <span class="nav-text">图 3　声明式：期望状态与实际状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-4-%E7%94%9F%E4%BF%A1%E6%A0%88%EF%BC%9A%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F-%E2%86%92-Kubernetes-%E2%86%92-Argo-Workflows"><span class="nav-number">4.4.</span> <span class="nav-text">图 4　生信栈：容器镜像 → Kubernetes → Argo Workflows</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE-5-%E6%95%B4%E4%BD%93%E4%B8%9A%E5%8A%A1%E9%80%BB%E8%BE%91%EF%BC%9A%E6%8E%A7%E5%88%B6%E9%9D%A2-%E6%95%B0%E6%8D%AE%E9%9D%A2%E3%80%81%E4%BF%A1%E6%81%AF%E6%B5%81%E4%B8%8E%E8%B0%83%E5%BA%A6%EF%BC%88%E6%80%BB%E8%A7%88%EF%BC%89"><span class="nav-number">4.5.</span> <span class="nav-text">图 5　整体业务逻辑：控制面 &#x2F; 数据面、信息流与调度（总览）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-1%EF%BD%9E5-%E9%80%9F%E6%9F%A5%E8%A1%A8%EF%BC%88%E4%B8%8E-Fig-5-%E5%9B%BE%E4%B8%AD%E6%A0%87%E6%B3%A8%E4%B8%80%E8%87%B4%EF%BC%89"><span class="nav-number">4.5.1.</span> <span class="nav-text">步骤 1～5 速查表（与 Fig.5 图中标注一致）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E7%BB%84%E4%BB%B6%E4%B8%8E%E8%81%8C%E8%B4%A3%EF%BC%88%E4%B8%8E%E5%9B%BE-5-%E5%8F%8A%E6%AD%A5%E9%AA%A4%E5%AF%B9%E7%85%A7%EF%BC%89"><span class="nav-number">4.5.2.</span> <span class="nav-text">主要组件与职责（与图 5 及步骤对照）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E5%8E%9F%E7%90%86%EF%BC%88%E5%85%A5%E9%97%A8%E7%89%88%EF%BC%8C%E4%B8%8E%E6%AD%A5%E9%AA%A4-4%E3%80%815-%E8%A1%94%E6%8E%A5%EF%BC%89"><span class="nav-number">4.5.3.</span> <span class="nav-text">调度原理（入门版，与步骤 4、5 衔接）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%92%8C%E7%94%9F%E4%BF%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E3%80%81Argo-%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E6%80%BB%E4%B8%80%E8%B5%B7%E5%87%BA%E7%8E%B0%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">五、和生信流水线、Argo 的关系（为什么总一起出现）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E9%BB%98%E8%AE%A4%E4%BD%A0%E7%9F%A5%E9%81%93%E4%BB%80%E4%B9%88%E3%80%81%E4%B8%BA%E4%BD%95%E8%BF%98%E8%A6%81%E6%8B%86%E6%88%90%E7%B3%BB%E5%88%97"><span class="nav-number">6.</span> <span class="nav-text">六、默认你知道什么、为何还要拆成系列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">七、小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95%EF%BC%9A%E9%98%85%E8%AF%BB%E4%B8%8E%E7%BC%96%E5%8F%B7%E7%BA%A6%E5%AE%9A%EF%BC%88%E5%85%A8%E6%96%87%E7%BB%9F%E4%B8%80%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">附录：阅读与编号约定（全文统一）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

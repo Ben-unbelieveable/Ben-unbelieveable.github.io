@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,定向进化,蛋白质语言模型,主动学习,EVOLVEpro," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="文献《Rapid in silico directed evolution by a protein language model with EVOLVEpro》解析：ESM-2 序列表征、残基嵌入均值汇聚、随机森林回归与主动学习 top-N 策略，及与零样本 PLM 适应度的关系。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-modelpaper-EVOLVEpro">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-EVOLVEpro/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="文献《Rapid in silico directed evolution by a protein language model with EVOLVEpro》解析：ESM-2 序列表征、残基嵌入均值汇聚、随机森林回归与主动学习 top-N 策略，及与零样本 PLM 适应度的关系。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-EVOLVEpro/evolvepro-fig01-pipeline.svg">
+<meta property="article:published_time" content="2026-04-01T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-09T13:37:42.183Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="EVOLVEpro">
+<meta property="article:tag" content="主动学习">
+<meta property="article:tag" content="定向进化">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-EVOLVEpro/evolvepro-fig01-pipeline.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-14.聚合酶/酶改造-modelpaper-EVOLVEpro/"/>
+
+
+
+
+
+  <title>酶改造-modelpaper-EVOLVEpro | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-EVOLVEpro/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-modelpaper-EVOLVEpro</h1>
+        
+
+        <div class="post-meta">
+	  
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-04-01T12:00:00+08:00">
+                2026-04-01
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  文献《Rapid in silico directed evolution by a protein language model with EVOLVEpro》解析：ESM-2 序列表征、残基嵌入均值汇聚、随机森林回归与主动学习 top-N 策略，及与零样本 PLM 适应度的关系。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <h2 id="1-文献信息"><a href="#1-文献信息" class="headerlink" title="1. 文献信息"></a>1. 文献信息</h2><ul>
+<li><strong>题目</strong>：Rapid in silico directed evolution by a protein language model with EVOLVEpro  </li>
+<li><strong>期刊</strong>：<em>Science</em>；DOI：<a target="_blank" rel="noopener" href="https://doi.org/10.1126/science.adr6006">https://doi.org/10.1126/science.adr6006</a>  </li>
+<li><strong>作者</strong>：Kaiyi Jiang、Omar O. Abudayyeh、Jonathan S. Gootenberg 等  </li>
+<li><strong>核心贡献</strong>：提出 <strong>EVOLVEpro</strong>（全称在正文中写作 <em>evolution via language model–guided variance exploration for proteins</em>，即「语言模型引导的蛋白方差探索式进化」），将<strong>大规模蛋白质语言模型（Protein Language Model，PLM）</strong> 的序列表征与<strong>顶层回归模型</strong>结合，在<strong>少量实验（few-shot，每轮仅测少量突变体）</strong> 的<strong>主动学习（active learning）</strong> 循环中，迭代学习「<strong>嵌入 → 实验读出活性</strong>」的映射，用于<strong>定向进化（directed evolution，DE）</strong> 与<strong>机器学习定向进化（machine learning–directed evolution，MLDE）</strong> 场景。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PLM</strong> 在预训练序列上学习通用表征；<strong>few-shot</strong> 指每轮仅用极少标注样本更新模型；<strong>active learning</strong> 指模型主动挑选下一轮最值得测的样本；<strong>DE</strong> 为实验迭代筛选高活性变体；<strong>MLDE</strong> 将机器学习嵌入 DE 闭环。</p>
+</blockquote>
+<hr>
+<h2 id="2-研究动机（方法视角）"><a href="#2-研究动机（方法视角）" class="headerlink" title="2. 研究动机（方法视角）"></a>2. 研究动机（方法视角）</h2><p>自然进化优化的是<strong>可遗传适应度</strong>，与实验室度量的<strong>蛋白活性&#x2F;结合&#x2F;编辑效率</strong>等<strong>目标函数</strong>不必一致；纯 <strong>PLM</strong> 的<strong>零样本（zero-shot，无任务专用再训练）</strong> 突变排序在多种任务上<strong>成功有限</strong>。生成式 PLM 可探索更大序列空间，但<strong>高活性、可落地</strong>变体比例仍低。作者假设：<strong>在 PLM 提供的稠密表征空间里，用带实验反馈的回归器迭代拟合「目标活性」</strong>，可在<strong>崎岖活性景观</strong>上比纯 PLM 打分或纯随机筛选更高效地爬升。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>zero-shot</strong> 指不针对当前蛋白&#x2F;实验读出再训练，直接用预训练模型给出的分数或似然排序候选。</p>
+</blockquote>
+<hr>
+<h2 id="3-方法实现原理（详解）"><a href="#3-方法实现原理（详解）" class="headerlink" title="3. 方法实现原理（详解）"></a>3. 方法实现原理（详解）</h2><p>以下与 <strong>Science</strong> 正文 <strong>Fig. 1A</strong> 及 <strong>Methods</strong>（<strong>Use of ESM2 embeddings</strong>、<strong>EVOLVEpro model</strong>、<strong>Active learning approach</strong>、<strong>EVOLVEpro parameter grid search</strong>）对齐；实现细节与补充材料以论文及官方仓库为准。</p>
+<h3 id="3-1-总体流程（模块化）"><a href="#3-1-总体流程（模块化）" class="headerlink" title="3.1 总体流程（模块化）"></a>3.1 总体流程（模块化）</h3><ol>
+<li><strong>候选池</strong>：对目标蛋白定义突变搜索空间（如单点突变全集，或论文设定的子集）；用<strong>冻结</strong>的 <strong>ESM-2</strong> 对每条变体序列前向，得到嵌入。  </li>
+<li><strong>序列级向量</strong>：将<strong>残基级嵌入</strong>在长度维上<strong>平均汇聚（mean pooling）</strong>，得到固定维度 <strong>d</strong> 的向量 <strong>ē</strong>，作为<strong>顶层模型</strong>输入。  </li>
+<li><strong>顶层监督</strong>：用<strong>随机森林回归器（Random Forest regressor，RFR）</strong> 以 <strong>ē</strong> 为特征、以实验归一化活性 <strong>y</strong> 为标签训练 <strong>f_θ</strong>（论文记预测为 <strong>f_θ(x)</strong> 或 <strong>f(ē)</strong>）。  </li>
+<li><strong>主动学习</strong>：每一轮用当前 <strong>RFR</strong> 对<strong>尚未测定</strong>的变体预测活性，按策略（见 <strong>§3.4</strong>）选出 <strong>K</strong> 个进入下一轮湿实验；测得的 <strong>(序列, y)</strong> 并入训练集，<strong>重训</strong>顶层模型，重复直至满足目标或轮数上限。  </li>
+<li><strong>多轮扩展</strong>：后续可在单点突变基础上组合<strong>多位点突变</strong>，由同一框架提名组合（具体组合策略见原文各应用小节）。</li>
+</ol>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>mean pooling</strong> 即对序列各位置嵌入取算术平均，使长度不同的蛋白对应同一维度向量；<strong>K</strong> 为每轮实验通量，与预算相关。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-EVOLVEpro/evolvepro-fig01-pipeline.svg" alt="Fig.1 EVOLVEpro 主动学习闭环示意（与 Jiang 等 *Science* **Fig.1A** 对齐；图中标注为英文便于矢量渲染）"></p>
+<blockquote>
+<p><strong>图注</strong>：<strong>冻结 ESM-2</strong> 输出逐残基矩阵 <strong>E</strong>，<strong>均值汇聚</strong>得 <strong>ē</strong>，<strong>随机森林（RFR）</strong> 学习 <strong>f(ē)</strong>，按 <strong>top-K</strong> 进入湿实验读出 <strong>y</strong>，将 <strong>(序列, y)</strong> 并入训练集 <strong>D</strong> 并重训顶层模型；紫色虚线箭头表示多轮迭代。脚注区强调：<strong>pMMS</strong> 等零样本 PLM 适应度与任务活性不必一致；首轮突变在网格搜索中常以<strong>随机抽样</strong>为默认策略。</p>
+</blockquote>
+<h3 id="3-2-PLM-嵌入：从序列到-E-与-e"><a href="#3-2-PLM-嵌入：从序列到-E-与-e" class="headerlink" title="3.2 PLM 嵌入：从序列到 E 与 ē"></a>3.2 PLM 嵌入：从序列到 <strong>E</strong> 与 <strong>ē</strong></h3><p>设第 <strong>i</strong> 个变体序列 <strong>x_i &#x3D; (a_1, …, a_n)</strong>，<strong>n</strong> 为长度。预训练 <strong>ESM-2</strong>（原文方法主结果采用 <strong>15B</strong> 参数版）将 <strong>x_i</strong> 映射为<strong>最后一层</strong>的<strong>逐残基嵌入矩阵</strong>（论文 <strong>Eq. 1</strong> 记法）：</p>
+<p>[<br>E_i &#x3D; \mathrm{PLM}(x_i) \in \mathbb{R}^{n \times d},<br>]</p>
+<p>其中 <strong>d</strong> 为隐藏维度。对位置 <strong>j</strong> 的嵌入在 <strong>n</strong> 上取平均，得到整条序列的表征（论文 <strong>Eq. 2</strong>）：</p>
+<p>[<br>\bar{e}<em>i &#x3D; \frac{1}{n}\sum</em>{j&#x3D;1}^{n} E_{i,j}, \quad \bar{e}_i \in \mathbb{R}^d.<br>]</p>
+<p><strong>设计要点</strong>：在 <strong>高维 p、低样本数 N（high-p, low-N）</strong> 下，作者曾尝试 <strong>主成分分析（Principal Component Analysis，PCA）</strong> 将 <strong>ē</strong> 降到 10～1000 维再输入回归器；在 <strong>12</strong> 个 <strong>深度突变扫描（Deep Mutational Scanning，DMS）</strong> 基准上，<strong>多数任务上全维原始嵌入更优</strong>，尤其在<strong>高活性变体稀疏</strong>的困难任务上；较易任务上不同维度可能饱和。故<strong>默认</strong>用<strong>完整 <strong>d</strong> 维</strong> <strong>ē</strong> 作为特征。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>DMS</strong> 为高通量测定大量突变体效应的实验范式；<strong>PCA</strong> 为线性降维；<strong>high-p, low-N</strong> 指特征维数远大于样本数，易过拟合，需强正则或简单基学习器配合。</p>
+</blockquote>
+<h3 id="3-3-顶层模型：随机森林回归"><a href="#3-3-顶层模型：随机森林回归" class="headerlink" title="3.3 顶层模型：随机森林回归"></a>3.3 顶层模型：随机森林回归</h3><p><strong>RFR</strong> 由 <strong>T &#x3D; 100</strong> 棵回归树集成；分裂质量用 <strong>Friedman 均方误差（Mean Squared Error，MSE）</strong> 准则。单棵树在<strong>自助采样（bootstrap）</strong> 子集上训练；叶节点分裂用不纯度下降最大化（论文 <strong>Eq. 3–4</strong> 给出 Friedman MSE 形式的左右子均值差与样本数加权）。对<strong>新</strong>嵌入 <strong>ē</strong>，森林预测为<strong>各树预测的平均</strong>（论文 <strong>Eq. 5</strong>）：</p>
+<p>[<br>f(\bar{e}) &#x3D; \frac{1}{T}\sum_{t&#x3D;1}^{T} h_t(\bar{e}).<br>]</p>
+<p><strong>为何用树模型</strong>：作者在 <strong>12</strong> 个 <strong>DMS</strong> 集上比较了<strong>岭回归、Lasso、弹性网络、线性回归、末层线性神经网络、K 近邻回归（KNN）、高斯过程（Gaussian Process，GP）、梯度提升</strong>等；<strong>随机森林在约 12 个中 10 个</strong> 数据集上表现最好，与<strong>低 N 下树集成</strong>在其它领域的经验一致。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RFR</strong> 对特征非线性交互、异常值相对鲁棒；<strong>GP</strong> 适合小数据但高维嵌入上成本与调参不同；<strong>KNN</strong> 在嵌入空间上依赖距离度量与局部密度。</p>
+</blockquote>
+<h3 id="3-4-主动学习：预测范围约束与-top-N-选点"><a href="#3-4-主动学习：预测范围约束与-top-N-选点" class="headerlink" title="3.4 主动学习：预测范围约束与 top-N 选点"></a>3.4 主动学习：预测范围约束与 <strong>top-N</strong> 选点</h3><p><strong>关键性质</strong>：对回归树&#x2F;森林，若训练标签 <strong>y</strong> 有界，则对<strong>未见过</strong>样本的预测值落在<strong>训练集 y 的 min–max 区间内</strong>（论文 <strong>Eq. 6</strong>）。因此每轮选「预测分最高」的一批点，目的是在<strong>下一轮</strong>用新实验数据<strong>抬高</strong>模型见过的 <strong>y</strong> 上界，使后续预测区间整体上移（论文 <strong>Eq. 7–8</strong> 的 <strong>top-n</strong> 策略：在候选池中取预测值 <strong>≥ 第 n 高</strong> 阈值的变体）。</p>
+<p>作者曾比较：<strong>随机</strong>、<strong>top + bottom 混合</strong>、<strong>嵌入空间与已选点欧氏距离最大</strong> 等；在<strong>以快速提升顶部活性</strong>为目标时，<strong>贪心 top-N</strong> 与网格搜索中的「胜出策略」一致。<strong>首轮</strong>突变选择：在完整网格搜索中，<strong>随机首轮</strong> 优于仅基于嵌入的 <strong>K-medoids</strong> 多样性首轮（论文 <strong>Grid search</strong> 小节），故实验流程默认<strong>第一轮随机抽变体</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>K-medoids</strong> 为聚类代表点选取，用于「首轮覆盖嵌入空间」的备选策略；贪心 <strong>top-N</strong> 可能局部最优，但论文以<strong>实验轮数与通量</strong>为约束优化。</p>
+</blockquote>
+<h3 id="3-5-与「零样本-PLM-适应度」的区分"><a href="#3-5-与「零样本-PLM-适应度」的区分" class="headerlink" title="3.5 与「零样本 PLM 适应度」的区分"></a>3.5 与「零样本 PLM 适应度」的区分</h3><p>论文多次将 <strong>ESM-2</strong> 给出的<strong>掩码边际类分数</strong>等概括为 <strong>pMMS</strong>（<strong>predicted masked marginal score</strong>，预测掩码边际分数），作为<strong>天然序列分布上的「进化似然」<strong>代理；而 <strong>EVOLVEpro</strong> 在 <strong>ē</strong> 上学习的 <strong>f(ē)</strong> 对应</strong>实验读出</strong>。在抗体、Cas12f、PE2、Bxb1、T7 <strong>RNA 聚合酶（RNA polymerase，RNAP）</strong> 等案例中，<strong>pMMS 与实测活性往往弱相关甚至近乎无关</strong>；<strong>PCA 投影</strong>上「高 PLM 适应度方向」与「高活性方向」可<strong>相反</strong>。说明：<strong>基础 PLM 不直接等于任务活性</strong>，需<strong>实验锚定</strong>的<strong>回归解释层</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>pMMS</strong> 依赖 ESM 对突变位点掩码&#x2F;似然的构造，与 Meier 等 <strong>ESM-1v</strong> 零样本打分同族思想；<strong>RNAP</strong> 此处指 <strong>T7 RNA 聚合酶</strong> 工程案例。</p>
+</blockquote>
+<h3 id="3-6-基准与模型选择（支撑「为何是-ESM-2-15B-RFR」）"><a href="#3-6-基准与模型选择（支撑「为何是-ESM-2-15B-RFR」）" class="headerlink" title="3.6 基准与模型选择（支撑「为何是 ESM-2 15B + RFR」）"></a>3.6 基准与模型选择（支撑「为何是 ESM-2 15B + RFR」）</h3><ul>
+<li><strong>数据</strong>：<strong>12</strong> 个 <strong>DMS</strong> 数据集（病毒刺突、核酸酶、DNA&#x2F;RNA 结合蛋白、激酶等），<strong>仿真</strong>时仅对<strong>模型提名</strong>的变体「揭示」真实标签，模拟真实筛选。  </li>
+<li><strong>PLM 对比</strong>：在相同顶层流程下，<strong>ESM-2 15B</strong> 平均在<strong>高活性变体检出</strong>上优于较小 <strong>ESM-2</strong>、<strong>ESM-1</strong>、<strong>UniRep</strong>、<strong>ProtT5</strong>、<strong>ProteinBERT</strong>、<strong>Ankh</strong> 及 <strong>one-hot &#x2F; 整数编码</strong>；仅少数 <strong>PLM</strong> 显著优于 one-hot，说明<strong>表征质量</strong>是瓶颈。  </li>
+<li><strong>主动学习 vs 预训练全部数据</strong>：例如 <strong>5</strong> 轮 × 每轮 <strong>16</strong> 个变体<strong>主动学习</strong>，<strong>性能上约等价</strong>于用 <strong>160</strong> 个变体<strong>一次性预训练</strong>回归器；<strong>10</strong> 轮主动学习约等价 <strong>500</strong> 个变体一次性预训练——体现<strong>迭代选点</strong>的样本效率。  </li>
+<li><strong>网格搜索胜出组合</strong>（论文 <strong>Methods</strong>）：<strong>首轮随机</strong>、<strong>原始 fitness（或 min-max 归一化，以数据集为准）</strong>、<strong>每轮 top-N</strong>、<strong>RFR</strong>、<strong>原始全维嵌入</strong>（未 <strong>PCA</strong> 时整体更稳）。</li>
+</ul>
+<h3 id="3-7-多目标优化（目标函数构造）"><a href="#3-7-多目标优化（目标函数构造）" class="headerlink" title="3.7 多目标优化（目标函数构造）"></a>3.7 多目标优化（目标函数构造）</h3><p>当实验同时读出多个指标（如抗体<strong>结合亲和力</strong>与<strong>表达量</strong>、<strong>T7 RNAP</strong> 的产量、翻译读数、<strong>干扰素-β（IFN-β）</strong> 相关免疫原性等），将各指标<strong>归一化</strong>后按权重<strong>线性加权</strong>为单一标量 <strong>y</strong>，再输入 <strong>§3.3</strong> 的 <strong>RFR</strong>。权重反映任务优先级（如抗体案例中结合亲和力权重为表达量的 <strong>4</strong> 倍）。<strong>本质</strong>仍是「<strong>标量回归 + 主动学习</strong>」，多目标通过<strong>工程化标量ization</strong> 处理。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>IFN-β</strong> 为细胞免疫应答相关细胞因子，此处作 mRNA 免疫原性读数代理；线性加权是简单可解释方案，<strong>Pareto 前沿</strong>遍历需更复杂策略（见原文讨论）。</p>
+</blockquote>
+<hr>
+<h2 id="4-与聚合酶-酶工程读者的关系"><a href="#4-与聚合酶-酶工程读者的关系" class="headerlink" title="4. 与聚合酶 &#x2F; 酶工程读者的关系"></a>4. 与聚合酶 &#x2F; 酶工程读者的关系</h2><p>本文 <strong>T7 RNA 聚合酶</strong> 案例与 <strong>Prime editor</strong> 中 <strong>M-MLV 逆转录酶（reverse transcriptase，RT）</strong> 等，属于<strong>广义的酶与催化机器</strong>定向改造：<strong>同一套 EVOLVEpro 管线</strong>只依赖<strong>可测的序列–活性对</strong>与 <strong>PLM 嵌入</strong>，不强制<strong>结构输入</strong>；若你的场景是<strong>聚合酶</strong> <strong>k_cat</strong>、<strong>保真度</strong>、<strong>产物纯度</strong>等，可类比为<strong>定义好读出与加权</strong>后嵌入闭环。需注意：<strong>体外转录（in vitro transcription，IVT）</strong> 缓冲、帽化与纯化流程会改变表型，<strong>体外</strong>筛选到的变体应在<strong>目标工艺</strong>下复验。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RT</strong> 以 RNA 为模板合成 DNA，prime editor 的核心模块之一；<strong>IVT</strong> 指无细胞体系下以 DNA 为模板合成 RNA。</p>
+</blockquote>
+<hr>
+<h2 id="5-开源与复现入口"><a href="#5-开源与复现入口" class="headerlink" title="5. 开源与复现入口"></a>5. 开源与复现入口</h2><ul>
+<li><strong>代码与模型</strong>：GitHub <a target="_blank" rel="noopener" href="https://github.com/mat10d/EvolvePro">https://github.com/mat10d/EvolvePro</a>（论文 <strong>Data and materials availability</strong>；Zenodo 存档编号以论文为准）。  </li>
+<li><strong>依赖</strong>：<strong>ESM-2</strong> 嵌入需 <strong>facebookresearch&#x2F;esm</strong> 或等价实现；<strong>15B</strong> 模型算力与显存要求显著高于小模型。  </li>
+<li><strong>许可</strong>：期刊文章版权遵循 <em>Science</em> 页面说明；<strong>复现与二次分发</strong>以仓库 <strong>License</strong> 与 <strong>Science</strong> 补充材料为准。</li>
+</ul>
+<hr>
+<h2 id="6-小结"><a href="#6-小结" class="headerlink" title="6. 小结"></a>6. 小结</h2><ul>
+<li><strong>EVOLVEpro</strong> 的<strong>可复现核心</strong>是：<strong>冻结 PLM → 序列嵌入均值 → 随机森林回归 → 主动学习 top-N 扩充标注 → 迭代</strong>。  </li>
+<li><strong>原理</strong>上强调：<strong>PLM 提供通用几何&#x2F;进化语义空间</strong>，<strong>实验数据</strong>在顶层<strong>校正</strong>到<strong>任务活性</strong>；<strong>pMMS</strong> 与<strong>真实活性</strong>解耦时，<strong>零样本 PLM</strong> 不足以替代该闭环。  </li>
+<li><strong>实现细节</strong>（树深度、<strong>K</strong>、归一化、多位点组合策略）因蛋白与实验而异，以 <strong>adr6006</strong> 正文、<strong>补充材料</strong> 与 <strong>EvolvePro</strong> 仓库为准。</li>
+</ul>
+<hr>
+<h2 id="7-延伸阅读（检索关键词）"><a href="#7-延伸阅读（检索关键词）" class="headerlink" title="7. 延伸阅读（检索关键词）"></a>7. 延伸阅读（检索关键词）</h2><ul>
+<li><code>EVOLVEpro</code>, <code>EvolvePro</code>, <code>active learning protein</code>, <code>ESM-2 15B</code>, <code>random forest directed evolution</code>, <code>machine learning directed evolution</code>, <code>deep mutational scanning</code>, <code>protein language model regression</code>, <code>top-n active learning</code></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E5%AE%9A%E5%90%91%E8%BF%9B%E5%8C%96/" rel="tag"><i class="fa fa-tag"></i> 定向进化</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/%E4%B8%BB%E5%8A%A8%E5%AD%A6%E4%B9%A0/" rel="tag"><i class="fa fa-tag"></i> 主动学习</a>
+          
+            <a href="/tags/EVOLVEpro/" rel="tag"><i class="fa fa-tag"></i> EVOLVEpro</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/" rel="next" title="酶改造-modelpaper-UniKP">
+                <i class="fa fa-chevron-left"></i> 酶改造-modelpaper-UniKP
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-TaqPol-ProtT5-RT/" rel="prev" title="酶改造-modelpaper-TaqPol-ProtT5-RT">
+                酶改造-modelpaper-TaqPol-ProtT5-RT <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">550</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">101</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">182</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%96%87%E7%8C%AE%E4%BF%A1%E6%81%AF"><span class="nav-number">1.</span> <span class="nav-text">1. 文献信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%A0%94%E7%A9%B6%E5%8A%A8%E6%9C%BA%EF%BC%88%E6%96%B9%E6%B3%95%E8%A7%86%E8%A7%92%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. 研究动机（方法视角）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%EF%BC%88%E8%AF%A6%E8%A7%A3%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 方法实现原理（详解）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%80%BB%E4%BD%93%E6%B5%81%E7%A8%8B%EF%BC%88%E6%A8%A1%E5%9D%97%E5%8C%96%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 总体流程（模块化）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-PLM-%E5%B5%8C%E5%85%A5%EF%BC%9A%E4%BB%8E%E5%BA%8F%E5%88%97%E5%88%B0-E-%E4%B8%8E-e"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 PLM 嵌入：从序列到 E 与 ē</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E9%A1%B6%E5%B1%82%E6%A8%A1%E5%9E%8B%EF%BC%9A%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97%E5%9B%9E%E5%BD%92"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 顶层模型：随机森林回归</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E4%B8%BB%E5%8A%A8%E5%AD%A6%E4%B9%A0%EF%BC%9A%E9%A2%84%E6%B5%8B%E8%8C%83%E5%9B%B4%E7%BA%A6%E6%9D%9F%E4%B8%8E-top-N-%E9%80%89%E7%82%B9"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 主动学习：预测范围约束与 top-N 选点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E4%B8%8E%E3%80%8C%E9%9B%B6%E6%A0%B7%E6%9C%AC-PLM-%E9%80%82%E5%BA%94%E5%BA%A6%E3%80%8D%E7%9A%84%E5%8C%BA%E5%88%86"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 与「零样本 PLM 适应度」的区分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E5%9F%BA%E5%87%86%E4%B8%8E%E6%A8%A1%E5%9E%8B%E9%80%89%E6%8B%A9%EF%BC%88%E6%94%AF%E6%92%91%E3%80%8C%E4%B8%BA%E4%BD%95%E6%98%AF-ESM-2-15B-RFR%E3%80%8D%EF%BC%89"><span class="nav-number">3.6.</span> <span class="nav-text">3.6 基准与模型选择（支撑「为何是 ESM-2 15B + RFR」）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-7-%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96%EF%BC%88%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E6%9E%84%E9%80%A0%EF%BC%89"><span class="nav-number">3.7.</span> <span class="nav-text">3.7 多目标优化（目标函数构造）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%B8%8E%E8%81%9A%E5%90%88%E9%85%B6-%E9%85%B6%E5%B7%A5%E7%A8%8B%E8%AF%BB%E8%80%85%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">4.</span> <span class="nav-text">4. 与聚合酶 &#x2F; 酶工程读者的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%BC%80%E6%BA%90%E4%B8%8E%E5%A4%8D%E7%8E%B0%E5%85%A5%E5%8F%A3"><span class="nav-number">5.</span> <span class="nav-text">5. 开源与复现入口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">6. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB%EF%BC%88%E6%A3%80%E7%B4%A2%E5%85%B3%E9%94%AE%E8%AF%8D%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 延伸阅读（检索关键词）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
