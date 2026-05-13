@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,StripedHyena,Hyena,长上下文," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="StripedHyena 混合序列建模框架：旋转分组注意力与 Hyena 门控卷积的协同、长上下文训练与推理优势、FIR&#x2F;IIR 视角与开源生态概述。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-StripedHyena-0.框架介绍">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="StripedHyena 混合序列建模框架：旋转分组注意力与 Hyena 门控卷积的协同、长上下文训练与推理优势、FIR&#x2F;IIR 视角与开源生态概述。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-01-overall.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-02-dual-path.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-03-prefill-decode.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-04-concept-map.png">
+<meta property="article:published_time" content="2026-05-08T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-13T07:59:29.898Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Hyena">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="StripedHyena">
+<meta property="article:tag" content="长上下文">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-01-overall.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-StripedHyena-0.框架介绍/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-StripedHyena-0.框架介绍 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-StripedHyena-0.框架介绍</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-08T10:00:00+08:00">
+                2026-05-08
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  StripedHyena 混合序列建模框架：旋转分组注意力与 Hyena 门控卷积的协同、长上下文训练与推理优势、FIR/IIR 视角与开源生态概述。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>StripedHyena 是由 Together AI 与学术合作者推动的一类<strong>深度信号处理（deep signal processing）混合架构</strong>：在解码器式语言模型中，在<strong>旋转位置编码（Rotary Position Embedding，RoPE）<strong>之上叠加</strong>分组查询注意力（Grouped-Query Attention，GQA）</strong>，并与按 **Hyena 层级（Hyena Hierarchy）<strong>论文思路组织的</strong>门控隐式卷积（gated implicit convolutions）**按层配方交替堆叠，使「大范围混合」主要由卷积侧承担，「精确模式召回」由注意力侧补强，从而在短上下文与长上下文任务上同时贴近强开源 <strong>Transformer</strong> 基线，并在训练与自回归推理上获得更优的渐近行为与工程表现。</p>
+<blockquote>
+<p>段末注释：<strong>RoPE</strong> 用旋转矩阵编码相对位置；<strong>GQA</strong> 让多组查询头共享少量 KV 头以省缓存与访存；<strong>Hyena</strong> 指多阶门控长卷积类 mixer，常以 FFT 或递推实现亚二次复杂度；<strong>Transformer</strong> 这里指以自注意力为主干的解码器栈。</p>
+</blockquote>
+<hr>
+<h2 id="1-动机：在-Transformer-之外重排计算"><a href="#1-动机：在-Transformer-之外重排计算" class="headerlink" title="1. 动机：在 Transformer 之外重排计算"></a>1. 动机：在 Transformer 之外重排计算</h2><p>纯 <strong>Transformer</strong> 解码器以自注意力（Self-Attention）为序列混合核心，其代价随上下文长度呈超线性增长（预填充与 KV 缓存（Key-Value Cache，KV Cache）显存压力尤为突出）。**Hyena 层级（Hyena Hierarchy）**等工作表明：用门控卷积与状态空间模型（State-Space Model，SSM）等算子承担大部分「全局混合」，有望在长序列上接近线性扩展；但完全去掉注意力又会在某些需要强「联想回忆（associative recall）」的模式上吃亏。</p>
+<blockquote>
+<p>段末注释：<strong>SSM</strong> 这里指可用递推&#x2F;卷积等价实现的线性时不变或门控动态系统，用于把长卷积写成常数状态更新以解码。</p>
+</blockquote>
+<p>StripedHyena 的设计哲学是<strong>混合化（hybridization）</strong>：在同一计算预算下，异构层（注意力、门控 MLP、门控卷积）的组合往往优于同质堆叠；再通过**算力最优扩展（compute-optimal scaling）**协议调节各算子比例与排布，得到改进的扩展律（相对 Chinchilla 类 Transformer 基线）。</p>
+<p><strong>插图约定</strong>：下文插入图为<strong>科普动漫风、偏平涂的矢量示意</strong>（非官方架构原图），画面上中文与关键词尽量采用<strong>手写体&#x2F;马克笔体</strong>标注，便于建立直觉；精确拓扑仍以论文、README 与配置为准。配图位于与本文同名的资源目录中；站点已开启 <code>post_asset_folder</code> 并使用 <strong>hexo-asset-image</strong>，正文里图链<strong>只写文件名</strong>（如 <code>fig-stripedhyena-01-overall.png</code>），由构建阶段拼到文章永久链接路径。若在编辑器里 Markdown 预览不显示图，属相对路径与 Hexo 处理差异，以 <code>hexo server</code> 或部署后的页面为准。</p>
+<hr>
+<h2 id="2-整体架构鸟瞰"><a href="#2-整体架构鸟瞰" class="headerlink" title="2. 整体架构鸟瞰"></a>2. 整体架构鸟瞰</h2><p>StripedHyena 可理解为**仅解码器（decoder-only）**堆栈：词元嵌入与位置&#x2F;旋转编码后，进入多层「<strong>Hyena 块</strong>」与「<strong>注意力块</strong>」的交错组合；每层仍配合前馈 MLP 与残差、归一化（具体实现依赖官方配置与 <strong>flash_attn</strong> 等内核）。与标准 GPT 式堆栈的差异在于：<strong>序列混合子层</strong>在注意力与 Hyena 门控卷积之间分工，而非清一色自注意力。</p>
+<p>下图给出<strong>逻辑模块级</strong>鸟瞰（层内细节见后文）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-01-overall.png" alt="StripedHyena 解码器堆栈鸟瞰：词嵌入 → 交替 Hyena&#x2F;注意力 + MLP → LM 头（科普动漫风矢量示意，手写体标注，非官方原图）"></p>
+<p><strong>读图要点</strong>：矩形「块」在实现中对应配置文件里的层类型与顺序；<strong>Hyena 块</strong>负责大尺度上下文混合的主要 FLOPs，<strong>注意力块</strong>补充稀疏、可解释的「查表式」关联能力。</p>
+<hr>
+<h2 id="3-两类序列混合子层的分工（逻辑示意图）"><a href="#3-两类序列混合子层的分工（逻辑示意图）" class="headerlink" title="3. 两类序列混合子层的分工（逻辑示意图）"></a>3. 两类序列混合子层的分工（逻辑示意图）</h2><p>官方 README 与博客强调：<strong>Hyena 层承担序列处理的主体计算，注意力层补充定向模式召回</strong>。下图从<strong>信息流与职责</strong>角度抽象两种子层（非某一固定 checkpoint 的精确拓扑，便于建立心智模型）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-02-dual-path.png" alt="Hyena 路径与旋转分组注意力路径分工对比（科普动漫风矢量示意，手写体标注，非官方原图）"></p>
+<p><strong>直觉</strong>：Hyena 路径像<strong>可学习的长卷积滤波器组</strong>，在频域&#x2F;状态域高效扫过整段上下文；注意力路径像<strong>内容寻址的稀疏检索</strong>，对少量关键依赖更敏感。二者交替使模型在「平滑全局混合」与「尖锐局部对齐」之间取得折中。</p>
+<hr>
+<h2 id="4-Hyena-算子在-StripedHyena-中的角色（简要）"><a href="#4-Hyena-算子在-StripedHyena-中的角色（简要）" class="headerlink" title="4. Hyena 算子在 StripedHyena 中的角色（简要）"></a>4. Hyena 算子在 StripedHyena 中的角色（简要）</h2><p>Hyena 算子族（见论文 <em>Hyena Hierarchy</em>）通过<strong>门控</strong>与<strong>多阶卷积结构</strong>构造深层卷积网络式的序列 mixer，可用 FFT 卷积等形式实现亚二次甚至近线性复杂度的长程依赖。<strong>StripedHyena</strong> 并不重新发明 Hyena，而是把它作为<strong>可扩展的主力 mixer</strong>，与旋转位置编码（Rotary Position Embedding，RoPE）上的分组注意力协同。</p>
+<blockquote>
+<p>段末注释：<strong>RoPE</strong> 将位置信息编码为 Q&#x2F;K 的旋转变换，利于外推与相对位置归纳偏置。</p>
+</blockquote>
+<p>若需 Hyena 数学细节与历史脉络，可与同目录下的 Hyena 主题笔记对照阅读：<code>5003.大模型-基础架构-hyena鬣狗.md</code>。</p>
+<hr>
+<h2 id="5-信号处理视角：FIR、IIR-与推理缓存"><a href="#5-信号处理视角：FIR、IIR-与推理缓存" class="headerlink" title="5. 信号处理视角：FIR、IIR 与推理缓存"></a>5. 信号处理视角：FIR、IIR 与推理缓存</h2><p>Together 博客从经典信号处理借用了对卷积的两种等价视角，用以解释 <strong>StripedHyena 推理缓存可小于同规模 GQA Transformer</strong> 的原因：</p>
+<table>
+<thead>
+<tr>
+<th>视角</th>
+<th>含义（直觉）</th>
+<th>与推理的关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>**有限脉冲响应（Finite Impulse Response，FIR）**卷积</td>
+<td>有限长滤波器；缓存随已见上下文增长，类比<strong>滑动窗口式</strong>状态</td>
+<td>类似「段式」或有限历史的卷积缓存</td>
+</tr>
+<tr>
+<td>**无限脉冲响应（Infinite Impulse Response，IIR）**形式</td>
+<td>可用<strong>固定大小状态</strong>递推更新</td>
+<td>解码步只更新常数维状态，利于连续批处理与投机解码</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>段末注释：<strong>FIR&#x2F;IIR</strong> 是线性系统两种参数化；实现上可在训练用 FFT 卷积、生成用递推之间切换。</p>
+</blockquote>
+<p><strong>逻辑示意图：预填充（prefill）与自回归解码</strong></p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-03-prefill-decode.png" alt="预填充 FFT &#x2F; recurrence 与解码阶段 KV Cache、Hyena 状态（科普动漫风矢量示意，手写体标注，非官方原图）"></p>
+<p>官方独立实现中，<code>prefill_style: fft</code> 与 <code>prefill_style: recurrence</code> 对应上述权衡；极长提示可改用 recurrence 降低峰值显存。生成脚本中 <code>--cached_generation</code> 等选项则与<strong>缓存形态</strong>相关，需在目标 GPU 上实测。</p>
+<hr>
+<h2 id="6-训练与扩展：为何长上下文更划算"><a href="#6-训练与扩展：为何长上下文更划算" class="headerlink" title="6. 训练与扩展：为何长上下文更划算"></a>6. 训练与扩展：为何长上下文更划算</h2><p>根据 Together 公开博文与 README 的归纳（具体倍数依赖批次、内核版本与基线配置）：</p>
+<ul>
+<li><strong>长序列训练&#x2F;微调</strong>：相对基于 <strong>FlashAttention v2</strong> 与定制内核优化的 7B 级 Transformer 基线，在 32k、64k、128k 等长度上，StripedHyena 可出现 <strong>10%～100%+</strong> 量级的端到端加速，<strong>131k 附近微调</strong>可报告 <strong>&gt;3×</strong> 级别优势（请以复现实验为准）。</li>
+<li><strong>扩展律</strong>：在算力最优协议下，<strong>注意力 + 门控卷积 + MLP</strong> 的混合配方可改善「每 FLOP 带来的损失下降」相对纯 Transformer++ 类结构的表现。</li>
+<li><strong>模型嫁接（grafting）</strong>：训练过程中可替换或嫁接子架构组件（例如 Transformer 与 Hyena 部件的组合），便于探索异构堆栈而不必从零固定拓扑。</li>
+</ul>
+<hr>
+<h2 id="7-公开模型与生态"><a href="#7-公开模型与生态" class="headerlink" title="7. 公开模型与生态"></a>7. 公开模型与生态</h2><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>角色</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>StripedHyena-Hessian-7B</strong></td>
+<td>基座</td>
+<td>长文摘要等 ZeroScrolls 类任务上可与 Mistral 7B 等对照</td>
+</tr>
+<tr>
+<td><strong>StripedHyena-Nous-7B</strong></td>
+<td>对话</td>
+<td>与 Nous Research 合作；指令格式见 HuggingFace 说明</td>
+</tr>
+<tr>
+<td><strong>Evo-1-7B</strong></td>
+<td>基因组基础模型</td>
+<td>字节级核苷酸序列；展示架构在生物序列上的近线性扩展</td>
+</tr>
+</tbody></table>
+<p>开源实现与权重：</p>
+<ul>
+<li>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/togethercomputer/stripedhyena">togethercomputer&#x2F;stripedhyena</a></li>
+<li>博文：<a target="_blank" rel="noopener" href="https://www.together.ai/blog/stripedhyena-7b">StripedHyena-7B 发布说明</a></li>
+<li>可选加速：<strong>FlashFFTConv</strong> 等自定义卷积内核（README 标明可选）</li>
+</ul>
+<p><strong>最小依赖提示</strong>：独立仓库需 <code>requirements.txt</code> 与 <strong>flash_attn</strong> 中的旋转与归一化内核；混合精度训练时注意 README 对 <strong><code>poles</code> &#x2F; <code>residues</code> 保持 float32</strong> 的提醒，以免数值不稳定。</p>
+<hr>
+<h2 id="8-与其他工作的关系（一张概念地图）"><a href="#8-与其他工作的关系（一张概念地图）" class="headerlink" title="8. 与其他工作的关系（一张概念地图）"></a>8. 与其他工作的关系（一张概念地图）</h2><p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-StripedHyena-0.%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/fig-stripedhyena-04-concept-map.png" alt="Transformer、Hyena 系、Monarch Mixer 等与 StripedHyena 的关系（科普动漫风矢量示意，手写体标注，非官方原图）"></p>
+<p>StripedHyena 处于 <strong>「保留注意力强项 + 用 Hyena 卷积扛长上下文主负载」</strong> 的交汇点；后续工作若继续调参混合比例、层序与内核，仍可能进一步推高同样算力下的质量或同样质量下的吞吐。</p>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ul>
+<li><strong>是什么</strong>：面向语言与序列数据的<strong>混合解码器</strong>，核心为 <strong>旋转分组注意力 + Hyena 门控卷积</strong>，强调层类<strong>专业化分工</strong>与<strong>算力最优混合比例</strong>。</li>
+<li><strong>为何重要</strong>：在开源生态中较早展示「<strong>非纯 Transformer</strong> 仍可在短&#x2F;长上下文评测上与强基线竞争」，并带来长序列训练与推理侧的可观工程收益。</li>
+<li><strong>怎么用</strong>：优先阅读官方 README 的配置项（预填充风格、缓存生成、精度）；生产环境需结合 <strong>flash_attn</strong> 版本与 GPU 架构做基准测试。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/togethercomputer/stripedhyena">StripedHyena GitHub README</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.together.ai/blog/stripedhyena-7b">Together AI：StripedHyena-7B 博文</a></li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2302.10866">Hyena Hierarchy 论文（arXiv:2302.10866）</a></li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2310.18780">Hyena 推理与卷积表示（arXiv:2310.18780）</a></li>
+<li><a target="_blank" rel="noopener" href="https://huggingface.co/togethercomputer/StripedHyena-Hessian-7B">Hugging Face：StripedHyena-Hessian-7B</a></li>
+<li><a target="_blank" rel="noopener" href="https://huggingface.co/togethercomputer/StripedHyena-Nous-7B">Hugging Face：StripedHyena-Nous-7B</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/StripedHyena/" rel="tag"><i class="fa fa-tag"></i> StripedHyena</a>
+          
+            <a href="/tags/Hyena/" rel="tag"><i class="fa fa-tag"></i> Hyena</a>
+          
+            <a href="/tags/%E9%95%BF%E4%B8%8A%E4%B8%8B%E6%96%87/" rel="tag"><i class="fa fa-tag"></i> 长上下文</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-05.Paper/EvoMaster-%E9%9D%A2%E5%90%91%E8%A7%84%E6%A8%A1%E5%8C%96Agentic-Science%E7%9A%84%E6%BC%94%E5%8C%96%E6%99%BA%E8%83%BD%E4%BD%93%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90/" rel="next" title="EvoMaster：面向规模化 Agentic Science 的演化智能体框架解析">
+                <i class="fa fa-chevron-left"></i> EvoMaster：面向规模化 Agentic Science 的演化智能体框架解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-03.standard/fileformat-pdb/" rel="prev" title="文件格式说明 - PDB（蛋白质三维结构坐标）">
+                文件格式说明 - PDB（蛋白质三维结构坐标） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">571</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">102</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">251</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%8A%A8%E6%9C%BA%EF%BC%9A%E5%9C%A8-Transformer-%E4%B9%8B%E5%A4%96%E9%87%8D%E6%8E%92%E8%AE%A1%E7%AE%97"><span class="nav-number">1.</span> <span class="nav-text">1. 动机：在 Transformer 之外重排计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E9%B8%9F%E7%9E%B0"><span class="nav-number">2.</span> <span class="nav-text">2. 整体架构鸟瞰</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%B8%A4%E7%B1%BB%E5%BA%8F%E5%88%97%E6%B7%B7%E5%90%88%E5%AD%90%E5%B1%82%E7%9A%84%E5%88%86%E5%B7%A5%EF%BC%88%E9%80%BB%E8%BE%91%E7%A4%BA%E6%84%8F%E5%9B%BE%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 两类序列混合子层的分工（逻辑示意图）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Hyena-%E7%AE%97%E5%AD%90%E5%9C%A8-StripedHyena-%E4%B8%AD%E7%9A%84%E8%A7%92%E8%89%B2%EF%BC%88%E7%AE%80%E8%A6%81%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. Hyena 算子在 StripedHyena 中的角色（简要）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86%E8%A7%86%E8%A7%92%EF%BC%9AFIR%E3%80%81IIR-%E4%B8%8E%E6%8E%A8%E7%90%86%E7%BC%93%E5%AD%98"><span class="nav-number">5.</span> <span class="nav-text">5. 信号处理视角：FIR、IIR 与推理缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%AE%AD%E7%BB%83%E4%B8%8E%E6%89%A9%E5%B1%95%EF%BC%9A%E4%B8%BA%E4%BD%95%E9%95%BF%E4%B8%8A%E4%B8%8B%E6%96%87%E6%9B%B4%E5%88%92%E7%AE%97"><span class="nav-number">6.</span> <span class="nav-text">6. 训练与扩展：为何长上下文更划算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%85%AC%E5%BC%80%E6%A8%A1%E5%9E%8B%E4%B8%8E%E7%94%9F%E6%80%81"><span class="nav-number">7.</span> <span class="nav-text">7. 公开模型与生态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E5%85%B6%E4%BB%96%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%88%E4%B8%80%E5%BC%A0%E6%A6%82%E5%BF%B5%E5%9C%B0%E5%9B%BE%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">8. 与其他工作的关系（一张概念地图）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

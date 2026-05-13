@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,蛋白质语言模型,kcat,Km,UniKP," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="文献《UniKP》解析：基于 ProtT5 与 SMILES Transformer 表征 + 极端随机树（Extra Trees）统一预测 kcat、Km 与 kcat&#x2F;Km；EF-UniKP 环境因子、样本重加权与和 DLKcat、DeepEnzyme 等的关系。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-modelpaper-UniKP">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="文献《UniKP》解析：基于 ProtT5 与 SMILES Transformer 表征 + 极端随机树（Extra Trees）统一预测 kcat、Km 与 kcat&#x2F;Km；EF-UniKP 环境因子、样本重加权与和 DLKcat、DeepEnzyme 等的关系。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig01.jpg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig02.jpg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig03.jpg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig04.jpg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig05.jpg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig06.jpg">
+<meta property="article:published_time" content="2026-03-31T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-13T07:59:29.302Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Km">
+<meta property="article:tag" content="UniKP">
+<meta property="article:tag" content="kcat">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig01.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-14.聚合酶/酶改造-modelpaper-UniKP/"/>
+
+
+
+
+
+  <title>酶改造-modelpaper-UniKP | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-modelpaper-UniKP</h1>
+        
+
+        <div class="post-meta">
+	  
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-31T18:00:00+08:00">
+                2026-03-31
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  文献《UniKP》解析：基于 ProtT5 与 SMILES Transformer 表征 + 极端随机树（Extra Trees）统一预测 kcat、Km 与 kcat/Km；EF-UniKP 环境因子、样本重加权与和 DLKcat、DeepEnzyme 等的关系。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <h2 id="1-文献信息"><a href="#1-文献信息" class="headerlink" title="1. 文献信息"></a>1. 文献信息</h2><ul>
+<li><strong>题目</strong>：UniKP: a unified framework for the prediction of enzyme kinetic parameters  </li>
+<li><strong>期刊</strong>：<em>Nature Communications</em>，2023 年 12 月 11 日；卷 14，文章号 8211  </li>
+<li><strong>DOI</strong>：<a target="_blank" rel="noopener" href="https://doi.org/10.1038/s41467-023-44113-1">https://doi.org/10.1038/s41467-023-44113-1</a>  </li>
+<li><strong>开放获取</strong>：PMC <a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10713628/">PMC10713628</a>，PMID <a target="_blank" rel="noopener" href="https://pubmed.ncbi.nlm.nih.gov/38081905/">38081905</a>  </li>
+<li><strong>通讯作者</strong>：深圳先进技术研究院等，<strong>罗小洲（Xiaozhou Luo）</strong> 等  </li>
+<li><strong>并列一作</strong>：<strong>余晗（Han Yu）</strong>、<strong>邓华祥（Huaxiang Deng）</strong></li>
+</ul>
+<p><strong>酶动力学参数</strong>主要包括<strong>周转数（turnover number，k<sub>cat</sub>）</strong>、<strong>米氏常数（Michaelis constant，K<sub>m</sub>）</strong> 以及二者比值表示的<strong>催化效率（catalytic efficiency，k<sub>cat</sub>&#x2F;K<sub>m</sub>）</strong>。UniKP 的目标是从<strong>蛋白质序列</strong>与<strong>底物结构</strong>出发，在统一框架内同时提升上述量的预测精度，并衍生 <strong>EF-UniKP</strong>（考虑 <strong>pH</strong>、<strong>温度</strong> 等环境因素）与<strong>高 k<sub>cat</sub> 区间</strong>的样本重加权策略。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>k<sub>cat</sub></strong> 为饱和底物下每活性位点每秒转化底物数的上限；<strong>K<sub>m</sub></strong> 为半饱和底物浓度；<strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong> 综合反映底物亲和力与催化速率（同一底物比较时常用）。</p>
+</blockquote>
+<hr>
+<h2 id="2-研究动机与定位"><a href="#2-研究动机与定位" class="headerlink" title="2. 研究动机与定位"></a>2. 研究动机与定位</h2><p><strong>UniProt</strong> 等序列库规模达数亿条，而 <strong>BRENDA</strong>、<strong>SABIO-RK</strong> 等中实验测得的 <strong>k<sub>cat</sub></strong>、<strong>K<sub>m</sub></strong> 仅数万量级，标注稀疏制约代谢工程、定向进化等应用。既有工作往往<strong>分别</strong>预测 <strong>k<sub>cat</sub></strong> 或 <strong>K<sub>m</sub></strong>，再用独立模型结果相除得到 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>，与直接实验测定的 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong> 一致性差（文中展示相关系数可接近 <strong>0</strong>）。此外，<strong>pH</strong>、<strong>温度</strong> 等环境因子影响显著，而多数模型未显式纳入。</p>
+<p>UniKP 的定位是：**用预训练语言模型分别编码酶序列与小分子底物，再拼接为固定维向量，由可解释的集成学习（以 <strong>极端随机树（Extremely Randomized Trees，Extra Trees）</strong> 为主）统一拟合 <strong>k<sub>cat</sub>、K<sub>m</sub></strong> 或 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>，从而在「小样本、高维特征」条件下取得优于纯端到端深度网络（在作者对比设定下）的泛化表现。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Extra Trees</strong> 与随机森林同属树集成，但在划分点选择上引入更强随机性，常能降低方差；此处强调作者系统比较后选用该基学习器。</p>
+</blockquote>
+<hr>
+<h2 id="3-框架概览（对应原文-Fig-1）"><a href="#3-框架概览（对应原文-Fig-1）" class="headerlink" title="3. 框架概览（对应原文 Fig. 1）"></a>3. 框架概览（对应原文 Fig. 1）</h2><p>UniKP 由 <strong>表征模块（representation module）</strong> 与 <strong>机器学习模块（machine learning module）</strong> 组成。</p>
+<h3 id="3-1-酶序列表征：ProtT5-XL-UniRef50"><a href="#3-1-酶序列表征：ProtT5-XL-UniRef50" class="headerlink" title="3.1 酶序列表征：ProtT5-XL-UniRef50"></a>3.1 酶序列表征：ProtT5-XL-UniRef50</h3><ul>
+<li>使用 <strong>ProtT5</strong> 系列的 <strong>ProtT5-XL-UniRef50</strong> 预训练模型（<strong>ProtTrans</strong> 路线），将每个氨基酸残基映射为最后一层隐藏状态上的 <strong>1024</strong> 维向量。</li>
+<li>对整条序列做 <strong>平均池化（mean pooling）</strong> 得到 <strong>1024</strong> 维<strong>整条蛋白</strong>表征（作者引用指出 mean pooling 对「整条蛋白」级任务效果较好）。</li>
+</ul>
+<h3 id="3-2-底物表征：SMILES-Transformer"><a href="#3-2-底物表征：SMILES-Transformer" class="headerlink" title="3.2 底物表征：SMILES Transformer"></a>3.2 底物表征：SMILES Transformer</h3><ul>
+<li>底物以 <strong>SMILES（Simplified Molecular Input Line Entry System，SMILES）</strong> 表示，输入预训练的 <strong>SMILES Transformer</strong>（Honda 等）。</li>
+<li>每个 SMILES 符号对应最后一层 <strong>256</strong> 维向量；将<strong>最后一层</strong>的 <strong>mean pooling</strong> 与 <strong>max pooling</strong>，以及<strong>倒数第二层与最后一层</strong>的「首位置输出」等拼接，得到 <strong>1024</strong> 维<strong>分子级</strong>表征（与原文 Fig. 1b 一致）。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SMILES</strong> 为线性分子编码；<strong>mean&#x2F;max pooling</strong> 将变长序列压成定长向量。</p>
+</blockquote>
+<h3 id="3-3-读出层：Extra-Trees-等"><a href="#3-3-读出层：Extra-Trees-等" class="headerlink" title="3.3 读出层：Extra Trees 等"></a>3.3 读出层：Extra Trees 等</h3><ul>
+<li>将 <strong>1024（酶）+ 1024（底物）&#x3D; 2048</strong> 维向量拼接后，输入下游回归器。作者在 <strong>16</strong> 种经典机器学习模型与 <strong>2</strong> 种深度学习基线（<strong>CNN</strong>、<strong>RNN</strong>）上做了系统比较（原文 <strong>Fig. 2</strong>），在默认超参、未针对集成学习细致调参的前提下，<strong>Extra Trees</strong> 的 <strong>R²</strong> 等指标最高（<strong>k<sub>cat</sub></strong> 任务五折交叉验证示例中 <strong>Extra Trees R² ≈ 0.65</strong>，而线性回归约 <strong>0.38</strong>，<strong>CNN&#x2F;RNN</strong> 表现较弱）。作者讨论认为：数据规模约 <strong>10⁴</strong>、特征维 <strong>2048</strong>，树模型更适合「高维、小样本」且无需大量调参；深度网络则更依赖标注规模与结构设计。</li>
+</ul>
+<h3 id="3-4-表征必要性（t-SNE）"><a href="#3-4-表征必要性（t-SNE）" class="headerlink" title="3.4 表征必要性（t-SNE）"></a>3.4 表征必要性（t-SNE）</h3><ul>
+<li>作者将仅拼接的 <strong>2048</strong> 维向量做 <strong>t-SNE（t-distributed stochastic neighbor embedding，t-SNE）</strong> 可视化，显示其对高&#x2F;低 <strong>k<sub>cat</sub></strong> 区分度不足（<strong>Supplementary Fig. 1</strong>），从而说明<strong>必须</strong>依赖后续机器学习模块而非仅靠表征拼接。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>t-SNE</strong> 为非线性降维可视化工具，用于观察聚类与可分性。</p>
+</blockquote>
+<p><strong>文献原图（Fig. 1）</strong>：UniKP 总览——ProtT5 序列支路、SMILES Transformer 底物支路、Extra Trees 预测 <strong>k<sub>cat</sub>、K<sub>m</sub>、k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>，以及 <strong>EF-UniKP</strong> 与重加权扩展。（图源：Yu 等，<em>Nat Commun</em> 2023，PMC <a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10713628/">10713628</a>，CC BY 4.0）</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig01.jpg" alt="Fig. 1. The overview of UniKP."></p>
+<hr>
+<h2 id="4-详细-Methods：数据集与预处理"><a href="#4-详细-Methods：数据集与预处理" class="headerlink" title="4. 详细 Methods：数据集与预处理"></a>4. 详细 Methods：数据集与预处理</h2><h3 id="4-1-DLKcat（kcat-主实验）"><a href="#4-1-DLKcat（kcat-主实验）" class="headerlink" title="4.1 DLKcat（kcat 主实验）"></a>4.1 DLKcat（k<sub>cat</sub> 主实验）</h3><ul>
+<li>来源与 <strong>DLKcat</strong> 论文一致：自 <strong>BRENDA</strong>、<strong>SABIO-RK</strong> 等整理的酶–底物–<strong>k<sub>cat</sub></strong>。</li>
+<li>剔除底物 <strong>SMILES</strong> 含 <strong>「.」</strong>（多组分）或 <strong>k<sub>cat</sub> ≤ 0</strong> 的样本后，共 <strong>16 838</strong> 条；<strong>k<sub>cat</sub></strong> 取对数刻度建模。</li>
+<li>划分：<strong>90% 训练 &#x2F; 10% 测试</strong>，随机重复 <strong>5</strong> 次，与 <strong>DLKcat</strong> 原文可比。</li>
+</ul>
+<h3 id="4-2-pH-与温度数据集（EF-UniKP）"><a href="#4-2-pH-与温度数据集（EF-UniKP）" class="headerlink" title="4.2 pH 与温度数据集（EF-UniKP）"></a>4.2 pH 与温度数据集（EF-UniKP）</h3><ul>
+<li>酶序列、底物名及 <strong>pH</strong> 或反应温度来自 <strong>UniProt</strong>；底物结构由 <strong>PubChem</strong> 检索并转 <strong>SMILES</strong>。</li>
+<li><strong>pH</strong> 集：<strong>636</strong> 条，<strong>pH</strong> 约 <strong>3–10.5</strong>；<strong>温度</strong> 集：<strong>572</strong> 条，约 <strong>4–85 °C</strong>。</li>
+<li>独立划分：<strong>80% 训练 &#x2F; 20% 测试</strong>（<strong>EF-UniKP</strong> 训练另有子划分，见 <strong>§6</strong>）。</li>
+</ul>
+<h3 id="4-3-Km-数据集"><a href="#4-3-Km-数据集" class="headerlink" title="4.3 Km 数据集"></a>4.3 K<sub>m</sub> 数据集</h3><ul>
+<li>采用 Kroll 等 <strong>PLoS Biol. 2021</strong> 中 <strong>11 722</strong> 条天然酶–底物 <strong>K<sub>m</sub></strong> 数据；底物改为 <strong>SMILES</strong> 表示，<strong>K<sub>m</sub></strong> 取 <strong>log<sub>10</sub></strong>；<strong>80&#x2F;20</strong> 划分与原文对齐。</li>
+</ul>
+<h3 id="4-4-kcat-Km-数据集"><a href="#4-4-kcat-Km-数据集" class="headerlink" title="4.4 kcat&#x2F;Km 数据集"></a>4.4 k<sub>cat</sub>&#x2F;K<sub>m</sub> 数据集</h3><ul>
+<li>自 <strong>BRENDA</strong>、<strong>UniProt</strong>、<strong>PubChem</strong> 整理 <strong>910</strong> 条酶序列、底物结构与实验 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>；五折交叉验证评估。</li>
+</ul>
+<hr>
+<h2 id="5-原文-Methods：UniKP-与-EF-UniKP-的构建"><a href="#5-原文-Methods：UniKP-与-EF-UniKP-的构建" class="headerlink" title="5. 原文 Methods：UniKP 与 EF-UniKP 的构建"></a>5. 原文 Methods：UniKP 与 EF-UniKP 的构建</h2><h3 id="5-1-实现环境"><a href="#5-1-实现环境" class="headerlink" title="5.1 实现环境"></a>5.1 实现环境</h3><ul>
+<li><strong>PyTorch</strong> 1.10.1+cu113，<strong>scikit-learn</strong> 0.24.2（表征与训练管线）；部分对比实验使用 <strong>sklearn</strong> 1.1.1。硬件：Ubuntu 20.04，<strong>64</strong> 核 CPU，<strong>4× NVIDIA GeForce RTX 3080</strong>（文内训练使用单核单卡）。</li>
+</ul>
+<h3 id="5-2-机器学习模块的模型清单（原文）"><a href="#5-2-机器学习模块的模型清单（原文）" class="headerlink" title="5.2 机器学习模块的模型清单（原文）"></a>5.2 机器学习模块的模型清单（原文）</h3><ul>
+<li><strong>16</strong> 种机器学习：<strong>线性回归</strong>、<strong>Ridge</strong>、<strong>Lasso</strong>、<strong>Bayesian Ridge</strong>、<strong>Elastic Net</strong>、<strong>决策树</strong>、<strong>支持向量回归（Support Vector Regression，SVR）</strong>、<strong>K 近邻回归</strong>、<strong>随机森林</strong>、<strong>梯度提升</strong>、<strong>Extra Trees</strong>、<strong>AdaBoost</strong>、<strong>Bagging</strong>、<strong>XGBoost</strong>、<strong>LightGBM</strong>、浅层 <strong>MLP Regressor</strong>（视作传统机器学习）。</li>
+<li><strong>CNN</strong>：一维卷积（<strong>16</strong> 通道、核 <strong>3</strong>）+ <strong>MaxPool</strong> + 全连接（<strong>16×1023 → 64 → 1</strong>）。</li>
+<li><strong>RNN</strong>：输入维 <strong>2048</strong>，<strong>128</strong> 隐藏单元，<strong>1</strong> 层 <strong>RNN</strong> + 两层全连接（<strong>128→64→1</strong>）。</li>
+<li>深度学习训练：<strong>Adam</strong>，学习率 <strong>1×10⁻⁴</strong>，损失 <strong>MSE</strong>，<strong>batch size 8192</strong>，<strong>PyTorch</strong> 1.10.1。</li>
+</ul>
+<h3 id="5-3-EF-UniKP（两层框架）"><a href="#5-3-EF-UniKP（两层框架）" class="headerlink" title="5.3 EF-UniKP（两层框架）"></a>5.3 EF-UniKP（两层框架）</h3><ul>
+<li><strong>底层</strong>：模型 <strong>A</strong> 为在<strong>无环境标签</strong>的 <strong>DLKcat</strong> 上训练的 <strong>UniKP</strong>；模型 <strong>B</strong> 为 <strong>Revised UniKP</strong>，输入为酶+底物表征再拼接标量 <strong>pH</strong> 或 <strong>温度</strong>，同样用 <strong>Extra Trees</strong>。</li>
+<li><strong>元学习层</strong>：以 <strong>A、B</strong> 输出的 <strong>k<sub>cat</sub></strong> 预测值为特征，训练<strong>线性回归</strong>融合为最终 <strong>k<sub>cat</sub></strong>。</li>
+<li><strong>训练数据划分</strong>：在 <strong>pH&#x2F;温度</strong> 全集上先 <strong>80% 训练 &#x2F; 20% 测试</strong>；训练部分再分为 <strong>64% &#x2F; 16%</strong> 两段：第一段训练 <strong>Revised UniKP</strong>，第二段结合两底层输出训练元层线性模型。测试在剩余 <strong>20%</strong> 上评估；随机划分重复 <strong>3</strong> 次取平均以降低划分偶然性。</li>
+</ul>
+<h3 id="5-4-高-kcat-样本重加权"><a href="#5-4-高-kcat-样本重加权" class="headerlink" title="5.4 高 kcat 样本重加权"></a>5.4 高 k<sub>cat</sub> 样本重加权</h3><ul>
+<li>针对 <strong>k<sub>cat</sub></strong> 标签分布近似正态、<strong>高值端</strong>样本少的问题，比较 <strong>DMW</strong>、<strong>CSW</strong>、<strong>CBW</strong>、<strong>LDS</strong> 四类代表性重加权（见 Yang 等 <strong>ICML 2021</strong> 不平衡回归脉络）。</li>
+<li><strong>DMW</strong>：直接提高 <strong>log k<sub>cat</sub> &gt; 4</strong> 样本权重，网格搜索倍率 <strong>2–100</strong> 等，最优约为<strong>权重 ×10 且不做归一化</strong>等（原文 <strong>Methods</strong> 细述 <strong>12</strong> 组组合）。</li>
+<li><strong>CSW</strong>：按 <strong>131</strong> 个等宽区间计数，<strong>root CSW</strong> 等变体中 <strong>root CSW</strong> 较优。</li>
+<li><strong>CBW</strong>：有效样本数 (E_n&#x3D;(1-\beta^n)&#x2F;(1-\beta))，<strong>β</strong> 网格搜索后 <strong>0.9</strong> 最优。</li>
+<li><strong>LDS</strong>：对标签经验分布与高斯核卷积得平滑密度；核宽 <strong>5</strong>、<strong>σ&#x3D;1</strong> 较优。</li>
+</ul>
+<h3 id="5-5-评价指标（原文-Eq-1–4）"><a href="#5-5-评价指标（原文-Eq-1–4）" class="headerlink" title="5.5 评价指标（原文 Eq. 1–4）"></a>5.5 评价指标（原文 Eq. 1–4）</h3><ul>
+<li><strong>R²</strong>、<strong>PCC</strong>、<strong>RMSE</strong>、<strong>MAE（mean absolute error，MAE）</strong>；变量记号 <strong>y<sup>e</sup><sub>i</sub></strong>（实验）、<strong>y<sup>p</sup><sub>i</sub></strong>（预测）等见论文。</li>
+</ul>
+<h3 id="5-6-可解释性：SHAP"><a href="#5-6-可解释性：SHAP" class="headerlink" title="5.6 可解释性：SHAP"></a>5.6 可解释性：SHAP</h3><ul>
+<li>对测试集上训练好的 <strong>UniKP</strong>（<strong>TreeExplainer</strong>）计算 <strong>SHAP（SHapley Additive exPlanations，SHAP）</strong> 值，分析 <strong>2048</strong> 维中酶相关维与底物相关维的贡献（原文 <strong>Fig. 3f</strong>：<strong>Top 20</strong> 特征中多数来自酶嵌入）。</li>
+</ul>
+<h3 id="5-7-湿实验与挖掘协议（节选）"><a href="#5-7-湿实验与挖掘协议（节选）" class="headerlink" title="5.7 湿实验与挖掘协议（节选）"></a>5.7 湿实验与挖掘协议（节选）</h3><ul>
+<li><strong>BLASTp</strong>：以 <strong>RgTAL</strong> 为查询，<strong>nr</strong> 库取 <strong>E-value</strong> 排序前 <strong>1000</strong>，默认 <strong>BLOSUM62</strong>、<strong>word size 5</strong>、<strong>expect 0.05</strong>。</li>
+<li>动力学测定与 <strong>HPLC</strong> 条件见原文 <strong>Methods</strong>（缓冲液、波长、梯度等）。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SHAP</strong> 基于合作博弈 Shapley 值解释单条预测中各特征的边际贡献。</p>
+</blockquote>
+<hr>
+<h2 id="6-主要结果（概括）"><a href="#6-主要结果（概括）" class="headerlink" title="6. 主要结果（概括）"></a>6. 主要结果（概括）</h2><h3 id="6-1-kcat：相对-DLKcat"><a href="#6-1-kcat：相对-DLKcat" class="headerlink" title="6.1 kcat：相对 DLKcat"></a>6.1 k<sub>cat</sub>：相对 DLKcat</h3><ul>
+<li>五轮随机划分测试集平均 <strong>R² ≈ 0.68</strong>，较 <strong>DLKcat</strong> 报告值高约 <strong>20%</strong>；测试集 <strong>PCC ≈ 0.85</strong>；更严格「酶或底物未在训练中出现」子集上 <strong>PCC</strong> 亦优于 <strong>DLKcat</strong>（原文 <strong>Fig. 3</strong>、<strong>Supplementary Fig. 2</strong>）。</li>
+<li>与实验几何均值对照（用于讨论数据泄漏）显示 <strong>UniKP</strong> 更优（<strong>Supplementary Fig. 3</strong>）。</li>
+</ul>
+<p><strong>文献原图（Fig. 2）</strong>：<strong>16+2</strong> 种模型在 <strong>RMSE、PCC、MAE、R²</strong> 上的对比（五折交叉验证）。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig02.jpg" alt="Fig. 2. Performance comparison of different models."></p>
+<p><strong>文献原图（Fig. 3）</strong>：与 <strong>DLKcat</strong> 的 <strong>R²、RMSE</strong>、测试集散点、分 <strong>k<sub>cat</sub></strong> 区间 <strong>RMSE</strong>、代谢路径分类 <strong>t</strong> 检验、<strong>SHAP</strong> 等。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig03.jpg" alt="Fig. 3. High accuracy of UniKP in enzyme kcat prediction."></p>
+<h3 id="6-2-野生型与突变体"><a href="#6-2-野生型与突变体" class="headerlink" title="6.2 野生型与突变体"></a>6.2 野生型与突变体</h3><ul>
+<li>测试集：野生型 <strong>PCC ≈ 0.78</strong>，突变体 <strong>≈ 0.91</strong>；整体优于 <strong>DLKcat</strong>（原文 <strong>Fig. 4</strong>）。</li>
+</ul>
+<p><strong>文献原图（Fig. 4）</strong>：野生型 &#x2F; 突变体散点及 <strong>PCC</strong> 柱状对比。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig04.jpg" alt="Fig. 4. UniKP markedly discriminates kcat values of enzymes and their mutants."></p>
+<h3 id="6-3-EF-UniKP"><a href="#6-3-EF-UniKP" class="headerlink" title="6.3 EF-UniKP"></a>6.3 EF-UniKP</h3><ul>
+<li><strong>Revised UniKP</strong> 在 <strong>pH</strong>、<strong>温度</strong> 集上单独已有一定 <strong>PCC&#x2F;R²</strong>；<strong>EF-UniKP</strong> 在独立测试集上多数指标优于单层 <strong>UniKP</strong> 或 <strong>Revised UniKP</strong>，在「酶或底物未出现于训练」子集上仍保持优势（原文 <strong>Fig. 5</strong>）。</li>
+</ul>
+<p><strong>文献原图（Fig. 5）</strong>：<strong>EF-UniKP</strong> 结构示意图及 <strong>pH&#x2F;温度</strong> 性能。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig05.jpg" alt="Fig. 5. A two-layer framework considering environmental factors."></p>
+<h3 id="6-4-重加权与-Km、kcat-Km"><a href="#6-4-重加权与-Km、kcat-Km" class="headerlink" title="6.4 重加权与 Km、kcat&#x2F;Km"></a>6.4 重加权与 K<sub>m</sub>、k<sub>cat</sub>&#x2F;K<sub>m</sub></h3><ul>
+<li><strong>CBW</strong> 对 <strong>log k<sub>cat</sub> &gt; 4</strong> 的高值子集 <strong>RMSE</strong> 改善约 <strong>6.5%</strong>（相对初始 <strong>UniKP</strong>）。</li>
+<li><strong>K<sub>m</sub></strong>：测试集 <strong>R² ≈ 0.53</strong>，<strong>PCC ≈ 0.73</strong>，与当时最强基线可比或更优。</li>
+<li><strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>：<strong>PCC ≈ 0.81</strong>，<strong>R² ≈ 0.65</strong>；用「独立 <strong>k<sub>cat</sub></strong> 预测 ÷ 独立 <strong>K<sub>m</sub></strong> 预测」计算的比值与实验 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong> 几乎无相关（<strong>PCC ≈ −0.02</strong>），凸显对 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong> 做统一建模（而非两模型商）的必要性。</li>
+</ul>
+<p><strong>文献原图（Fig. 6）</strong>：<strong>k<sub>cat</sub></strong> 分布、逐样本误差、重加权 <strong>RMSE</strong>、<strong>K<sub>m</sub></strong> 与 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong> 结果。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-UniKP/unikp-fig06.jpg" alt="Fig. 6. Re-weighting, Km and kcat&#x2F;Km predictions."></p>
+<h3 id="6-5-应用：酪氨酸解氨酶（TAL）"><a href="#6-5-应用：酪氨酸解氨酶（TAL）" class="headerlink" title="6.5 应用：酪氨酸解氨酶（TAL）"></a>6.5 应用：酪氨酸解氨酶（TAL）</h3><ul>
+<li><strong>挖掘</strong>：<strong>BLASTp</strong> 前 <strong>1000</strong> 条中用 <strong>UniKP</strong> 预测 <strong>k<sub>cat</sub></strong>，实验验证 <strong>AsTAL</strong> 等（原文 <strong>Table 1</strong>）。</li>
+<li><strong>定向进化</strong>：单点饱和 <strong>19×693 &#x3D; 13 167</strong> 突变体 in silico 筛选，发现 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong> 显著提升的突变体。</li>
+<li><strong>EF-UniKP</strong>：在 <strong>pH 9.5</strong> 等条件下对 <strong>TALclu</strong> 类似策略挖掘，<strong>HiTAL</strong>、<strong>TrTAL</strong> 等动力学优于野生型对照。</li>
+</ul>
+<hr>
+<h2 id="7-与-DeepEnzyme、DLKcat-等的关系（阅读笔记）"><a href="#7-与-DeepEnzyme、DLKcat-等的关系（阅读笔记）" class="headerlink" title="7. 与 DeepEnzyme、DLKcat 等的关系（阅读笔记）"></a>7. 与 DeepEnzyme、DLKcat 等的关系（阅读笔记）</h2><ul>
+<li><strong>DLKcat</strong>：UniKP 使用同一 <strong>DLKcat</strong> 数据管线做主对比，强调<strong>预训练序列&#x2F;分子表征 + 浅层集成学习</strong>相对 <strong>DLKcat</strong> 卷积式深度模型的增益。</li>
+<li><strong>DeepEnzyme</strong>（<em>Brief Bioinform</em> 2024）：在 <strong>DeepEnzyme</strong> 讨论中指出，<strong>UniKP</strong> 在部分指标上精度更高，但 <strong>DeepEnzyme</strong> 在突变效应定性排序等任务仍有特点，且<strong>结构已给定</strong>时 <strong>DeepEnzyme</strong> 推理可快数个数量级——二者取舍取决于<strong>是否需要三维结构、算力预算与任务类型</strong>。</li>
+</ul>
+<hr>
+<h2 id="8-局限（原文-Discussion-归纳）"><a href="#8-局限（原文-Discussion-归纳）" class="headerlink" title="8. 局限（原文 Discussion 归纳）"></a>8. 局限（原文 Discussion 归纳）</h2><ul>
+<li>标注量相对序列宇宙仍极少；高 <strong>k<sub>cat</sub></strong> 预测经重加权仅适度改善，未来可结合 <strong>SMOTE</strong> 等过采样与迁移&#x2F;强化学习等。  </li>
+<li><strong>k<sub>cat</sub></strong> 与 <strong>K<sub>m</sub></strong> 若未来有<strong>同一批实验成对测定</strong>的统一大数据，「分别预测再相除」与「直接预测 <strong>k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>」的差距可能缩小。  </li>
+<li>利益冲突声明见原文（作者与生物科技公司关系）。</li>
+</ul>
+<hr>
+<h2 id="9-代码、数据与补充材料"><a href="#9-代码、数据与补充材料" class="headerlink" title="9. 代码、数据与补充材料"></a>9. 代码、数据与补充材料</h2><ul>
+<li><strong>代码与说明</strong>：<a target="_blank" rel="noopener" href="https://github.com/Luo-SynBioLab/UniKP">https://github.com/Luo-SynBioLab/UniKP</a>  </li>
+<li><strong>预训练与权重</strong>：仓库说明需另行下载 <strong>ProtT5-XL-UniRef50</strong>（Zenodo 等链接见 README）、<strong>SMILES Transformer</strong>（DSPsleeporg&#x2F;smiles-transformer），以及 <strong>UniKP</strong> 推理权重（<a target="_blank" rel="noopener" href="https://huggingface.co/HanselYu/UniKP/tree/main">Hugging Face：HanselYu&#x2F;UniKP</a>）。输出为 <strong>log<sub>10</sub></strong> 尺度时需按说明反变换回物理单位。  </li>
+<li><strong>Zenodo 归档</strong>：<a target="_blank" rel="noopener" href="https://doi.org/10.5281/zenodo.10115498">https://doi.org/10.5281/zenodo.10115498</a>（正文 <strong>Data availability</strong> 亦出现 <code>10.5281/zenodo.1011549853</code> 写法，以作者仓库与 Zenodo 页面为准）  </li>
+<li><strong>PDF（PMC）</strong>：<a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10713628/pdf/41467_2023_Article_44113.pdf">https://pmc.ncbi.nlm.nih.gov/articles/PMC10713628/pdf/41467_2023_Article_44113.pdf</a>  </li>
+<li><strong>补充信息</strong>：<a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/instance/10713628/bin/41467_2023_44113_MOESM1_ESM.pdf">Supplementary PDF</a>  </li>
+<li><strong>Source Data</strong>：<a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/instance/10713628/bin/41467_2023_44113_MOESM4_ESM.zip">ZIP</a></li>
+</ul>
+<hr>
+<h2 id="10-与酶改造实践的关联（一句话）"><a href="#10-与酶改造实践的关联（一句话）" class="headerlink" title="10. 与酶改造实践的关联（一句话）"></a>10. 与酶改造实践的关联（一句话）</h2><p>需要<strong>同时关心 k<sub>cat</sub>、K<sub>m</sub> 与 k<sub>cat</sub>&#x2F;K<sub>m</sub></strong>、且希望<strong>仅用序列 + 底物 SMILES</strong>（无需先算蛋白三维结构）时，UniKP 是当前文献中较完整的统一管线；若强调<strong>远缘序列下的结构先验</strong>或<strong>位点级解释</strong>，可并列参考 <strong>DeepEnzyme</strong> 等结构增强模型。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/kcat/" rel="tag"><i class="fa fa-tag"></i> kcat</a>
+          
+            <a href="/tags/Km/" rel="tag"><i class="fa fa-tag"></i> Km</a>
+          
+            <a href="/tags/UniKP/" rel="tag"><i class="fa fa-tag"></i> UniKP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-DeepEnzyme/" rel="next" title="酶改造-modelpaper-DeepEnzyme">
+                <i class="fa fa-chevron-left"></i> 酶改造-modelpaper-DeepEnzyme
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-EVOLVEpro/" rel="prev" title="酶改造-modelpaper-EVOLVEpro">
+                酶改造-modelpaper-EVOLVEpro <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">571</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">102</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">251</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%96%87%E7%8C%AE%E4%BF%A1%E6%81%AF"><span class="nav-number">1.</span> <span class="nav-text">1. 文献信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%A0%94%E7%A9%B6%E5%8A%A8%E6%9C%BA%E4%B8%8E%E5%AE%9A%E4%BD%8D"><span class="nav-number">2.</span> <span class="nav-text">2. 研究动机与定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A1%86%E6%9E%B6%E6%A6%82%E8%A7%88%EF%BC%88%E5%AF%B9%E5%BA%94%E5%8E%9F%E6%96%87-Fig-1%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 框架概览（对应原文 Fig. 1）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E9%85%B6%E5%BA%8F%E5%88%97%E8%A1%A8%E5%BE%81%EF%BC%9AProtT5-XL-UniRef50"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 酶序列表征：ProtT5-XL-UniRef50</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%BA%95%E7%89%A9%E8%A1%A8%E5%BE%81%EF%BC%9ASMILES-Transformer"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 底物表征：SMILES Transformer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%AF%BB%E5%87%BA%E5%B1%82%EF%BC%9AExtra-Trees-%E7%AD%89"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 读出层：Extra Trees 等</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E8%A1%A8%E5%BE%81%E5%BF%85%E8%A6%81%E6%80%A7%EF%BC%88t-SNE%EF%BC%89"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 表征必要性（t-SNE）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%AF%A6%E7%BB%86-Methods%EF%BC%9A%E6%95%B0%E6%8D%AE%E9%9B%86%E4%B8%8E%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">4.</span> <span class="nav-text">4. 详细 Methods：数据集与预处理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-DLKcat%EF%BC%88kcat-%E4%B8%BB%E5%AE%9E%E9%AA%8C%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 DLKcat（kcat 主实验）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-pH-%E4%B8%8E%E6%B8%A9%E5%BA%A6%E6%95%B0%E6%8D%AE%E9%9B%86%EF%BC%88EF-UniKP%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 pH 与温度数据集（EF-UniKP）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-Km-%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 Km 数据集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-kcat-Km-%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 kcat&#x2F;Km 数据集</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%8E%9F%E6%96%87-Methods%EF%BC%9AUniKP-%E4%B8%8E-EF-UniKP-%E7%9A%84%E6%9E%84%E5%BB%BA"><span class="nav-number">5.</span> <span class="nav-text">5. 原文 Methods：UniKP 与 EF-UniKP 的构建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%AE%9E%E7%8E%B0%E7%8E%AF%E5%A2%83"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 实现环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A8%A1%E5%9D%97%E7%9A%84%E6%A8%A1%E5%9E%8B%E6%B8%85%E5%8D%95%EF%BC%88%E5%8E%9F%E6%96%87%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 机器学习模块的模型清单（原文）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-EF-UniKP%EF%BC%88%E4%B8%A4%E5%B1%82%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 EF-UniKP（两层框架）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E9%AB%98-kcat-%E6%A0%B7%E6%9C%AC%E9%87%8D%E5%8A%A0%E6%9D%83"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 高 kcat 样本重加权</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-%E8%AF%84%E4%BB%B7%E6%8C%87%E6%A0%87%EF%BC%88%E5%8E%9F%E6%96%87-Eq-1%E2%80%934%EF%BC%89"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 评价指标（原文 Eq. 1–4）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-6-%E5%8F%AF%E8%A7%A3%E9%87%8A%E6%80%A7%EF%BC%9ASHAP"><span class="nav-number">5.6.</span> <span class="nav-text">5.6 可解释性：SHAP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-7-%E6%B9%BF%E5%AE%9E%E9%AA%8C%E4%B8%8E%E6%8C%96%E6%8E%98%E5%8D%8F%E8%AE%AE%EF%BC%88%E8%8A%82%E9%80%89%EF%BC%89"><span class="nav-number">5.7.</span> <span class="nav-text">5.7 湿实验与挖掘协议（节选）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%B8%BB%E8%A6%81%E7%BB%93%E6%9E%9C%EF%BC%88%E6%A6%82%E6%8B%AC%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 主要结果（概括）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-kcat%EF%BC%9A%E7%9B%B8%E5%AF%B9-DLKcat"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 kcat：相对 DLKcat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E9%87%8E%E7%94%9F%E5%9E%8B%E4%B8%8E%E7%AA%81%E5%8F%98%E4%BD%93"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 野生型与突变体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-EF-UniKP"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 EF-UniKP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E9%87%8D%E5%8A%A0%E6%9D%83%E4%B8%8E-Km%E3%80%81kcat-Km"><span class="nav-number">6.4.</span> <span class="nav-text">6.4 重加权与 Km、kcat&#x2F;Km</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-5-%E5%BA%94%E7%94%A8%EF%BC%9A%E9%85%AA%E6%B0%A8%E9%85%B8%E8%A7%A3%E6%B0%A8%E9%85%B6%EF%BC%88TAL%EF%BC%89"><span class="nav-number">6.5.</span> <span class="nav-text">6.5 应用：酪氨酸解氨酶（TAL）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%8E-DeepEnzyme%E3%80%81DLKcat-%E7%AD%89%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%88%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 与 DeepEnzyme、DLKcat 等的关系（阅读笔记）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B1%80%E9%99%90%EF%BC%88%E5%8E%9F%E6%96%87-Discussion-%E5%BD%92%E7%BA%B3%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">8. 局限（原文 Discussion 归纳）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%BB%A3%E7%A0%81%E3%80%81%E6%95%B0%E6%8D%AE%E4%B8%8E%E8%A1%A5%E5%85%85%E6%9D%90%E6%96%99"><span class="nav-number">9.</span> <span class="nav-text">9. 代码、数据与补充材料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E4%B8%8E%E9%85%B6%E6%94%B9%E9%80%A0%E5%AE%9E%E8%B7%B5%E7%9A%84%E5%85%B3%E8%81%94%EF%BC%88%E4%B8%80%E5%8F%A5%E8%AF%9D%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">10. 与酶改造实践的关联（一句话）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

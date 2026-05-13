@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="argo," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="生命不止，框架不断。之前介绍过snakemake和 wdl，今天介绍下argo。Argo 是一个开源的云原生工作流引擎，专门设计用于在 Kubernetes 上编排和运行复杂的并行任务。其核心组件 Argo Workflows 允许你将工作流定义为 Kubernetes 自定义资源（CRD），每个步骤都是一个独立的容器，通过 YAML 声明任务依赖、并行逻辑和数据传递。Argo 天然与 Kuber">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pipeline-frameworks-argo-01.入门简介">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="生命不止，框架不断。之前介绍过snakemake和 wdl，今天介绍下argo。Argo 是一个开源的云原生工作流引擎，专门设计用于在 Kubernetes 上编排和运行复杂的并行任务。其核心组件 Argo Workflows 允许你将工作流定义为 Kubernetes 自定义资源（CRD），每个步骤都是一个独立的容器，通过 YAML 声明任务依赖、并行逻辑和数据传递。Argo 天然与 Kuber">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-03-10T01:03:05.000Z">
+<meta property="article:modified_time" content="2026-05-13T07:59:29.506Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="argo">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-argo-01.入门简介/"/>
+
+
+
+
+
+  <title>pipeline-frameworks-argo-01.入门简介 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">pipeline-frameworks-argo-01.入门简介</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-10T09:03:05+08:00">
+                2026-03-10
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%B0%83%E5%BA%A6%E6%A1%86%E6%9E%B6/" itemprop="url" rel="index">
+                    <span itemprop="name">调度框架</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>生命不止，框架不断。之前介绍过snakemake和 wdl，今天介绍下argo。<br>Argo 是一个开源的云原生工作流引擎，专门设计用于在 <strong>Kubernetes</strong> 上编排和运行复杂的并行任务。其核心组件 Argo Workflows 允许你将工作流定义为 <strong>Kubernetes</strong> 自定义资源（CRD），每个步骤都是一个独立的容器，通过 YAML 声明任务依赖、并行逻辑和数据传递。Argo 天然与 <strong>Kubernetes</strong> 集成，支持动态并行、构件管理、重试策略等特性，适用于 CI&#x2F;CD、机器学习、生物信息学等场景。<br>除了最核心的 <strong>Argo Workflows</strong>，此外还包括 Argo CD（持续交付）、Argo Events（事件驱动）、Argo Rollouts（高级部署策略）等，共同构成一套完整的云原生 DevOps 工具链。</p>
+<h1 id="Argo-的核心特点包括："><a href="#Argo-的核心特点包括：" class="headerlink" title="Argo 的核心特点包括："></a>Argo 的核心特点包括：</h1><ul>
+<li>容器原生：工作流的每一步都是一个独立的 Kubernetes 容器，环境依赖被封装在镜像中，保证了可移植性和一致性。</li>
+<li>Kubernetes 原生：工作流定义为 Kubernetes CRD（自定义资源），可直接用 kubectl 管理，并充分利用 K8s 的调度、资源隔离和监控能力。</li>
+<li>DAG 编排：通过 YAML 声明任务之间的依赖关系，支持复杂的并行和条件分支，自动管理执行顺序。</li>
+<li>动态并行：支持基于列表或前序步骤输出动态生成并行任务，适合大规模数据处理。</li>
+<li>构件管理：内置对 S3、OSS 等对象存储的支持，可自动传递输入&#x2F;输出文件，简化中间数据管理。</li>
+<li>可视化界面：提供 Web UI 实时查看工作流状态、日志和资源消耗。<br>今天我们先初步认识下 Argo Workflows。首先我们了解一下它的关键字，argo是基于yaml格式的流程描述语言，通过关键字的整体情况，我们可以先建立一个整体的认识，大概知道这套flow可以做哪些事情。</li>
+</ul>
+<h1 id="Argo-的核心关键字"><a href="#Argo-的核心关键字" class="headerlink" title="Argo 的核心关键字"></a>Argo 的核心关键字</h1><h2 id="1-顶层资源-Top-Level-Resources"><a href="#1-顶层资源-Top-Level-Resources" class="headerlink" title="1. 顶层资源 (Top-Level Resources)"></a>1. 顶层资源 (Top-Level Resources)</h2><table>
+<thead>
+<tr>
+<th align="left">关键字</th>
+<th align="left">可选值</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>Workflow</code></strong></td>
+<td align="left">-</td>
+<td align="left">工作流实例。创建此对象会触发一次具体的工作流运行，状态实时更新，既代表定义也代表运行实例。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>WorkflowTemplate</code></strong></td>
+<td align="left">-</td>
+<td align="left">工作流模板。定义可复用的工作流蓝图，存储在集群中，可被多个 <code>Workflow</code> 引用，避免重复定义。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>CronWorkflow</code></strong></td>
+<td align="left">-</td>
+<td align="left">定时工作流。使用 Cron 语法设置计划，在指定时间自动重复运行工作流。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-工作流核心配置-Workflow-spec"><a href="#2-工作流核心配置-Workflow-spec" class="headerlink" title="2. 工作流核心配置 (Workflow spec)"></a>2. 工作流核心配置 (Workflow <code>spec</code>)</h2><p>在 Kubernetes 和 Argo Workflows 中，spec 是 specification（规范）的缩写。它位于每个 Kubernetes 资源（如 Workflow、Pod、Deployment 等）的 YAML 定义中，用于描述您期望该资源达到的理想状态。简单来说，spec 就是资源的“配置说明书”——您在这里定义工作流如何运行、包含哪些步骤、使用什么参数、需要多少资源等。</p>
+<table>
+<thead>
+<tr>
+<th align="left">关键字</th>
+<th align="left">可选值</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>entrypoint</code></strong></td>
+<td align="left"><code>string</code> (模板名称)</td>
+<td align="left"><strong>必须字段</strong>。指定工作流启动时第一个执行的 <code>template</code> 。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>templates</code></strong></td>
+<td align="left"><code>[]Template</code></td>
+<td align="left">模板列表。定义工作流中所有可被调用的执行单元（模板）。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>arguments</code></strong></td>
+<td align="left"><code>&#123;parameters: [], artifacts: []&#125;</code></td>
+<td align="left">工作流参数。定义传递给工作流的全局参数或构件，可在所有模板中引用。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>onExit</code></strong></td>
+<td align="left"><code>string</code> (模板名称)</td>
+<td align="left">退出处理器。指定在 <code>entrypoint</code> 执行完毕后（无论成功或失败）运行的模板，常用于清理或通知。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>serviceAccountName</code></strong></td>
+<td align="left"><code>string</code></td>
+<td align="left">服务账户。指定运行工作流 Pod 时所使用的 Kubernetes 服务账户，用于权限控制。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>volumeClaimTemplates</code></strong></td>
+<td align="left"><code>[]PersistentVolumeClaim</code></td>
+<td align="left">动态存储卷。为工作流动态创建持久卷声明（PVC），生命周期与工作流绑定，常用于在步骤间共享临时数据。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>ttlStrategy</code></strong></td>
+<td align="left"><code>&#123;secondsAfterCompletion: int, ...&#125;</code></td>
+<td align="left">设置工作流完成后经过多长时间自动删除整个 <code>Workflow</code> 对象。例如 <code>secondsAfterCompletion: 300</code> 表示完成后 300 秒删除。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>podGC</code></strong></td>
+<td align="left"><code>&#123;strategy: string&#125;</code></td>
+<td align="left">何时删除其创建的 Pod。<code>strategy</code> 可以是 <code>OnPodCompletion</code>（Pod 完成后立即删除）、<code>OnWorkflowCompletion</code>（工作流完成后删除）等。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-模板-Template-深度解析"><a href="#3-模板-Template-深度解析" class="headerlink" title="3. 模板 (Template) 深度解析"></a>3. 模板 (Template) 深度解析</h2><p><code>template</code> 是 Argo 的核心单元，可以是具体的执行动作，也可以是用于编排其他模板的步骤。</p>
+<h3 id="3-1-基础执行模板"><a href="#3-1-基础执行模板" class="headerlink" title="3.1 基础执行模板"></a>3.1 基础执行模板</h3><p>具体的最小任务执行单元 </p>
+<table>
+<thead>
+<tr>
+<th align="left">关键字</th>
+<th align="left">可选值&#x2F;子字段</th>
+<th>功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>container</code></strong></td>
+<td align="left">遵循 Kubernetes Container spec</td>
+<td><strong>容器模板</strong>。最常用，定义一个标准 Kubernetes 容器来执行任务，包括镜像、命令、参数、资源限制等。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>script</code></strong></td>
+<td align="left"><code>image</code>, <code>command</code>, <code>source</code></td>
+<td><strong>脚本模板</strong>。Container 的便捷包装，允许在 <code>source</code> 中直接编写脚本（如 Bash、Python），Argo 会将其保存为文件并执行。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>resource</code></strong></td>
+<td align="left"><code>action</code>, <code>manifest</code></td>
+<td><strong>资源模板</strong>。用于直接操作 Kubernetes 集群资源。<code>action</code> 指定操作（<code>create</code>、<code>get</code>、<code>apply</code>、<code>delete</code>、<code>replace</code>、<code>patch</code>），<code>manifest</code> 提供资源的 YAML 定义。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>suspend</code></strong></td>
+<td align="left"><code>&#123;&#125;</code> 或 <code>duration: string</code></td>
+<td><strong>暂停模板</strong>。暂停工作流执行。若不指定 <code>duration</code>，将无限期暂停，需人工通过 <code>argo resume</code> 恢复；指定时长（如 <code>&quot;5m&quot;</code>）则暂停指定时间后自动继续。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>http</code></strong></td>
+<td align="left"><code>url: string</code>, <code>method: string</code></td>
+<td><strong>HTTP 模板</strong>（v3.0+）。发起一个 HTTP 请求作为工作流步骤。可设置请求方法、URL、头信息和请求体。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>data</code></strong></td>
+<td align="left"><code>source</code>, <code>transformation</code></td>
+<td><strong>数据模板</strong>（v3.1+）。用于处理数据，例如从 S3 获取数据并进行转换、过滤等操作，无需编写脚本。</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-编排模板"><a href="#3-2-编排模板" class="headerlink" title="3.2 编排模板"></a>3.2 编排模板</h3><p>当基础执行模板有多个时候，通过编排模板制定任务的执行逻辑顺序。</p>
+<table>
+<thead>
+<tr>
+<th align="left">关键字</th>
+<th align="left">子字段&#x2F;语法</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>steps</code></strong></td>
+<td align="left"><code>- - name: ...</code></td>
+<td align="left"><strong>步骤模板</strong>。以序列方式组织任务。在 <code>steps</code> 下，用 <code>- -</code>（双横线）表示一个顺序执行的步骤组，用 <code>-</code>（单横线）表示多个任务并行。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>dag</code></strong></td>
+<td align="left"><code>tasks: [&#123;name, template, dependencies&#125;]</code></td>
+<td align="left"><strong>DAG 模板</strong>。处理复杂依赖关系。在 <code>tasks</code> 下列出所有任务，并通过 <code>dependencies</code> 明确指定依赖任务。<del>只有依赖任务完成后</del>，当前任务才会启动。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-任务与步骤的详细字段"><a href="#4-任务与步骤的详细字段" class="headerlink" title="4. 任务与步骤的详细字段"></a>4. 任务与步骤的详细字段</h2><p>在 <code>steps</code> 或 <code>dag</code> 中定义的每个具体任务，可使用以下字段丰富行为。</p>
+<table>
+<thead>
+<tr>
+<th align="left">字段</th>
+<th align="left">可选值&#x2F;示例</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>name</code></strong></td>
+<td align="left"><code>string</code></td>
+<td align="left">当前步骤或任务的名称，在<strong>同级中唯一</strong>，方便被其他步骤引用。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>template</code></strong></td>
+<td align="left"><code>string</code></td>
+<td align="left">指定此任务要引用的模板名称。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>arguments</code></strong></td>
+<td align="left"><code>&#123;parameters: [], artifacts: []&#125;</code></td>
+<td align="left">向引用的模板传递参数或构件，覆盖模板中定义的默认值。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>dependencies</code></strong> (仅用于 DAG)</td>
+<td align="left"><code>[string]</code></td>
+<td align="left">在 DAG 中，列出当前任务依赖的其他任务名称。只有列出的任务都成功完成后，当前任务才会开始。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>withItems</code></strong></td>
+<td align="left"><code>[string]</code> 或 <code>[map]</code></td>
+<td align="left"><strong>循环执行</strong>。根据提供的列表，为列表中的每一项并行执行一次当前任务。例如：<code>withItems: [1, 2, 3]</code>。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>withParam</code></strong></td>
+<td align="left"><code>string</code> (变量引用)</td>
+<td align="left"><strong>动态循环</strong>。与 <code>withItems</code> 类似，但列表来自一个变量（如上一步的输出），实现更动态的并行处理。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>when</code></strong></td>
+<td align="left"><code>string</code> (条件表达式)</td>
+<td align="left"><strong>条件执行</strong>。只有满足指定的条件时，才会执行当前任务。例如：<code>when: &quot;&#123;&#123;workflow.status&#125;&#125; == Succeeded&quot;</code>。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>continueOn</code></strong></td>
+<td align="left"><code>&#123;failed: true, error: true&#125;</code></td>
+<td align="left"><strong>失败容忍</strong>。配置当前任务在遇到特定失败（如子任务失败）时是否继续执行，而不是立即终止整个工作流。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>retryStrategy</code></strong></td>
+<td align="left"><code>&#123;limit: int, retryPolicy: string&#125;</code></td>
+<td align="left"><strong>重试策略</strong>。任务失败时是否自动重试。可设置重试次数 <code>limit</code> 和重试策略（如 <code>Always</code>、<code>OnFailure</code>）。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>sidecars</code></strong></td>
+<td align="left"><code>[]Container</code></td>
+<td align="left"><strong>边车容器</strong>。为任务的主容器运行一个辅助容器，例如运行一个数据库容器供主容器测试使用。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>daemon</code></strong></td>
+<td align="left"><code>bool</code></td>
+<td align="left"><strong>守护进程</strong>。若设为 <code>true</code>，该任务容器会作为后台守护进程一直运行直到工作流结束。常用于启动服务供后续步骤调用。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-数据与变量系统"><a href="#5-数据与变量系统" class="headerlink" title="5. 数据与变量系统"></a>5. 数据与变量系统</h2><h3 id="5-1-参数与构件"><a href="#5-1-参数与构件" class="headerlink" title="5.1 参数与构件"></a>5.1 参数与构件</h3><table>
+<thead>
+<tr>
+<th align="left">关键字</th>
+<th align="left">子字段&#x2F;语法</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>parameters</code></strong></td>
+<td align="left"><code>- name: string, value: string</code></td>
+<td align="left"><strong>参数</strong>。传递小型的、键值对形式的字符串数据。可在 <code>arguments</code> 或 <code>inputs</code>&#x2F;<code>outputs</code> 中定义。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>artifacts</code></strong></td>
+<td align="left"><code>- name: string, path: string, s3/git/http: ...</code></td>
+<td align="left"><strong>构件</strong>。传递大型文件或目录，如二进制模型、日志文件等。Argo 可将构件自动上传&#x2F;下载到 S3、Git 等多种存储。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>inputs</code></strong></td>
+<td align="left"><code>parameters</code>, <code>artifacts</code></td>
+<td align="left"><strong>模板输入</strong>。定义模板期望接收的参数和构件。在模板内部通过 <code>&#123;&#123;inputs.parameters.name&#125;&#125;</code> 等形式引用。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>outputs</code></strong></td>
+<td align="left"><code>parameters</code>, <code>artifacts</code></td>
+<td align="left"><strong>模板输出</strong>。定义模板执行后产生的结果。例如，可将容器的输出文件声明为 <code>outputs.artifacts</code>，或将标准输出的一部分声明为 <code>outputs.parameters.result</code> 供后续步骤使用。</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-变量引用-Variable-References"><a href="#5-2-变量引用-Variable-References" class="headerlink" title="5.2 变量引用 (Variable References)"></a>5.2 变量引用 (Variable References)</h3><p>Argo 允许在 YAML 字符串中通过 <code>&#123;&#123; &#125;&#125;</code> 引用各种上下文信息。</p>
+<table>
+<thead>
+<tr>
+<th align="left">变量类型</th>
+<th align="left">示例</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>工作流元数据</strong></td>
+<td align="left"><code>&#123;&#123;workflow.name&#125;&#125;</code>, <code>&#123;&#123;workflow.namespace&#125;&#125;</code>, <code>&#123;&#123;workflow.parameters.message&#125;&#125;</code>, <code>&#123;&#123;workflow.status&#125;&#125;</code></td>
+<td align="left">引用当前工作流的名称、命名空间、参数和执行状态等全局信息。</td>
+</tr>
+<tr>
+<td align="left"><strong>步骤&#x2F;任务输出</strong></td>
+<td align="left"><code>&#123;&#123;steps.previous-step.outputs.result&#125;&#125;</code>, <code>&#123;&#123;tasks.previous-task.outputs.parameters.my-param&#125;&#125;</code></td>
+<td align="left">引用之前步骤或任务的输出结果或参数，是实现任务间数据传递的关键。</td>
+</tr>
+<tr>
+<td align="left"><strong>输入&#x2F;输出</strong></td>
+<td align="left"><code>&#123;&#123;inputs.parameters.message&#125;&#125;</code>, <code>&#123;&#123;outputs.artifacts.model.path&#125;&#125;</code></td>
+<td align="left">在模板内部引用自己的输入，或获取自己输出的路径。</td>
+</tr>
+<tr>
+<td align="left"><strong>动态项</strong></td>
+<td align="left"><code>&#123;&#123;item&#125;&#125;</code></td>
+<td align="left">在 <code>withItems</code> 循环中，引用当前迭代项的值。如果迭代项是对象，可用 <code>&#123;&#123;item.key&#125;&#125;</code>。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-Kubernetes-相关概念补充说明"><a href="#6-Kubernetes-相关概念补充说明" class="headerlink" title="6. Kubernetes 相关概念补充说明"></a>6. Kubernetes 相关概念补充说明</h2><p>Argo Workflows 深度集成 Kubernetes，以下概念在配置中经常出现，了解它们有助于更好地理解和使用 Argo。</p>
+<table>
+<thead>
+<tr>
+<th align="left">概念</th>
+<th align="left">可选值&#x2F;示例</th>
+<th align="left">功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Pod</strong></td>
+<td align="left">-</td>
+<td align="left">Kubernetes 中最小的部署单元，包含一个或多个容器（如主容器和 sidecar 容器）。Argo 中的每个任务（template）通常运行在一个独立的 Pod 中。</td>
+</tr>
+<tr>
+<td align="left"><strong>Container</strong></td>
+<td align="left">镜像名称、命令、资源等</td>
+<td align="left">容器是 Pod 内运行的轻量级、可执行的软件包。在 Argo 中，<code>container</code> 模板直接定义一个容器。</td>
+</tr>
+<tr>
+<td align="left"><strong>PersistentVolumeClaim (PVC)</strong></td>
+<td align="left">存储大小、访问模式</td>
+<td align="left">持久卷声明，用于向集群请求存储资源。Argo 的 <code>volumeClaimTemplates</code> 可动态创建 PVC，供工作流中的 Pod 挂载使用。</td>
+</tr>
+<tr>
+<td align="left"><strong>ServiceAccount</strong></td>
+<td align="left"><code>string</code></td>
+<td align="left">服务账户，为 Pod 中的进程提供身份标识，用于访问 Kubernetes API 或其他云服务时的权限控制。</td>
+</tr>
+<tr>
+<td align="left"><strong>Volume</strong></td>
+<td align="left">各种卷类型（emptyDir、hostPath、PVC 等）</td>
+<td align="left">卷是 Pod 中容器可以访问的存储目录。Argo 中可通过 <code>volumes</code> 字段挂载临时或持久存储。</td>
+</tr>
+<tr>
+<td align="left"><strong>Sidecar</strong></td>
+<td align="left"><code>[]Container</code></td>
+<td align="left">边车容器，与主容器一起运行在同一个 Pod 中，用于提供辅助功能（如日志收集、代理等）。</td>
+</tr>
+<tr>
+<td align="left"><strong>Daemon</strong></td>
+<td align="left"><code>bool</code></td>
+<td align="left">守护进程模式，使容器在后台持续运行，直到工作流结束，常用于启动服务供后续步骤调用。</td>
+</tr>
+<tr>
+<td align="left"><strong>Resource requests&#x2F;limits</strong></td>
+<td align="left"><code>requests: &#123;cpu: &quot;1&quot;, memory: &quot;1Gi&quot;&#125;</code>, <code>limits: &#123;...&#125;</code></td>
+<td align="left">资源请求与限制，指定容器需要的最低资源量和最大可用资源量，Kubernetes 根据这些值调度 Pod。</td>
+</tr>
+<tr>
+<td align="left"><strong>Namespace</strong></td>
+<td align="left"><code>string</code></td>
+<td align="left">命名空间，用于在 Kubernetes 集群中隔离资源。Argo 工作流运行在特定的命名空间中。</td>
+</tr>
+<tr>
+<td align="left"><strong>Custom Resource Definition (CRD)</strong></td>
+<td align="left">-</td>
+<td align="left">自定义资源定义，允许用户扩展 Kubernetes API。Argo 的 <code>Workflow</code>、<code>WorkflowTemplate</code> 等都是 CRD。</td>
+</tr>
+<tr>
+<td align="left"><strong>Labels&#x2F;Annotations</strong></td>
+<td align="left">键值对</td>
+<td align="left">标签和注解，用于为 Kubernetes 对象附加元数据，可用于选择、过滤和描述。</td>
+</tr>
+</tbody></table>
+<p>此文档涵盖了 Argo Workflows 配置中的绝大部分关键字段，可作为编写和理解工作流时的参考手册。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/argo/" rel="tag"><i class="fa fa-tag"></i> argo</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-14.openclaw%E5%AE%9E%E6%88%98/%E6%A1%86%E6%9E%B6-openclaw-2.%E6%8A%80%E8%83%BD%E9%85%8D%E7%BD%AE/" rel="next" title="OpenClaw 实战：技能配置与自动备份">
+                <i class="fa fa-chevron-left"></i> OpenClaw 实战：技能配置与自动备份
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-13.%E5%BC%95%E7%89%A9%E8%AE%BE%E8%AE%A1/%E5%BC%95%E7%89%A9%E8%AE%BE%E8%AE%A1-03.%E8%BD%AF%E4%BB%B6-PMPrimer/" rel="prev" title="引物设计相关工具-PMPrimer">
+                引物设计相关工具-PMPrimer <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">571</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">102</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">251</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Argo-%E7%9A%84%E6%A0%B8%E5%BF%83%E7%89%B9%E7%82%B9%E5%8C%85%E6%8B%AC%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">Argo 的核心特点包括：</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Argo-%E7%9A%84%E6%A0%B8%E5%BF%83%E5%85%B3%E9%94%AE%E5%AD%97"><span class="nav-number">2.</span> <span class="nav-text">Argo 的核心关键字</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%A1%B6%E5%B1%82%E8%B5%84%E6%BA%90-Top-Level-Resources"><span class="nav-number">2.1.</span> <span class="nav-text">1. 顶层资源 (Top-Level Resources)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%B7%A5%E4%BD%9C%E6%B5%81%E6%A0%B8%E5%BF%83%E9%85%8D%E7%BD%AE-Workflow-spec"><span class="nav-number">2.2.</span> <span class="nav-text">2. 工作流核心配置 (Workflow spec)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A8%A1%E6%9D%BF-Template-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="nav-number">2.3.</span> <span class="nav-text">3. 模板 (Template) 深度解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%9F%BA%E7%A1%80%E6%89%A7%E8%A1%8C%E6%A8%A1%E6%9D%BF"><span class="nav-number">2.3.1.</span> <span class="nav-text">3.1 基础执行模板</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E7%BC%96%E6%8E%92%E6%A8%A1%E6%9D%BF"><span class="nav-number">2.3.2.</span> <span class="nav-text">3.2 编排模板</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%AD%A5%E9%AA%A4%E7%9A%84%E8%AF%A6%E7%BB%86%E5%AD%97%E6%AE%B5"><span class="nav-number">2.4.</span> <span class="nav-text">4. 任务与步骤的详细字段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%95%B0%E6%8D%AE%E4%B8%8E%E5%8F%98%E9%87%8F%E7%B3%BB%E7%BB%9F"><span class="nav-number">2.5.</span> <span class="nav-text">5. 数据与变量系统</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%8F%82%E6%95%B0%E4%B8%8E%E6%9E%84%E4%BB%B6"><span class="nav-number">2.5.1.</span> <span class="nav-text">5.1 参数与构件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%8F%98%E9%87%8F%E5%BC%95%E7%94%A8-Variable-References"><span class="nav-number">2.5.2.</span> <span class="nav-text">5.2 变量引用 (Variable References)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Kubernetes-%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5%E8%A1%A5%E5%85%85%E8%AF%B4%E6%98%8E"><span class="nav-number">2.6.</span> <span class="nav-text">6. Kubernetes 相关概念补充说明</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

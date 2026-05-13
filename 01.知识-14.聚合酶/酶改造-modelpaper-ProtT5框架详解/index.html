@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,蛋白质语言模型,ProtT5,ProtTrans,T5," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="ProtT5 的 T5 编码器—解码器骨架、相对位置注意力、与原版 T5 去噪目标的差异；ProtT5-XL-UniRef50 的训练数据、掩码策略、初始化与超参；嵌入提取与下游使用注意。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-modelpaper-ProtT5框架详解">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="ProtT5 的 T5 编码器—解码器骨架、相对位置注意力、与原版 T5 去噪目标的差异；ProtT5-XL-UniRef50 的训练数据、掩码策略、初始化与超参；嵌入提取与下游使用注意。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/prott5-fig01-encoder-decoder.svg">
+<meta property="article:published_time" content="2026-04-02T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-13T07:59:29.302Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="ProtT5">
+<meta property="article:tag" content="ProtTrans">
+<meta property="article:tag" content="T5">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/prott5-fig01-encoder-decoder.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-14.聚合酶/酶改造-modelpaper-ProtT5框架详解/"/>
+
+
+
+
+
+  <title>酶改造-modelpaper-ProtT5框架详解 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-modelpaper-ProtT5框架详解</h1>
+        
+
+        <div class="post-meta">
+	  
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-04-02T12:00:00+08:00">
+                2026-04-02
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  ProtT5 的 T5 编码器—解码器骨架、相对位置注意力、与原版 T5 去噪目标的差异；ProtT5-XL-UniRef50 的训练数据、掩码策略、初始化与超参；嵌入提取与下游使用注意。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>ProtT5</strong> 是 <strong>ProtTrans</strong>（蛋白质 Transformer 模型族，<strong>ProtTrans</strong>）中以 <strong>文本到文本迁移 Transformer（Text-to-Text Transfer Transformer，T5）</strong> 为骨架的<strong>蛋白质语言模型（Protein Language Model，PLM）</strong>：在<strong>大规模</strong>氨基酸序列上做<strong>自监督学习（self-supervised learning）</strong>，输出<strong>逐残基嵌入</strong>或经<strong>序列到序列（sequence-to-sequence，seq2seq）</strong> 头做生成式微调。下文先交代 <strong>NLP</strong> 中 <strong>T5</strong> 的通用结构，再对齐 <strong>Rostlab</strong> 在 <strong>Hugging Face（HF，模型与数据集托管平台）</strong> 上发布的 <strong>ProtT5-XL-UniRef50</strong> 的<strong>构建细节</strong>（以官方模型卡与 <code>config.json</code> 为准）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PLM</strong> 指在蛋白序列上预训练的通用表征模型；<strong>self-supervised</strong> 指用输入本身构造伪标签、无需人工逐条标注；<strong>seq2seq</strong> 指编码器读入序列、解码器生成另一串符号；</p>
+</blockquote>
+<hr>
+<h2 id="1-文献与代码入口"><a href="#1-文献与代码入口" class="headerlink" title="1. 文献与代码入口"></a>1. 文献与代码入口</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>信息</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>总论文</strong></td>
+<td>Elnaggar 等，<em>ProtTrans: Toward Understanding the Language of Life Through Self-Supervised Learning</em>（题目以 <strong>IEEE Xplore</strong> 为准，与 bioRxiv 标题略有差异）；预印本 <a target="_blank" rel="noopener" href="https://doi.org/10.1101/2020.07.12.199554">bioRxiv 10.1101&#x2F;2020.07.12.199554</a>；arXiv <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2007.06225">2007.06225</a>；期刊版 <strong>IEEE TPAMI</strong>，<strong>44</strong>（<strong>10</strong>）：<strong>7112–7127</strong>（<strong>2022</strong>；DOI <a target="_blank" rel="noopener" href="https://doi.org/10.1109/TPAMI.2021.3095381">10.1109&#x2F;TPAMI.2021.3095381</a>）</td>
+</tr>
+<tr>
+<td><strong>代码与模型族</strong></td>
+<td>GitHub <a target="_blank" rel="noopener" href="https://github.com/agemagician/ProtTrans">agemagician&#x2F;ProtTrans</a></td>
+</tr>
+<tr>
+<td><strong>常用权重（XL + UniRef50）</strong></td>
+<td>HF <a target="_blank" rel="noopener" href="https://huggingface.co/Rostlab/prot_t5_xl_uniref50"><code>Rostlab/prot_t5_xl_uniref50</code></a>（README 与 <code>config.json</code> 为本文<strong>数值细节</strong>的主要来源）</td>
+</tr>
+<tr>
+<td><strong>原始 T5</strong></td>
+<td>Raffel 等，<em>Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</em>，<a target="_blank" rel="noopener" href="https://jmlr.org/papers/v21/20-074.html">JMLR 2020</a>（理解 <strong>span corruption</strong> 与 <strong>text-to-text</strong> 的参照）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>IEEE TPAMI</strong> 为计算机视觉与模式识别领域权威期刊；<strong>JMLR</strong> 为机器学习期刊；<strong>span corruption</strong> 指随机挖连续片段再让模型复原，为原版 <strong>T5</strong> 预训练目标之一。</p>
+</blockquote>
+<hr>
+<h2 id="2-框架总览：为什么是「编码器—解码器」而不是纯-BERT？"><a href="#2-框架总览：为什么是「编码器—解码器」而不是纯-BERT？" class="headerlink" title="2. 框架总览：为什么是「编码器—解码器」而不是纯 BERT？"></a>2. 框架总览：为什么是「编码器—解码器」而不是纯 BERT？</h2><h3 id="2-1-NLP-中的-T5-在做什么（与-ProtT5-的继承关系）"><a href="#2-1-NLP-中的-T5-在做什么（与-ProtT5-的继承关系）" class="headerlink" title="2.1 NLP 中的 T5 在做什么（与 ProtT5 的继承关系）"></a>2.1 NLP 中的 T5 在做什么（与 ProtT5 的继承关系）</h3><p><strong>T5</strong> 将<strong>任意 NLP 任务</strong>都写成「输入文本 → 输出文本」：分类、回归、生成统一成 <strong>seq2seq</strong>。网络上是<strong>共享词表</strong>的 <strong>Transformer</strong>：</p>
+<ul>
+<li><strong>编码器（encoder）</strong>：双向上下文，把输入 token 序列映射为<strong>隐藏状态序列</strong>（每层含<strong>多头自注意力（multi-head self-attention）</strong> 与<strong>前馈网络（feed-forward network，FFN）</strong>，外加<strong>残差连接（residual connection）</strong> 与 <strong>层归一化（Layer Normalization，LayerNorm）</strong>）。  </li>
+<li><strong>解码器（decoder）</strong>：<strong>因果掩码自注意力（causal masked self-attention）</strong>（只能看到已生成前缀）+ <strong>交叉注意力（cross-attention）</strong>（查询来自解码器，键值来自编码器最后输出），再经 FFN；逐步生成输出 token。</li>
+</ul>
+<p><strong>相对位置编码（relative positional encoding）</strong>：<strong>T5</strong> 用<strong>桶化的相对位置偏置</strong>（<code>relative_attention_num_buckets</code>）替代部分绝对位置编码，利于外推与长序列（蛋白上截断长度常有限制，见 <strong>§4</strong>）。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ProtT5%E6%A1%86%E6%9E%B6%E8%AF%A6%E8%A7%A3/prott5-fig01-encoder-decoder.svg" alt="Fig.1 T5 &#x2F; ProtT5 编码器—解码器骨架示意（图中为英文标注；与 HF &#96;prot_t5_xl_uniref50&#96; 配置一致）"></p>
+<p><strong>原版 T5 预训练目标</strong>常为 <strong>span corruption</strong>：随机采样并遮盖<strong>连续 span</strong>，在输出端复原被挖掉的片段（与 <strong>BERT</strong> 式单 token <strong>掩码语言建模（Masked Language Modeling，MLM）</strong> 不同）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>BERT</strong> 为仅编码器的双向模型，以 MLM 为主目标；<strong>cross-attention</strong> 使解码器每个位置能** attend** 到编码器全体位置。</p>
+</blockquote>
+<h3 id="2-2-ProtT5-在蛋白序列上的「文本」是什么"><a href="#2-2-ProtT5-在蛋白序列上的「文本」是什么" class="headerlink" title="2.2 ProtT5 在蛋白序列上的「文本」是什么"></a>2.2 ProtT5 在蛋白序列上的「文本」是什么</h3><ul>
+<li><strong>字母表</strong>：标准 <strong>20</strong> 种氨基酸 + <strong>未知&#x2F;稀有</strong> 合并规则；<strong>HF</strong> 模型卡说明：输入为<strong>大写</strong>单字母，<strong>稀有&#x2F;模糊氨基酸（U、Z、O、B）</strong> 映射为 <strong>X</strong>（与常见工程约定一致）。  </li>
+<li><strong>分词（tokenization）</strong>：在字符间插入<strong>空格</strong>，使每个氨基酸近似为<strong>一个词片段</strong>；词表规模在 <code>config.json</code> 中记为 <strong>128</strong>（含特殊符号与 <strong>padding</strong> 等），与「21 个氨基酸类符号 + 特殊 token」的工程实现对齐，<strong>不必</strong>与自然语言数万词表混淆。  </li>
+<li><strong>序列长度</strong>：公开 <strong>ProtT5-XL-UniRef50</strong> 训练与位置编码上限为 <strong>512</strong> token（<code>n_positions</code>: 512），长蛋白需<strong>截断</strong>或<strong>分段</strong>再聚合（如<strong>均值汇聚</strong>）。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>token</strong> 指模型输入的最小整数索引单位；<strong>padding</strong> 为对齐批内长度而补的无效位。</p>
+</blockquote>
+<hr>
+<h2 id="3-ProtT5-XL-网络规格（与-t5-3b-同族）"><a href="#3-ProtT5-XL-网络规格（与-t5-3b-同族）" class="headerlink" title="3. ProtT5-XL 网络规格（与 t5-3b 同族）"></a>3. ProtT5-XL 网络规格（与 <code>t5-3b</code> 同族）</h2><p>以下字段摘自 HF 权重 <a target="_blank" rel="noopener" href="https://huggingface.co/Rostlab/prot_t5_xl_uniref50/blob/main/config.json"><code>config.json</code></a>，对应 <strong><code>T5ForConditionalGeneration</code></strong> 架构：</p>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>数值</th>
+<th>含义（直觉）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>is_encoder_decoder</code></td>
+<td><code>true</code></td>
+<td>标准 <strong>encoder–decoder</strong></td>
+</tr>
+<tr>
+<td><code>num_layers</code></td>
+<td><strong>24</strong></td>
+<td><strong>编码器</strong>层数</td>
+</tr>
+<tr>
+<td><code>num_decoder_layers</code></td>
+<td><strong>24</strong></td>
+<td><strong>解码器</strong>层数</td>
+</tr>
+<tr>
+<td><code>d_model</code></td>
+<td><strong>1024</strong></td>
+<td>隐藏维度（隐层宽度）</td>
+</tr>
+<tr>
+<td><code>d_ff</code></td>
+<td><strong>16384</strong></td>
+<td>FFN 中间层宽度（通常为 <code>4×d_model</code> 量级，此处与 <strong>T5-3B</strong> 档位一致）</td>
+</tr>
+<tr>
+<td><code>num_heads</code></td>
+<td><strong>32</strong></td>
+<td>注意力头数</td>
+</tr>
+<tr>
+<td><code>d_kv</code></td>
+<td><strong>128</strong></td>
+<td>每头键&#x2F;值维度（常满足 <code>d_model = num_heads × d_kv</code>）</td>
+</tr>
+<tr>
+<td><code>dropout_rate</code></td>
+<td><strong>0.1</strong></td>
+<td>训练时随机失活比例</td>
+</tr>
+<tr>
+<td><code>feed_forward_proj</code></td>
+<td><code>&quot;relu&quot;</code></td>
+<td>FFN 内激活为 <strong>整流线性单元（Rectified Linear Unit，ReLU）</strong></td>
+</tr>
+<tr>
+<td><code>relative_attention_num_buckets</code></td>
+<td><strong>32</strong></td>
+<td>相对位置偏置桶数</td>
+</tr>
+<tr>
+<td><code>n_positions</code></td>
+<td><strong>512</strong></td>
+<td>最大序列位置长度</td>
+</tr>
+<tr>
+<td><code>vocab_size</code></td>
+<td><strong>128</strong></td>
+<td>词表大小（含特殊 token）</td>
+</tr>
+</tbody></table>
+<p>参数量级约 <strong>3×10⁹（3B）</strong>，与 <strong>NLP</strong> 中 <strong>T5-3B</strong> 同档；<strong>ProtTrans</strong> 总论文亦在<strong>超算&#x2F;TPU 集群</strong>上训练多架构，<strong>ProtT5</strong> 是其中<strong>编码器—解码器</strong>路线的代表。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>FFN</strong> 为逐位置前馈子层；<strong>ReLU</strong> 为 (\max(0,x))；<strong>3B</strong> 为三十亿参数量级简称。</p>
+</blockquote>
+<hr>
+<h2 id="4-预训练目标与「和原版-T5-的关键差异」"><a href="#4-预训练目标与「和原版-T5-的关键差异」" class="headerlink" title="4. 预训练目标与「和原版 T5 的关键差异」"></a>4. 预训练目标与「和原版 T5 的关键差异」</h2><p><strong>HF</strong> 官方 <strong>README</strong> 明确写出（引用意译）：</p>
+<ul>
+<li><strong>原版 T5-3B</strong> 使用 <strong>span denoising（span 去噪）</strong> 目标；  </li>
+<li><strong>ProtT5-XL-UniRef50</strong> 则采用更接近 <strong>BART</strong> 风格的 <strong>MLM 去噪</strong>：对输入序列随机遮盖约 <strong>15%</strong> 的氨基酸位置；其中约 <strong>90%</strong> 用 <strong><code>[MASK]</code></strong> 替换，约 <strong>10%</strong> 替换为<strong>随机氨基酸</strong>（与被替换位置不同）。</li>
+</ul>
+<p>因此：ProtT5 <strong>名字与实现骨架</strong>是 <strong>T5</strong>，但<strong>该 checkpoint 的预训练目标</strong>与 Raffel 等原文中<strong>典型 span 长度采样</strong>的设定<strong>不一致</strong>，读论文时需区分「架构来自 T5」与「该蛋白 checkpoint 的 denoising 配方」。</p>
+<p><strong>训练数据（该 checkpoint）</strong>：<strong>UniRef50</strong>（<strong>约 4500 万</strong>条蛋白序列，聚类约 <strong>50%</strong> 序列一致性水平，见 <strong>UniProt</strong> 文档）。  </p>
+<p><strong>初始化与日程（该 checkpoint）</strong>：以 <strong>ProtT5-XL-BFD</strong>（在 <strong>BFD</strong> 等更大语料上训练的同名架构 checkpoint）为<strong>初始权重</strong>，再在 <strong>UniRef50</strong> 上继续训练；硬件为 <strong>TPU Pod V2-256</strong>；总步数约 <strong>991.5k</strong>；序列长度 <strong>512</strong>，<strong>batch size 约 2k</strong>；优化器为 <strong>AdaFactor</strong>，学习率 <strong>逆平方根</strong>调度（inverse square root schedule）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>BFD</strong> 为大规模蛋白序列库（<strong>Big Fantastic Database</strong> 类资源，以原文与 <strong>ProtTrans</strong> 仓库说明为准）；<strong>UniRef50</strong> 为 <strong>UniProt</strong> 下聚类序列集；<strong>AdaFactor</strong> 为 Google 提出的内存友好优化器；<strong>checkpoint</strong> 指某次保存的权重快照。</p>
+</blockquote>
+<hr>
+<h2 id="5-输入输出与下游使用（实践向）"><a href="#5-输入输出与下游使用（实践向）" class="headerlink" title="5. 输入输出与下游使用（实践向）"></a>5. 输入输出与下游使用（实践向）</h2><h3 id="5-1-嵌入从哪里来"><a href="#5-1-嵌入从哪里来" class="headerlink" title="5.1 嵌入从哪里来"></a>5.1 嵌入从哪里来</h3><ul>
+<li><strong>逐残基嵌入</strong>：对 <strong>编码器</strong>最后一层隐藏状态取 <strong><code>last_hidden_state</code></strong>，形状约为 <strong>(序列长度 × d_model)</strong>，即每残基 <strong>1024</strong> 维（见模型卡示例代码）。  </li>
+<li><strong>整条蛋白向量</strong>：对有效残基位置做 <strong>mean pooling（均值汇聚）</strong> 或 <strong>attention pooling</strong>，得到<strong>固定长度</strong>向量，供 <strong>岭回归（Ridge regression）</strong>、<strong>随机森林（Random Forest）</strong>、<strong>高斯过程（Gaussian Process，GP）</strong> 等浅层头使用（与 <strong>EVOLVEpro</strong> 用 <strong>ESM-2</strong>、<strong>Taq</strong> 工程用 <strong>ProtT5</strong> 的实践一致）。</li>
+</ul>
+<p><strong>官方建议</strong>：不少下游任务中，<strong>仅使用编码器侧特征</strong>往往优于依赖解码器输出；若只做表征、不做生成，<strong>编码器嵌入</strong>是默认首选。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>mean pooling</strong> 对可变长度序列在残基维上取平均；<strong>Ridge</strong> 为 L2 正则线性回归。</p>
+</blockquote>
+<h3 id="5-2-与仅编码器-PLM（如-ProtBERT、ESM）的分工直觉"><a href="#5-2-与仅编码器-PLM（如-ProtBERT、ESM）的分工直觉" class="headerlink" title="5.2 与仅编码器 PLM（如 ProtBERT、ESM）的分工直觉"></a>5.2 与仅编码器 PLM（如 ProtBERT、ESM）的分工直觉</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th><strong>ProtT5（encoder–decoder）</strong></th>
+<th><strong>仅编码器 BERT&#x2F;ESM 类</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>预训练接口</strong></td>
+<td>天然适配 <strong>seq2seq</strong>（还原被遮盖片段、或微调为序列到标签字符串）</td>
+<td>以 <strong>MLM</strong> 表征为主，读长上下文</td>
+</tr>
+<tr>
+<td><strong>嵌入用途</strong></td>
+<td><strong>Encoder</strong> 隐藏状态用于分类&#x2F;回归&#x2F;对齐；解码器多用于生成式微调</td>
+<td>单层或多层聚合嵌入</td>
+</tr>
+<tr>
+<td><strong>计算</strong></td>
+<td>推理通常重于同档仅编码器（解码器额外堆叠）</td>
+<td>相对省算力</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-与-ProtTrans-大家庭的关系（避免混淆）"><a href="#6-与-ProtTrans-大家庭的关系（避免混淆）" class="headerlink" title="6. 与 ProtTrans 大家庭的关系（避免混淆）"></a>6. 与 ProtTrans 大家庭的关系（避免混淆）</h2><p><strong>ProtTrans</strong> 在同一数据规模下还训练了 <strong>Transformer-XL</strong>、<strong>XLNet</strong>（自回归）、<strong>BERT</strong>、<strong>Albert</strong>、<strong>Electra</strong>、<strong>T5</strong> 等多种架构；<strong>ProtT5</strong> 特指 <strong>T5</strong> 这一路。不同 checkpoint（<strong>BFD</strong> vs <strong>UniRef50</strong>、<strong>base</strong> vs <strong>XL</strong>）在数据与规模上不同，<strong>不可</strong>混用训练脚本与超参。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Electra</strong> 为判别式替换的预训练目标，与 <strong>MLM</strong> 不同；此处仅提示族谱，不展开。</p>
+</blockquote>
+<hr>
+<h2 id="7-小结"><a href="#7-小结" class="headerlink" title="7. 小结"></a>7. 小结</h2><ul>
+<li><strong>结构</strong>：<strong>ProtT5</strong> &#x3D; <strong>T5</strong> 式 <strong>24+24</strong> 层 <strong>encoder–decoder</strong>，<strong>d_model&#x3D;1024</strong>，<strong>32</strong> 头，<strong>相对位置偏置</strong>，最大长度 <strong>512</strong>（公开 <strong>XL-UniRef50</strong> 卡）。  </li>
+<li><strong>训练细节（该权重）</strong>：<strong>BART 式 MLM</strong> 去噪（<strong>非</strong>原版 <strong>T5 span corruption</strong> 的默认配方）、<strong>15%</strong> 遮盖、<strong>90%&#x2F;10%</strong> 掩码与随机替换策略；<strong>UniRef50</strong> 上自 <strong>ProtT5-XL-BFD</strong> <strong>热启动</strong>；<strong>TPU v2-256</strong>，<strong>991.5k</strong> steps，<strong>AdaFactor</strong>。  </li>
+<li><strong>使用</strong>：下游<strong>特征</strong>优先取 <strong>encoder</strong> <strong>last_hidden_state</strong>；长序列注意 <strong>512</strong> 截断与分段策略。</li>
+</ul>
+<hr>
+<h2 id="8-延伸阅读（检索关键词）"><a href="#8-延伸阅读（检索关键词）" class="headerlink" title="8. 延伸阅读（检索关键词）"></a>8. 延伸阅读（检索关键词）</h2><ul>
+<li><code>ProtTrans</code>, <code>ProtT5</code>, <code>Rostlab/prot_t5_xl_uniref50</code>, <code>T5 span corruption</code>, <code>BART-like MLM protein</code>, <code>Elnaggar TPAMI 2021</code>, <code>relative attention buckets T5</code></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/ProtT5/" rel="tag"><i class="fa fa-tag"></i> ProtT5</a>
+          
+            <a href="/tags/ProtTrans/" rel="tag"><i class="fa fa-tag"></i> ProtTrans</a>
+          
+            <a href="/tags/T5/" rel="tag"><i class="fa fa-tag"></i> T5</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-TaqPol-ProtT5-RT/" rel="next" title="酶改造-modelpaper-TaqPol-ProtT5-RT">
+                <i class="fa fa-chevron-left"></i> 酶改造-modelpaper-TaqPol-ProtT5-RT
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-%E9%85%B6%E5%8A%9F%E8%83%BD%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%B8%8ESMILES%E8%A1%A8%E5%BE%81/" rel="prev" title="酶改造-酶功能大模型与SMILES表征">
+                酶改造-酶功能大模型与SMILES表征 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">571</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">102</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">251</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%96%87%E7%8C%AE%E4%B8%8E%E4%BB%A3%E7%A0%81%E5%85%A5%E5%8F%A3"><span class="nav-number">1.</span> <span class="nav-text">1. 文献与代码入口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%A1%86%E6%9E%B6%E6%80%BB%E8%A7%88%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF%E3%80%8C%E7%BC%96%E7%A0%81%E5%99%A8%E2%80%94%E8%A7%A3%E7%A0%81%E5%99%A8%E3%80%8D%E8%80%8C%E4%B8%8D%E6%98%AF%E7%BA%AF-BERT%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">2. 框架总览：为什么是「编码器—解码器」而不是纯 BERT？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-NLP-%E4%B8%AD%E7%9A%84-T5-%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88%EF%BC%88%E4%B8%8E-ProtT5-%E7%9A%84%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 NLP 中的 T5 在做什么（与 ProtT5 的继承关系）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-ProtT5-%E5%9C%A8%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E4%B8%8A%E7%9A%84%E3%80%8C%E6%96%87%E6%9C%AC%E3%80%8D%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 ProtT5 在蛋白序列上的「文本」是什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-ProtT5-XL-%E7%BD%91%E7%BB%9C%E8%A7%84%E6%A0%BC%EF%BC%88%E4%B8%8E-t5-3b-%E5%90%8C%E6%97%8F%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. ProtT5-XL 网络规格（与 t5-3b 同族）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%A2%84%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87%E4%B8%8E%E3%80%8C%E5%92%8C%E5%8E%9F%E7%89%88-T5-%E7%9A%84%E5%85%B3%E9%94%AE%E5%B7%AE%E5%BC%82%E3%80%8D"><span class="nav-number">4.</span> <span class="nav-text">4. 预训练目标与「和原版 T5 的关键差异」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E4%B8%8E%E4%B8%8B%E6%B8%B8%E4%BD%BF%E7%94%A8%EF%BC%88%E5%AE%9E%E8%B7%B5%E5%90%91%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 输入输出与下游使用（实践向）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%B5%8C%E5%85%A5%E4%BB%8E%E5%93%AA%E9%87%8C%E6%9D%A5"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 嵌入从哪里来</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E4%B8%8E%E4%BB%85%E7%BC%96%E7%A0%81%E5%99%A8-PLM%EF%BC%88%E5%A6%82-ProtBERT%E3%80%81ESM%EF%BC%89%E7%9A%84%E5%88%86%E5%B7%A5%E7%9B%B4%E8%A7%89"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 与仅编码器 PLM（如 ProtBERT、ESM）的分工直觉</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%B8%8E-ProtTrans-%E5%A4%A7%E5%AE%B6%E5%BA%AD%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%88%E9%81%BF%E5%85%8D%E6%B7%B7%E6%B7%86%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 与 ProtTrans 大家庭的关系（避免混淆）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">7. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB%EF%BC%88%E6%A3%80%E7%B4%A2%E5%85%B3%E9%94%AE%E8%AF%8D%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">8. 延伸阅读（检索关键词）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
