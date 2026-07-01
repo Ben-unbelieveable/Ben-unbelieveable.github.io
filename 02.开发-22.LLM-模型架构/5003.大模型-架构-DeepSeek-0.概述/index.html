@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,MoE,混合专家,DeepSeek,MLA," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="DeepSeek 系列架构全景：MLA、DeepSeekMoE、DSA 与 V4 混合注意力；R1 推理训练范式；版本迭代史（LLM→V2→V3→R1→V3.2→V4）及生物信息学部署选型。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-DeepSeek-0.概述">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="DeepSeek 系列架构全景：MLA、DeepSeekMoE、DSA 与 V4 混合注意力；R1 推理训练范式；版本迭代史（LLM→V2→V3→R1→V3.2→V4）及生物信息学部署选型。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig01-overall-architecture.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig02-mla-compression.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig04-v4-hybrid-attention.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig03-version-timeline.png">
+<meta property="article:published_time" content="2026-06-11T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:18.087Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DeepSeek">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="MLA">
+<meta property="article:tag" content="MoE">
+<meta property="article:tag" content="混合专家">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig01-overall-architecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-DeepSeek-0.概述/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-DeepSeek-0.概述 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-DeepSeek-0.概述</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T18:00:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  DeepSeek 系列架构全景：MLA、DeepSeekMoE、DSA 与 V4 混合注意力；R1 推理训练范式；版本迭代史（LLM→V2→V3→R1→V3.2→V4）及生物信息学部署选型。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>DeepSeek</strong>（深度求索）是近年来开源大语言模型（Large Language Model，LLM）领域最具代表性的 <strong>混合专家（Mixture of Experts，MoE）+ 解码器 Transformer</strong> 路线实践者：在 <strong>671B 级总参数量</strong>下仅激活约 <strong>37B</strong> 参数&#x2F;token，通过 <strong>多头潜注意力（Multi-Head Latent Attention，MLA）</strong> 压缩 <strong>KV Cache</strong>、<strong>DeepSeekMoE</strong> 稀疏路由与 <strong>FP8</strong> 训练工程，把预训练成本压到同类稠密模型的数量级分之一；<strong>DeepSeek-R1</strong> 则在<strong>同一骨干</strong>上用大规模<strong>强化学习（Reinforcement Learning，RL）</strong> 激发链式推理。2026 年 <strong>DeepSeek-V4</strong> 进一步以 <strong>压缩稀疏注意力（Compressed Sparse Attention，CSA）</strong>、<strong>重度压缩注意力（Heavily Compressed Attention，HCA）</strong> 与 <strong>流形约束超连接（Manifold-Constrained Hyper-Connections，mHC）</strong> 将原生上下文推至 <strong>1M token</strong>。</p>
+<blockquote>
+<p>段末注释：<strong>MoE</strong> 指每 token 仅激活部分专家子网络；<strong>MLA</strong> 用低秩潜向量压缩 Key&#x2F;Value 缓存；<strong>KV Cache</strong> 为自回归推理时缓存的历史 Key&#x2F;Value 向量。</p>
+</blockquote>
+<p><strong>前置阅读</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-0.%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84%E8%8C%83%E5%BC%8F%E7%BB%BC%E8%BF%B0.md">5003.大模型-架构-0.大模型架构范式综述</a>（MoE 范式定位）</p>
+<p><strong>插图约定</strong>：配图为科普动漫风学术示意（非官方原图），位于 <code>5003.大模型-架构-DeepSeek-0.概述/</code>。</p>
+<hr>
+<h2 id="1-在架构范式中的位置"><a href="#1-在架构范式中的位置" class="headerlink" title="1. 在架构范式中的位置"></a>1. 在架构范式中的位置</h2><p>DeepSeek 主线属于 <strong>Decoder-only 自回归 Transformer</strong>，在「<strong>规模与路由</strong>」维度走 <strong>MoE</strong> 而非纯稠密堆叠；在「<strong>序列混合</strong>」维度，V2–V3.2 以 <strong>MLA</strong>（可视为带 KV 压缩的注意力变体）为主，V3.2 叠加 <strong>DeepSeek Sparse Attention（DSA）</strong>，V4 改为 <strong>CSA&#x2F;HCA 混合注意力栈</strong>。</p>
+<table>
+<thead>
+<tr>
+<th align="left">维度</th>
+<th align="left">DeepSeek 选择</th>
+<th align="left">对照</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">训练目标</td>
+<td align="left">下一 token 交叉熵（+ V3 <strong>多 token 预测</strong>辅助目标）</td>
+<td align="left">与 GPT&#x2F;LLaMA 相同</td>
+</tr>
+<tr>
+<td align="left">混合机制</td>
+<td align="left">MLA → DSA → V4 CSA&#x2F;HCA</td>
+<td align="left">LLaMA 用 GQA；Mamba 用 SSM</td>
+</tr>
+<tr>
+<td align="left">规模路由</td>
+<td align="left">256 路由专家 + 1 共享专家 &#x2F; 层</td>
+<td align="left">Mixtral 8×7B 为较小 MoE</td>
+</tr>
+<tr>
+<td align="left">后训练</td>
+<td align="left">SFT + RLHF（V3 Chat）；纯&#x2F;少 SFT + 大规模 RL（R1）</td>
+<td align="left">R1 代表「推理能力来自 RL」</td>
+</tr>
+</tbody></table>
+<p>对<strong>生物信息学</strong>读者：DeepSeek 通常作为 <strong>Agent 编排</strong>、<strong>文献&#x2F;协议问答</strong>、<strong>代码与 pipeline 生成</strong>的通用推理后端，而非像 <strong>ESM</strong> &#x2F; <strong>DNABERT</strong> 那样在领域序列上预训练——选型时需区分「<strong>通用 LLM API</strong>」与「<strong>领域基础模型</strong>」。</p>
+<hr>
+<h2 id="2-核心架构：以-DeepSeek-V3-为基准"><a href="#2-核心架构：以-DeepSeek-V3-为基准" class="headerlink" title="2. 核心架构：以 DeepSeek-V3 为基准"></a>2. 核心架构：以 DeepSeek-V3 为基准</h2><p><strong>DeepSeek-V3</strong>（2024-12，arXiv:2412.19437）是当前理解整个系列的<strong>架构锚点</strong>：<strong>671B 总参数，每 token 激活约 37B</strong>；<strong>128K</strong> 上下文；在 <strong>14.8T token</strong> 上预训练，官方称约 <strong>2.788M H800 GPU·小时</strong>（业界常引用 ~550 万美元量级，随集群与电价浮动）。</p>
+<p>整体仍为 <strong>Pre-Norm Transformer 解码器栈</strong>（<strong>RMSNorm</strong>、<strong>SwiGLU</strong> FFN 被 MoE 替换、<strong>RoPE</strong> 位置编码），单层逻辑如图 1。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig01-overall-architecture.png" alt="图 1　DeepSeek 解码器层：MLA 注意力 + DeepSeekMoE 前馈（共享专家 + 路由专家）"></p>
+<hr>
+<h3 id="2-1-Multi-Head-Latent-Attention（MLA）"><a href="#2-1-Multi-Head-Latent-Attention（MLA）" class="headerlink" title="2.1 Multi-Head Latent Attention（MLA）"></a>2.1 Multi-Head Latent Attention（MLA）</h3><p><strong>问题</strong>：标准多头注意力（Multi-Head Attention，MHA）推理时需缓存完整 <strong>K&#x2F;V</strong>，长上下文下 <strong>KV Cache</strong> 显存占主导。</p>
+<p><strong>做法</strong>（DeepSeek-V2 提出，V3 延续并细化）：将 K&#x2F;V 投影到低秩<strong>潜空间</strong> (c_t^{KV})，推理时<strong>只缓存潜向量</strong>，需要时再上投影还原各头 K&#x2F;V：</p>
+<p>[<br>c_t^{KV} &#x3D; W^{DKV} h_t, \quad k_t &#x3D; W^{UK} c_t^{KV}, \quad v_t &#x3D; W^{UV} c_t^{KV}.<br>]</p>
+<p>Q 侧也可做类似低秩分解（MQA 模式）。效果：在可比质量下 <strong>KV 缓存显著减小</strong>（社区实测常引 <strong>~90%+</strong> 量级，依实现与头数而异），长上下文推理更可行。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig02-mla-compression.png" alt="图 2　标准 MHA vs MLA：KV 潜空间压缩与缓存策略"></p>
+<blockquote>
+<p>段末注释：<strong>MHA</strong> 为每头独立 Q&#x2F;K&#x2F;V；<strong>MQA</strong>（Multi-Query Attention）为多 Q 头共享一组 K&#x2F;V；MLA 在潜空间统一压缩后再按头上投影。</p>
+</blockquote>
+<hr>
+<h3 id="2-2-DeepSeekMoE-前馈层"><a href="#2-2-DeepSeekMoE-前馈层" class="headerlink" title="2.2 DeepSeekMoE 前馈层"></a>2.2 DeepSeekMoE 前馈层</h3><p>FFN 层替换为 <strong>DeepSeekMoE</strong>（DeepSeek-V2&#x2F;V3 技术报告）：</p>
+<table>
+<thead>
+<tr>
+<th align="left">组件</th>
+<th align="left">V3 典型配置</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>路由专家（Routed Experts）</strong></td>
+<td align="left">256 个 &#x2F; 层</td>
+<td align="left">门控网络按 token 选 Top-(k)（常 <strong>8</strong>）</td>
+</tr>
+<tr>
+<td align="left"><strong>共享专家（Shared Expert）</strong></td>
+<td align="left">1 个 &#x2F; 层</td>
+<td align="left">始终激活，捕获通用模式</td>
+</tr>
+<tr>
+<td align="left"><strong>细粒度专家</strong></td>
+<td align="left">较 Switch Transformer 更细分</td>
+<td align="left">知识分解更均匀，单专家更窄</td>
+</tr>
+</tbody></table>
+<p>相对 DeepSeek-V2，V3 <strong>路由专家数 160→256</strong>，FFN 容量显著增大而<strong>每 token 激活 FLOPs 可控</strong>。</p>
+<p><strong>设备受限路由（Device-Limited Routing）</strong>：先在 <strong>(M)</strong> 个设备（GPU）内选专家，限制跨机通信——与 <strong>HPC 协同设计</strong>绑定。</p>
+<hr>
+<h3 id="2-3-无辅助损失的负载均衡（Auxiliary-Loss-Free-Balancing）"><a href="#2-3-无辅助损失的负载均衡（Auxiliary-Loss-Free-Balancing）" class="headerlink" title="2.3 无辅助损失的负载均衡（Auxiliary-Loss-Free Balancing）"></a>2.3 无辅助损失的负载均衡（Auxiliary-Loss-Free Balancing）</h3><p>MoE 常见问题是专家<strong>负载倾斜</strong>（<strong>routing collapse &#x2F; 专家坍缩</strong>）。传统做法加 <strong>auxiliary load balancing loss</strong>，但会损害下游质量。概念详解见 <a href="5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-01.%E4%B8%93%E5%AE%B6%E5%9D%8D%E7%BC%A9.md">LLM概念解析-01.专家坍缩</a>。</p>
+<p>DeepSeek-V3 采用 <strong>bias-only 动态路由</strong>：给门控分数加可学习<strong>偏置</strong> (b_i)，训练时若专家 (i) 过载&#x2F;欠载则按步更新 (b_i)（<strong>不进入总 loss</strong>），使 token 分布更均匀。这是 V3 相对 V2 的<strong>关键架构&#x2F;训练策略增量</strong>之一。</p>
+<hr>
+<h3 id="2-4-多-Token-预测（Multi-Token-Prediction，MTP）"><a href="#2-4-多-Token-预测（Multi-Token-Prediction，MTP）" class="headerlink" title="2.4 多 Token 预测（Multi-Token Prediction，MTP）"></a>2.4 多 Token 预测（Multi-Token Prediction，MTP）</h3><p>V3 训练引入 <strong>MTP</strong> 辅助头：除下一 token 外，同时预测后续多个 token，作为额外监督。论文报告有助于提升整体 benchmark，并带来 <strong>15–20%</strong> 量级训练收敛加速（依实现而定）。</p>
+<hr>
+<h3 id="2-5-FP8-混合精度预训练"><a href="#2-5-FP8-混合精度预训练" class="headerlink" title="2.5 FP8 混合精度预训练"></a>2.5 FP8 混合精度预训练</h3><p>DeepSeek-V3 是首批大规模 <strong>FP8</strong> 预训练开源 LLM 之一：</p>
+<ul>
+<li>权重&#x2F;激活采用 <strong>E4M3</strong> 等 FP8 格式（细粒度 <strong>tile</strong> 量化，非整行粗量化）；</li>
+<li>配合 <strong>DualPipe</strong> 等流水线并行与 <strong>PTX</strong> 级内核优化；</li>
+<li>目标：在 <strong>H800</strong> 集群上完成 671B MoE 训练而不超预算。</li>
+</ul>
+<p>这使「<strong>稀疏大模型 + 低精度 HPC</strong>」成为可复现工程路径，而非仅算法论文。</p>
+<hr>
+<h2 id="3-DeepSeek-V3-2：DeepSeek-Sparse-Attention（DSA）"><a href="#3-DeepSeek-V3-2：DeepSeek-Sparse-Attention（DSA）" class="headerlink" title="3. DeepSeek-V3.2：DeepSeek Sparse Attention（DSA）"></a>3. DeepSeek-V3.2：DeepSeek Sparse Attention（DSA）</h2><p><strong>DeepSeek-V3.2</strong>（2025-12，arXiv:2512.02556）在 <strong>V3.1-Terminus</strong> 上<strong>继续训练</strong>引入 <strong>DSA</strong>，架构与 <strong>V3.2-Exp</strong>（2025-09 实验版）一致：</p>
+<ol>
+<li><strong>Lightning Indexer</strong>：轻量索引头，用 MLA 潜表示对历史 token 打<strong>相关性分数</strong>（ReLU + 加权和）；</li>
+<li><strong>Top-(k) Token 选择</strong>：仅对得分最高的 (k) 个 token 做完整 MLA 注意力；</li>
+<li>复杂度由 (O(L^2)) 降为约 (O(Lk))（(k \ll L)），<strong>长上下文 decode&#x2F;prefill</strong> 成本近常数化趋势。</li>
+</ol>
+<p>V3.2 同时<strong>放大后训练 RL 算力</strong>（官方称超过预训练算力的 10%）与 <strong>Agent 任务生态</strong>（1800+ 环境、85000+ 任务），使开源模型在推理、工具调用上与闭源旗舰缩小差距。<strong>DeepSeek-V3.2-Speciale</strong> 为高算力长思考变体，偏研究&#x2F;竞赛（IMO、IOI 等），日常 chat 非首选。</p>
+<hr>
+<h2 id="4-DeepSeek-V4：2026-架构跃迁"><a href="#4-DeepSeek-V4：2026-架构跃迁" class="headerlink" title="4. DeepSeek-V4：2026 架构跃迁"></a>4. DeepSeek-V4：2026 架构跃迁</h2><p><strong>DeepSeek-V4</strong>（2026-04）在注意力与连接方式上<strong>不再沿用纯 MLA</strong>，转向<strong>混合长上下文栈</strong>（见图 4）：</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig04-v4-hybrid-attention.png" alt="图 4　DeepSeek-V4：CSA &#x2F; HCA 混合注意力 + mHC 超连接 + Hash-MoE 引导层"></p>
+<table>
+<thead>
+<tr>
+<th align="left">模块</th>
+<th align="left">含义</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>CSA</strong></td>
+<td align="left">低压缩率块 + Lightning Indexer Top-(k)</td>
+<td align="left">细粒度局部关联</td>
+</tr>
+<tr>
+<td align="left"><strong>HCA</strong></td>
+<td align="left">高压缩率（如 (m’&#x3D;128)）块级聚合</td>
+<td align="left">廉价<strong>全局视野</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>mHC</strong></td>
+<td align="left">多流形约束超连接，替代标准残差</td>
+<td align="left">稳定超深&#x2F;超长训练</td>
+</tr>
+<tr>
+<td align="left"><strong>Hash-MoE</strong></td>
+<td align="left">前几层用 token-id→expert 静态哈希路由</td>
+<td align="left">引导 MoE 冷启动</td>
+</tr>
+</tbody></table>
+<p><strong>规格（公开资料）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th align="left">型号</th>
+<th align="left">总参数</th>
+<th align="left">每 token 激活</th>
+<th align="left">上下文</th>
+<th align="left">预训练 token</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>V4-Pro</strong></td>
+<td align="left">~1.6T</td>
+<td align="left">~49B</td>
+<td align="left"><strong>1M</strong></td>
+<td align="left">32T+</td>
+</tr>
+<tr>
+<td align="left"><strong>V4-Flash</strong></td>
+<td align="left">~284B</td>
+<td align="left">~13B</td>
+<td align="left"><strong>1M</strong></td>
+<td align="left">32T+</td>
+</tr>
+</tbody></table>
+<p>相对 V3.2，在 <strong>1M token</strong> 场景下，V4-Pro 推理 <strong>FLOPs ~27%</strong>、<strong>KV Cache ~10%</strong>（Flash 更低）——长代码库、多文档 Agent、跨会话记忆成为<strong>一等公民</strong>。</p>
+<p><strong>三种推理模式</strong>：Non-think（快答）、Think High（链式推理）、Think Max（极限推理预算；需特定 system prompt 前缀）。</p>
+<hr>
+<h2 id="5-DeepSeek-R1：同架构、不同训练范式"><a href="#5-DeepSeek-R1：同架构、不同训练范式" class="headerlink" title="5. DeepSeek-R1：同架构、不同训练范式"></a>5. DeepSeek-R1：同架构、不同训练范式</h2><p><strong>DeepSeek-R1</strong>（2025-01，arXiv:2501.12948）与 <strong>V3 共享 MoE 骨干</strong>，差异几乎全在<strong>后训练</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    Base[&quot;DeepSeek-V3-Base\n(671B MoE 预训练)&quot;] --&gt; V3Chat[&quot;V3 Chat\nSFT + RLHF&quot;]</span><br><span class="line">    Base --&gt; R1Zero[&quot;R1-Zero\n纯 RL，无 SFT&quot;]</span><br><span class="line">    Base --&gt; R1[&quot;R1\n冷启动 SFT + 大规模 RL&quot;]</span><br><span class="line">    R1Zero --&gt; R1</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th align="left">模型</th>
+<th align="left">后训练</th>
+<th align="left">输出风格</th>
+<th align="left">典型场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>V3 &#x2F; V3-0324 &#x2F; V3.1</strong></td>
+<td align="left">SFT + RLHF；V3.1 支持 <strong>思考&#x2F;非思考</strong> 双模式</td>
+<td align="left">直接回答或可控 CoT</td>
+<td align="left">通用对话、代码、Agent</td>
+</tr>
+<tr>
+<td align="left"><strong>R1-Zero</strong></td>
+<td align="left"><strong>无 SFT</strong>，纯 RL</td>
+<td align="left">强推理但可读性差、易混语言</td>
+<td align="left">研究 ablation</td>
+</tr>
+<tr>
+<td align="left"><strong>R1 &#x2F; R1-0528</strong></td>
+<td align="left">少量冷启动 SFT + <strong>大规模 RL</strong></td>
+<td align="left">输出含 <code>think</code> 推理块 + 最终答案</td>
+<td align="left">数学、竞赛编程、多步规划</td>
+</tr>
+<tr>
+<td align="left"><strong>R1-Distill</strong></td>
+<td align="left">小模型 + R1 合成数据 <strong>SFT</strong></td>
+<td align="left">小参数上的推理能力</td>
+<td align="left">本地 7B–70B 部署</td>
+</tr>
+</tbody></table>
+<p><strong>R1-0528</strong>（2025-05）：推理 token 预算显著增加（如 AIME 上均值 12K→23K），幻觉率下降，支持 <strong>system prompt</strong>；工具调用在 thinking 模式下仍有限制。</p>
+<p><strong>生物信息学提示</strong>：用 R1 做 <strong>实验设计推演、统计检验选择、生信脚本 debug</strong> 时，宜在 prompt 中要求分步推理；部署成本远高于 V3-Flash 类模型，需按任务选 <strong>V3.1 混合模式</strong> 或 <strong>蒸馏 R1</strong>。</p>
+<hr>
+<h2 id="6-生物信息学与开源部署要点"><a href="#6-生物信息学与开源部署要点" class="headerlink" title="6. 生物信息学与开源部署要点"></a>6. 生物信息学与开源部署要点</h2><table>
+<thead>
+<tr>
+<th align="left">场景</th>
+<th align="left">推荐型号</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">文献综述、邮件、报告起草</td>
+<td align="left">V3 &#x2F; V3.1 非思考模式</td>
+<td align="left">延迟低</td>
+</tr>
+<tr>
+<td align="left">复杂 pipeline、Snakemake&#x2F;WDL 生成</td>
+<td align="left">V3.1 思考模式 或 R1-0528</td>
+<td align="left">需验证语法</td>
+</tr>
+<tr>
+<td align="left">长 PDF &#x2F; 多组学文档问答</td>
+<td align="left">V3.2+（DSA）或 <strong>V4</strong>（1M ctx）</td>
+<td align="left">注意隐私与合规</td>
+</tr>
+<tr>
+<td align="left">本地私有化（有限 GPU）</td>
+<td align="left">R1-Distill-Qwen&#x2F;Llama <strong>7B–32B</strong></td>
+<td align="left">非领域 FM</td>
+</tr>
+<tr>
+<td align="left">领域序列&#x2F;embeddings</td>
+<td align="left"><strong>ESM &#x2F; DNABERT &#x2F; NT</strong> 等</td>
+<td align="left">非 DeepSeek 替代</td>
+</tr>
+</tbody></table>
+<p><strong>硬件粗算</strong>：完整 <strong>671B MoE</strong> 推理通常需 <strong>多卡 H200&#x2F;H800</strong> 级；生产常见 <strong>vLLM &#x2F; SGLang</strong> + FP8&#x2F;INT4 量化 + 专家并行。<strong>切勿</strong>用通用 LLM 替代在基因组上预训练的 <strong>GFM</strong> 做 variant effect 等任务。</p>
+<hr>
+<h2 id="7-版本迭代史：从-DeepSeek-LLM-到-V4"><a href="#7-版本迭代史：从-DeepSeek-LLM-到-V4" class="headerlink" title="7. 版本迭代史：从 DeepSeek-LLM 到 V4"></a>7. 版本迭代史：从 DeepSeek-LLM 到 V4</h2><p>下图概括主线里程碑；下文按时间展开<strong>架构与能力增量</strong>。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DeepSeek-0.%E6%A6%82%E8%BF%B0/deepseek-fig03-version-timeline.png" alt="图 3　DeepSeek 系列版本演进时间线（2024–2026）"></p>
+<h3 id="7-1-2024：奠基与效率架构"><a href="#7-1-2024：奠基与效率架构" class="headerlink" title="7.1 2024：奠基与效率架构"></a>7.1 2024：奠基与效率架构</h3><table>
+<thead>
+<tr>
+<th align="left">时间</th>
+<th align="left">版本</th>
+<th align="left">架构&#x2F;训练要点</th>
+<th align="left">意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>2024-01</strong></td>
+<td align="left"><strong>DeepSeek-LLM</strong></td>
+<td align="left">7B&#x2F;67B 稠密；双语 2T token；<strong>非 embedding FLOPs&#x2F;token</strong> 缩放律</td>
+<td align="left">确立数据-算力-模型规模配比方法论</td>
+</tr>
+<tr>
+<td align="left"><strong>2024-02</strong></td>
+<td align="left"><strong>DeepSeek-Math</strong></td>
+<td align="left">数学语料继续预训练</td>
+<td align="left">为后续 R1 推理与 V3.2-Speciale 打基础</td>
+</tr>
+<tr>
+<td align="left"><strong>2024-05</strong></td>
+<td align="left"><strong>DeepSeek-V2</strong></td>
+<td align="left"><strong>MLA</strong> + <strong>DeepSeekMoE</strong> 首次系统亮相；236B 总 &#x2F; 21B 激活</td>
+<td align="left">KV 与 FFN 双路径降本</td>
+</tr>
+<tr>
+<td align="left"><strong>2024-11</strong></td>
+<td align="left"><strong>DeepSeek-V2.5</strong></td>
+<td align="left">V2 + Coder 能力合并</td>
+<td align="left">代码能力并入主线</td>
+</tr>
+<tr>
+<td align="left"><strong>2024-12</strong></td>
+<td align="left"><strong>DeepSeek-V3</strong></td>
+<td align="left">671B &#x2F; 37B 激活；256 专家；<strong>无 aux-loss 均衡</strong>；<strong>MTP</strong>；<strong>FP8</strong> 全链路预训练</td>
+<td align="left">开源 MoE 旗舰；训练成本震惊业界</td>
+</tr>
+</tbody></table>
+<p><strong>并行产品线</strong>：<strong>DeepSeek-Coder</strong>（代码）、<strong>DeepSeek-VL</strong>（视觉语言）等，共享部分训练基建但架构各异。</p>
+<h3 id="7-2-2025-上：推理模型与混合模式"><a href="#7-2-2025-上：推理模型与混合模式" class="headerlink" title="7.2 2025 上：推理模型与混合模式"></a>7.2 2025 上：推理模型与混合模式</h3><table>
+<thead>
+<tr>
+<th align="left">时间</th>
+<th align="left">版本</th>
+<th align="left">相对前代升级</th>
+<th align="left">关键点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>2025-01</strong></td>
+<td align="left"><strong>DeepSeek-R1-Zero</strong></td>
+<td align="left">V3-Base + <strong>纯 RL</strong></td>
+<td align="left">证明无 SFT 亦可涌现 CoT；可读性不足</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-01</strong></td>
+<td align="left"><strong>DeepSeek-R1</strong></td>
+<td align="left">冷启动 SFT + RL；<strong>R1-Distill</strong> 系列</td>
+<td align="left">开源推理标杆；6 个蒸馏小模型</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-03</strong></td>
+<td align="left"><strong>DeepSeek-V3-0324</strong></td>
+<td align="left">V3-Base + 改进后训练（借鉴 R1 RL 技巧）</td>
+<td align="left">通用能力 + 推理&#x2F;代码跳升</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-05</strong></td>
+<td align="left"><strong>DeepSeek-R1-0528</strong></td>
+<td align="left">更多 RL 算力；推理链更长；幻觉↓</td>
+<td align="left">支持 system prompt；接近 o3 级数学编程</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-08</strong></td>
+<td align="left"><strong>DeepSeek-V3.1</strong></td>
+<td align="left"><strong>思考&#x2F;非思考</strong>同一权重双模板；128K 续训；Agent&#x2F;tool 强化</td>
+<td align="left">「一个模型两种人格」</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-09</strong></td>
+<td align="left"><strong>DeepSeek-V3.1-Terminus</strong></td>
+<td align="left">语言一致性、Agent 稳定性修补</td>
+<td align="left">V3.1 小步稳定版</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-09</strong></td>
+<td align="left"><strong>DeepSeek-V3.2-Exp</strong></td>
+<td align="left">引入 <strong>DSA</strong> 实验架构</td>
+<td align="left">长上下文效率验证</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-12</strong></td>
+<td align="left"><strong>DeepSeek-V3.2</strong></td>
+<td align="left">DSA 定型 + <strong>大规模 RL</strong> + Agent 生态</td>
+<td align="left">对标 GPT-5-High 级开源综合</td>
+</tr>
+<tr>
+<td align="left"><strong>2025-12</strong></td>
+<td align="left"><strong>DeepSeek-V3.2-Speciale</strong></td>
+<td align="left">高算力长思考 + DeepSeek-Math-V2 定理能力</td>
+<td align="left">IMO&#x2F;IOI 金牌级；偏研究</td>
+</tr>
+</tbody></table>
+<h3 id="7-3-2025-下–2026：长上下文原生架构"><a href="#7-3-2025-下–2026：长上下文原生架构" class="headerlink" title="7.3 2025 下–2026：长上下文原生架构"></a>7.3 2025 下–2026：长上下文原生架构</h3><table>
+<thead>
+<tr>
+<th align="left">时间</th>
+<th align="left">版本</th>
+<th align="left">架构变化</th>
+<th align="left">能力定位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>2026-04</strong></td>
+<td align="left"><strong>DeepSeek-V4-Flash</strong></td>
+<td align="left"><strong>CSA&#x2F;HCA</strong> 混合注意力；<strong>mHC</strong>；Hash-MoE；1M ctx</td>
+<td align="left">高性价比超长上下文</td>
+</tr>
+<tr>
+<td align="left"><strong>2026-04</strong></td>
+<td align="left"><strong>DeepSeek-V4-Pro</strong></td>
+<td align="left">同上，规模更大（~1.6T &#x2F; 49B active）</td>
+<td align="left">开源最强综合 + 世界知识跃升</td>
+</tr>
+</tbody></table>
+<h3 id="7-4-迭代逻辑总结（三代架构思想）"><a href="#7-4-迭代逻辑总结（三代架构思想）" class="headerlink" title="7.4 迭代逻辑总结（三代架构思想）"></a>7.4 迭代逻辑总结（三代架构思想）</h3><table>
+<thead>
+<tr>
+<th align="left">代际</th>
+<th align="left">代表</th>
+<th align="left">核心问题</th>
+<th align="left">解法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>第一代</strong></td>
+<td align="left">V2</td>
+<td align="left">KV 与 FFN 太贵</td>
+<td align="left">MLA + DeepSeekMoE</td>
+</tr>
+<tr>
+<td align="left"><strong>第二代</strong></td>
+<td align="left">V3</td>
+<td align="left">671B 如何训得起、推得动</td>
+<td align="left">FP8 + DualPipe + 无 aux MoE 均衡 + MTP</td>
+</tr>
+<tr>
+<td align="left"><strong>第三代</strong></td>
+<td align="left">V3.2</td>
+<td align="left">长上下文仍贵</td>
+<td align="left">DSA 稀疏注意力 + 大 RL</td>
+</tr>
+<tr>
+<td align="left"><strong>第四代</strong></td>
+<td align="left">V4</td>
+<td align="left">1M ctx 必须「原生」而非硬撑</td>
+<td align="left">CSA&#x2F;HCA 层间交替 + mHC + 更大 MoE</td>
+</tr>
+</tbody></table>
+<p><strong>后训练路线</strong>亦在分化：<strong>V3 线</strong> &#x3D; SFT&#x2F;RLHF 对齐通用助手；<strong>R1 线</strong> &#x3D; RL 激发推理；<strong>V3.1+</strong> &#x3D; 合并为<strong>可切换思考模式</strong>；<strong>V4</strong> &#x3D; 内置 <strong>Non-think &#x2F; Think High &#x2F; Think Max</strong> 三档。</p>
+<hr>
+<h2 id="8-与其它-MoE-开源模型对照"><a href="#8-与其它-MoE-开源模型对照" class="headerlink" title="8. 与其它 MoE 开源模型对照"></a>8. 与其它 MoE 开源模型对照</h2><table>
+<thead>
+<tr>
+<th align="left">模型</th>
+<th align="left">总参 &#x2F; 激活</th>
+<th align="left">注意力</th>
+<th align="left">长上下文</th>
+<th align="left">开源许可</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>DeepSeek-V3</strong></td>
+<td align="left">671B &#x2F; 37B</td>
+<td align="left">MLA</td>
+<td align="left">128K</td>
+<td align="left">MIT</td>
+</tr>
+<tr>
+<td align="left"><strong>Mixtral 8×22B</strong></td>
+<td align="left">~176B &#x2F; ~39B</td>
+<td align="left">GQA</td>
+<td align="left">64K</td>
+<td align="left">Apache 2.0</td>
+</tr>
+<tr>
+<td align="left"><strong>Qwen3-MoE</strong></td>
+<td align="left">随版本</td>
+<td align="left">GQA&#x2F;MLA 类</td>
+<td align="left">128K+</td>
+<td align="left">各版本不同</td>
+</tr>
+<tr>
+<td align="left"><strong>DeepSeek-V4-Pro</strong></td>
+<td align="left">~1.6T &#x2F; 49B</td>
+<td align="left">CSA+HCA</td>
+<td align="left"><strong>1M</strong></td>
+<td align="left">MIT</td>
+</tr>
+</tbody></table>
+<p>DeepSeek 的差异化在于 <strong>MLA→DSA→CSA&#x2F;HCA 连续演进</strong>与 <strong>RL 推理线</strong>深度耦合，而非单点堆参数量。</p>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ul>
+<li><strong>架构主线</strong>：Decoder-only <strong>MoE</strong> + <strong>KV 高效注意力</strong>（MLA → DSA → V4 混合压缩注意力）+ <strong>HPC 协同</strong>（FP8、专家并行、无 aux 负载均衡）。</li>
+<li><strong>V3&#x2F;R1 关系</strong>：<strong>同一 V3-Base 骨干</strong>；Chat vs R1 是<strong>后训练配方</strong>之分，不是两套 Transformer。</li>
+<li><strong>最新 V4</strong>：面向 <strong>1M token</strong> 与 <strong>Agent&#x2F;代码库</strong> 重新设计注意力与连接，Pro&#x2F;Flash 分级覆盖旗舰与性价比。</li>
+<li><strong>版本史</strong>：2024 解决「能训、能推」→ 2025 解决「会推理、会调工具」→ 2026 解决「超长上下文原生可用」。</li>
+</ul>
+<blockquote>
+<p>段末注释：<strong>CoT</strong>（Chain-of-Thought）指模型生成中间推理步骤再给出答案；<strong>SFT</strong> 为监督微调（Supervised Fine-Tuning）。</p>
+</blockquote>
+<hr>
+<h2 id="参考与延伸阅读"><a href="#参考与延伸阅读" class="headerlink" title="参考与延伸阅读"></a>参考与延伸阅读</h2><ul>
+<li>DeepSeek-AI, <em>DeepSeek-V3 Technical Report</em>（arXiv:2412.19437）.  </li>
+<li>DeepSeek-AI, <em>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</em>（arXiv:2501.12948）.  </li>
+<li>DeepSeek-AI, <em>DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model</em>（arXiv:2405.04434）.  </li>
+<li>DeepSeek-AI, <em>DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models</em>（arXiv:2512.02556）.  </li>
+<li>Dai <em>et al.</em>, <em>DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models</em>（arXiv:2401.06066）.  </li>
+<li>Hugging Face Transformers — <a target="_blank" rel="noopener" href="https://huggingface.co/docs/transformers/main/model_doc/deepseek_v4">DeepSeek-V4 模型文档</a>.  </li>
+<li>本目录：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-0.%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84%E8%8C%83%E5%BC%8F%E7%BB%BC%E8%BF%B0.md">范式综述</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-transformer-0.%E6%A6%82%E8%BF%B0.md">Transformer 概述</a>.</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/MoE/" rel="tag"><i class="fa fa-tag"></i> MoE</a>
+          
+            <a href="/tags/%E6%B7%B7%E5%90%88%E4%B8%93%E5%AE%B6/" rel="tag"><i class="fa fa-tag"></i> 混合专家</a>
+          
+            <a href="/tags/DeepSeek/" rel="tag"><i class="fa fa-tag"></i> DeepSeek</a>
+          
+            <a href="/tags/MLA/" rel="tag"><i class="fa fa-tag"></i> MLA</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80/" rel="next" title="5003.大模型-架构-Diffusion-Math-0.概率与扩散数学基础">
+                <i class="fa fa-chevron-left"></i> 5003.大模型-架构-Diffusion-Math-0.概率与扩散数学基础
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-0.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB/" rel="prev" title="5003.LLM概念解析-0.系列导读">
+                5003.LLM概念解析-0.系列导读 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%9C%A8%E6%9E%B6%E6%9E%84%E8%8C%83%E5%BC%8F%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">1. 在架构范式中的位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%9E%84%EF%BC%9A%E4%BB%A5-DeepSeek-V3-%E4%B8%BA%E5%9F%BA%E5%87%86"><span class="nav-number">2.</span> <span class="nav-text">2. 核心架构：以 DeepSeek-V3 为基准</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Multi-Head-Latent-Attention%EF%BC%88MLA%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 Multi-Head Latent Attention（MLA）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-DeepSeekMoE-%E5%89%8D%E9%A6%88%E5%B1%82"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 DeepSeekMoE 前馈层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E6%97%A0%E8%BE%85%E5%8A%A9%E6%8D%9F%E5%A4%B1%E7%9A%84%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%EF%BC%88Auxiliary-Loss-Free-Balancing%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 无辅助损失的负载均衡（Auxiliary-Loss-Free Balancing）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E5%A4%9A-Token-%E9%A2%84%E6%B5%8B%EF%BC%88Multi-Token-Prediction%EF%BC%8CMTP%EF%BC%89"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 多 Token 预测（Multi-Token Prediction，MTP）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-FP8-%E6%B7%B7%E5%90%88%E7%B2%BE%E5%BA%A6%E9%A2%84%E8%AE%AD%E7%BB%83"><span class="nav-number">2.5.</span> <span class="nav-text">2.5 FP8 混合精度预训练</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-DeepSeek-V3-2%EF%BC%9ADeepSeek-Sparse-Attention%EF%BC%88DSA%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. DeepSeek-V3.2：DeepSeek Sparse Attention（DSA）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-DeepSeek-V4%EF%BC%9A2026-%E6%9E%B6%E6%9E%84%E8%B7%83%E8%BF%81"><span class="nav-number">4.</span> <span class="nav-text">4. DeepSeek-V4：2026 架构跃迁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-DeepSeek-R1%EF%BC%9A%E5%90%8C%E6%9E%B6%E6%9E%84%E3%80%81%E4%B8%8D%E5%90%8C%E8%AE%AD%E7%BB%83%E8%8C%83%E5%BC%8F"><span class="nav-number">5.</span> <span class="nav-text">5. DeepSeek-R1：同架构、不同训练范式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF%E5%AD%A6%E4%B8%8E%E5%BC%80%E6%BA%90%E9%83%A8%E7%BD%B2%E8%A6%81%E7%82%B9"><span class="nav-number">6.</span> <span class="nav-text">6. 生物信息学与开源部署要点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E7%89%88%E6%9C%AC%E8%BF%AD%E4%BB%A3%E5%8F%B2%EF%BC%9A%E4%BB%8E-DeepSeek-LLM-%E5%88%B0-V4"><span class="nav-number">7.</span> <span class="nav-text">7. 版本迭代史：从 DeepSeek-LLM 到 V4</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-2024%EF%BC%9A%E5%A5%A0%E5%9F%BA%E4%B8%8E%E6%95%88%E7%8E%87%E6%9E%B6%E6%9E%84"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 2024：奠基与效率架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-2025-%E4%B8%8A%EF%BC%9A%E6%8E%A8%E7%90%86%E6%A8%A1%E5%9E%8B%E4%B8%8E%E6%B7%B7%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 2025 上：推理模型与混合模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-2025-%E4%B8%8B%E2%80%932026%EF%BC%9A%E9%95%BF%E4%B8%8A%E4%B8%8B%E6%96%87%E5%8E%9F%E7%94%9F%E6%9E%B6%E6%9E%84"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 2025 下–2026：长上下文原生架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4-%E8%BF%AD%E4%BB%A3%E9%80%BB%E8%BE%91%E6%80%BB%E7%BB%93%EF%BC%88%E4%B8%89%E4%BB%A3%E6%9E%B6%E6%9E%84%E6%80%9D%E6%83%B3%EF%BC%89"><span class="nav-number">7.4.</span> <span class="nav-text">7.4 迭代逻辑总结（三代架构思想）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E5%85%B6%E5%AE%83-MoE-%E5%BC%80%E6%BA%90%E6%A8%A1%E5%9E%8B%E5%AF%B9%E7%85%A7"><span class="nav-number">8.</span> <span class="nav-text">8. 与其它 MoE 开源模型对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">10.</span> <span class="nav-text">参考与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

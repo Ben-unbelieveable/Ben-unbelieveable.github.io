@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="概念解析,GNN,图神经网络,LLM,过平滑," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="过平滑（Oversmoothing）的直观解释、谱域&#x2F;消息传递成因、分子图与知识图谱等场景、残差&#x2F;JK&#x2F;PairNorm 等缓解方案，以及与过挤压、表示坍缩、专家坍缩的异同。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.LLM概念解析-02.过平滑">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="过平滑（Oversmoothing）的直观解释、谱域&#x2F;消息传递成因、分子图与知识图谱等场景、残差&#x2F;JK&#x2F;PairNorm 等缓解方案，以及与过挤压、表示坍缩、专家坍缩的异同。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig04-oversmoothing-healthy-vs-collapsed.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig05-oversmoothing-causes.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig06-oversmoothing-solutions-analogies.png">
+<meta property="article:published_time" content="2026-06-11T12:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.957Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="GNN">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="图神经网络">
+<meta property="article:tag" content="概念解析">
+<meta property="article:tag" content="过平滑">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig04-oversmoothing-healthy-vs-collapsed.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.LLM概念解析-02.过平滑/"/>
+
+
+
+
+
+  <title>5003.LLM概念解析-02.过平滑 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.LLM概念解析-02.过平滑</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T20:00:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  过平滑（Oversmoothing）的直观解释、谱域/消息传递成因、分子图与知识图谱等场景、残差/JK/PairNorm 等缓解方案，以及与过挤压、表示坍缩、专家坍缩的异同。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>过平滑（Oversmoothing）</strong> 是 <strong>图神经网络（Graph Neural Network，GNN）</strong> &#x2F; <strong>消息传递神经网络（Message Passing Neural Network，MPNN）</strong> 堆叠层数过多时出现的一类<strong>表示退化</strong>：经多轮「邻居聚合—更新」后，<strong>不同节点的嵌入向量趋于相似</strong>，图上的<strong>区分度（discriminability）</strong> 下降，节点分类、图分类、分子性质预测等下游任务性能变差。直观上说，所有节点被「抹成同一灰色」——并非梯度消失那么简单，而是<strong>消息传递算子反复作用</strong>带来的<strong>低通滤波</strong>效应。</p>
+<blockquote>
+<p>段末注释：<strong>GNN</strong> 在图结构数据上通过邻居交换信息学习表示；<strong>MPNN</strong> 将其抽象为消息—聚合—更新三步；<strong>嵌入（embedding）</strong> 即节点&#x2F;图的连续向量表示。</p>
+</blockquote>
+<p><strong>系列导读</strong>：<a href="5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-0.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB.md">5003.LLM概念解析-0.系列导读</a><br><strong>关联架构</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-MPNN-0.%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">MPNN-0 §6</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-0.%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84%E8%8C%83%E5%BC%8F%E7%BB%BC%E8%BF%B0.md">范式综述 §GNN</a></p>
+<p><strong>插图</strong>：<code>5003.LLM概念解析/concept-fig04~06*.png</code></p>
+<hr>
+<h2 id="1-直观解释"><a href="#1-直观解释" class="headerlink" title="1. 直观解释"></a>1. 直观解释</h2><h3 id="1-1-比喻"><a href="#1-1-比喻" class="headerlink" title="1.1 比喻"></a>1.1 比喻</h3><p>把图上的消息传递想象成<strong>颜料在清水里扩散</strong>：</p>
+<ul>
+<li><strong>1–2 层</strong>：每个节点只与<strong>直接邻居</strong>混色，红、蓝、绿节点仍可分辨——学到局部化学环境、一级邻居类型。  </li>
+<li><strong>很多层以后</strong>：颜色经全图多跳路径不断<strong>平均</strong>，最终整图节点变成<strong>同一色调</strong>——模型无法回答「这个碳原子与那个氮原子有何不同」。</li>
+</ul>
+<p>这与扩散模型里的「前向加噪」不同：过平滑是 <strong>GNN 层数过深</strong> 导致的<strong>表征坍缩</strong>，不是生成式噪声日程。</p>
+<h3 id="1-2-最小定义"><a href="#1-2-最小定义" class="headerlink" title="1.2 最小定义"></a>1.2 最小定义</h3><p>设第 (t) 层节点 (v) 的表示为 (h_v^{(t)})。理想情况下，对非同构或不同属性的节点 (u, v)，(|h_u^{(t)} - h_v^{(t)}|) 应反映结构&#x2F;特征差异。<strong>过平滑</strong>指存在层数 (T)，当 (t \geq T) 时：</p>
+<p>[<br>\frac{1}{|V|}\sum_{v \in V} h_v^{(t)} \approx \bar{h}, \quad \text{且各 } h_v^{(t)} \text{ 两两余弦相似度} \to 1.<br>]</p>
+<p>即：节点表示收敛到<strong>几乎相同的子空间</strong>，失去<strong>类间可分性</strong>。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig04-oversmoothing-healthy-vs-collapsed.png" alt="图 1　浅层 GNN 节点可区分 vs 深层过平滑后节点表示趋同"></p>
+<hr>
+<h2 id="2-背后的原因"><a href="#2-背后的原因" class="headerlink" title="2. 背后的原因"></a>2. 背后的原因</h2><h3 id="2-1-重复邻域平均-图上的低通滤波"><a href="#2-1-重复邻域平均-图上的低通滤波" class="headerlink" title="2.1 重复邻域平均 &#x3D; 图上的低通滤波"></a>2.1 重复邻域平均 &#x3D; 图上的低通滤波</h3><p>多数 GNN（<strong>GCN</strong>、<strong>GraphSAGE</strong> 均值聚合）一层更新近似：</p>
+<p>[<br>h_v^{(t+1)} &#x3D; \sigma\Big(W^{(t)} \cdot \mathrm{AGG}_{u \in \mathcal{N}(v)} h_u^{(t)}\Big).<br>]</p>
+<p>无自环或弱自环时，这类似对节点信号做<strong>拉普拉斯平滑</strong>——高频（节点间差异大的）分量被抑制，低频（全局常数&#x2F;缓慢变化）分量保留。层数 (t\uparrow) 等价于<strong>多次应用低通滤波器</strong>，终态趋近<strong>拉普拉斯主特征向量</strong>方向，节点特征<strong>无法区分</strong>。</p>
+<h3 id="2-2-与图热扩散的类比"><a href="#2-2-与图热扩散的类比" class="headerlink" title="2.2 与图热扩散的类比"></a>2.2 与图热扩散的类比</h3><p>连续图上热方程 (\frac{\partial u}{\partial t} &#x3D; \Delta u) 随时间抹平温度差。离散消息传递在连通图上具有<strong>类似动力学</strong>：(t) 层 (\approx) 扩散 (t) 步，全图节点趋于<strong>平衡态</strong>。</p>
+<h3 id="2-3-层数-vs-图直径-连通度"><a href="#2-3-层数-vs-图直径-连通度" class="headerlink" title="2.3 层数 vs 图直径 &#x2F; 连通度"></a>2.3 层数 vs 图直径 &#x2F; 连通度</h3><ul>
+<li><strong>直径小、连通密</strong>的图（如小分子、高度社交图）：过平滑<strong>更早</strong>出现，有时 <strong>4–8 层</strong>已明显。  </li>
+<li><strong>直径大、稀疏</strong>图：需更多层才平滑，但此时可能先遇到 <strong>过挤压（oversquashing）</strong>（远距离信息传不过来）——二者常<strong>此消彼长</strong>。</li>
+</ul>
+<h3 id="2-4-同质性（Homophily）加剧"><a href="#2-4-同质性（Homophily）加剧" class="headerlink" title="2.4 同质性（Homophily）加剧"></a>2.4 同质性（Homophily）加剧</h3><p>若相连节点本已相似（「物以类聚」），聚合进一步<strong>放大相似、消减差异</strong>；分子图中同一官能团内原子本身特征接近，深层 GNN 更易「糊成一片」。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig05-oversmoothing-causes.png" alt="图 2　过平滑成因：重复平均、低通滤波、热扩散与层数–拓扑关系"></p>
+<hr>
+<h2 id="3-出现的场景"><a href="#3-出现的场景" class="headerlink" title="3. 出现的场景"></a>3. 出现的场景</h2><table>
+<thead>
+<tr>
+<th align="left">场景</th>
+<th align="left">典型图</th>
+<th align="left">表现</th>
+<th align="left">如何察觉</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>分子性质预测</strong></td>
+<td align="left">原子为节点、键为边</td>
+<td align="left">深 GNN 验证集先升后降</td>
+<td align="left">扫层数 (T&#x3D;2,4,8,16) 画 learning curve</td>
+</tr>
+<tr>
+<td align="left"><strong>蛋白质接触图 &#x2F; 口袋</strong></td>
+<td align="left">残基或原子图</td>
+<td align="left">结合位点 vs 非位点节点难区分</td>
+<td align="left">可视化节点 embedding（t-SNE 聚成一团）</td>
+</tr>
+<tr>
+<td align="left"><strong>知识图谱嵌入</strong></td>
+<td align="left">实体关系图</td>
+<td align="left">深层 MPNN  link prediction 退化</td>
+<td align="left">对比浅层 vs 深层 hits@K</td>
+</tr>
+<tr>
+<td align="left"><strong>单细胞 &#x2F; 空间转录组</strong></td>
+<td align="left">kNN 细胞图</td>
+<td align="left">聚类边界模糊</td>
+<td align="left">与浅层 <strong>GCN</strong> baseline 对比</td>
+</tr>
+<tr>
+<td align="left"><strong>读 MPNN&#x2F;GNN 论文</strong></td>
+<td align="left">—</td>
+<td align="left">「deeper is not always better」</td>
+<td align="left">见 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-MPNN-0.%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">MPNN-0 §6</a></td>
+</tr>
+</tbody></table>
+<p><strong>LLM 主栈通常不直接谈 oversmoothing</strong>——<strong>Transformer 全连接注意力</strong>不是局部拉普拉斯平滑。但若做 <strong>分子 + GNN</strong>、<strong>AlphaFold 式 pair track</strong> 或 <strong>知识图谱 + LLM</strong>，仍会碰到；亦勿与 <strong>MoE 专家坍缩</strong>混淆（见 §5）。</p>
+<hr>
+<h2 id="4-解决方案"><a href="#4-解决方案" class="headerlink" title="4. 解决方案"></a>4. 解决方案</h2><h3 id="4-1-残差连接与初始连接（Residual-Initial-Connection）"><a href="#4-1-残差连接与初始连接（Residual-Initial-Connection）" class="headerlink" title="4.1 残差连接与初始连接（Residual &#x2F; Initial Connection）"></a>4.1 残差连接与初始连接（Residual &#x2F; Initial Connection）</h3><p><strong>做法</strong>：(h_v^{(t+1)} &#x3D; h_v^{(t)} + \Delta h_v^{(t)}) 或 concat 初始特征 (x_v)。<br><strong>原理</strong>：保留<strong>节点自身</strong>信息与浅层信号，减缓被邻居平均掉。<br><strong>代表</strong>：<strong>GCNII</strong>、许多工程实现默认加 residual。</p>
+<h3 id="4-2-Jumping-Knowledge（JK）"><a href="#4-2-Jumping-Knowledge（JK）" class="headerlink" title="4.2 Jumping Knowledge（JK）"></a>4.2 Jumping Knowledge（JK）</h3><p><strong>做法</strong>：不只用最后一层 (h^{(T)})，而拼接或注意力融合 ({h^{(1)},\ldots,h^{(T)}}) 再读出。<br><strong>原理</strong>：浅层保留局部、高层保留全局，避免「只取已平滑的最深层」。</p>
+<h3 id="4-3-控制深度-早停层数"><a href="#4-3-控制深度-早停层数" class="headerlink" title="4.3 控制深度 + 早停层数"></a>4.3 控制深度 + 早停层数</h3><p><strong>做法</strong>：分子任务常 <strong>3–5 层</strong> 即够；用验证集选 (T)。<br><strong>优点</strong>：最简单；<strong>SchNet</strong>、<strong>DimeNet</strong> 等化学模型层数受限 partly 因此。</p>
+<h3 id="4-4-归一化与去平滑正则（PairNorm、GroupNorm-等）"><a href="#4-4-归一化与去平滑正则（PairNorm、GroupNorm-等）" class="headerlink" title="4.4 归一化与去平滑正则（PairNorm、GroupNorm 等）"></a>4.4 归一化与去平滑正则（PairNorm、GroupNorm 等）</h3><p><strong>做法</strong>：<strong>PairNorm</strong> 等显式约束节点间平均距离，对抗表示坍缩。<br><strong>场景</strong>：必须较深 GNN 时的训练稳定手段。</p>
+<h3 id="4-5-DropEdge-随机删边"><a href="#4-5-DropEdge-随机删边" class="headerlink" title="4.5 DropEdge &#x2F; 随机删边"></a>4.5 DropEdge &#x2F; 随机删边</h3><p><strong>做法</strong>：训练时随机 drop 边，降低有效连通度，减缓扩散速度。<br><strong>权衡</strong>：正则化效果；推理时用完整图。</p>
+<h3 id="4-6-注意力与自适应聚合（GAT）"><a href="#4-6-注意力与自适应聚合（GAT）" class="headerlink" title="4.6 注意力与自适应聚合（GAT）"></a>4.6 注意力与自适应聚合（GAT）</h3><p><strong>做法</strong>：邻居权重由数据学习，而非固定均匀平均。<br><strong>效果</strong>：不能完全消除过平滑，但可<strong>减轻</strong>「无脑平均」；极深仍可能平滑。</p>
+<h3 id="4-7-虚拟节点-全局读出（Virtual-Node-Set2Set）"><a href="#4-7-虚拟节点-全局读出（Virtual-Node-Set2Set）" class="headerlink" title="4.7 虚拟节点 &#x2F; 全局读出（Virtual Node, Set2Set）"></a>4.7 虚拟节点 &#x2F; 全局读出（Virtual Node, Set2Set）</h3><p><strong>做法</strong>：加<strong>超级节点</strong>连所有节点，或图级 pooling 早提取全局信息，节点层不必极深。<br><strong>生物例子</strong>：分子图分类常用 <strong>Set2Set</strong> + 浅层 MPNN。</p>
+<h3 id="4-8-图重写（Rewiring）、长程边"><a href="#4-8-图重写（Rewiring）、长程边" class="headerlink" title="4.8 图重写（Rewiring）、长程边"></a>4.8 图重写（Rewiring）、长程边</h3><p><strong>做法</strong>：加 <strong>virtual edges</strong>、<strong>positional encoding</strong>、<strong>Graph Transformers</strong> 跳局部瓶颈——更常解决 <strong>oversquashing</strong>，但与过平滑一并考虑图深度设计。</p>
+<h3 id="4-9-与-Transformer-混合"><a href="#4-9-与-Transformer-混合" class="headerlink" title="4.9 与 Transformer 混合"></a>4.9 与 Transformer 混合</h3><p><strong>做法</strong>：浅 <strong>GNN</strong> 提取局部几何 + <strong>Transformer</strong> 做长程（分子 <strong>Graphormer</strong>、蛋白 <strong>EGNN + attention</strong>）。<br><strong>直觉</strong>：把「易过平滑的深局部堆叠」换成「浅 GNN + 全局注意力」。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-02.%E8%BF%87%E5%B9%B3%E6%BB%91/concept-fig06-oversmoothing-solutions-analogies.png" alt="图 3　过平滑缓解方案与近似概念对照"></p>
+<hr>
+<h2 id="5-近似概念的异同"><a href="#5-近似概念的异同" class="headerlink" title="5. 近似概念的异同"></a>5. 近似概念的异同</h2><table>
+<thead>
+<tr>
+<th align="left">概念</th>
+<th align="left">英文</th>
+<th align="left">对象</th>
+<th align="left">核心问题</th>
+<th align="left">与过平滑关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>过平滑</strong></td>
+<td align="left">Oversmoothing</td>
+<td align="left"><strong>GNN 节点表示</strong></td>
+<td align="left">层数↑ → 节点 embedding 趋同</td>
+<td align="left"><strong>本文主题</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>过挤压</strong></td>
+<td align="left">Oversquashing</td>
+<td align="left"><strong>GNN 信息流动</strong></td>
+<td align="left">瓶颈处远程依赖无法传入</td>
+<td align="left"><strong>互补问题</strong>：浅层传不远，深层却平滑；见 MPNN-0 §6</td>
+</tr>
+<tr>
+<td align="left"><strong>欠达（Underreaching）</strong></td>
+<td align="left">Underreaching</td>
+<td align="left"><strong>GNN 感受野</strong></td>
+<td align="left">层数不足，覆盖不了远距离</td>
+<td align="left">与过平滑<strong>相反</strong>方向（太浅 vs 太深）</td>
+</tr>
+<tr>
+<td align="left"><strong>表示坍缩</strong></td>
+<td align="left">Representation Collapse</td>
+<td align="left"><strong>对比学习</strong></td>
+<td align="left">所有样本 embedding 趋同</td>
+<td align="left">机制不同（InfoNCE&#x2F;增广），<strong>非图专属</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>专家坍缩</strong></td>
+<td align="left">Expert Collapse</td>
+<td align="left"><strong>MoE 路由</strong></td>
+<td align="left">少数专家垄断 token</td>
+<td align="left">发生在 <strong>router</strong>，见 <a href="5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-01.%E4%B8%93%E5%AE%B6%E5%9D%8D%E7%BC%A9.md">概念解析-01</a></td>
+</tr>
+<tr>
+<td align="left"><strong>模式坍缩</strong></td>
+<td align="left">Mode Collapse</td>
+<td align="left"><strong>GAN 生成</strong></td>
+<td align="left">输出多样性丧失</td>
+<td align="left">对抗训练 pathology</td>
+</tr>
+<tr>
+<td align="left"><strong>Transformer 过平滑</strong></td>
+<td align="left">—</td>
+<td align="left">部分 <strong>ViT&#x2F;长序列</strong> 文献</td>
+<td align="left">token 表示趋同</td>
+<td align="left">名词借用，机制是<strong>自注意力深度</strong>；与 GNN 理论不完全相同</td>
+</tr>
+</tbody></table>
+<p><strong>记忆口诀</strong>：</p>
+<ul>
+<li><strong>太深 + 图 + 节点长得一样</strong> → <strong>过平滑</strong>；  </li>
+<li><strong>太远 + 图 + 传不过去</strong> → <strong>过挤压</strong>；  </li>
+<li><strong>太浅 + 图 + 够不着</strong> → <strong>欠达</strong>；  </li>
+<li><strong>MoE + 专家闲着</strong> → <strong>专家坍缩</strong>。</li>
+</ul>
+<hr>
+<h2 id="6-生物信息学读者需要关心吗？"><a href="#6-生物信息学读者需要关心吗？" class="headerlink" title="6. 生物信息学读者需要关心吗？"></a>6. 生物信息学读者需要关心吗？</h2><p><strong>需要</strong>，若你的 pipeline 含 <strong>GNN&#x2F;MPNN</strong>：</p>
+<ul>
+<li><strong>小分子&#x2F;QM9&#x2F;Drug 性质</strong>：SchNet、MPNN、<strong>EGNN</strong> 层数不宜盲目加深；  </li>
+<li><strong>蛋白界面、接触图</strong>：深层 <strong>GCN</strong> 可能抹平结合位点信号；  </li>
+<li><strong>知识图谱 + 实体链接</strong>：深 MPNN 需 JK&#x2F;残差。</li>
+</ul>
+<p><strong>通常不需要</strong>，若仅使用 <strong>ESM &#x2F; DNABERT &#x2F; LLM API</strong> 而不建图模型——过平滑不在 Transformer 主线词汇里。</p>
+<p><strong>实践建议</strong>：从 <strong>(T&#x3D;3\sim 5)</strong> 起扫；监控验证集与 <strong>节点 embedding 方差</strong>；深模型优先加 <strong>residual + JK</strong>，而非单纯加层。</p>
+<hr>
+<h2 id="7-小结"><a href="#7-小结" class="headerlink" title="7. 小结"></a>7. 小结</h2><table>
+<thead>
+<tr>
+<th align="left">维度</th>
+<th align="left">要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>是什么</strong></td>
+<td align="left">深层消息传递使节点表示趋同，区分度下降</td>
+</tr>
+<tr>
+<td align="left"><strong>为什么</strong></td>
+<td align="left">重复邻域平均 ≈ 图低通滤波 &#x2F; 热扩散收敛</td>
+</tr>
+<tr>
+<td align="left"><strong>何时</strong></td>
+<td align="left">深 GNN、密图、分子&#x2F;知识图谱、读 MPNN 文献时</td>
+</tr>
+<tr>
+<td align="left"><strong>怎么办</strong></td>
+<td align="left">浅层、残差、JK、PairNorm、DropEdge、虚拟节点、GNN+Transformer</td>
+</tr>
+<tr>
+<td align="left"><strong>别混淆</strong></td>
+<td align="left">过挤压、欠达、表示坍缩、专家坍缩</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>段末注释：<strong>WL 测试</strong>（Weisfeiler–Lehman）常用来刻画 GNN 表达力上界；过平滑是<strong>优化&#x2F;深度</strong>层面的训练现象，与 WL 表达力正交。</p>
+</blockquote>
+<hr>
+<h2 id="参考与延伸阅读"><a href="#参考与延伸阅读" class="headerlink" title="参考与延伸阅读"></a>参考与延伸阅读</h2><ul>
+<li>Li <em>et al.</em>, <em>Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning</em>（过平滑早期分析）.  </li>
+<li>Xu <em>et al.</em>, <em>Representation Learning on Graphs with Jumping Knowledge Networks</em>（<strong>JK</strong>）.  </li>
+<li>Chen <em>et al.</em>, <em>Simple and Deep Graph Convolutional Networks</em>（<strong>GCNII</strong> 残差）.  </li>
+<li>Topping <em>et al.</em>, <em>Understanding Over-Squashing and Bottlenecks on Graphs</em>（<strong>过挤压</strong>）.  </li>
+<li>本目录：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-MPNN-0.%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">MPNN-0</a>、<a href="5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-01.%E4%B8%93%E5%AE%B6%E5%9D%8D%E7%BC%A9.md">概念解析-01 专家坍缩</a>.</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90/" rel="tag"><i class="fa fa-tag"></i> 概念解析</a>
+          
+            <a href="/tags/GNN/" rel="tag"><i class="fa fa-tag"></i> GNN</a>
+          
+            <a href="/tags/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" rel="tag"><i class="fa fa-tag"></i> 图神经网络</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E8%BF%87%E5%B9%B3%E6%BB%91/" rel="tag"><i class="fa fa-tag"></i> 过平滑</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.LLM%E6%A6%82%E5%BF%B5%E8%A7%A3%E6%9E%90-01.%E4%B8%93%E5%AE%B6%E5%9D%8D%E7%BC%A9/" rel="next" title="5003.LLM概念解析-01.专家坍缩">
+                <i class="fa fa-chevron-left"></i> 5003.LLM概念解析-01.专家坍缩
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/" rel="prev" title="5003.大模型-架构-Diffusion-Example-0.前向训练数值例题">
+                5003.大模型-架构-Diffusion-Example-0.前向训练数值例题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%9B%B4%E8%A7%82%E8%A7%A3%E9%87%8A"><span class="nav-number">1.</span> <span class="nav-text">1. 直观解释</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E6%AF%94%E5%96%BB"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 比喻</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E6%9C%80%E5%B0%8F%E5%AE%9A%E4%B9%89"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 最小定义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%83%8C%E5%90%8E%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-number">2.</span> <span class="nav-text">2. 背后的原因</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E9%87%8D%E5%A4%8D%E9%82%BB%E5%9F%9F%E5%B9%B3%E5%9D%87-%E5%9B%BE%E4%B8%8A%E7%9A%84%E4%BD%8E%E9%80%9A%E6%BB%A4%E6%B3%A2"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 重复邻域平均 &#x3D; 图上的低通滤波</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E4%B8%8E%E5%9B%BE%E7%83%AD%E6%89%A9%E6%95%A3%E7%9A%84%E7%B1%BB%E6%AF%94"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 与图热扩散的类比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%B1%82%E6%95%B0-vs-%E5%9B%BE%E7%9B%B4%E5%BE%84-%E8%BF%9E%E9%80%9A%E5%BA%A6"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 层数 vs 图直径 &#x2F; 连通度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E5%90%8C%E8%B4%A8%E6%80%A7%EF%BC%88Homophily%EF%BC%89%E5%8A%A0%E5%89%A7"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 同质性（Homophily）加剧</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%87%BA%E7%8E%B0%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">3. 出现的场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">4.</span> <span class="nav-text">4. 解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E6%AE%8B%E5%B7%AE%E8%BF%9E%E6%8E%A5%E4%B8%8E%E5%88%9D%E5%A7%8B%E8%BF%9E%E6%8E%A5%EF%BC%88Residual-Initial-Connection%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 残差连接与初始连接（Residual &#x2F; Initial Connection）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-Jumping-Knowledge%EF%BC%88JK%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 Jumping Knowledge（JK）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E6%8E%A7%E5%88%B6%E6%B7%B1%E5%BA%A6-%E6%97%A9%E5%81%9C%E5%B1%82%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 控制深度 + 早停层数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E5%BD%92%E4%B8%80%E5%8C%96%E4%B8%8E%E5%8E%BB%E5%B9%B3%E6%BB%91%E6%AD%A3%E5%88%99%EF%BC%88PairNorm%E3%80%81GroupNorm-%E7%AD%89%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 归一化与去平滑正则（PairNorm、GroupNorm 等）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-5-DropEdge-%E9%9A%8F%E6%9C%BA%E5%88%A0%E8%BE%B9"><span class="nav-number">4.5.</span> <span class="nav-text">4.5 DropEdge &#x2F; 随机删边</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-6-%E6%B3%A8%E6%84%8F%E5%8A%9B%E4%B8%8E%E8%87%AA%E9%80%82%E5%BA%94%E8%81%9A%E5%90%88%EF%BC%88GAT%EF%BC%89"><span class="nav-number">4.6.</span> <span class="nav-text">4.6 注意力与自适应聚合（GAT）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-7-%E8%99%9A%E6%8B%9F%E8%8A%82%E7%82%B9-%E5%85%A8%E5%B1%80%E8%AF%BB%E5%87%BA%EF%BC%88Virtual-Node-Set2Set%EF%BC%89"><span class="nav-number">4.7.</span> <span class="nav-text">4.7 虚拟节点 &#x2F; 全局读出（Virtual Node, Set2Set）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-8-%E5%9B%BE%E9%87%8D%E5%86%99%EF%BC%88Rewiring%EF%BC%89%E3%80%81%E9%95%BF%E7%A8%8B%E8%BE%B9"><span class="nav-number">4.8.</span> <span class="nav-text">4.8 图重写（Rewiring）、长程边</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-9-%E4%B8%8E-Transformer-%E6%B7%B7%E5%90%88"><span class="nav-number">4.9.</span> <span class="nav-text">4.9 与 Transformer 混合</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%BF%91%E4%BC%BC%E6%A6%82%E5%BF%B5%E7%9A%84%E5%BC%82%E5%90%8C"><span class="nav-number">5.</span> <span class="nav-text">5. 近似概念的异同</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF%E5%AD%A6%E8%AF%BB%E8%80%85%E9%9C%80%E8%A6%81%E5%85%B3%E5%BF%83%E5%90%97%EF%BC%9F"><span class="nav-number">6.</span> <span class="nav-text">6. 生物信息学读者需要关心吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">7. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">8.</span> <span class="nav-text">参考与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

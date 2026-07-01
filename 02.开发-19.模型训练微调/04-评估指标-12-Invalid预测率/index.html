@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="评估指标,LLM,微调,Invalid,生成式分类," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="说明生成式微调中 Invalid 预测率的定义、解析规则设计、与 Accuracy&#x2F;F1 的关系及在格式约束任务中的诊断价值。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Invalid 预测率详解">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-12-Invalid%E9%A2%84%E6%B5%8B%E7%8E%87/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="说明生成式微调中 Invalid 预测率的定义、解析规则设计、与 Accuracy&#x2F;F1 的关系及在格式约束任务中的诊断价值。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-24T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.552Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Invalid">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="微调">
+<meta property="article:tag" content="生成式分类">
+<meta property="article:tag" content="评估指标">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-19.模型训练微调/04-评估指标-12-Invalid预测率/"/>
+
+
+
+
+
+  <title>Invalid 预测率详解 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-12-Invalid%E9%A2%84%E6%B5%8B%E7%8E%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Invalid 预测率详解</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-24T12:00:00+08:00">
+                2026-06-24
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  说明生成式微调中 Invalid 预测率的定义、解析规则设计、与 Accuracy/F1 的关系及在格式约束任务中的诊断价值。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>Invalid 预测率</strong>（Invalid Prediction Rate）衡量：模型生成结果中，<strong>无法被解析为合法任务输出</strong> 的样本占比。在生成式分类、结构化 JSON 输出、固定词表标签等场景，它是 Accuracy &#x2F; F1 之外的必要补充——告诉你有多少回答「格式上已经不可用」。</p>
+<blockquote>
+<p>段末注释：<strong>Invalid</strong> 非 sklearn 内置指标，需在评估脚本中根据 <code>LABEL_SET</code>、JSON schema 或正则规则自行判定；通常与 Accuracy、混淆矩阵并列报告。</p>
+</blockquote>
+<p>系列索引：<a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-00-%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB.md">微调评估指标导读</a></p>
+<hr>
+<h2 id="一、直观含义"><a href="#一、直观含义" class="headerlink" title="一、直观含义"></a>一、直观含义</h2><p>对 (N) 个测试样本，设解析函数 (\text{parse}(\cdot)) 返回合法标签或 <code>None</code>：</p>
+<p>$$<br>\text{Invalid Rate} &#x3D; \frac{1}{N} \sum_{i&#x3D;1}^{N} \mathbb{1}[\text{parse}(\hat{s}_i) &#x3D; \text{None}]<br>$$</p>
+<p>其中 (\hat{s}_i) 为模型原始生成字符串。</p>
+<p><strong>人话</strong>：100 条回复里，有多少条「根本没法当成有效答案用」。</p>
+<p>典型 Invalid 表现：</p>
+<ul>
+<li>情绪分类应输出 <code>fear</code>，模型输出 <code>I think the emotion is fear.</code>（解析规则只认纯标签）</li>
+<li>应输出 JSON，模型输出 markdown 代码块外加解释文字</li>
+<li>输出词表外标签 <code>fearful</code>、<code>UNKNOWN</code></li>
+<li>空串、仅标点、超长废话</li>
+</ul>
+<hr>
+<h2 id="二、使用场景与所需数据"><a href="#二、使用场景与所需数据" class="headerlink" title="二、使用场景与所需数据"></a>二、使用场景与所需数据</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>是否需要</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>生成式多类分类（固定标签集）</td>
+<td><strong>强烈建议</strong></td>
+</tr>
+<tr>
+<td>JSON &#x2F; 工具调用结构化输出</td>
+<td><strong>强烈建议</strong></td>
+</tr>
+<tr>
+<td>开放对话</td>
+<td>一般不用（无固定 parse）</td>
+</tr>
+<tr>
+<td>分类头 argmax</td>
+<td>不适用（输出恒合法）</td>
+</tr>
+</tbody></table>
+<p><strong>数据要求</strong>：</p>
+<ol>
+<li>模型 <code>generate()</code> 的<strong>原始字符串</strong></li>
+<li>明确定义的 <strong>合法输出集合</strong> 或 <strong>schema</strong></li>
+<li>与训练 <code>SYSTEM_PROMPT</code> 一致的格式约束描述</li>
+</ol>
+<hr>
+<h2 id="三、计算方式"><a href="#三、计算方式" class="headerlink" title="三、计算方式"></a>三、计算方式</h2><h3 id="3-1-解析规则示例（标签分类）"><a href="#3-1-解析规则示例（标签分类）" class="headerlink" title="3.1 解析规则示例（标签分类）"></a>3.1 解析规则示例（标签分类）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">LABEL_SET = &#123;<span class="string">&quot;sadness&quot;</span>, <span class="string">&quot;joy&quot;</span>, <span class="string">&quot;love&quot;</span>, <span class="string">&quot;anger&quot;</span>, <span class="string">&quot;fear&quot;</span>, <span class="string">&quot;surprise&quot;</span>&#125;</span><br><span class="line">LABEL_PATTERN = re.<span class="built_in">compile</span>(</span><br><span class="line">    <span class="string">r&quot;\b(sadness|joy|love|anger|fear|surprise)\b&quot;</span>,</span><br><span class="line">    re.IGNORECASE,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">parse_label</span>(<span class="params">raw: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span> | <span class="literal">None</span>:</span><br><span class="line">    raw = raw.strip()</span><br><span class="line">    <span class="keyword">if</span> raw.lower() <span class="keyword">in</span> LABEL_SET:</span><br><span class="line">        <span class="keyword">return</span> raw.lower()</span><br><span class="line">    m = LABEL_PATTERN.search(raw)</span><br><span class="line">    <span class="keyword">return</span> m.group(<span class="number">1</span>).lower() <span class="keyword">if</span> m <span class="keyword">else</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">invalid_rate</span>(<span class="params">raw_outputs: <span class="built_in">list</span>[<span class="built_in">str</span>]</span>) -&gt; <span class="built_in">float</span>:</span><br><span class="line">    invalid = <span class="built_in">sum</span>(parse_label(s) <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">for</span> s <span class="keyword">in</span> raw_outputs)</span><br><span class="line">    <span class="keyword">return</span> invalid / <span class="built_in">len</span>(raw_outputs)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-与-Accuracy-的衔接"><a href="#3-2-与-Accuracy-的衔接" class="headerlink" title="3.2 与 Accuracy 的衔接"></a>3.2 与 Accuracy 的衔接</h3><p>解析后：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">parsed = [parse_label(s) <span class="keyword">for</span> s <span class="keyword">in</span> raw_outputs]</span><br><span class="line">invalid_count = <span class="built_in">sum</span>(p <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">for</span> p <span class="keyword">in</span> parsed)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 常见做法 A：Invalid 计为错误，不参与「有效子集 accuracy」</span></span><br><span class="line">valid_mask = [p <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">for</span> p <span class="keyword">in</span> parsed]</span><br><span class="line">y_pred_valid = [p <span class="keyword">for</span> p <span class="keyword">in</span> parsed <span class="keyword">if</span> p <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>]</span><br><span class="line">y_true_valid = [y <span class="keyword">for</span> y, ok <span class="keyword">in</span> <span class="built_in">zip</span>(y_true, valid_mask) <span class="keyword">if</span> ok]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 常见做法 B：混淆矩阵增加 INVALID 列/行</span></span><br><span class="line">ALL_LABELS = <span class="built_in">sorted</span>(LABEL_SET) + [<span class="string">&quot;INVALID&quot;</span>]</span><br><span class="line">y_pred_for_cm = [p <span class="keyword">if</span> p <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">else</span> <span class="string">&quot;INVALID&quot;</span> <span class="keyword">for</span> p <span class="keyword">in</span> parsed]</span><br></pre></td></tr></table></figure>
+
+<p><strong>必须在报告中声明采用哪种做法</strong>，否则 Accuracy 不可比。</p>
+<h3 id="3-3-汇总指标"><a href="#3-3-汇总指标" class="headerlink" title="3.3 汇总指标"></a>3.3 汇总指标</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">metrics = &#123;</span><br><span class="line">    <span class="string">&quot;invalid_rate&quot;</span>: invalid_count / <span class="built_in">len</span>(raw_outputs),</span><br><span class="line">    <span class="string">&quot;invalid_count&quot;</span>: invalid_count,</span><br><span class="line">    <span class="string">&quot;evaluated_examples&quot;</span>: <span class="built_in">len</span>(raw_outputs),</span><br><span class="line">    <span class="string">&quot;accuracy&quot;</span>: accuracy_score(y_true, y_pred_for_cm),  <span class="comment"># 若 INVALID 算错</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四、如何解读"><a href="#四、如何解读" class="headerlink" title="四、如何解读"></a>四、如何解读</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>微调前 invalid 低、微调后升高</td>
+<td>过拟合训练集但 <strong>格式约束退化</strong>；或学习率过大破坏指令遵循</td>
+</tr>
+<tr>
+<td>invalid 高但 token accuracy 高</td>
+<td>训练用 teacher forcing 学 token，generate 时爱「多说一句」</td>
+</tr>
+<tr>
+<td>invalid 降、macro F1 升</td>
+<td>理想：格式与语义双改善</td>
+</tr>
+<tr>
+<td>invalid 低但 F1 低</td>
+<td>格式对了，<strong>内容常错</strong>——需看混淆矩阵</td>
+</tr>
+</tbody></table>
+<p><strong>数值直觉</strong>：400 条测试里 2 条 invalid → invalid_rate &#x3D; 0.005（0.5%），通常可接受；&gt;5% 应排查 prompt 与 decode 策略。</p>
+<hr>
+<h2 id="五、局限性与常见误用"><a href="#五、局限性与常见误用" class="headerlink" title="五、局限性与常见误用"></a>五、局限性与常见误用</h2><ol>
+<li><strong>解析规则即指标</strong>：正则过严把 <code>Fear.</code> 标 invalid；过松把 <code>not fear but joy</code> 抽成 <code>fear</code>——<strong>规则与指标耦合</strong>。</li>
+<li><strong>不反映语义近错</strong>：invalid 只抓格式，不抓「合法但错误」标签。</li>
+<li><strong>与 max_new_tokens 相关</strong>：截断可能导致半句话 invalid。</li>
+<li><strong>temperature &gt; 0 升高 invalid</strong>：采样随机性增加格式漂移。</li>
+<li><strong>单独报告误导</strong>：invalid&#x3D;0 不代表任务做好；必须并列 F1。</li>
+<li><strong>跨实验 parse 不一致</strong>：改正则后 historical 不可比。</li>
+</ol>
+<hr>
+<h2 id="六、与其他指标的关系"><a href="#六、与其他指标的关系" class="headerlink" title="六、与其他指标的关系"></a>六、与其他指标的关系</h2><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-04-%E5%87%86%E7%A1%AE%E7%8E%87-accuracy.md">Accuracy</a></td>
+<td>Invalid 通常计为错；或只在有效子集上算 accuracy</td>
+</tr>
+<tr>
+<td><a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-06-%E6%B7%B7%E6%B7%86%E7%9F%A9%E9%98%B5-confusion_matrix.md">混淆矩阵</a></td>
+<td>INVALID 作伪类可定位格式失败量</td>
+</tr>
+<tr>
+<td><a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-03-Token%E5%87%86%E7%A1%AE%E7%8E%87-mean_token_accuracy.md">mean_token_accuracy</a></td>
+<td>训练 token 对 ≠ 生成格式对</td>
+</tr>
+<tr>
+<td><a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-09-%E5%AE%8C%E5%85%A8%E5%8C%B9%E9%85%8D-exact_match.md">Exact Match</a></td>
+<td>EM 要求整串匹配；Invalid 是 EM 之前的 gates</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、实践建议"><a href="#七、实践建议" class="headerlink" title="七、实践建议"></a>七、实践建议</h2><ol>
+<li><strong>训练、评估、线上推理共用同一 SYSTEM_PROMPT 与 parse 逻辑</strong>（代码层抽成函数复用）。</li>
+<li>报告 <strong>invalid_rate + invalid_count + 原始失败样例</strong>（各 5～10 条）。</li>
+<li>微调对比表：<code>pre invalid / post invalid / Δ</code>，并列 macro_f1。</li>
+<li>decode 用 <strong>greedy + 低 max_new_tokens</strong> 做主评估；采样策略单独做鲁棒性实验。</li>
+<li>若 invalid 上升：先查 <code>completion_only_loss</code>、prompt 是否强调「只输出标签」、是否需加 few-shot 或约束解码（allowed tokens）。</li>
+<li>结构化输出优先 <strong>JSON mode &#x2F; grammar constraint</strong>，再谈 invalid 阈值。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/" rel="tag"><i class="fa fa-tag"></i> 评估指标</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E5%BE%AE%E8%B0%83/" rel="tag"><i class="fa fa-tag"></i> 微调</a>
+          
+            <a href="/tags/Invalid/" rel="tag"><i class="fa fa-tag"></i> Invalid</a>
+          
+            <a href="/tags/%E7%94%9F%E6%88%90%E5%BC%8F%E5%88%86%E7%B1%BB/" rel="tag"><i class="fa fa-tag"></i> 生成式分类</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-11-BERTScore/" rel="next" title="BERTScore 详解">
+                <i class="fa fa-chevron-left"></i> BERTScore 详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-10-pass@k/" rel="prev" title="pass@k 详解">
+                pass@k 详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%9B%B4%E8%A7%82%E5%90%AB%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">一、直观含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E4%B8%8E%E6%89%80%E9%9C%80%E6%95%B0%E6%8D%AE"><span class="nav-number">2.</span> <span class="nav-text">二、使用场景与所需数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">三、计算方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E8%A7%A3%E6%9E%90%E8%A7%84%E5%88%99%E7%A4%BA%E4%BE%8B%EF%BC%88%E6%A0%87%E7%AD%BE%E5%88%86%E7%B1%BB%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 解析规则示例（标签分类）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%B8%8E-Accuracy-%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 与 Accuracy 的衔接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%B1%87%E6%80%BB%E6%8C%87%E6%A0%87"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 汇总指标</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%A6%82%E4%BD%95%E8%A7%A3%E8%AF%BB"><span class="nav-number">4.</span> <span class="nav-text">四、如何解读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%B1%80%E9%99%90%E6%80%A7%E4%B8%8E%E5%B8%B8%E8%A7%81%E8%AF%AF%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">五、局限性与常见误用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E4%B8%8E%E5%85%B6%E4%BB%96%E6%8C%87%E6%A0%87%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">6.</span> <span class="nav-text">六、与其他指标的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%AE%9E%E8%B7%B5%E5%BB%BA%E8%AE%AE"><span class="nav-number">7.</span> <span class="nav-text">七、实践建议</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

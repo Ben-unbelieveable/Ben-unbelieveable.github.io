@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="argo,WorkflowTemplate," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="对比 Workflow 与 WorkflowTemplate 在 YAML 构建、任务投递与运维上的差异，说明何时应维护集群内模板而非每次直接 submit Workflow，以及 Template 在复用、治理与集成上的优势。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pipeline-frameworks-argo-05.WorkflowTemplate使用与选型">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-argo-05.WorkflowTemplate%E4%BD%BF%E7%94%A8%E4%B8%8E%E9%80%89%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="对比 Workflow 与 WorkflowTemplate 在 YAML 构建、任务投递与运维上的差异，说明何时应维护集群内模板而非每次直接 submit Workflow，以及 Template 在复用、治理与集成上的优势。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-11T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.171Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="WorkflowTemplate">
+<meta property="article:tag" content="argo">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-04.pipeline/pipeline-frameworks-argo-05.WorkflowTemplate使用与选型/"/>
+
+
+
+
+
+  <title>pipeline-frameworks-argo-05.WorkflowTemplate使用与选型 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-argo-05.WorkflowTemplate%E4%BD%BF%E7%94%A8%E4%B8%8E%E9%80%89%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">pipeline-frameworks-argo-05.WorkflowTemplate使用与选型</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T14:00:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%B0%83%E5%BA%A6%E6%A1%86%E6%9E%B6/" itemprop="url" rel="index">
+                    <span itemprop="name">调度框架</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  对比 Workflow 与 WorkflowTemplate 在 YAML 构建、任务投递与运维上的差异，说明何时应维护集群内模板而非每次直接 submit Workflow，以及 Template 在复用、治理与集成上的优势。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>Argo 系列</strong>：<a href="pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B.md">01 入门简介</a> · <a href="pipeline-frameworks-argo-02.%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4.md">02 常用命令</a> · <a href="pipeline-frameworks-argo-03.%E6%93%8D%E4%BD%9Cpod.md">03 操作 Pod</a> · <a href="pipeline-frameworks-argo-04.Argo%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%B0%81%E8%A3%85MCP%E6%8E%A5%E5%8F%A3.md">04 Argo 封装 MCP</a> · <strong>05 WorkflowTemplate（本文）</strong></p>
+<hr>
+<h2 id="1-先建立直觉：蓝图-vs-一次运行"><a href="#1-先建立直觉：蓝图-vs-一次运行" class="headerlink" title="1. 先建立直觉：蓝图 vs 一次运行"></a>1. 先建立直觉：蓝图 vs 一次运行</h2><table>
+<thead>
+<tr>
+<th>资源</th>
+<th>类比</th>
+<th>创建后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>WorkflowTemplate</strong></td>
+<td>流程的「类定义 &#x2F; 标准作业指导书」</td>
+<td><strong>不跑任务</strong>，只把 DAG、镜像、默认参数存进集群</td>
+</tr>
+<tr>
+<td><strong>Workflow</strong></td>
+<td>某次「函数调用 &#x2F; 一次实验记录」</td>
+<td><strong>立即执行</strong>，产生 <code>status</code>、Pod、日志</td>
+</tr>
+</tbody></table>
+<p>两者 <code>spec</code> 结构（<code>entrypoint</code>、<code>templates</code>、<code>arguments</code> 等）高度相似，但 <strong>WorkflowTemplate 不会被 Controller 当作运行实例调度</strong>；只有实例化成 <strong>Workflow</strong> 后才会创建 Pod。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>DAG</strong>（Directed Acyclic Graph，有向无环图）描述步骤依赖；Argo 用 <code>steps</code> 或 <code>dag</code> 模板表达。<strong>CRD</strong>（Custom Resource Definition）是 Kubernetes 扩展 API 的机制，<code>Workflow</code> 与 <code>WorkflowTemplate</code> 均为 CRD，<code>apiVersion</code> 通常为 <code>argoproj.io/v1alpha1</code>。</p>
+</blockquote>
+<hr>
+<h2 id="2-为什么需要-WorkflowTemplate：相对「每次直接-Workflow」的优势"><a href="#2-为什么需要-WorkflowTemplate：相对「每次直接-Workflow」的优势" class="headerlink" title="2. 为什么需要 WorkflowTemplate：相对「每次直接 Workflow」的优势"></a>2. 为什么需要 WorkflowTemplate：相对「每次直接 Workflow」的优势</h2><p>许多入门示例用 <strong><code>argo submit workflow.yaml</code></strong>（<code>kind: Workflow</code>）跑通第一条流程，这很自然。但当同一套流程要被 <strong>多人、多系统、多次</strong> 重复触发时，每次都携带完整 Workflow YAML 会带来明显成本。<strong>WorkflowTemplate</strong> 把「流程定义」与「单次运行」拆开，优势集中在下面几类。</p>
+<h3 id="2-1-定义复用，避免-YAML-膨胀与漂移"><a href="#2-1-定义复用，避免-YAML-膨胀与漂移" class="headerlink" title="2.1 定义复用，避免 YAML 膨胀与漂移"></a>2.1 定义复用，避免 YAML 膨胀与漂移</h3><table>
+<thead>
+<tr>
+<th>痛点（每次直接 Workflow）</th>
+<th>Template 做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每个项目复制一份 200～500 行 YAML，镜像&#x2F;tag 各改各的</td>
+<td>集群内 <strong>一份</strong> Template，submit 只传 <code>-p</code> 参数</td>
+</tr>
+<tr>
+<td>修一个 bug 要改 N 份文件 &#x2F; N 个 Git 分支</td>
+<td><code>kubectl apply</code> <strong>一次</strong> 更新 Template，后续 submit 自动用新版本</td>
+</tr>
+<tr>
+<td>Code review 难以看出「这次运行」改了流程还是只改了样本 ID</td>
+<td>运行侧 YAML 极短，差异只在 <code>arguments</code></td>
+</tr>
+</tbody></table>
+<p><strong>本质</strong>：流程逻辑（<strong>how</strong>）与运行输入（<strong>what</strong>）分离，和软件工程里「库函数 vs 调用参数」同一思路。</p>
+<h3 id="2-2-投递轻量：CLI-API-MCP-只传参"><a href="#2-2-投递轻量：CLI-API-MCP-只传参" class="headerlink" title="2.2 投递轻量：CLI &#x2F; API &#x2F; MCP 只传参"></a>2.2 投递轻量：CLI &#x2F; API &#x2F; MCP 只传参</h3><p>直接 Workflow 投递时，客户端要带 <strong>完整 spec</strong>（或本地大文件）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">argo submit -n bio-ns huge-pipeline.yaml -p sample-id=S001</span><br></pre></td></tr></table></figure>
+
+<p>WorkflowTemplate 投递时，客户端只需 <strong>模板名 + 参数</strong>（见 <a href="pipeline-frameworks-argo-02.%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4.md">02 常用命令 §2.2</a>）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">argo submit -n bio-ns --from workflowtemplate/rnaseq-qc \</span><br><span class="line">  -p sample-id=S001 -p ref=hg38</span><br></pre></td></tr></table></figure>
+
+<p>对 <strong>CI、MCP 网关、内部 API</strong> 而言：Template 名是稳定常量，参数是 JSON&#x2F;schema 约束字段——这正是 <a href="pipeline-frameworks-argo-04.Argo%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%B0%81%E8%A3%85MCP%E6%8E%A5%E5%8F%A3.md">argo-04 MCP 封装</a> 推荐的模式。</p>
+<h3 id="2-3-治理与权限：谁改流程、谁只能跑"><a href="#2-3-治理与权限：谁改流程、谁只能跑" class="headerlink" title="2.3 治理与权限：谁改流程、谁只能跑"></a>2.3 治理与权限：谁改流程、谁只能跑</h3><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>直接 Workflow</th>
+<th>WorkflowTemplate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平台 &#x2F; 流程负责人</td>
+<td>难以阻止用户改 DAG 里的镜像</td>
+<td><strong><code>apply</code> Template</strong> 需较高 RBAC；普通用户仅 <strong><code>create workflows</code></strong></td>
+</tr>
+<tr>
+<td>分析员</td>
+<td>可随意改 YAML 里任意步骤</td>
+<td>只能 <strong>submit + 覆盖 parameters</strong></td>
+</tr>
+<tr>
+<td>审计</td>
+<td>每次 submit 的 YAML 可能不同</td>
+<td>Template 版本在集群可追溯；实例 Workflow 只记录本次参数</td>
+</tr>
+</tbody></table>
+<p>可在 Template 上打 label（<code>team=rnaseq</code>、<code>version=2.1</code>），配合 GitOps 或 Argo CD 做 <strong>模板发布流程</strong>。</p>
+<h3 id="2-4-与-CronWorkflow、UI、监控的天然集成"><a href="#2-4-与-CronWorkflow、UI、监控的天然集成" class="headerlink" title="2.4 与 CronWorkflow、UI、监控的天然集成"></a>2.4 与 CronWorkflow、UI、监控的天然集成</h3><ul>
+<li><strong>CronWorkflow</strong> 通常 <strong>引用</strong> WorkflowTemplate（或内嵌 spec），定时触发产生的仍是 <strong>Workflow 实例</strong>——定时规则与流程定义解耦。</li>
+<li>Argo UI 可按 <strong>WorkflowTemplate</strong> 筛选历史运行、嵌入「由某模板产生的最新 Workflow」widget（v3+ UI 能力）。</li>
+<li>指标如 <code>workflowtemplate_triggered_total</code>（v3.6+）按模板统计触发次数，便于容量规划。</li>
+</ul>
+<h3 id="2-5-集群级共享：ClusterWorkflowTemplate"><a href="#2-5-集群级共享：ClusterWorkflowTemplate" class="headerlink" title="2.5 集群级共享：ClusterWorkflowTemplate"></a>2.5 集群级共享：ClusterWorkflowTemplate</h3><p>命名空间内用 <strong>WorkflowTemplate</strong>；跨 namespace 共享同一套流程用 <strong>ClusterWorkflowTemplate</strong>（集群级 CRD，无 <code>metadata.namespace</code>）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">argo submit -n team-a --from clusterworkflowtemplate/org-standard-qc -p sample-id=X</span><br></pre></td></tr></table></figure>
+
+<p>适合「公司统一 QC 流程、各项目 namespace 各自投递」的组织结构。</p>
+<h3 id="2-6-何时「直接-Workflow」仍然更合适"><a href="#2-6-何时「直接-Workflow」仍然更合适" class="headerlink" title="2.6 何时「直接 Workflow」仍然更合适"></a>2.6 何时「直接 Workflow」仍然更合适</h3><p>Template 不是银弹。以下场景 <strong>继续直接 submit Workflow</strong> 往往更省事：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>本地第一次搭流程、频繁改 DAG</td>
+<td>改 Template 要 apply + 权限，迭代慢</td>
+</tr>
+<tr>
+<td>一次性 adhoc 实验</td>
+<td>无复用价值，不必污染集群模板库</td>
+</tr>
+<tr>
+<td>CI 把 <strong>完整 Workflow YAML 当构建产物</strong> 版本化</td>
+<td>定义随 Git commit 走，Template 反而多一层同步</td>
+</tr>
+<tr>
+<td>每次运行的 <strong>结构本身不同</strong>（步骤数、DAG 拓扑变）</td>
+<td>Template 适合固定拓扑 + 参数化；拓扑常变应生成 Workflow</td>
+</tr>
+</tbody></table>
+<p><strong>选型原则</strong>：<strong>同一 DAG 拓扑跑很多次 → Template</strong>；<strong>拓扑或镜像逻辑每次都不一样 → Workflow</strong>。</p>
+<hr>
+<h2 id="3-构建-YAML：两者写法的区别"><a href="#3-构建-YAML：两者写法的区别" class="headerlink" title="3. 构建 YAML：两者写法的区别"></a>3. 构建 YAML：两者写法的区别</h2><h3 id="3-1-结构对照"><a href="#3-1-结构对照" class="headerlink" title="3.1 结构对照"></a>3.1 结构对照</h3><p><strong>WorkflowTemplate</strong>（安装进集群，不执行）：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">argoproj.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">WorkflowTemplate</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">rnaseq-qc</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">bio-ns</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">entrypoint:</span> <span class="string">main</span></span><br><span class="line">  <span class="attr">arguments:</span></span><br><span class="line">    <span class="attr">parameters:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">sample-id</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ref</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">hg38</span></span><br><span class="line">  <span class="attr">templates:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">main</span></span><br><span class="line">      <span class="attr">steps:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">qc</span></span><br><span class="line">            <span class="attr">template:</span> <span class="string">run-qc</span></span><br><span class="line">            <span class="attr">arguments:</span></span><br><span class="line">              <span class="attr">parameters:</span></span><br><span class="line">                <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">sample-id</span></span><br><span class="line">                  <span class="attr">value:</span> <span class="string">&quot;<span class="template-variable">&#123;&#123;workflow.parameters.sample-id&#125;&#125;</span>&quot;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">run-qc</span></span><br><span class="line">      <span class="attr">inputs:</span></span><br><span class="line">        <span class="attr">parameters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">sample-id</span></span><br><span class="line">      <span class="attr">container:</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">registry.example.com/rnaseq-qc:1.2.0</span></span><br><span class="line">        <span class="attr">command:</span> [<span class="string">qc</span>, <span class="string">--sample</span>, <span class="string">&quot;<span class="template-variable">&#123;&#123;inputs.parameters.sample-id&#125;&#125;</span>&quot;</span>]</span><br></pre></td></tr></table></figure>
+
+<p><strong>Workflow</strong>（两种写法）：</p>
+<p><strong>写法 A — 完整自包含</strong>（适合 adhoc，与 Template 的 <code>spec</code> 几乎相同，仅 <code>kind</code> 不同）：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">argoproj.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Workflow</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">generateName:</span> <span class="string">rnaseq-qc-</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">bio-ns</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="comment"># ... 与上面 WorkflowTemplate.spec 相同的大段 templates ...</span></span><br><span class="line">  <span class="attr">arguments:</span></span><br><span class="line">    <span class="attr">parameters:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">sample-id</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">S001</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>写法 B — 引用已有 Template</strong>（推荐：运行 YAML 极短）：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">argoproj.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Workflow</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">generateName:</span> <span class="string">rnaseq-qc-</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">bio-ns</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">workflowTemplateRef:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">rnaseq-qc</span></span><br><span class="line">  <span class="attr">arguments:</span></span><br><span class="line">    <span class="attr">parameters:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">sample-id</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">S001</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ref</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">hg38</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-字段分工建议"><a href="#3-2-字段分工建议" class="headerlink" title="3.2 字段分工建议"></a>3.2 字段分工建议</h3><table>
+<thead>
+<tr>
+<th>内容</th>
+<th>放 WorkflowTemplate</th>
+<th>放 Workflow 实例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>templates</code>、镜像、资源 limits、重试策略</td>
+<td>✅</td>
+<td>❌（引用时不必重复）</td>
+</tr>
+<tr>
+<td>默认参数值（如默认 ref）</td>
+<td>✅ <code>spec.arguments.parameters</code></td>
+<td>可选覆盖</td>
+</tr>
+<tr>
+<td>本次样本 ID、输入 URI</td>
+<td>占位符定义</td>
+<td>✅ <code>-p</code> 或 <code>arguments</code></td>
+</tr>
+<tr>
+<td><code>ttlStrategy</code>、<code>podGC</code></td>
+<td>可放在 Template</td>
+<td>也可仅在实例覆盖</td>
+</tr>
+<tr>
+<td><code>metadata.labels</code>（项目、批次）</td>
+<td>模板级默认</td>
+<td><strong>实例级</strong>更常见</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-安装与更新-Template"><a href="#3-3-安装与更新-Template" class="headerlink" title="3.3 安装与更新 Template"></a>3.3 安装与更新 Template</h3><p>Template 用 <strong><code>kubectl apply</code></strong>（或 CI&#x2F;GitOps）写入集群，<strong>不会</strong>创建 Pod：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -n bio-ns -f workflow-template-rnaseq-qc.yaml</span><br><span class="line">kubectl get workflowtemplate -n bio-ns</span><br><span class="line">kubectl describe workflowtemplate -n bio-ns rnaseq-qc</span><br></pre></td></tr></table></figure>
+
+<p>更新镜像版本 &#x3D; 改 Template YAML 再 apply；<strong>已在跑的 Workflow 不受影响</strong>，<strong>新 submit</strong> 使用新定义。</p>
+<hr>
+<h2 id="4-任务投递：流程对比"><a href="#4-任务投递：流程对比" class="headerlink" title="4. 任务投递：流程对比"></a>4. 任务投递：流程对比</h2><h3 id="4-1-直接-Workflow-投递路径"><a href="#4-1-直接-Workflow-投递路径" class="headerlink" title="4.1 直接 Workflow 投递路径"></a>4.1 直接 Workflow 投递路径</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">    participant U as 用户/CI</span><br><span class="line">    participant A as Argo Server/CLI</span><br><span class="line">    participant K as Kubernetes API</span><br><span class="line">    participant C as Workflow Controller</span><br><span class="line"></span><br><span class="line">    U-&gt;&gt;A: argo submit huge.yaml (-p ...)</span><br><span class="line">    A-&gt;&gt;K: create Workflow（含完整 spec）</span><br><span class="line">    K-&gt;&gt;C: watch 新 Workflow</span><br><span class="line">    C-&gt;&gt;C: 按 spec 创建 Pod</span><br></pre></td></tr></table></figure>
+
+<p>特点：<strong>一次 RPC 既创建定义又触发运行</strong>；客户端必须持有完整 YAML 或从 Git 拉取。</p>
+<h3 id="4-2-从-WorkflowTemplate-投递路径"><a href="#4-2-从-WorkflowTemplate-投递路径" class="headerlink" title="4.2 从 WorkflowTemplate 投递路径"></a>4.2 从 WorkflowTemplate 投递路径</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">    participant U as 用户/CI/MCP</span><br><span class="line">    participant A as Argo Server/CLI</span><br><span class="line">    participant K as Kubernetes API</span><br><span class="line">    participant C as Workflow Controller</span><br><span class="line"></span><br><span class="line">    Note over K: WorkflowTemplate 已预先 apply</span><br><span class="line">    U-&gt;&gt;A: argo submit --from workflowtemplate/T (-p ...)</span><br><span class="line">    A-&gt;&gt;K: create Workflow（ref + 参数）</span><br><span class="line">    K-&gt;&gt;C: watch 新 Workflow</span><br><span class="line">    C-&gt;&gt;C: 合并 Template spec + 实例参数，创建 Pod</span><br></pre></td></tr></table></figure>
+
+<p>特点：<strong>Template 已在集群</strong>；submit 请求体小；Template 与实例 <strong>解耦版本</strong>。</p>
+<h3 id="4-3-命令对照表"><a href="#4-3-命令对照表" class="headerlink" title="4.3 命令对照表"></a>4.3 命令对照表</h3><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>直接 Workflow</th>
+<th>WorkflowTemplate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>首次定义流程</td>
+<td><code>argo submit wf.yaml</code> 或 <code>kubectl apply -f wf.yaml</code></td>
+<td><code>kubectl apply -f template.yaml</code></td>
+</tr>
+<tr>
+<td>触发一次运行</td>
+<td><code>argo submit wf.yaml -p k=v</code></td>
+<td><code>argo submit --from workflowtemplate/T -p k=v</code></td>
+</tr>
+<tr>
+<td>干跑看解析结果</td>
+<td><code>argo submit wf.yaml --dry-run -o yaml</code></td>
+<td><code>argo submit --from workflowtemplate/T -p k=v --dry-run -o yaml</code></td>
+</tr>
+<tr>
+<td>批量避免重名</td>
+<td><code>--generate-name prefix-</code></td>
+<td>同样适用于生成的 Workflow 实例</td>
+</tr>
+<tr>
+<td>跟踪运行</td>
+<td><code>argo get/list/logs</code>（针对 <strong>Workflow</strong> 名）</td>
+<td>相同——看的永远是 <strong>Workflow 实例</strong></td>
+</tr>
+<tr>
+<td>改流程逻辑</td>
+<td>改本地 YAML 再 submit <strong>新文件</strong></td>
+<td><code>kubectl apply</code> 更新 Template，再 submit</td>
+</tr>
+</tbody></table>
+<h3 id="4-4-传参覆盖规则"><a href="#4-4-传参覆盖规则" class="headerlink" title="4.4 传参覆盖规则"></a>4.4 传参覆盖规则</h3><p>无论哪种来源，<strong>实例参数</strong>优先级高于 Template 默认值：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Template 内 ref 默认 hg38；本次覆盖为 mm10</span></span><br><span class="line">argo submit -n bio-ns --from workflowtemplate/rnaseq-qc \</span><br><span class="line">  -p sample-id=S002 -p ref=mm10</span><br></pre></td></tr></table></figure>
+
+<p>artifact 也可在 submit 时通过 <code>-p</code> 或补充 Workflow 包装 YAML 传入；大文件更常见做法是参数里只传 <strong>对象存储 URI</strong>（与 <a href="pipeline-frameworks-argo-04.Argo%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%B0%81%E8%A3%85MCP%E6%8E%A5%E5%8F%A3.md">argo-04</a> 一致）。</p>
+<hr>
+<h2 id="5-运维与生命周期差异"><a href="#5-运维与生命周期差异" class="headerlink" title="5. 运维与生命周期差异"></a>5. 运维与生命周期差异</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Workflow 实例</th>
+<th>WorkflowTemplate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>status.phase</strong></td>
+<td>Pending &#x2F; Running &#x2F; Succeeded &#x2F; Failed</td>
+<td>无运行 phase</td>
+</tr>
+<tr>
+<td><strong>Pod</strong></td>
+<td>由实例创建</td>
+<td>不创建</td>
+</tr>
+<tr>
+<td><strong>删除</strong></td>
+<td><code>argo delete wf</code>；可设 TTL 自动清理</td>
+<td><code>kubectl delete wftmpl</code>；不影响历史实例</td>
+</tr>
+<tr>
+<td><strong>重跑</strong></td>
+<td><code>argo retry</code> &#x2F; <code>argo resubmit</code></td>
+<td>应对 <strong>Workflow</strong> 操作，不是 Template</td>
+</tr>
+<tr>
+<td><strong>排障</strong></td>
+<td><code>argo get</code>、<code>argo logs</code>、<a href="pipeline-frameworks-argo-03.%E6%93%8D%E4%BD%9Cpod.md">03 操作 Pod</a></td>
+<td>模板问题：检查 <code>kubectl get wftmpl -o yaml</code>；运行问题：仍查 Workflow</td>
+</tr>
+</tbody></table>
+<p><strong>常见误区</strong>：删除 WorkflowTemplate 后，已完成的 Workflow 仍在；但 <strong>无法再 <code>--from</code> 该模板</strong> submit 新任务，直到重新 apply。</p>
+<hr>
+<h2 id="6-选型决策树"><a href="#6-选型决策树" class="headerlink" title="6. 选型决策树"></a>6. 选型决策树</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">  Q1&#123;&quot;同一套步骤结构\n会跑 ≥ 2 次？&quot;&#125;</span><br><span class="line">  Q2&#123;&quot;是否需要平台统一\n管镜像/资源/权限？&quot;&#125;</span><br><span class="line">  Q3&#123;&quot;触发方是否只有\n模板名+参数？&quot;&#125;</span><br><span class="line">  Q4&#123;&quot;是否仍在频繁改\nDAG 拓扑？&quot;&#125;</span><br><span class="line"></span><br><span class="line">  WF[&quot;直接 submit Workflow\n或短 workflowTemplateRef YAML&quot;]</span><br><span class="line">  WFT[&quot;维护 WorkflowTemplate\nargo submit --from&quot;]</span><br><span class="line">  HYB[&quot;Git 版本化 Workflow YAML\nCI 每次 submit&quot;]</span><br><span class="line"></span><br><span class="line">  Q1 --&gt;|否| WF</span><br><span class="line">  Q1 --&gt;|是| Q2</span><br><span class="line">  Q2 --&gt;|是| WFT</span><br><span class="line">  Q2 --&gt;|否| Q3</span><br><span class="line">  Q3 --&gt;|是| WFT</span><br><span class="line">  Q3 --&gt;|否| Q4</span><br><span class="line">  Q4 --&gt;|是| WF</span><br><span class="line">  Q4 --&gt;|否| HYB</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-1-典型场景映射"><a href="#6-1-典型场景映射" class="headerlink" title="6.1 典型场景映射"></a>6.1 典型场景映射</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>生信平台标准 QC &#x2F; 变异检测 pipeline</td>
+<td><strong>WorkflowTemplate</strong> + 用户只填 sample-id</td>
+</tr>
+<tr>
+<td>研发个人调试新步骤</td>
+<td><strong>Workflow</strong> 直到 DAG 稳定</td>
+</tr>
+<tr>
+<td>定时批量（cron）</td>
+<td><strong>CronWorkflow</strong> → 引用 <strong>WorkflowTemplate</strong></td>
+</tr>
+<tr>
+<td>MCP &#x2F; REST 网关触发</td>
+<td><strong>WorkflowTemplate</strong> 名常量 + Tool 参数映射</td>
+</tr>
+<tr>
+<td>多团队共用公司级流程</td>
+<td><strong>ClusterWorkflowTemplate</strong></td>
+</tr>
+<tr>
+<td>每次 DAG 节点数随样本变化（动态 workflow）</td>
+<td>程序 <strong>生成 Workflow YAML</strong> submit，或 Workflow 内 <code>withParam</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-完整最小示例：从安装到投递"><a href="#7-完整最小示例：从安装到投递" class="headerlink" title="7. 完整最小示例：从安装到投递"></a>7. 完整最小示例：从安装到投递</h2><h3 id="7-1-安装-Template"><a href="#7-1-安装-Template" class="headerlink" title="7.1 安装 Template"></a>7.1 安装 Template</h3><p><code>wftmpl-hello.yaml</code>：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">argoproj.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">WorkflowTemplate</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-template</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">my-ns</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">entrypoint:</span> <span class="string">whalesay</span></span><br><span class="line">  <span class="attr">arguments:</span></span><br><span class="line">    <span class="attr">parameters:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">message</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">hello</span> <span class="string">world</span></span><br><span class="line">  <span class="attr">templates:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">whalesay</span></span><br><span class="line">      <span class="attr">container:</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">docker/whalesay:latest</span></span><br><span class="line">        <span class="attr">command:</span> [<span class="string">cowsay</span>]</span><br><span class="line">        <span class="attr">args:</span> [<span class="string">&quot;<span class="template-variable">&#123;&#123;workflow.parameters.message&#125;&#125;</span>&quot;</span>]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -n my-ns -f wftmpl-hello.yaml</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-2-三次运行，只改参数"><a href="#7-2-三次运行，只改参数" class="headerlink" title="7.2 三次运行，只改参数"></a>7.2 三次运行，只改参数</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">argo submit -n my-ns --from workflowtemplate/hello-template</span><br><span class="line">argo submit -n my-ns --from workflowtemplate/hello-template -p message=run-2</span><br><span class="line">argo submit -n my-ns --from workflowtemplate/hello-template -p message=run-3</span><br><span class="line">argo list -n my-ns</span><br></pre></td></tr></table></figure>
+
+<p>列表里会出现 <strong>三个 Workflow 实例</strong>，Template 仍只有一个。</p>
+<h3 id="7-3-升级流程（改-Template）"><a href="#7-3-升级流程（改-Template）" class="headerlink" title="7.3 升级流程（改 Template）"></a>7.3 升级流程（改 Template）</h3><p>把镜像改为 <code>argoproj/argosay:v2</code> 后 <code>kubectl apply</code>，再 submit——新实例用新镜像，旧实例记录不变。</p>
+<hr>
+<h2 id="8-与系列其他篇章的衔接"><a href="#8-与系列其他篇章的衔接" class="headerlink" title="8. 与系列其他篇章的衔接"></a>8. 与系列其他篇章的衔接</h2><table>
+<thead>
+<tr>
+<th>篇章</th>
+<th>关联</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="pipeline-frameworks-argo-01.%E5%85%A5%E9%97%A8%E7%AE%80%E4%BB%8B.md">01 入门</a></td>
+<td>顶层 CRD 关键字、<code>spec</code> 字段</td>
+</tr>
+<tr>
+<td><a href="pipeline-frameworks-argo-02.%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4.md">02 命令</a></td>
+<td><code>--from workflowtemplate/</code>、<code>-p</code> 传参</td>
+</tr>
+<tr>
+<td><a href="pipeline-frameworks-argo-03.%E6%93%8D%E4%BD%9Cpod.md">03 Pod</a></td>
+<td>实例化后才产生 Pod；排障对象仍是 Workflow</td>
+</tr>
+<tr>
+<td><a href="pipeline-frameworks-argo-04.Argo%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%B0%81%E8%A3%85MCP%E6%8E%A5%E5%8F%A3.md">04 MCP</a></td>
+<td>MCP <code>submit_*</code> 内部应 submit Template 而非贴完整 YAML</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>答案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WorkflowTemplate 是什么？</td>
+<td>集群内可复用的流程 <strong>蓝图</strong>，不执行</td>
+</tr>
+<tr>
+<td>相比每次 Workflow 的核心优势？</td>
+<td><strong>复用、轻量投递、权限治理、与 Cron&#x2F;MCP 集成</strong></td>
+</tr>
+<tr>
+<td>YAML 怎么拆？</td>
+<td>重逻辑进 Template；实例只 <strong>ref + arguments</strong></td>
+</tr>
+<tr>
+<td>怎么投递？</td>
+<td><code>kubectl apply</code> Template；<code>argo submit --from workflowtemplate/NAME -p ...</code></td>
+</tr>
+<tr>
+<td>什么时候不用 Template？</td>
+<td>一次性实验、DAG 仍在剧烈改动、每次拓扑都不同</td>
+</tr>
+</tbody></table>
+<p><strong>记住一句</strong>：<strong>WorkflowTemplate 管「怎么跑」；Workflow 管「这一次跑得怎么样」。</strong> 当同一「怎么跑」要服务很多人很多次时，就应该把定义放进 WorkflowTemplate，而不是每次都重新投递一整份 Workflow。</p>
+<hr>
+<h2 id="概念索引"><a href="#概念索引" class="headerlink" title="概念索引"></a>概念索引</h2><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>WorkflowTemplate</strong></td>
+<td>命名空间内可复用的工作流 CRD 定义</td>
+</tr>
+<tr>
+<td><strong>ClusterWorkflowTemplate</strong></td>
+<td>集群级可复用模板，跨 namespace 引用</td>
+</tr>
+<tr>
+<td><strong>workflowTemplateRef</strong></td>
+<td>Workflow spec 中引用已安装 Template 的字段</td>
+</tr>
+<tr>
+<td><strong>generateName</strong></td>
+<td>Workflow metadata 前缀，由集群生成唯一实例名</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/argo/" rel="tag"><i class="fa fa-tag"></i> argo</a>
+          
+            <a href="/tags/WorkflowTemplate/" rel="tag"><i class="fa fa-tag"></i> WorkflowTemplate</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90/" rel="next" title="5003.大模型-架构-Diffusion-4.离散扩散与序列生成">
+                <i class="fa fa-chevron-left"></i> 5003.大模型-架构-Diffusion-4.离散扩散与序列生成
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-5.%E6%BD%9C%E7%A9%BA%E9%97%B4%E6%89%A9%E6%95%A3%E4%B8%8E%E7%BB%93%E6%9E%84%E7%94%9F%E6%88%90%E5%AE%9E%E8%B7%B5/" rel="prev" title="5003.大模型-架构-Diffusion-5.潜空间扩散与结构生成实践">
+                5003.大模型-架构-Diffusion-5.潜空间扩散与结构生成实践 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A7%89%EF%BC%9A%E8%93%9D%E5%9B%BE-vs-%E4%B8%80%E6%AC%A1%E8%BF%90%E8%A1%8C"><span class="nav-number">1.</span> <span class="nav-text">1. 先建立直觉：蓝图 vs 一次运行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-WorkflowTemplate%EF%BC%9A%E7%9B%B8%E5%AF%B9%E3%80%8C%E6%AF%8F%E6%AC%A1%E7%9B%B4%E6%8E%A5-Workflow%E3%80%8D%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">2.</span> <span class="nav-text">2. 为什么需要 WorkflowTemplate：相对「每次直接 Workflow」的优势</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%AE%9A%E4%B9%89%E5%A4%8D%E7%94%A8%EF%BC%8C%E9%81%BF%E5%85%8D-YAML-%E8%86%A8%E8%83%80%E4%B8%8E%E6%BC%82%E7%A7%BB"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 定义复用，避免 YAML 膨胀与漂移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E6%8A%95%E9%80%92%E8%BD%BB%E9%87%8F%EF%BC%9ACLI-API-MCP-%E5%8F%AA%E4%BC%A0%E5%8F%82"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 投递轻量：CLI &#x2F; API &#x2F; MCP 只传参</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E6%B2%BB%E7%90%86%E4%B8%8E%E6%9D%83%E9%99%90%EF%BC%9A%E8%B0%81%E6%94%B9%E6%B5%81%E7%A8%8B%E3%80%81%E8%B0%81%E5%8F%AA%E8%83%BD%E8%B7%91"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 治理与权限：谁改流程、谁只能跑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E4%B8%8E-CronWorkflow%E3%80%81UI%E3%80%81%E7%9B%91%E6%8E%A7%E7%9A%84%E5%A4%A9%E7%84%B6%E9%9B%86%E6%88%90"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 与 CronWorkflow、UI、监控的天然集成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-%E9%9B%86%E7%BE%A4%E7%BA%A7%E5%85%B1%E4%BA%AB%EF%BC%9AClusterWorkflowTemplate"><span class="nav-number">2.5.</span> <span class="nav-text">2.5 集群级共享：ClusterWorkflowTemplate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-%E4%BD%95%E6%97%B6%E3%80%8C%E7%9B%B4%E6%8E%A5-Workflow%E3%80%8D%E4%BB%8D%E7%84%B6%E6%9B%B4%E5%90%88%E9%80%82"><span class="nav-number">2.6.</span> <span class="nav-text">2.6 何时「直接 Workflow」仍然更合适</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%9E%84%E5%BB%BA-YAML%EF%BC%9A%E4%B8%A4%E8%80%85%E5%86%99%E6%B3%95%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">3.</span> <span class="nav-text">3. 构建 YAML：两者写法的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%BB%93%E6%9E%84%E5%AF%B9%E7%85%A7"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 结构对照</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%AD%97%E6%AE%B5%E5%88%86%E5%B7%A5%E5%BB%BA%E8%AE%AE"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 字段分工建议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%AE%89%E8%A3%85%E4%B8%8E%E6%9B%B4%E6%96%B0-Template"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 安装与更新 Template</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BB%BB%E5%8A%A1%E6%8A%95%E9%80%92%EF%BC%9A%E6%B5%81%E7%A8%8B%E5%AF%B9%E6%AF%94"><span class="nav-number">4.</span> <span class="nav-text">4. 任务投递：流程对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E7%9B%B4%E6%8E%A5-Workflow-%E6%8A%95%E9%80%92%E8%B7%AF%E5%BE%84"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 直接 Workflow 投递路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%BB%8E-WorkflowTemplate-%E6%8A%95%E9%80%92%E8%B7%AF%E5%BE%84"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 从 WorkflowTemplate 投递路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%91%BD%E4%BB%A4%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 命令对照表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E4%BC%A0%E5%8F%82%E8%A6%86%E7%9B%96%E8%A7%84%E5%88%99"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 传参覆盖规则</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%BF%90%E7%BB%B4%E4%B8%8E%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E5%B7%AE%E5%BC%82"><span class="nav-number">5.</span> <span class="nav-text">5. 运维与生命周期差异</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%80%89%E5%9E%8B%E5%86%B3%E7%AD%96%E6%A0%91"><span class="nav-number">6.</span> <span class="nav-text">6. 选型决策树</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%85%B8%E5%9E%8B%E5%9C%BA%E6%99%AF%E6%98%A0%E5%B0%84"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 典型场景映射</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%AE%8C%E6%95%B4%E6%9C%80%E5%B0%8F%E7%A4%BA%E4%BE%8B%EF%BC%9A%E4%BB%8E%E5%AE%89%E8%A3%85%E5%88%B0%E6%8A%95%E9%80%92"><span class="nav-number">7.</span> <span class="nav-text">7. 完整最小示例：从安装到投递</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E5%AE%89%E8%A3%85-Template"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 安装 Template</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E4%B8%89%E6%AC%A1%E8%BF%90%E8%A1%8C%EF%BC%8C%E5%8F%AA%E6%94%B9%E5%8F%82%E6%95%B0"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 三次运行，只改参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-%E5%8D%87%E7%BA%A7%E6%B5%81%E7%A8%8B%EF%BC%88%E6%94%B9-Template%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 升级流程（改 Template）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E7%B3%BB%E5%88%97%E5%85%B6%E4%BB%96%E7%AF%87%E7%AB%A0%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-number">8.</span> <span class="nav-text">8. 与系列其他篇章的衔接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E7%B4%A2%E5%BC%95"><span class="nav-number">10.</span> <span class="nav-text">概念索引</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

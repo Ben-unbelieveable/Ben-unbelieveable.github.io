@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Reinforcement-Learning," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="探索–利用权衡、多臂老虎机、ε-greedy、Softmax&#x2F;Boltzmann、UCB 与衰减 schedule；与 Q-Learning、Bandit 推荐的关系。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RL-02-03-探索与利用">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-03-%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="探索–利用权衡、多臂老虎机、ε-greedy、Softmax&#x2F;Boltzmann、UCB 与衰减 schedule；与 Q-Learning、Bandit 推荐的关系。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-03-%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8/fig-explore-exploit.png">
+<meta property="article:published_time" content="2026-05-27T03:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.779Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Reinforcement-Learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-03-%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8/fig-explore-exploit.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-21.强化学习/RL-02-03-探索与利用/"/>
+
+
+
+
+
+  <title>RL-02-03-探索与利用 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-03-%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">RL-02-03-探索与利用</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-27T11:00:00+08:00">
+                2026-05-27
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">强化学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  探索–利用权衡、多臂老虎机、ε-greedy、Softmax/Boltzmann、UCB 与衰减 schedule；与 Q-Learning、Bandit 推荐的关系。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>← 上级：<a href="RL-02.%E5%8E%9F%E7%90%86%E4%B8%8E%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md">RL-02.原理与数学基础</a> · 算法：<a href="RL-03-02-%E7%AE%97%E6%B3%95-Q-Learning.md">RL-03-02-算法-Q-Learning</a></p>
+<p>RL 的奖励信号稀疏且延迟，Agent 必须在<strong>尝试未知动作</strong>（探索）与<strong>执行当前最优</strong>（利用）之间权衡。本文从<strong>多臂老虎机</strong>（Multi-Armed Bandit，<strong>MAB</strong>）出发，介绍常用探索策略及在 Q-Learning 中的用法。</p>
+<blockquote>
+<p>段末注释：<strong>多臂老虎机</strong>（Multi-Armed Bandit，<strong>MAB</strong>）指每步在多个动作中选一个、仅观测该臂奖励的简化 RL 问题；后文沿用 <strong>MAB</strong>。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-03-%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8/fig-explore-exploit.png" alt="探索与利用权衡示意"></p>
+<hr>
+<h2 id="一、为何必须探索"><a href="#一、为何必须探索" class="headerlink" title="一、为何必须探索"></a>一、为何必须探索</h2><p>仅选 $\arg\max_a Q(s,a)$ 时：</p>
+<ul>
+<li>未试过的动作 $Q(s,a)$ 可能仍为初值 0，<strong>永不被选中</strong>；  </li>
+<li>环境非平稳时，旧最优可能已失效。</li>
+</ul>
+<p><strong>探索</strong>保证每个 $(s,a)$ 或每个 bandit 臂有足够样本，使估计收敛到真值或适应变化。</p>
+<hr>
+<h2 id="二、多臂老虎机（无状态）"><a href="#二、多臂老虎机（无状态）" class="headerlink" title="二、多臂老虎机（无状态）"></a>二、多臂老虎机（无状态）</h2><p>$K$ 个臂，选臂 $a$ 得奖励 $R \sim \mathcal{D}_a$，目标最大化累积奖励。</p>
+<table>
+<thead>
+<tr>
+<th align="left">设定</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Regret</td>
+<td align="left">与始终选最优臂的奖励差</td>
+</tr>
+<tr>
+<td align="left">平稳</td>
+<td align="left">$\mathcal{D}_a$ 不随时间变</td>
+</tr>
+<tr>
+<td align="left">Contextual</td>
+<td align="left">加入上下文 $x$，即 Contextual Bandit</td>
+</tr>
+</tbody></table>
+<p>MAB 是 RL 的「单状态」特例；推荐系统常用 Contextual Bandit 做快速 A&#x2F;B，见 <a href="RL-07.%E5%BA%94%E7%94%A8%E5%AE%9E%E6%88%98.md">RL-07.应用实战</a>。</p>
+<hr>
+<h2 id="三、-varepsilon-greedy"><a href="#三、-varepsilon-greedy" class="headerlink" title="三、$\varepsilon$-greedy"></a>三、$\varepsilon$-greedy</h2><p>$$<br>a &#x3D; \begin{cases}<br>\text{Uniform}(A) &amp; \text{概率 } \varepsilon \<br>\arg\max_a Q(s,a) &amp; \text{概率 } 1-\varepsilon<br>\end{cases}<br>$$</p>
+<table>
+<thead>
+<tr>
+<th align="left">优点</th>
+<th align="left">缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">实现极简</td>
+<td align="left">探索与利用<strong>不区分</strong>不确定性</td>
+</tr>
+<tr>
+<td align="left">Q-Learning 标配</td>
+<td align="left">线性 $\varepsilon$ 可能探索过多或过早利用</td>
+</tr>
+</tbody></table>
+<h3 id="3-1-衰减-Schedule"><a href="#3-1-衰减-Schedule" class="headerlink" title="3.1 衰减 Schedule"></a>3.1 衰减 Schedule</h3><table>
+<thead>
+<tr>
+<th align="left">策略</th>
+<th align="left">形式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">线性</td>
+<td align="left">$\varepsilon_t &#x3D; \max(\varepsilon_{\min}, \varepsilon_0 - kt)$</td>
+</tr>
+<tr>
+<td align="left">指数</td>
+<td align="left">$\varepsilon_t &#x3D; \varepsilon_{\min} + (\varepsilon_0 - \varepsilon_{\min}) e^{-\lambda t}$</td>
+</tr>
+<tr>
+<td align="left">分阶段</td>
+<td align="left">前 10% 步 $\varepsilon&#x3D;1$，再衰减</td>
+</tr>
+</tbody></table>
+<p>DQN 论文：前 $10^6$ 步从 1.0 线性降至 0.1。</p>
+<hr>
+<h2 id="四、Softmax-Boltzmann-探索"><a href="#四、Softmax-Boltzmann-探索" class="headerlink" title="四、Softmax &#x2F; Boltzmann 探索"></a>四、Softmax &#x2F; Boltzmann 探索</h2><p>按 $Q$ 值比例采样：</p>
+<p>$$<br>\pi(a|s) &#x3D; \frac{\exp(Q(s,a)&#x2F;\tau)}{\sum_{a’} \exp(Q(s,a’)&#x2F;\tau)}<br>$$</p>
+<p><strong>温度</strong> $\tau$：</p>
+<ul>
+<li>$\tau \to 0$：接近贪心  </li>
+<li>$\tau \to \infty$：均匀随机</li>
+</ul>
+<p>比 $\varepsilon$-greedy 更「平滑」地偏向高 $Q$ 动作；SAC 等用熵正则化是连续&#x2F;随机策略侧的延伸。</p>
+<hr>
+<h2 id="五、UCB（Upper-Confidence-Bound）"><a href="#五、UCB（Upper-Confidence-Bound）" class="headerlink" title="五、UCB（Upper Confidence Bound）"></a>五、UCB（Upper Confidence Bound）</h2><p>每臂 $a$ 维护估计 $\hat{Q}_a$ 与次数 $N_a$，选：</p>
+<p>$$<br>a &#x3D; \arg\max_a \left( \hat{Q}_a + c \sqrt{\frac{\ln t}{N_a}} \right)<br>$$</p>
+<p><strong>乐观面对不确定性</strong>：尝试次数 $N_a$ 小的臂 bonus 大，自动探索。</p>
+<table>
+<thead>
+<tr>
+<th align="left">特点</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">理论 Regret 界</td>
+<td align="left">平稳 bandit 下对数级</td>
+</tr>
+<tr>
+<td align="left">状态扩展</td>
+<td align="left">到 MDP 需每 $(s,a)$ 计数，状态大时不适用</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="六、Thompson-Sampling（简述）"><a href="#六、Thompson-Sampling（简述）" class="headerlink" title="六、Thompson Sampling（简述）"></a>六、Thompson Sampling（简述）</h2><p>为每臂维护奖励分布的后验（如 Beta），每步<strong>从后验采样</strong>一值再 $\arg\max$，自然平衡探索与利用。贝叶斯 bandit 常用，工程上 Contextual Bandit 也常见。</p>
+<hr>
+<h2 id="七、在-Q-Learning-DQN-中的组合"><a href="#七、在-Q-Learning-DQN-中的组合" class="headerlink" title="七、在 Q-Learning &#x2F; DQN 中的组合"></a>七、在 Q-Learning &#x2F; DQN 中的组合</h2><table>
+<thead>
+<tr>
+<th align="left">组件</th>
+<th align="left">探索角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">行为策略</td>
+<td align="left">$\varepsilon$-greedy 或 Noisy Net</td>
+</tr>
+<tr>
+<td align="left">学习目标</td>
+<td align="left">Q-Learning 仍对 $\max Q(s’,a’)$（Off-Policy）</td>
+</tr>
+<tr>
+<td align="left">衰减</td>
+<td align="left">训练后期减小 $\varepsilon$，提高利用</td>
+</tr>
+</tbody></table>
+<p><strong>注意</strong>：SARSA 的 On-Policy 更新与 $\varepsilon$-greedy <strong>行为</strong>一致，悬崖行走等例中更保守。</p>
+<hr>
+<h2 id="八、探索不足-vs-过度"><a href="#八、探索不足-vs-过度" class="headerlink" title="八、探索不足 vs 过度"></a>八、探索不足 vs 过度</h2><table>
+<thead>
+<tr>
+<th align="left">现象</th>
+<th align="left">可能原因</th>
+<th align="left">调整</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">回报平台早、策略次优</td>
+<td align="left">探索不足</td>
+<td align="left">提高 $\varepsilon$、延长衰减</td>
+</tr>
+<tr>
+<td align="left">曲线震荡、不收敛</td>
+<td align="left">探索过多</td>
+<td align="left">加快衰减、降 $\varepsilon_{\min}$</td>
+</tr>
+<tr>
+<td align="left">局部最优</td>
+<td align="left">状态覆盖不全</td>
+<td align="left">乐观初值、Intrinsic reward</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="九、与「利用」相关的非探索技巧"><a href="#九、与「利用」相关的非探索技巧" class="headerlink" title="九、与「利用」相关的非探索技巧"></a>九、与「利用」相关的非探索技巧</h2><table>
+<thead>
+<tr>
+<th align="left">技巧</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">经验回放</td>
+<td align="left">重复利用旧数据（Off-Policy 样本效率）</td>
+</tr>
+<tr>
+<td align="left">目标网络</td>
+<td align="left">稳定 Bootstrap 目标</td>
+</tr>
+<tr>
+<td align="left">PPO clip</td>
+<td align="left">限制策略更新，避免一步破坏已有策略</td>
+</tr>
+</tbody></table>
+<p>这些不替代探索，但影响<strong>利用侧</strong>稳定性。</p>
+<hr>
+<h2 id="十、小结"><a href="#十、小结" class="headerlink" title="十、小结"></a>十、小结</h2><ul>
+<li><strong>探索–利用</strong> &#x3D; 在不确定下采样 vs 执行当前最优。  </li>
+<li>入门：<strong>$\varepsilon$-greedy + 衰减</strong>；Bandit 理论：<strong>UCB &#x2F; Thompson</strong>。  </li>
+<li>MDP 中探索保证 $(s,a)$ 覆盖；与 Q-Learning、SARSA 行为策略紧密相关。  </li>
+<li>上一篇：<a href="RL-02-02-%E4%BB%B7%E5%80%BC%E5%87%BD%E6%95%B0%E4%B8%8E%E7%AD%96%E7%95%A5.md">价值函数与策略</a> · 下一级：<a href="RL-03.%E7%AE%97%E6%B3%95%E5%88%86%E7%B1%BB%E4%B8%8E%E9%80%89%E5%9E%8B.md">RL-03 算法</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Reinforcement-Learning/" rel="tag"><i class="fa fa-tag"></i> Reinforcement-Learning</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-02-%E4%BB%B7%E5%80%BC%E5%87%BD%E6%95%B0%E4%B8%8E%E7%AD%96%E7%95%A5/" rel="next" title="RL-02-02-价值函数与策略">
+                <i class="fa fa-chevron-left"></i> RL-02-02-价值函数与策略
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/" rel="prev" title="5003.大模型-架构-DNABERT-1.课程对比学习C2LR">
+                5003.大模型-架构-DNABERT-1.课程对比学习C2LR <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BD%95%E5%BF%85%E9%A1%BB%E6%8E%A2%E7%B4%A2"><span class="nav-number">1.</span> <span class="nav-text">一、为何必须探索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%A4%9A%E8%87%82%E8%80%81%E8%99%8E%E6%9C%BA%EF%BC%88%E6%97%A0%E7%8A%B6%E6%80%81%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">二、多臂老虎机（无状态）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-varepsilon-greedy"><span class="nav-number">3.</span> <span class="nav-text">三、$\varepsilon$-greedy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E8%A1%B0%E5%87%8F-Schedule"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 衰减 Schedule</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81Softmax-Boltzmann-%E6%8E%A2%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">四、Softmax &#x2F; Boltzmann 探索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81UCB%EF%BC%88Upper-Confidence-Bound%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">五、UCB（Upper Confidence Bound）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81Thompson-Sampling%EF%BC%88%E7%AE%80%E8%BF%B0%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">六、Thompson Sampling（简述）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%9C%A8-Q-Learning-DQN-%E4%B8%AD%E7%9A%84%E7%BB%84%E5%90%88"><span class="nav-number">7.</span> <span class="nav-text">七、在 Q-Learning &#x2F; DQN 中的组合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E6%8E%A2%E7%B4%A2%E4%B8%8D%E8%B6%B3-vs-%E8%BF%87%E5%BA%A6"><span class="nav-number">8.</span> <span class="nav-text">八、探索不足 vs 过度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E4%B8%8E%E3%80%8C%E5%88%A9%E7%94%A8%E3%80%8D%E7%9B%B8%E5%85%B3%E7%9A%84%E9%9D%9E%E6%8E%A2%E7%B4%A2%E6%8A%80%E5%B7%A7"><span class="nav-number">9.</span> <span class="nav-text">九、与「利用」相关的非探索技巧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">十、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

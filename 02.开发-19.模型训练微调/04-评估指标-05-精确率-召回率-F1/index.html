@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="评估指标,LLM,微调,F1,Precision,Recall," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="说明 Precision、Recall、F1 及 macro&#x2F;micro&#x2F;weighted 平均在 LLM 微调分类评估中的含义、公式、选型与局限。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="精确率、召回率与 F1 详解">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-05-%E7%B2%BE%E7%A1%AE%E7%8E%87-%E5%8F%AC%E5%9B%9E%E7%8E%87-F1/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="说明 Precision、Recall、F1 及 macro&#x2F;micro&#x2F;weighted 平均在 LLM 微调分类评估中的含义、公式、选型与局限。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-24T03:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.552Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="F1">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="Precision">
+<meta property="article:tag" content="Recall">
+<meta property="article:tag" content="微调">
+<meta property="article:tag" content="评估指标">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-19.模型训练微调/04-评估指标-05-精确率-召回率-F1/"/>
+
+
+
+
+
+  <title>精确率、召回率与 F1 详解 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-05-%E7%B2%BE%E7%A1%AE%E7%8E%87-%E5%8F%AC%E5%9B%9E%E7%8E%87-F1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">精确率、召回率与 F1 详解</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-24T11:00:00+08:00">
+                2026-06-24
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  说明 Precision、Recall、F1 及 macro/micro/weighted 平均在 LLM 微调分类评估中的含义、公式、选型与局限。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>精确率</strong>（Precision）、<strong>召回率</strong>（Recall）与 <strong>F1</strong> 是分类任务中最常用的细粒度指标 trio。相比 <a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-04-%E5%87%86%E7%A1%AE%E7%8E%87-accuracy.md">Accuracy</a>，它们按类别拆开「查准」与「查全」，并在类别不平衡时更可靠。</p>
+<blockquote>
+<p>段末注释：<strong>F1</strong> 是 Precision 与 Recall 的调和平均；<strong>macro</strong> 先算每类 F1 再平均，<strong>micro</strong> 先汇总 TP&#x2F;FP&#x2F;FN 再算全局 P&#x2F;R&#x2F;F1。</p>
+</blockquote>
+<p>系列索引：<a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-00-%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB.md">微调评估指标导读</a></p>
+<hr>
+<h2 id="一、直观含义（以单类为例）"><a href="#一、直观含义（以单类为例）" class="headerlink" title="一、直观含义（以单类为例）"></a>一、直观含义（以单类为例）</h2><p>以「预测为 fear」为例，混淆计数：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>预测 fear</th>
+<th>预测非 fear</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>真 fear</strong></td>
+<td>TP</td>
+<td>FN</td>
+</tr>
+<tr>
+<td><strong>真非 fear</strong></td>
+<td>FP</td>
+<td>TN</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Precision（查准率）</strong>：你说是 fear 的里，有多少真是 fear<br>(\text{P} &#x3D; \frac{TP}{TP + FP}) — 「宁缺毋滥」</li>
+<li><strong>Recall（查全率）</strong>：真是 fear 的里，你抓住了多少<br>(\text{R} &#x3D; \frac{TP}{TP + FN}) — 「宁滥毋缺」</li>
+<li><strong>F1</strong>：P 与 R 的调和平均<br>(F1 &#x3D; \frac{2PR}{P + R})</li>
+</ul>
+<p><strong>人话</strong>：P 衡量「误报多不多」，R 衡量「漏报多不多」，F1 在二者间折中。</p>
+<hr>
+<h2 id="二、使用场景与所需数据"><a href="#二、使用场景与所需数据" class="headerlink" title="二、使用场景与所需数据"></a>二、使用场景与所需数据</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐平均方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>多类不平衡（如情绪、意图）</td>
+<td><strong>macro F1</strong></td>
+</tr>
+<tr>
+<td>多标签分类</td>
+<td>每标签算 P&#x2F;R&#x2F;F1 再 macro；或 sample-wise</td>
+</tr>
+<tr>
+<td>大类主导、关心总体 TP&#x2F;FP</td>
+<td>micro F1（≈ accuracy 在多类 one-hot 下）</td>
+</tr>
+<tr>
+<td>关心样本量加权</td>
+<td>weighted F1</td>
+</tr>
+</tbody></table>
+<p><strong>数据要求</strong>：离散标签 (\hat{y}_i, y_i \in {1,\ldots,C})；生成式任务需先解析输出为标签字符串。</p>
+<hr>
+<h2 id="三、计算方式"><a href="#三、计算方式" class="headerlink" title="三、计算方式"></a>三、计算方式</h2><h3 id="3-1-多类-macro-micro-weighted"><a href="#3-1-多类-macro-micro-weighted" class="headerlink" title="3.1 多类 macro &#x2F; micro &#x2F; weighted"></a>3.1 多类 macro &#x2F; micro &#x2F; weighted</h3><p>对类别 (c)，记 (P_c, R_c, F1_c)：</p>
+<table>
+<thead>
+<tr>
+<th>平均</th>
+<th>公式</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>macro</strong></td>
+<td>(\frac{1}{C}\sum_c F1_c)</td>
+<td>小类与大类等权；不平衡任务首选</td>
+</tr>
+<tr>
+<td><strong>micro</strong></td>
+<td>全局合并 TP&#x2F;FP&#x2F;FN 后算 F1</td>
+<td>受大类主导</td>
+</tr>
+<tr>
+<td><strong>weighted</strong></td>
+<td>(\sum_c \frac{n_c}{N} F1_c)</td>
+<td>按 support 加权</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-代码"><a href="#3-2-代码" class="headerlink" title="3.2 代码"></a>3.2 代码</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sklearn.metrics <span class="keyword">import</span> f1_score, classification_report</span><br><span class="line"></span><br><span class="line">label_names = [<span class="string">&quot;sadness&quot;</span>, <span class="string">&quot;joy&quot;</span>, <span class="string">&quot;love&quot;</span>, <span class="string">&quot;anger&quot;</span>, <span class="string">&quot;fear&quot;</span>, <span class="string">&quot;surprise&quot;</span>]</span><br><span class="line"></span><br><span class="line">macro_f1 = f1_score(</span><br><span class="line">    y_true, y_pred,</span><br><span class="line">    labels=label_names,</span><br><span class="line">    average=<span class="string">&quot;macro&quot;</span>,</span><br><span class="line">    zero_division=<span class="number">0</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 每类明细</span></span><br><span class="line">report = classification_report(y_true, y_pred, labels=label_names, zero_division=<span class="number">0</span>)</span><br><span class="line"><span class="built_in">print</span>(report)</span><br></pre></td></tr></table></figure>
+
+<p><code>classification_report</code> 输出每类的 precision、recall、f1-score、support，是微调报告的标准附件。</p>
+<h3 id="3-3-数值示例"><a href="#3-3-数值示例" class="headerlink" title="3.3 数值示例"></a>3.3 数值示例</h3><p>六类情绪、基座零样本评估：macro_f1 &#x3D; 0.482，accuracy &#x3D; 0.625。macro 更低说明少数类 F1 拖累整体——若只看 accuracy 会高估模型。</p>
+<hr>
+<h2 id="四、如何解读"><a href="#四、如何解读" class="headerlink" title="四、如何解读"></a>四、如何解读</h2><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>可能原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>某类 recall 极低</td>
+<td>模型很少预测该类；或常与它类混淆</td>
+</tr>
+<tr>
+<td>某类 precision 极低</td>
+<td>模型乱预测到该类</td>
+</tr>
+<tr>
+<td>macro_f1 ↑ 但 accuracy ↓</td>
+<td>少数类改善、多数类略降——业务上可能仍更好</td>
+</tr>
+<tr>
+<td>各类 F1 均低</td>
+<td>基座能力弱或 prompt 与任务不匹配</td>
+</tr>
+</tbody></table>
+<p><strong>微调验收</strong>：优先看 <strong>macro_f1 delta</strong>；若业务只关心某一类（如「anger 不能被漏掉」），单独盯该类的 recall。</p>
+<hr>
+<h2 id="五、局限性与常见误用"><a href="#五、局限性与常见误用" class="headerlink" title="五、局限性与常见误用"></a>五、局限性与常见误用</h2><ol>
+<li><strong>依赖标签解析规则</strong>：生成式输出 <code>Fear.</code>、<code>fearful</code> 是否算对，需在评估脚本中统一规范化。</li>
+<li><strong>macro 对小类方差大</strong>：某类 test 仅 5 条，F1 波动剧烈。</li>
+<li><strong>F1 隐含 P&#x2F;R 等权</strong>：若业务更怕 FN，应直接优化 recall 或看 PR 曲线。</li>
+<li><strong>不能反映排序质量</strong>：推荐系统 top-k 需 MAP、NDCG 等。</li>
+<li><strong>与 train loss 无单调关系</strong>：loss 低不保证 macro F1 升。</li>
+</ol>
+<hr>
+<h2 id="六、与其他指标的关系"><a href="#六、与其他指标的关系" class="headerlink" title="六、与其他指标的关系"></a>六、与其他指标的关系</h2><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-04-%E5%87%86%E7%A1%AE%E7%8E%87-accuracy.md">Accuracy</a></td>
+<td>平衡二分类时 F1 与 accuracy 相关；多类不平衡时分化</td>
+</tr>
+<tr>
+<td><a href="./04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-06-%E6%B7%B7%E6%B7%86%E7%9F%A9%E9%98%B5-confusion_matrix.md">混淆矩阵</a></td>
+<td>矩阵对角线对应各类 TP；off-diagonal 解释 P&#x2F;R 低的原因</td>
+</tr>
+<tr>
+<td>Token-level F1（SQuAD 等）</td>
+<td>字符&#x2F;词 span 重叠 F1，非分类 F1；见 QA 评估</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、实践建议"><a href="#七、实践建议" class="headerlink" title="七、实践建议"></a>七、实践建议</h2><ol>
+<li>多类微调报告：<strong>macro_f1 + classification_report + 混淆矩阵</strong>，accuracy 作补充。</li>
+<li><code>zero_division=0</code> 避免某类未预测时报错。</li>
+<li>对比微调前后时，固定 <code>labels=</code> 参数列表，防止类别顺序变化导致不可比。</li>
+<li>生成式评估慢，可先用较小 <code>EVAL_LIMIT</code> 看趋势，正式实验再放大。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/" rel="tag"><i class="fa fa-tag"></i> 评估指标</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E5%BE%AE%E8%B0%83/" rel="tag"><i class="fa fa-tag"></i> 微调</a>
+          
+            <a href="/tags/F1/" rel="tag"><i class="fa fa-tag"></i> F1</a>
+          
+            <a href="/tags/Precision/" rel="tag"><i class="fa fa-tag"></i> Precision</a>
+          
+            <a href="/tags/Recall/" rel="tag"><i class="fa fa-tag"></i> Recall</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-06-%E6%B7%B7%E6%B7%86%E7%9F%A9%E9%98%B5-confusion_matrix/" rel="next" title="混淆矩阵（Confusion Matrix）详解">
+                <i class="fa fa-chevron-left"></i> 混淆矩阵（Confusion Matrix）详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/04-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87-03-Token%E5%87%86%E7%A1%AE%E7%8E%87-mean_token_accuracy/" rel="prev" title="Token 准确率（mean_token_accuracy）详解">
+                Token 准确率（mean_token_accuracy）详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%9B%B4%E8%A7%82%E5%90%AB%E4%B9%89%EF%BC%88%E4%BB%A5%E5%8D%95%E7%B1%BB%E4%B8%BA%E4%BE%8B%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">一、直观含义（以单类为例）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E4%B8%8E%E6%89%80%E9%9C%80%E6%95%B0%E6%8D%AE"><span class="nav-number">2.</span> <span class="nav-text">二、使用场景与所需数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">三、计算方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%A4%9A%E7%B1%BB-macro-micro-weighted"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 多类 macro &#x2F; micro &#x2F; weighted</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%BB%A3%E7%A0%81"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%95%B0%E5%80%BC%E7%A4%BA%E4%BE%8B"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 数值示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%A6%82%E4%BD%95%E8%A7%A3%E8%AF%BB"><span class="nav-number">4.</span> <span class="nav-text">四、如何解读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%B1%80%E9%99%90%E6%80%A7%E4%B8%8E%E5%B8%B8%E8%A7%81%E8%AF%AF%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">五、局限性与常见误用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E4%B8%8E%E5%85%B6%E4%BB%96%E6%8C%87%E6%A0%87%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">6.</span> <span class="nav-text">六、与其他指标的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%AE%9E%E8%B7%B5%E5%BB%BA%E8%AE%AE"><span class="nav-number">7.</span> <span class="nav-text">七、实践建议</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

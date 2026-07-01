@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,MCP," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="对比 Python 侧 MCP Server 开发框架：官方 SDK、FastMCP、底层 mcp.server、客户端桥接与 Agent 编排，并给出选型决策树与环境约定。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MCP开发-02.Python框架选型">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-02.Python%E6%A1%86%E6%9E%B6%E9%80%89%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="对比 Python 侧 MCP Server 开发框架：官方 SDK、FastMCP、底层 mcp.server、客户端桥接与 Agent 编排，并给出选型决策树与环境约定。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-05T02:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.360Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-12.MCP开发/MCP开发-02.Python框架选型/"/>
+
+
+
+
+
+  <title>MCP开发-02.Python框架选型 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-02.Python%E6%A1%86%E6%9E%B6%E9%80%89%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MCP开发-02.Python框架选型</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-05T10:30:00+08:00">
+                2026-06-05
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  对比 Python 侧 MCP Server 开发框架：官方 SDK、FastMCP、底层 mcp.server、客户端桥接与 Agent 编排，并给出选型决策树与环境约定。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本系列：<strong><a href="./MCP%E5%BC%80%E5%8F%91-00.%E4%BB%80%E4%B9%88%E6%98%AFMCP.md">00 什么是 MCP</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-01.%E5%8D%8F%E8%AE%AE%E6%A0%87%E5%87%86%E4%B8%8E%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md">01 协议与心智模型</a></strong> · <strong>02 Python 框架选型（本文）</strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03 部署与调用</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-04.%E9%87%8D%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%95%BF%E4%BB%BB%E5%8A%A1%E5%BC%80%E5%8F%91.md">04 重任务与优化</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-05.%E4%BB%8E0%E5%BC%80%E5%8F%91%E4%B8%80%E4%B8%AAMCP.md">05 从 0 开发</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-06.%E8%BF%9B%E9%98%B6%E7%A4%BA%E4%BE%8B-Resources%E4%B8%8ETasks.md">06 进阶示例</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-07.%E6%A1%88%E4%BE%8B-%E9%98%BF%E9%87%8C%E4%BA%91Argo%E4%B8%8E%E5%A4%9AMCP%E8%9B%8B%E7%99%BD%E8%AE%BE%E8%AE%A1.md">07 阿里云案例</a></strong></p>
+<hr>
+<h2 id="1-本文范围"><a href="#1-本文范围" class="headerlink" title="1. 本文范围"></a>1. 本文范围</h2><p>聚焦 <strong>Python 实现 MCP Server</strong> 时的框架与库选择。Client 侧（在 Agent 里连接 MCP）与 Server 侧（暴露 Tools）目标不同，下文分表说明，避免把「编排框架」误当作「Server 框架」。</p>
+<p>环境管理建议与 <a href="../02.%E5%BC%80%E5%8F%91-02.python/%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86-uv-%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%AE%9E%E8%B7%B5.md">Python-环境管理-uv-心智模型与实践</a> 对齐：项目级 <code>.venv</code>、<code>pyproject.toml</code> 声明依赖、Host 配置里写 <strong>Python 绝对路径</strong>。</p>
+<hr>
+<h2 id="2-Server-开发框架对比"><a href="#2-Server-开发框架对比" class="headerlink" title="2. Server 开发框架对比"></a>2. Server 开发框架对比</h2><table>
+<thead>
+<tr>
+<th>框架</th>
+<th>定位</th>
+<th>优势</th>
+<th>劣势</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>官方 MCP Python SDK</strong>（<code>pip install &quot;mcp[cli]&quot;</code>，<code>FastMCP</code>）</td>
+<td>规范参考实现；FastMCP 1.0 正并入官方仓库</td>
+<td>与 spec 同步、文档权威；stdio &#x2F; Streamable HTTP 内置；装饰器 <code>@mcp.tool()</code> 上手快</td>
+<td>Tasks 等 cutting-edge 特性跟进中；合并期 API 可能有小幅变动</td>
+<td><strong>默认首选</strong></td>
+</tr>
+<tr>
+<td><strong>FastMCP 2.x</strong>（<code>pip install fastmcp</code>，过渡期独立包）</td>
+<td>社区增强层，后并入官方</td>
+<td>Tasks（<code>task=True</code>）、Middleware、OAuth、OpenAPI 导入、Storage 后端</td>
+<td>需 pin 版本；与官方 SDK 职责重叠，长期应迁移到 <code>mcp</code> 包</td>
+<td>生产需 Tasks &#x2F; 中间件 &#x2F; 认证</td>
+</tr>
+<tr>
+<td><strong>底层 <code>mcp.server</code></strong></td>
+<td>手写 <code>Server</code>、自行注册 handler</td>
+<td>完全控制消息流；可嵌入 Starlette&#x2F;FastAPI</td>
+<td>样板代码多；需自行处理 schema 与传输</td>
+<td>定制传输、嵌入现有 ASGI 应用</td>
+</tr>
+<tr>
+<td><strong>OpenAPI → MCP</strong>（FastMCP <code>from_openapi</code> 等）</td>
+<td>由 REST 规范生成 Tool</td>
+<td>快速包装既有 HTTP API</td>
+<td>语义可能粗粒度；需审查生成的 Tool 描述</td>
+<td>存量 API 快速暴露</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ASGI</strong>（Asynchronous Server Gateway Interface）是 Python 异步 Web 服务器与应用之间的标准接口；<strong>FastMCP</strong> 是基于装饰器的 MCP Server 高层 API，现已成为官方 Python SDK 的推荐入口。</p>
+</blockquote>
+<hr>
+<h2 id="3-Client-编排侧（消费-MCP，非写-Server）"><a href="#3-Client-编排侧（消费-MCP，非写-Server）" class="headerlink" title="3. Client &#x2F; 编排侧（消费 MCP，非写 Server）"></a>3. Client &#x2F; 编排侧（消费 MCP，非写 Server）</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>角色</th>
+<th>优势</th>
+<th>劣势</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LangChain MCP Adapters</strong></td>
+<td>把 MCP Server 当作 LangChain Tool</td>
+<td>与 LangGraph &#x2F; LCEL 集成</td>
+<td>不实现 Server</td>
+<td>Agent 工作流消费多个 MCP</td>
+</tr>
+<tr>
+<td><strong>mcp-agent</strong>（LastMile AI）</td>
+<td>Agent + 多 MCP 工作流</td>
+<td>多 Server 组合、工作流抽象</td>
+<td>抽象较重、学习曲线</td>
+<td>多工具编排、研究原型</td>
+</tr>
+<tr>
+<td><strong>OpenAI Agents SDK</strong></td>
+<td>Agent 运行时</td>
+<td><code>MCPServerStdio</code> 等即用</td>
+<td>绑定 OpenAI 生态为主</td>
+<td>OpenAI Agent 产品链</td>
+</tr>
+<tr>
+<td><strong>Google ADK</strong></td>
+<td>Agent 开发套件</td>
+<td>含 MCP 集成</td>
+<td>谷歌栈导向</td>
+<td>Gemini &#x2F; ADK 项目</td>
+</tr>
+<tr>
+<td><strong>fast-agent-mcp</strong></td>
+<td>轻量 Agent + MCP</td>
+<td>工具调用、采样等</td>
+<td>社区规模小于 LangChain</td>
+<td>快速 Agent 实验</td>
+</tr>
+</tbody></table>
+<p>若你的目标是 <strong>「写一个给 Cursor 用的工具服务」</strong>，应优先 <strong>官方 SDK &#x2F; FastMCP</strong> 写 Server，而非从上表选框架。</p>
+<hr>
+<h2 id="4-选型决策树"><a href="#4-选型决策树" class="headerlink" title="4. 选型决策树"></a>4. 选型决策树</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">  Start[&quot;需要 Python MCP Server?&quot;]</span><br><span class="line">  Start --&gt; Q1&#123;&quot;仅本地 IDE\nstdio 调试?&quot;&#125;</span><br><span class="line">  Q1 --&gt;|是| A1[&quot;官方 SDK FastMCP\n+ stdio&quot;]</span><br><span class="line">  Q1 --&gt;|否| Q2&#123;&quot;远程 / 团队共享?&quot;&#125;</span><br><span class="line">  Q2 --&gt;|是| A2[&quot;官方 SDK\n+ streamable-http&quot;]</span><br><span class="line">  Q2 --&gt;|否| Q3&#123;&quot;长任务 / Tasks\n/ OAuth?&quot;&#125;</span><br><span class="line">  Q3 --&gt;|是| A3[&quot;FastMCP 2.14+\n或官方 SDK 跟进版&quot;]</span><br><span class="line">  Q3 --&gt;|否| Q4&#123;&quot;嵌入现有 FastAPI?&quot;&#125;</span><br><span class="line">  Q4 --&gt;|是| A4[&quot;底层 mcp.server\n+ ASGI mount&quot;]</span><br><span class="line">  Q4 --&gt;|否| A1</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第一个 Tool、本地 Cursor &#x2F; Claude Desktop</td>
+<td>官方 SDK + <code>transport=&quot;stdio&quot;</code></td>
+</tr>
+<tr>
+<td>内网 HTTPS、多用户</td>
+<td>官方 SDK + <code>streamable-http</code></td>
+</tr>
+<tr>
+<td>分钟级任务 + 进度 + 取消</td>
+<td>FastMCP <code>task=True</code> 或外部队列（见 <a href="./MCP%E5%BC%80%E5%8F%91-04.%E9%87%8D%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%95%BF%E4%BB%BB%E5%8A%A1%E5%BC%80%E5%8F%91.md">04</a>）</td>
+</tr>
+<tr>
+<td>已有 OpenAPI 文档的 REST 服务</td>
+<td>FastMCP OpenAPI 导入 + 人工审查 Tool</td>
+</tr>
+<tr>
+<td>Serverless（Lambda &#x2F; Workers）</td>
+<td>官方 SDK + <strong>无状态 HTTP</strong>（见 <a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03</a>）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-官方-SDK-与-FastMCP：如何理解合并"><a href="#5-官方-SDK-与-FastMCP：如何理解合并" class="headerlink" title="5. 官方 SDK 与 FastMCP：如何理解合并"></a>5. 官方 SDK 与 FastMCP：如何理解合并</h2><p>2025 年底起，<strong>FastMCP 1.0 并入 <a target="_blank" rel="noopener" href="https://github.com/modelcontextprotocol/python-sdk">modelcontextprotocol&#x2F;python-sdk</a></strong>。实践上：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 当前推荐 import（官方 SDK）</span></span><br><span class="line"><span class="keyword">from</span> mcp.server.fastmcp <span class="keyword">import</span> FastMCP</span><br></pre></td></tr></table></figure>
+
+<p>过渡期内，若文档或旧项目仍使用独立包：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 过渡期：独立 fastmcp 包（功能更全，长期迁移至 mcp）</span></span><br><span class="line"><span class="keyword">from</span> fastmcp <span class="keyword">import</span> FastMCP  <span class="comment"># pip install fastmcp</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>建议</strong>：新项目 <code>pip install &quot;mcp[cli]&quot;</code> 或 <code>uv add mcp</code>；需要 <strong>Tasks &#x2F; 高级中间件</strong> 且官方版尚未覆盖时，再额外 <code>fastmcp</code> 并 <strong>pin 版本</strong>，关注 release note。</p>
+<hr>
+<h2 id="6-环境约定（uv-venv）"><a href="#6-环境约定（uv-venv）" class="headerlink" title="6. 环境约定（uv &#x2F; venv）"></a>6. 环境约定（uv &#x2F; venv）</h2><h3 id="6-1-用-uv-初始化项目"><a href="#6-1-用-uv-初始化项目" class="headerlink" title="6.1 用 uv 初始化项目"></a>6.1 用 uv 初始化项目</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">uv init mcp-demo &amp;&amp; <span class="built_in">cd</span> mcp-demo</span><br><span class="line">uv add <span class="string">&quot;mcp[cli]&quot;</span></span><br><span class="line"><span class="comment"># 可选：长任务场景</span></span><br><span class="line"><span class="comment"># uv add fastmcp</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-2-Host-配置为何要用绝对路径"><a href="#6-2-Host-配置为何要用绝对路径" class="headerlink" title="6.2 Host 配置为何要用绝对路径"></a>6.2 Host 配置为何要用绝对路径</h3><p>stdio 模式下 Host <strong>不会</strong>激活你的 shell 环境。<code>command: &quot;python&quot;</code> 常指向系统解释器，导致 <code>ModuleNotFoundError: mcp</code>。</p>
+<p>正确做法：<code>command</code> 指向项目 <code>.venv/bin/python</code>（macOS&#x2F;Linux）或 <code>.venv\Scripts\python.exe</code>（Windows）的<strong>绝对路径</strong>。示例见 <a href="./MCP%E5%BC%80%E5%8F%91-05.%E4%BB%8E0%E5%BC%80%E5%8F%91%E4%B8%80%E4%B8%AAMCP.md">05 从 0 开发</a>。</p>
+<h3 id="6-3-版本与协议"><a href="#6-3-版本与协议" class="headerlink" title="6.3 版本与协议"></a>6.3 版本与协议</h3><ul>
+<li>Python：<strong>3.10+</strong>（以 SDK <code>pyproject.toml</code> 为准）。</li>
+<li>协议实践主干：<strong>2025-11-25</strong>（见 <a href="./MCP%E5%BC%80%E5%8F%91-01.%E5%8D%8F%E8%AE%AE%E6%A0%87%E5%87%86%E4%B8%8E%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md">01</a>）。</li>
+</ul>
+<hr>
+<h2 id="7-嵌入-FastAPI-Starlette（模式说明）"><a href="#7-嵌入-FastAPI-Starlette（模式说明）" class="headerlink" title="7. 嵌入 FastAPI &#x2F; Starlette（模式说明）"></a>7. 嵌入 FastAPI &#x2F; Starlette（模式说明）</h2><p>不重依赖新框架时，常见模式是：<strong>MCP 传输挂载到 ASGI 应用的路由</strong>，业务逻辑仍写在 FastMCP 或底层 handler 中。思路：</p>
+<ol>
+<li>用 <code>FastMCP</code> 定义 Tools。</li>
+<li>通过 SDK 提供的 <strong>Streamable HTTP &#x2F; SSE 适配器</strong> 挂载到 <code>/mcp</code>。</li>
+<li>同一进程可同时提供 REST 健康检查（<code>/health</code>）与 MCP 端点。</li>
+</ol>
+<p>具体 API 以当前 <a target="_blank" rel="noopener" href="https://github.com/modelcontextprotocol/python-sdk">python-sdk 文档</a> 为准；选型动机是「与现有 Web 服务共进程」，而非必须用 FastAPI 才能写 MCP。</p>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>答案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>默认选什么？</td>
+<td><strong>官方 MCP Python SDK + FastMCP</strong></td>
+</tr>
+<tr>
+<td>何时用 FastMCP 2.x 独立包？</td>
+<td>Tasks、OAuth、OpenAPI 等官方版尚未满足时</td>
+</tr>
+<tr>
+<td>何时用底层 <code>mcp.server</code>？</td>
+<td>定制传输、深度嵌入 ASGI</td>
+</tr>
+<tr>
+<td>Agent 里连 MCP 用什么？</td>
+<td>LangChain Adapters、mcp-agent 等 <strong>Client 侧</strong>库</td>
+</tr>
+<tr>
+<td>环境怎么配？</td>
+<td>项目 <code>.venv</code> + Host 里 Python <strong>绝对路径</strong></td>
+</tr>
+</tbody></table>
+<p>下一步：<a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03 部署方式与调用配置</a> · 动手：<a href="./MCP%E5%BC%80%E5%8F%91-05.%E4%BB%8E0%E5%BC%80%E5%8F%91%E4%B8%80%E4%B8%AAMCP.md">05 从 0 开发</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          
+            <a href="/tags/MCP/" rel="tag"><i class="fa fa-tag"></i> MCP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-01.%E5%8D%8F%E8%AE%AE%E6%A0%87%E5%87%86%E4%B8%8E%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B/" rel="next" title="MCP开发-01.协议标准与心智模型">
+                <i class="fa fa-chevron-left"></i> MCP开发-01.协议标准与心智模型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE/" rel="prev" title="MCP开发-03.部署方式与调用配置">
+                MCP开发-03.部署方式与调用配置 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%9C%AC%E6%96%87%E8%8C%83%E5%9B%B4"><span class="nav-number">1.</span> <span class="nav-text">1. 本文范围</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Server-%E5%BC%80%E5%8F%91%E6%A1%86%E6%9E%B6%E5%AF%B9%E6%AF%94"><span class="nav-number">2.</span> <span class="nav-text">2. Server 开发框架对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Client-%E7%BC%96%E6%8E%92%E4%BE%A7%EF%BC%88%E6%B6%88%E8%B4%B9-MCP%EF%BC%8C%E9%9D%9E%E5%86%99-Server%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. Client &#x2F; 编排侧（消费 MCP，非写 Server）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%80%89%E5%9E%8B%E5%86%B3%E7%AD%96%E6%A0%91"><span class="nav-number">4.</span> <span class="nav-text">4. 选型决策树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%AE%98%E6%96%B9-SDK-%E4%B8%8E-FastMCP%EF%BC%9A%E5%A6%82%E4%BD%95%E7%90%86%E8%A7%A3%E5%90%88%E5%B9%B6"><span class="nav-number">5.</span> <span class="nav-text">5. 官方 SDK 与 FastMCP：如何理解合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E7%8E%AF%E5%A2%83%E7%BA%A6%E5%AE%9A%EF%BC%88uv-venv%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 环境约定（uv &#x2F; venv）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E7%94%A8-uv-%E5%88%9D%E5%A7%8B%E5%8C%96%E9%A1%B9%E7%9B%AE"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 用 uv 初始化项目</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-Host-%E9%85%8D%E7%BD%AE%E4%B8%BA%E4%BD%95%E8%A6%81%E7%94%A8%E7%BB%9D%E5%AF%B9%E8%B7%AF%E5%BE%84"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 Host 配置为何要用绝对路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E7%89%88%E6%9C%AC%E4%B8%8E%E5%8D%8F%E8%AE%AE"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 版本与协议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B5%8C%E5%85%A5-FastAPI-Starlette%EF%BC%88%E6%A8%A1%E5%BC%8F%E8%AF%B4%E6%98%8E%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 嵌入 FastAPI &#x2F; Starlette（模式说明）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

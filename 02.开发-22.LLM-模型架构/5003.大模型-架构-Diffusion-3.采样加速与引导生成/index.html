@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,Diffusion,DDIM,Classifier-free Guidance,条件生成," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="DDIM 确定性跳步、Classifier Guidance 与 Classifier-free Guidance 原理；步数–质量权衡及蛋白质 design 中的条件控制。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-Diffusion-3.采样加速与引导生成">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="DDIM 确定性跳步、Classifier Guidance 与 Classifier-free Guidance 原理；步数–质量权衡及蛋白质 design 中的条件控制。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/math-fig04-conditional-distribution.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/fig05-ddpm-vs-ddim.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/math-fig11-score-function.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/fig06-motif-scaffolding-workflow.png">
+<meta property="article:published_time" content="2026-06-11T05:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:18.128Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Classifier-free Guidance">
+<meta property="article:tag" content="DDIM">
+<meta property="article:tag" content="Diffusion">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="条件生成">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/math-fig04-conditional-distribution.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-Diffusion-3.采样加速与引导生成/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-Diffusion-3.采样加速与引导生成 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-Diffusion-3.采样加速与引导生成</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T13:00:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  DDIM 确定性跳步、Classifier Guidance 与 Classifier-free Guidance 原理；步数–质量权衡及蛋白质 design 中的条件控制。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>扩散模型训练稳定，但默认 <strong>1000 步</strong>逆向采样使推理成本成为部署瓶颈；生物 <strong>design</strong> 任务还要求对<strong>二级结构</strong>、<strong>结合位点</strong>、<strong>对称性</strong>等条件精确控制。<strong>DDIM</strong> 提供<strong>跳步确定性</strong>采样；**分类器引导（Classifier Guidance）<strong>与</strong>无分类器引导（Classifier-free Guidance，CFG）**通过调节条件得分，在样本质量与条件服从度之间权衡——<strong>RFdiffusion</strong> 等蛋白质生成器 heavily 依赖 CFG 式条件化。</p>
+<blockquote>
+<p>段末注释：<strong>CFG</strong> 在训练时随机丢弃条件，推理时用有条件与无条件得分差做外推；<strong>DDIM</strong> 为 Denoising Diffusion Implicit Models 的缩写。</p>
+</blockquote>
+<p><strong>前置阅读</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-2.%E5%BE%97%E5%88%86%E5%8C%B9%E9%85%8D%E4%B8%8E%E9%9A%8F%E6%9C%BA%E5%BE%AE%E5%88%86%E6%96%B9%E7%A8%8B.md">5003.大模型-架构-Diffusion-2.得分匹配与随机微分方程</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md">Diffusion-Math-0 概率与扩散数学基础</a></p>
+<hr>
+<h2 id="1-采样加速的需求"><a href="#1-采样加速的需求" class="headerlink" title="1. 采样加速的需求"></a>1. 采样加速的需求</h2><p>设单次网络前向耗时 (c)，步数 (T) 则生成一个蛋白质骨架约需 (T \cdot c)。若 (T&#x3D;1000)、(c&#x3D;50,\mathrm{ms})，单样本约 <strong>50 s</strong>——高通量 <strong>design</strong> 不可接受。目标：在 <strong>(T’ \ll T)</strong> 步内保持可接受的 <strong>designability &#x2F; RMSD</strong>。</p>
+<p>加速路线概览：</p>
+<table>
+<thead>
+<tr>
+<th align="left">方法</th>
+<th align="left">思路</th>
+<th align="left">典型加速比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>DDIM</strong></td>
+<td align="left">非马尔可夫、确定性子序列</td>
+<td align="left">10–50×</td>
+</tr>
+<tr>
+<td align="left"><strong>高阶 ODE 求解器</strong></td>
+<td align="left">更大 (\Delta t)、更少步</td>
+<td align="left">5–20×</td>
+</tr>
+<tr>
+<td align="left"><strong>蒸馏（Distillation）</strong></td>
+<td align="left">学生网络模仿多步教师</td>
+<td align="left">10–100×</td>
+</tr>
+<tr>
+<td align="left"><strong>潜空间扩散 LDM</strong></td>
+<td align="left">低维 (z) 上扩散</td>
+<td align="left">2–4×（每步更轻）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-DDIM：非马尔可夫跳步采样"><a href="#2-DDIM：非马尔可夫跳步采样" class="headerlink" title="2. DDIM：非马尔可夫跳步采样"></a>2. DDIM：非马尔可夫跳步采样</h2><p>Song <em>et al.</em>（2020）构造一族<strong>非马尔可夫</strong>前向过程，使<strong>相同</strong>的 (q(x_t\mid x_0)) 边缘分布与 DDPM 一致，但逆向可<strong>确定性</strong>、且只在子序列 ({\tau_1,\ldots,\tau_S}) 上更新。</p>
+<h3 id="2-1-更新公式（-eta-0-确定性）"><a href="#2-1-更新公式（-eta-0-确定性）" class="headerlink" title="2.1 更新公式（(\eta&#x3D;0) 确定性）"></a>2.1 更新公式（(\eta&#x3D;0) 确定性）</h3><p>设 (\hat\epsilon &#x3D; \epsilon_\theta(x_t,t))，预测 (\hat x_0 &#x3D; \frac{1}{\sqrt{\bar\alpha_t}}(x_t - \sqrt{1-\bar\alpha_t},\hat\epsilon))。从步 (t) 跳到更早步 (t’)：</p>
+<p>[<br>x_{t’} &#x3D; \sqrt{\bar\alpha_{t’}},\hat x_0 + \sqrt{1-\bar\alpha_{t’} - \sigma_t^2},\hat\epsilon + \sigma_t z,<br>]</p>
+<p>(\eta \in [0,1]) 控制随机性：(\eta&#x3D;0) 时 (\sigma_t&#x3D;0)，完全确定性；(\eta&#x3D;1) 退化为 DDPM 类随机采样。</p>
+<p><strong>关键</strong>：可在 (S&#x3D;50) 个均匀（或余弦）选取的 (t) 上运行，而训练仍用完整 (T&#x3D;1000) 的 (\epsilon_\theta)。</p>
+<h3 id="2-2-与概率流-ODE-的关系"><a href="#2-2-与概率流-ODE-的关系" class="headerlink" title="2.2 与概率流 ODE 的关系"></a>2.2 与概率流 ODE 的关系</h3><p>(\eta&#x3D;0) 的 DDIM 等价于对<strong>概率流 ODE</strong>（第 2 篇）的一种离散化：同一 (x_T) 总得到同一 (x_0)，便于<strong>插值</strong>与<strong>编辑</strong>（inpainting 时在已知区域每步替换为 (q(x_t\mid x_0^{\mathrm{known}})) 的采样）。</p>
+<p><strong>概念锚点 · Inpainting 与条件分布</strong>：inpainting 每步将已知区域重置为 (q(x_t\mid x_0^{\mathrm{fixed}})) 的样本——即固定 (x_0) 条件下的前向加噪，与 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#4-%E6%9D%A1%E4%BB%B6%E5%88%86%E5%B8%83%E4%B8%8E%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%B7%B2%E7%9F%A5%E4%B8%80%E9%83%A8%E5%88%86%E5%85%B6%E4%BD%99%E6%80%8E%E4%B9%88%E5%8F%98">Math-0 §4</a> 的条件高斯一致。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/math-fig04-conditional-distribution.png" alt="概念图　条件分布 \(q(x_t \mid x_0)\)：inpainting 的理论基础"></p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/fig05-ddpm-vs-ddim.png" alt="图 1　DDPM 多步随机采样与 DDIM 跳步确定性采样对比"></p>
+<hr>
+<h2 id="3-Classifier-Guidance（分类器引导）"><a href="#3-Classifier-Guidance（分类器引导）" class="headerlink" title="3. Classifier Guidance（分类器引导）"></a>3. Classifier Guidance（分类器引导）</h2><p>Dhariwal &amp; Nichol（2021）在<strong>类条件</strong>扩散 (\epsilon_\theta(x_t,t,c)) 上，用预训练分类器 (p_\phi(c\mid x_t)) 引导采样 toward 目标类 (c)：</p>
+<p>[<br>\hat\epsilon &#x3D; \epsilon_\theta(x_t,t,c) - w,\sqrt{1-\bar\alpha_t},\nabla_{x_t}\log p_\phi(c\mid x_t),<br>]</p>
+<p>(w&gt;0) 为<strong>引导强度（guidance scale）</strong>。直觉：在去噪方向叠加「使分类器更确信为 (c)」的梯度——本质是在 (\epsilon) 空间做<strong>条件得分</strong>的外推（与 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#11-%E5%BE%97%E5%88%86%E5%87%BD%E6%95%B0%E5%AF%B9%E6%95%B0%E5%AF%86%E5%BA%A6%E7%9A%84%E6%A2%AF%E5%BA%A6">Math-0 §11</a> 得分方向一致）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/math-fig11-score-function.png" alt="概念图　得分&#x2F;梯度方向：CFG 与 Classifier Guidance 的几何直觉"></p>
+<p><strong>生物场景</strong>：若存在预测「是否为 (\alpha)-螺旋丰富」的分类器，可引导生成高螺旋蛋白——但需<strong>可微</strong>、且在 noisy (x_t) 上训练稳定的分类器，工程成本高。</p>
+<hr>
+<h2 id="4-Classifier-free-Guidance（CFG）"><a href="#4-Classifier-free-Guidance（CFG）" class="headerlink" title="4. Classifier-free Guidance（CFG）"></a>4. Classifier-free Guidance（CFG）</h2><p>Ho &amp; Salimans（2022）：<strong>不单独训练分类器</strong>，训练时以概率 (p_{\mathrm{uncond}}) 将条件 (c) <strong>置空</strong>（如全零嵌入、特殊 null token），学习同一网络 (\epsilon_\theta(x_t,t,c)) 同时建模条件与无条件分布。</p>
+<p>推理时：</p>
+<p>[<br>\hat\epsilon &#x3D; \epsilon_\theta(x_t,t,\varnothing) + w,\big(\epsilon_\theta(x_t,t,c) - \epsilon_\theta(x_t,t,\varnothing)\big),<br>]</p>
+<p>(w&#x3D;1) 为标准条件生成；(w&gt;1) <strong>放大</strong>条件方向，提高条件服从度，但过大时多样性下降、样本可能「过拟合条件」或物理不合理。</p>
+<h3 id="4-1-在蛋白质-design-中的对应"><a href="#4-1-在蛋白质-design-中的对应" class="headerlink" title="4.1 在蛋白质 design 中的对应"></a>4.1 在蛋白质 design 中的对应</h3><p><strong>RFdiffusion</strong> 将条件（二级结构、block adjacency、motif 约束等）编码为额外通道或嵌入，训练时使用 <strong>CFG dropout</strong>；推理时 (w \approx 1!-!10) 调节 scaffold 与 motif 的保真度。</p>
+<table>
+<thead>
+<tr>
+<th align="left">条件类型</th>
+<th align="left">编码方式</th>
+<th align="left">CFG 作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>二级结构</strong></td>
+<td align="left">逐残基 SS 标签</td>
+<td align="left">控制 (\alpha&#x2F;\beta) 比例</td>
+</tr>
+<tr>
+<td align="left"><strong>Motif scaffolding</strong></td>
+<td align="left">固定坐标 inpainting</td>
+<td align="left">保留活性位点几何</td>
+</tr>
+<tr>
+<td align="left"><strong>对称性</strong></td>
+<td align="left">对称复制 + 群平均</td>
+<td align="left">寡聚体 design</td>
+</tr>
+<tr>
+<td align="left"><strong>结合靶点</strong></td>
+<td align="left">靶点结构 cross-attention</td>
+<td align="left">结合剂 design</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-其他条件注入机制"><a href="#5-其他条件注入机制" class="headerlink" title="5. 其他条件注入机制"></a>5. 其他条件注入机制</h2><p>除 CFG 外，条件信息进入 (\epsilon_\theta) 的常见方式：</p>
+<p><strong>（1）通道拼接（concatenation）</strong><br>将条件图（SS、距离图、序列 profile）与 (x_t) 在通道维拼接——<strong>U-Net</strong> 常用。</p>
+<p><strong>（2）交叉注意力（cross-attention）</strong><br>条件序列（靶点残基、文本描述）作为 <strong>Key&#x2F;Value</strong>，noisy 结构作为 <strong>Query</strong>——<strong>Stable Diffusion</strong>、部分 <strong>Chroma</strong> 模块采用。</p>
+<p><strong>（3）AdaGN &#x2F; FiLM</strong><br>条件向量调制各层 <strong>GroupNorm</strong> 的 scale&#x2F;shift：(\mathrm{GN}(h) \cdot (1+s(c)) + b(c))。</p>
+<p><strong>（4）Inpainting &#x2F; 硬约束</strong><br>每步将已知区域替换为 (x_t^{\mathrm{known}} \sim q(x_t\mid x_0^{\mathrm{fixed}}))，未知区域继续去噪——<strong>motif scaffolding</strong> 的标准做法。</p>
+<hr>
+<h2 id="6-步数与引导强度的调参"><a href="#6-步数与引导强度的调参" class="headerlink" title="6. 步数与引导强度的调参"></a>6. 步数与引导强度的调参</h2><p><strong>步数 (S)</strong></p>
+<ul>
+<li>过少：结构未收敛，<strong>RMSD</strong> 高、<strong>clash</strong> 多；</li>
+<li>过多：收益递减，线性增加延迟。</li>
+<li>经验：骨架扩散 <strong>50–200</strong> 步 + DDIM&#x2F;Heun 是常见起点。</li>
+</ul>
+<p><strong>引导强度 (w)</strong></p>
+<ul>
+<li>(w&#x3D;1)：标准条件；</li>
+<li>(w \in [2,10])：更强条件，<strong>motif</strong> 保真度↑，多样性↓；</li>
+<li>(w) 过大：模式崩溃、非物理结构。</li>
+</ul>
+<p>建议在验证集上画 <strong>designability vs. (S)</strong>、<strong>motif RMSD vs. (w)</strong> 曲线，而非照搬图像生成的 (w&#x3D;7.5)。</p>
+<hr>
+<h2 id="7-蒸馏与其他加速（简述）"><a href="#7-蒸馏与其他加速（简述）" class="headerlink" title="7. 蒸馏与其他加速（简述）"></a>7. 蒸馏与其他加速（简述）</h2><p><strong>Progressive Distillation</strong>（Salimans &amp; Ho）：训练学生网络用 2 步模仿教师 4 步，迭代减半——最终 4–8 步生成。<br><strong>Consistency Models</strong>（Song <em>et al.</em>）：学习任意 (t) 到 (0) 的一步映射 (f(x_t,t))。<br>生物领域：蒸馏工作相对图像少，工业 <strong>design</strong> 仍以 <strong>DDIM + 中等步数</strong> 为主。</p>
+<hr>
+<h2 id="8-生物信息学案例：条件生成工作流"><a href="#8-生物信息学案例：条件生成工作流" class="headerlink" title="8. 生物信息学案例：条件生成工作流"></a>8. 生物信息学案例：条件生成工作流</h2><p>以 <strong>motif scaffolding</strong> 为例：</p>
+<ol>
+<li><strong>固定</strong>活性位点残基坐标 (x_0^{\mathrm{motif}})；</li>
+<li>初始化全结构 (x_T)（motif 区域加噪至与周围一致，或 inpainting 掩码）；</li>
+<li>每步 DDIM：预测 (\hat\epsilon)，应用 <strong>CFG</strong>（条件 &#x3D; SS + motif 掩码）；</li>
+<li><strong>Inpainting</strong>：motif 位置重置为 (q(x_t\mid x_0^{\mathrm{motif}}))；</li>
+<li>输出 (x_0)，用 <strong>ProteinMPNN</strong> 设计序列，<strong>AlphaFold2</strong> 验证 <strong>self-consistency</strong>。</li>
+</ol>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90/fig06-motif-scaffolding-workflow.png" alt="图 2　Motif scaffolding 条件生成工作流（DDIM + CFG + Inpainting）"></p>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><p><strong>DDIM</strong> 在保持 DDPM 训练不变的前提下，用<strong>确定性跳步</strong>将推理步数降一个数量级；<strong>CFG</strong> 用条件与无条件预测之差实现<strong>免分类器引导</strong>，成为 <strong>RFdiffusion</strong> 等工具的条件控制核心。部署生物扩散 pipeline 时，<strong>(S)</strong> 与 <strong>(w)</strong> 是与 <strong>学习率</strong> 同等重要的超参，应针对 <strong>designability</strong> 与 <strong>motif 保真</strong> 联合标定。</p>
+<blockquote>
+<p>段末注释：<strong>inpainting</strong> 指仅生成部分区域、其余区域由已知数据约束；<strong>self-consistency</strong> 指设计序列经折叠模型预测结构与生成结构一致。</p>
+</blockquote>
+<hr>
+<h2 id="本篇数学概念索引"><a href="#本篇数学概念索引" class="headerlink" title="本篇数学概念索引"></a>本篇数学概念索引</h2><table>
+<thead>
+<tr>
+<th align="left">概念</th>
+<th align="left">出现章节</th>
+<th align="left">延伸阅读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">条件分布 &#x2F; inpainting</td>
+<td align="left">§2.2</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#4-%E6%9D%A1%E4%BB%B6%E5%88%86%E5%B8%83%E4%B8%8E%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%B7%B2%E7%9F%A5%E4%B8%80%E9%83%A8%E5%88%86%E5%85%B6%E4%BD%99%E6%80%8E%E4%B9%88%E5%8F%98">Math-0 §4</a></td>
+</tr>
+<tr>
+<td align="left">得分 &#x2F; 梯度引导（CFG）</td>
+<td align="left">§3–§4</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#11-%E5%BE%97%E5%88%86%E5%87%BD%E6%95%B0%E5%AF%B9%E6%95%B0%E5%AF%86%E5%BA%A6%E7%9A%84%E6%A2%AF%E5%BA%A6">Math-0 §11</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考与延伸阅读"><a href="#参考与延伸阅读" class="headerlink" title="参考与延伸阅读"></a>参考与延伸阅读</h2><ul>
+<li>Song <em>et al.</em>, <em>Denoising Diffusion Implicit Models</em>（<strong>DDIM</strong>）.  </li>
+<li>Dhariwal &amp; Nichol, <em>Diffusion Models Beat GANs on Image Synthesis</em>（<strong>Classifier Guidance</strong>）.  </li>
+<li>Ho &amp; Salimans, <em>Classifier-Free Diffusion Guidance</em>（<strong>CFG</strong>）.  </li>
+<li>Watson <em>et al.</em>, <em>De novo design of protein structure and function with RFdiffusion</em>.  </li>
+<li>Karras <em>et al.</em>, <em>Elucidating the Design Space of Diffusion-Based Generative Models</em>（求解器与日程）.</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/Diffusion/" rel="tag"><i class="fa fa-tag"></i> Diffusion</a>
+          
+            <a href="/tags/DDIM/" rel="tag"><i class="fa fa-tag"></i> DDIM</a>
+          
+            <a href="/tags/Classifier-free-Guidance/" rel="tag"><i class="fa fa-tag"></i> Classifier-free Guidance</a>
+          
+            <a href="/tags/%E6%9D%A1%E4%BB%B6%E7%94%9F%E6%88%90/" rel="tag"><i class="fa fa-tag"></i> 条件生成</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-2.%E5%BE%97%E5%88%86%E5%8C%B9%E9%85%8D%E4%B8%8E%E9%9A%8F%E6%9C%BA%E5%BE%AE%E5%88%86%E6%96%B9%E7%A8%8B/" rel="next" title="5003.大模型-架构-Diffusion-2.得分匹配与随机微分方程">
+                <i class="fa fa-chevron-left"></i> 5003.大模型-架构-Diffusion-2.得分匹配与随机微分方程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90/" rel="prev" title="5003.大模型-架构-Diffusion-4.离散扩散与序列生成">
+                5003.大模型-架构-Diffusion-4.离散扩散与序列生成 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E7%9A%84%E9%9C%80%E6%B1%82"><span class="nav-number">1.</span> <span class="nav-text">1. 采样加速的需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-DDIM%EF%BC%9A%E9%9D%9E%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E8%B7%B3%E6%AD%A5%E9%87%87%E6%A0%B7"><span class="nav-number">2.</span> <span class="nav-text">2. DDIM：非马尔可夫跳步采样</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E6%9B%B4%E6%96%B0%E5%85%AC%E5%BC%8F%EF%BC%88-eta-0-%E7%A1%AE%E5%AE%9A%E6%80%A7%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 更新公式（(\eta&#x3D;0) 确定性）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E4%B8%8E%E6%A6%82%E7%8E%87%E6%B5%81-ODE-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 与概率流 ODE 的关系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Classifier-Guidance%EF%BC%88%E5%88%86%E7%B1%BB%E5%99%A8%E5%BC%95%E5%AF%BC%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. Classifier Guidance（分类器引导）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Classifier-free-Guidance%EF%BC%88CFG%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. Classifier-free Guidance（CFG）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%9C%A8%E8%9B%8B%E7%99%BD%E8%B4%A8-design-%E4%B8%AD%E7%9A%84%E5%AF%B9%E5%BA%94"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 在蛋白质 design 中的对应</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%85%B6%E4%BB%96%E6%9D%A1%E4%BB%B6%E6%B3%A8%E5%85%A5%E6%9C%BA%E5%88%B6"><span class="nav-number">5.</span> <span class="nav-text">5. 其他条件注入机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%AD%A5%E6%95%B0%E4%B8%8E%E5%BC%95%E5%AF%BC%E5%BC%BA%E5%BA%A6%E7%9A%84%E8%B0%83%E5%8F%82"><span class="nav-number">6.</span> <span class="nav-text">6. 步数与引导强度的调参</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E8%92%B8%E9%A6%8F%E4%B8%8E%E5%85%B6%E4%BB%96%E5%8A%A0%E9%80%9F%EF%BC%88%E7%AE%80%E8%BF%B0%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 蒸馏与其他加速（简述）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF%E5%AD%A6%E6%A1%88%E4%BE%8B%EF%BC%9A%E6%9D%A1%E4%BB%B6%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="nav-number">8.</span> <span class="nav-text">8. 生物信息学案例：条件生成工作流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E7%AF%87%E6%95%B0%E5%AD%A6%E6%A6%82%E5%BF%B5%E7%B4%A2%E5%BC%95"><span class="nav-number">10.</span> <span class="nav-text">本篇数学概念索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">11.</span> <span class="nav-text">参考与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

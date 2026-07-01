@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="大模型,信息论,KL散度,RLHF," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="RLHF 流程、奖励模型、PPO 中 KL 惩罚、DPO 目标及参考策略约束的信息论解读。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Math-05.信息论-20.RLHF与KL约束">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="RLHF 流程、奖励模型、PPO 中 KL 惩罚、DPO 目标及参考策略约束的信息论解读。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig01-intuition.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig02-pmf.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig03-scenarios.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig04-limitations.png">
+<meta property="article:published_time" content="2026-06-21T07:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:15.542Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="KL散度">
+<meta property="article:tag" content="RLHF">
+<meta property="article:tag" content="信息论">
+<meta property="article:tag" content="大模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig01-intuition.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-02.Math/Math-05.信息论-20.RLHF与KL约束/"/>
+
+
+
+
+
+  <title>Math-05.信息论-20.RLHF与KL约束 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Math-05.信息论-20.RLHF与KL约束</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-21T15:00:00+08:00">
+                2026-06-21
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  RLHF 流程、奖励模型、PPO 中 KL 惩罚、DPO 目标及参考策略约束的信息论解读。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本页从<strong>信息论</strong>视角梳理 <strong>RLHF</strong>（Reinforcement Learning from Human Feedback，人类反馈强化学习）中的 <strong>KL 约束</strong>：为何要对齐参考策略、公式如何出现。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RLHF</strong> 用人类偏好训练奖励模型，再以强化学习微调语言模型；<strong>KL 惩罚</strong> $D_{\mathrm{KL}}(\pi_\theta | \pi_{\mathrm{ref}})$ 防止策略偏离预训练模型过远导致能力遗忘。</p>
+</blockquote>
+<p><strong>系列入口</strong>：<a href="./Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-00.%E7%B3%BB%E5%88%97%E8%A7%84%E5%88%92.md">00.系列规划</a> | 前置：<a href="./Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-03.%E4%BA%A4%E5%8F%89%E7%86%B5%E4%B8%8EKL%E6%95%A3%E5%BA%A6.md">03 交叉熵与 KL</a>、<a href="./Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-10.%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B%E4%B8%8EPerplexity.md">10 语言模型</a></p>
+<hr>
+<h2 id="1-RLHF-三阶段（D1）"><a href="#1-RLHF-三阶段（D1）" class="headerlink" title="1. RLHF 三阶段（D1）"></a>1. RLHF 三阶段（D1）</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig01-intuition.png" alt="图 1　SFT → RM → PPO&#x2F;DPO"></p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>目标</th>
+<th>损失&#x2F;目标（概览）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1. SFT</strong></td>
+<td>监督微调</td>
+<td>token CE（<a href="./Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-10.%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B%E4%B8%8EPerplexity.md">10 LM</a>）</td>
+</tr>
+<tr>
+<td><strong>2. RM</strong></td>
+<td>奖励模型</td>
+<td>偏好对 $(y_w, y_l)$：Bradley–Terry &#x2F; ranking loss</td>
+</tr>
+<tr>
+<td><strong>3. RL 对齐</strong></td>
+<td>最大化奖励 + 约束</td>
+<td>PPO + KL；或直接 <strong>DPO</strong></td>
+</tr>
+</tbody></table>
+<p>$\pi_{\mathrm{ref}}$ 通常为 SFT 后策略，冻结作参考。</p>
+<hr>
+<h2 id="2-带-KL-约束的优化目标（D3）"><a href="#2-带-KL-约束的优化目标（D3）" class="headerlink" title="2. 带 KL 约束的优化目标（D3）"></a>2. 带 KL 约束的优化目标（D3）</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig02-pmf.png" alt="图 2　奖励 − β·KL"></p>
+<p>理想形式（每 prompt $x$，生成 $y$）：</p>
+<p>$$<br>\max_\theta \ \mathbb{E}<em>{x \sim D,, y \sim \pi</em>\theta(\cdot|x)}\left[ r(x,y) - \beta , D_{\mathrm{KL}}(\pi_\theta(\cdot|x) | \pi_{\mathrm{ref}}(\cdot|x)) \right]<br>$$</p>
+<ul>
+<li>$r(x,y)$：奖励模型分数  </li>
+<li>$\beta &gt; 0$：KL 系数——大则更接近 $\pi_{\mathrm{ref}}$，小则更追奖励  </li>
+<li>$D_{\mathrm{KL}}$：在<strong>同一 $x$</strong> 下，两个<strong>输出分布</strong>（整个序列或逐 token）的 KL</li>
+</ul>
+<p><strong>信息论含义</strong>：在「人类奖励」与「不浪费预训练信息」之间权衡；KL 是「相对参考多编了多少 bit」。</p>
+<hr>
+<h2 id="3-PPO-中的-KL（D7）"><a href="#3-PPO-中的-KL（D7）" class="headerlink" title="3. PPO 中的 KL（D7）"></a>3. PPO 中的 KL（D7）</h2><p><strong>近端策略优化</strong>（Proximal Policy Optimization，<strong>PPO</strong>）在 RLHF 中常用：</p>
+<p>$$<br>\mathcal{L}_{\mathrm{PPO}} &#x3D; \mathbb{E}\left[\min\left(r_t(\theta)\hat{A}_t,\ \mathrm{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t\right)\right]<br>$$</p>
+<p>其中 $r_t(\theta) &#x3D; \frac{\pi_\theta(a_t|s_t)}{\pi_{\mathrm{old}}(a_t|s_t)}$。</p>
+<p><strong>额外 KL 惩罚或约束</strong>：</p>
+<ul>
+<li>在 reward 中加 $-\beta \log\frac{\pi_\theta}{\pi_{\mathrm{ref}}}$（token 级）  </li>
+<li>或监控 $D_{\mathrm{KL}}(\pi_\theta | \pi_{\mathrm{ref}})$ 超阈值 early stop</li>
+</ul>
+<p>防止 <strong>reward hacking</strong> 与 <strong>模式崩溃</strong>（重复、胡言乱语）。</p>
+<hr>
+<h2 id="4-DPO：闭式偏好目标（D3–D7）"><a href="#4-DPO：闭式偏好目标（D3–D7）" class="headerlink" title="4. DPO：闭式偏好目标（D3–D7）"></a>4. DPO：闭式偏好目标（D3–D7）</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig03-scenarios.png" alt="图 3　DPO 无需显式 RM 采样"></p>
+<p><strong>Direct Preference Optimization</strong>（DPO）将上述 KL 约束 RL 问题重参数化为偏好损失。对偏好 $(y_w \succ y_l)$：</p>
+<p>$$<br>\mathcal{L}<em>{\mathrm{DPO}} &#x3D; -\mathbb{E}\left[\log \sigma\left(\beta \log \frac{\pi</em>\theta(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)} - \beta \log \frac{\pi_\theta(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right)\right]<br>$$</p>
+<ul>
+<li>隐式含 KL 约束（$\beta$ 与 RL 中角色类似）  </li>
+<li>无需单独 PPO 循环，实现简单  </li>
+<li>$\pi_\theta$ 与 $\pi_{\mathrm{ref}}$ 的 log 概率差 &#x3D; <strong>对数似然比</strong>，与信息论紧密相关</li>
+</ul>
+<hr>
+<h2 id="5-与-CE-PPL-的关系（D6）"><a href="#5-与-CE-PPL-的关系（D6）" class="headerlink" title="5. 与 CE &#x2F; PPL 的关系（D6）"></a>5. 与 CE &#x2F; PPL 的关系（D6）</h2><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>阶段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CE &#x2F; PPL</td>
+<td>SFT、评估通用能力</td>
+</tr>
+<tr>
+<td>偏好 win rate</td>
+<td>RM &#x2F; DPO 评估</td>
+</tr>
+<tr>
+<td>$\mathbb{E}[D_{\mathrm{KL}}(\pi_\theta | \pi_{\mathrm{ref}})]$</td>
+<td>监控遗忘；过大→能力掉，过小→对齐不足</td>
+</tr>
+</tbody></table>
+<p>酶学&#x2F;蛋白 LM：若有 SFT + 偏好数据（活性排序、专家评分），同样可用 LoRA + DPO（<a href="../Math-03.%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0-20.Attention%E4%B8%8ELoRA.md">Math-03&#x2F;20</a>）。</p>
+<hr>
+<h2 id="6-局限与工程（D8）"><a href="#6-局限与工程（D8）" class="headerlink" title="6. 局限与工程（D8）"></a>6. 局限与工程（D8）</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-20.RLHF%E4%B8%8EKL%E7%BA%A6%E6%9D%9F/fig04-limitations.png" alt="图 4　局限"></p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$\beta$ 难调</td>
+<td>需 grid search &#x2F; 自适应 KL target</td>
+</tr>
+<tr>
+<td>奖励模型偏差</td>
+<td>RM 错则 RL 放大</td>
+</tr>
+<tr>
+<td>KL 估计方差</td>
+<td>token 级 Monte Carlo 噪声</td>
+</tr>
+<tr>
+<td>长度偏差</td>
+<td>长回复 RM 分高</td>
+</tr>
+<tr>
+<td>仅 KL 不够</td>
+<td>还需 repetition penalty、SFT mix</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-概念代码（D12）"><a href="#7-概念代码（D12）" class="headerlink" title="7. 概念代码（D12）"></a>7. 概念代码（D12）</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">token_kl</span>(<span class="params">logits_theta, logits_ref</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;逐 token KL(pi_theta || pi_ref)，对 vocab 维。&quot;&quot;&quot;</span></span><br><span class="line">    log_p = F.log_softmax(logits_theta, dim=-<span class="number">1</span>)</span><br><span class="line">    log_q = F.log_softmax(logits_ref, dim=-<span class="number">1</span>)</span><br><span class="line">    p = log_p.exp()</span><br><span class="line">    <span class="keyword">return</span> (p * (log_p - log_q)).<span class="built_in">sum</span>(dim=-<span class="number">1</span>)  <span class="comment"># (batch, seq)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">dpo_loss</span>(<span class="params">logp_theta_w, logp_theta_l, logp_ref_w, logp_ref_l, beta=<span class="number">0.1</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;标量 log prob 已对序列求和。&quot;&quot;&quot;</span></span><br><span class="line">    logits = beta * ((logp_theta_w - logp_ref_w) - (logp_theta_l - logp_ref_l))</span><br><span class="line">    <span class="keyword">return</span> -F.logsigmoid(logits).mean()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 示意</span></span><br><span class="line">logp_tw = torch.tensor(-<span class="number">2.0</span>); logp_tl = torch.tensor(-<span class="number">5.0</span>)</span><br><span class="line">logp_rw = torch.tensor(-<span class="number">2.5</span>); logp_rl = torch.tensor(-<span class="number">4.0</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;DPO loss:&quot;</span>, dpo_loss(logp_tw, logp_tl, logp_rw, logp_rl).item())</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><p><strong>RLHF</strong> &#x3D; 奖励最大化 + <strong>KL 锚定</strong> $\pi_{\mathrm{ref}}$；<strong>DPO</strong> 把 KL-RL 化为偏好 CE。<strong>Math-05 信息论</strong> 全系列至此贯通 CE → KL → MI → RLHF。</p>
+<p><strong>系列导航</strong>：<a href="./Math-05.%E4%BF%A1%E6%81%AF%E8%AE%BA-00.%E7%B3%BB%E5%88%97%E8%A7%84%E5%88%92.md">00 规划</a> | <a href="../Math-04.%E4%BC%98%E5%8C%96-00.%E7%B3%BB%E5%88%97%E8%A7%84%E5%88%92.md">Math-04 优化</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 大模型</a>
+          
+            <a href="/tags/%E4%BF%A1%E6%81%AF%E8%AE%BA/" rel="tag"><i class="fa fa-tag"></i> 信息论</a>
+          
+            <a href="/tags/KL%E6%95%A3%E5%BA%A6/" rel="tag"><i class="fa fa-tag"></i> KL散度</a>
+          
+            <a href="/tags/RLHF/" rel="tag"><i class="fa fa-tag"></i> RLHF</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-17.miRNA/miRNA-08-%E8%9B%8B%E7%99%BD%E8%B4%A8%E7%BB%84%E5%AD%A6%E5%AE%9E%E9%AA%8C%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90%E5%85%A5%E9%97%A8/" rel="next" title="miRNA-08.蛋白质组学实验与数据分析入门">
+                <i class="fa fa-chevron-left"></i> miRNA-08.蛋白质组学实验与数据分析入门
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-17.miRNA/miRNA-09-%E5%8D%95%E7%BB%86%E8%83%9E%E6%B5%8B%E5%BA%8F%E5%9C%A8%E5%A4%96%E6%B3%8C%E4%BD%93%E7%A0%94%E7%A9%B6%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF/" rel="prev" title="miRNA-09.单细胞测序在外泌体研究中的应用场景">
+                miRNA-09.单细胞测序在外泌体研究中的应用场景 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-RLHF-%E4%B8%89%E9%98%B6%E6%AE%B5%EF%BC%88D1%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">1. RLHF 三阶段（D1）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%B8%A6-KL-%E7%BA%A6%E6%9D%9F%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87%EF%BC%88D3%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. 带 KL 约束的优化目标（D3）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-PPO-%E4%B8%AD%E7%9A%84-KL%EF%BC%88D7%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. PPO 中的 KL（D7）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-DPO%EF%BC%9A%E9%97%AD%E5%BC%8F%E5%81%8F%E5%A5%BD%E7%9B%AE%E6%A0%87%EF%BC%88D3%E2%80%93D7%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. DPO：闭式偏好目标（D3–D7）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%B8%8E-CE-PPL-%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%88D6%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 与 CE &#x2F; PPL 的关系（D6）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B1%80%E9%99%90%E4%B8%8E%E5%B7%A5%E7%A8%8B%EF%BC%88D8%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 局限与工程（D8）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%A6%82%E5%BF%B5%E4%BB%A3%E7%A0%81%EF%BC%88D12%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 概念代码（D12）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

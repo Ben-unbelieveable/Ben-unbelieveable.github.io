@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RNA,LLM,DNABERT,基因组,嵌入模型," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="系统梳理 DNABERT 系列及主流 DNA&#x2F;RNA 预训练基础模型的训练数据（含 ncRNA 类型组成、miRNA&#x2F;siRNA 说明）、分词策略与架构差异，并提供嵌入模型选型建议。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-DNABERT-0.DNA-RNA预训练模型选型指南">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-0.DNA-RNA%E9%A2%84%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B%E9%80%89%E5%9E%8B%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="系统梳理 DNABERT 系列及主流 DNA&#x2F;RNA 预训练基础模型的训练数据（含 ncRNA 类型组成、miRNA&#x2F;siRNA 说明）、分词策略与架构差异，并提供嵌入模型选型建议。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-05-27T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:18.061Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DNABERT">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="RNA">
+<meta property="article:tag" content="基因组">
+<meta property="article:tag" content="嵌入模型">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-DNABERT-0.DNA-RNA预训练模型选型指南/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-DNABERT-0.DNA-RNA预训练模型选型指南 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-0.DNA-RNA%E9%A2%84%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B%E9%80%89%E5%9E%8B%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-DNABERT-0.DNA-RNA预训练模型选型指南</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-27T10:00:00+08:00">
+                2026-05-27
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  系统梳理 DNABERT 系列及主流 DNA/RNA 预训练基础模型的训练数据（含 ncRNA 类型组成、miRNA/siRNA 说明）、分词策略与架构差异，并提供嵌入模型选型建议。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>在基因组学与 RNA 生物信息学项目中，<strong>预训练嵌入模型（pre-trained embedding model）</strong> 往往决定下游微调的上限与算力成本。与蛋白质领域的 ESM 类似，DNA&#x2F;RNA 语言模型通过在大规模无标注序列上进行自监督预训练，学习核苷酸上下文表示，再迁移到启动子识别、剪接位点预测、变异效应评估、RNA 二级结构预测等任务。</p>
+<p>本文聚焦 <strong>DNABERT 系列</strong> 及与其直接可比的主流 <strong>DNA &#x2F; RNA 基因组基础模型（Genome Foundation Model，GFM）</strong>，从三个维度展开：<strong>训练数据量与组成</strong>、<strong>分词与预训练目标</strong>、<strong>模型架构</strong>。文末给出面向具体项目的选型决策树与对照表。</p>
+<blockquote>
+<p>段末注释：<strong>GFM</strong> 指在大规模基因组或转录组序列上预训练、可迁移至多种下游任务的序列表示模型；<strong>MLM</strong> 指掩码语言建模（Masked Language Modeling），随机遮盖部分 token 并预测被遮盖内容。</p>
+</blockquote>
+<hr>
+<h2 id="1-总览：模型谱系与时间线"><a href="#1-总览：模型谱系与时间线" class="headerlink" title="1. 总览：模型谱系与时间线"></a>1. 总览：模型谱系与时间线</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">timeline</span><br><span class="line">    title DNA/RNA 预训练模型主要里程碑</span><br><span class="line">    2021 : DNABERT（人类参考基因组 + k-mer）</span><br><span class="line">    2022 : RNA-FM（ncRNA） / HyenaDNA（长上下文单碱基）</span><br><span class="line">    2023 : Nucleotide Transformer / DNABERT-2 / Uni-RNA</span><br><span class="line">    2024 : NT-v2 / Caduceus / GROVER / RiNALMo / Evo</span><br><span class="line">    2025 : DNABERT-S / Evo 1.5</span><br></pre></td></tr></table></figure>
+
+<p>按<strong>序列类型</strong>与<strong>建模目标</strong>，可将主流模型分为四类：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>代表模型</th>
+<th>核心特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>人类&#x2F;多物种 DNA 短上下文</td>
+<td>DNABERT、DNABERT-2、NT、GROVER</td>
+<td>BERT 式编码器，512–12 kb 上下文，侧重调控元件与变异</td>
+</tr>
+<tr>
+<td>长上下文 DNA</td>
+<td>HyenaDNA、Caduceus、Evo</td>
+<td>单碱基 token，131k–1M 上下文，SSM&#x2F;Hyena&#x2F;Mamba 架构</td>
+</tr>
+<tr>
+<td>物种感知 DNA 嵌入</td>
+<td>DNABERT-S</td>
+<td>在 DNABERT-2 上对比学习，面向聚类与物种鉴定</td>
+</tr>
+<tr>
+<td>RNA 专用</td>
+<td>RNA-FM、mRNA-FM、RiNALMo</td>
+<td>ncRNA &#x2F; mRNA 语料，结构–功能迁移</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-DNABERT-系列"><a href="#2-DNABERT-系列" class="headerlink" title="2. DNABERT 系列"></a>2. DNABERT 系列</h2><h3 id="2-1-DNABERT（v1，2021）"><a href="#2-1-DNABERT（v1，2021）" class="headerlink" title="2.1 DNABERT（v1，2021）"></a>2.1 DNABERT（v1，2021）</h3><p><strong>论文</strong>：<em>DNABERT: pre-trained Bidirectional Encoder Representations from Transformers model for DNA-language in genome</em>（Ji et al., Bioinformatics 2021）</p>
+<h4 id="训练数据"><a href="#训练数据" class="headerlink" title="训练数据"></a>训练数据</h4><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据来源</td>
+<td>人类参考基因组 GRCh38&#x2F;hg38</td>
+</tr>
+<tr>
+<td>数据量</td>
+<td>约 <strong>27.5 亿（2.75B）</strong> 碱基</td>
+</tr>
+<tr>
+<td>序列切分</td>
+<td>非重叠切分 + 随机采样，片段长度 <strong>5–510 bp</strong></td>
+</tr>
+<tr>
+<td>过滤规则</td>
+<td>仅保留 A&#x2F;T&#x2F;C&#x2F;G，去除 N</td>
+</tr>
+</tbody></table>
+<h4 id="分词与预训练"><a href="#分词与预训练" class="headerlink" title="分词与预训练"></a>分词与预训练</h4><ul>
+<li><strong>分词</strong>：重叠 <strong>k-mer</strong>（$k \in {3,4,5,6}$），滑动窗口 stride &#x3D; 1；四个变体对应不同词表大小（如 6-mer 约 4096 个 token）。</li>
+<li><strong>预训练目标</strong>：MLM；因 k-mer 重叠导致信息泄漏，需<strong>连续遮盖 $k$ 个 token</strong>（前 100k 步 mask 15%，后 20k 步 mask 20%）。</li>
+<li><strong>训练规模</strong>：120k steps，batch size 2000，8× RTX 2080Ti。</li>
+</ul>
+<h4 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h4><p>与 <strong>BERT-base</strong> 完全一致：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>参数量</td>
+<td>~<strong>110M</strong></td>
+</tr>
+<tr>
+<td>层数</td>
+<td>12</td>
+</tr>
+<tr>
+<td>隐藏维度</td>
+<td>768</td>
+</tr>
+<tr>
+<td>注意力头</td>
+<td>12</td>
+</tr>
+<tr>
+<td>最大输入</td>
+<td>512 token（≈ 512 个 k-mer，实际覆盖更短碱基窗口）</td>
+</tr>
+<tr>
+<td>位置编码</td>
+<td>可学习绝对位置嵌入</td>
+</tr>
+</tbody></table>
+<p><strong>主要局限</strong>：仅人类参考基因组、重叠 k-mer 样本效率低、512 长度硬限制（DNABERT-XL 扩展效果有限）。</p>
+<hr>
+<h3 id="2-2-DNABERT-2（2023-2024，ICLR-2024）"><a href="#2-2-DNABERT-2（2023-2024，ICLR-2024）" class="headerlink" title="2.2 DNABERT-2（2023&#x2F;2024，ICLR 2024）"></a>2.2 DNABERT-2（2023&#x2F;2024，ICLR 2024）</h3><p><strong>论文</strong>：<em>DNABERT-2: Efficient Foundation Model and Benchmark For Multi-Species Genome</em>（Zhou et al.）</p>
+<h4 id="训练数据-1"><a href="#训练数据-1" class="headerlink" title="训练数据"></a>训练数据</h4><p>作者公开两套预训练语料（GUE 基准配套）：</p>
+<table>
+<thead>
+<tr>
+<th>数据集</th>
+<th>物种&#x2F;来源</th>
+<th>碱基数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Human</td>
+<td>人类参考基因组</td>
+<td><strong>2.75B</strong></td>
+<td>与 DNABERT v1 相同</td>
+</tr>
+<tr>
+<td>Multi-species</td>
+<td><strong>135</strong> 个物种，6 大类（哺乳动物、鸟类、鱼类、无脊椎动物、植物、真菌等）</td>
+<td><strong>32.49B</strong></td>
+<td>去除 N，仅 A&#x2F;T&#x2F;C&#x2F;G；约为人类数据的 12 倍</td>
+</tr>
+</tbody></table>
+<p><strong>最终模型 DNABERT-2-117M</strong> 在 <strong>Multi-species</strong> 上预训练；预训练 token 数约 <strong>262B</strong>（500k steps × batch 4096 × max_len 128）。</p>
+<h4 id="分词与预训练-1"><a href="#分词与预训练-1" class="headerlink" title="分词与预训练"></a>分词与预训练</h4><ul>
+<li><strong>分词</strong>：<strong>BPE（Byte Pair Encoding，字节对编码）</strong>，词表 <strong>4096</strong>（$2^{12}$）；非重叠、变长 subword，缓解 k-mer 泄漏与近邻序列表示不一致问题。</li>
+<li><strong>预训练目标</strong>：标准 MLM（独立 mask 15% token，非 span mask）。</li>
+<li><strong>训练配置</strong>：max_len 128，AdamW，lr 5e-4（warmup 30k steps），8× RTX 2080Ti，约 14 天。</li>
+</ul>
+<h4 id="架构-1"><a href="#架构-1" class="headerlink" title="架构"></a>架构</h4><p>基于 <strong>MosaicBERT</strong> 改进的 Transformer 编码器：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>参数量</td>
+<td><strong>117M</strong></td>
+</tr>
+<tr>
+<td>层数 &#x2F; 隐藏维度 &#x2F; 头数</td>
+<td>12 &#x2F; 768 &#x2F; 12</td>
+</tr>
+<tr>
+<td>词表</td>
+<td>4096（BPE）</td>
+</tr>
+<tr>
+<td>位置编码</td>
+<td><strong>ALiBi</strong>（Attention with Linear Biases，线性偏置注意力），支持外推更长序列</td>
+</tr>
+<tr>
+<td>效率优化</td>
+<td>FlashAttention、低精度 LayerNorm</td>
+</tr>
+<tr>
+<td>微调</td>
+<td>全参数微调；大模型对比实验中对 NT 使用 LoRA</td>
+</tr>
+</tbody></table>
+<p>相对 DNABERT-110M：参数仅增 ~30%，但 FLOPs 约为 1&#x2F;3；在 GUE 28 个数据集上 23&#x2F;28 优于 DNABERT。</p>
+<p><strong>开源</strong>：<a target="_blank" rel="noopener" href="https://huggingface.co/zhihan1996/DNABERT-2-117M"><code>zhihan1996/DNABERT-2-117M</code></a></p>
+<hr>
+<h3 id="2-3-DNABERT-S（2024）"><a href="#2-3-DNABERT-S（2024）" class="headerlink" title="2.3 DNABERT-S（2024）"></a>2.3 DNABERT-S（2024）</h3><p><strong>论文</strong>：<em>DNABERT-S: Learning Species-Aware DNA Embedding</em>（ICLR 2024）</p>
+<p>DNABERT-S <strong>不是</strong>从头预训练的基因组 LM，而是在 <strong>DNABERT-2-117M</strong> 权重基础上，用<strong>对比学习</strong>微调得到物种感知嵌入。训练策略 <strong>C²LR（课程对比学习）</strong> 的原理与图示见扩展文 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR.md">课程对比学习 C²LR</a>。</p>
+<h4 id="训练数据（二阶段）"><a href="#训练数据（二阶段）" class="headerlink" title="训练数据（二阶段）"></a>训练数据（二阶段）</h4><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>规模</th>
+<th>序列特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GenBank 参考基因组</td>
+<td>病毒 47,923 对；真菌 100 万对；细菌 100 万对</td>
+<td>共 <strong>204.8 万对</strong>，每对为同物种两条 <strong>10,000 bp</strong> 非重叠片段</td>
+</tr>
+<tr>
+<td>训练&#x2F;验证划分</td>
+<td>200 万对训练，4.8 万对验证</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h4 id="方法与架构"><a href="#方法与架构" class="headerlink" title="方法与架构"></a>方法与架构</h4><ul>
+<li><strong>基础架构</strong>：继承 DNABERT-2（117M，BPE，ALiBi）。</li>
+<li><strong>C²LR（Curriculum Contrastive Learning，课程对比学习）</strong>：分阶段从「同序列不同增强」过渡到「同物种不同序列」。</li>
+<li><strong>MI-Mix（Manifold Instance Mixup，流形实例混合）</strong>：在隐层混合表示，增强长读长&#x2F;error-prone 序列鲁棒性。</li>
+<li><strong>嵌入提取</strong>：所有 token 最后隐层 <strong>mean pooling</strong> → 128 维物种嵌入。</li>
+</ul>
+<p><strong>适用场景</strong>：宏基因组物种聚类、物种分类（尤其 <strong>few-shot &#x2F; 无标签</strong>）、长读长序列物种鉴定——<strong>不是</strong>通用调控元件预测的首选。</p>
+<hr>
+<h2 id="3-Nucleotide-Transformer（NT）系列"><a href="#3-Nucleotide-Transformer（NT）系列" class="headerlink" title="3. Nucleotide Transformer（NT）系列"></a>3. Nucleotide Transformer（NT）系列</h2><p><strong>论文</strong>：<em>Nucleotide Transformer: building and evaluating robust foundation models for human genomics</em>（Dalla-Torre et al., Nature Methods 2024）</p>
+<h3 id="3-1-NT-v1（2023）"><a href="#3-1-NT-v1（2023）" class="headerlink" title="3.1 NT v1（2023）"></a>3.1 NT v1（2023）</h3><h4 id="训练数据-2"><a href="#训练数据-2" class="headerlink" title="训练数据"></a>训练数据</h4><table>
+<thead>
+<tr>
+<th>变体</th>
+<th>预训练语料</th>
+<th>碱基&#x2F;序列规模</th>
+<th>预训练 token 数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>NT-500M-human</strong></td>
+<td>GRCh38 人类参考基因组</td>
+<td><strong>3.2B</strong> 碱基</td>
+<td>~50B tokens</td>
+</tr>
+<tr>
+<td><strong>NT-500M-1000g</strong></td>
+<td>1000 Genomes <strong>3202</strong> 个 phased 人类基因组</td>
+<td><strong>20.5T</strong> 碱基（含变异；存储为参考 + 12 突变）</td>
+<td>~300B tokens</td>
+</tr>
+<tr>
+<td><strong>NT-2500M-1000g</strong></td>
+<td>同上</td>
+<td>同上</td>
+<td>~300B tokens</td>
+</tr>
+<tr>
+<td><strong>NT-2500M-multi</strong></td>
+<td><strong>850</strong> 物种（RefSeq，属级采样 + 模式生物）</td>
+<td><strong>174B</strong> 碱基</td>
+<td>~300B tokens</td>
+</tr>
+</tbody></table>
+<p><strong>数据预处理</strong>：</p>
+<ul>
+<li>切分为 <strong>6100 bp</strong> 重叠窗口（首尾各共享 50 bp），每 epoch 随机偏移 0–100 bp 后取 <strong>1000 tokens</strong>。</li>
+<li><strong>6-mer 非重叠分词</strong>：词表 4104（4096 六聚体 + 单碱基 fallback + 特殊 token）。</li>
+<li>有效上下文：<strong>~6 kb</strong>（1000 × 6 bp）。</li>
+</ul>
+<h4 id="架构（v1）"><a href="#架构（v1）" class="headerlink" title="架构（v1）"></a>架构（v1）</h4><table>
+<thead>
+<tr>
+<th>变体</th>
+<th>参数量</th>
+<th>层数</th>
+<th>隐藏维度</th>
+<th>注意力头</th>
+<th>上下文</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NT-500M</td>
+<td>500M</td>
+<td>24</td>
+<td>1024</td>
+<td>16</td>
+<td>6 kb</td>
+</tr>
+<tr>
+<td>NT-2500M</td>
+<td>2.5B</td>
+<td>32</td>
+<td>1280</td>
+<td>20</td>
+<td>6 kb</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>架构</strong>：RoBERTa&#x2F;BERT 式 Transformer 编码器 + 可学习位置嵌入。</li>
+<li><strong>预训练</strong>：MLM（15% mask；human&#x2F;multi 额外 10% 随机替换；1000G 不做随机替换以免噪声超过自然突变率）。</li>
+<li><strong>有效 batch</strong>：100 万 tokens&#x2F;step；500M 单节点 1 天，2.5B 全集群 128×A100 约 28 天。</li>
+</ul>
+<h3 id="3-2-NT-v2（2024，同论文扩展）"><a href="#3-2-NT-v2（2024，同论文扩展）" class="headerlink" title="3.2 NT-v2（2024，同论文扩展）"></a>3.2 NT-v2（2024，同论文扩展）</h3><p>在架构与训练时长上显著升级：</p>
+<table>
+<thead>
+<tr>
+<th>改进项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>位置编码</td>
+<td><strong>RoPE</strong> 替代可学习嵌入</td>
+</tr>
+<tr>
+<td>FFN</td>
+<td>SwiGLU + 无 bias</td>
+</tr>
+<tr>
+<td>上下文</td>
+<td><strong>2048 tokens ≈ 12 kb</strong></td>
+</tr>
+<tr>
+<td>规模</td>
+<td><strong>50M &#x2F; 100M &#x2F; 250M &#x2F; 500M</strong></td>
+</tr>
+<tr>
+<td>训练 token</td>
+<td>50M&#x2F;250M 各 <strong>300B</strong>；250M&#x2F;500M 最高 <strong>1T</strong> tokens</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>NT-v2-500M-12kb 以约 1&#x2F;5 参数达到或超过 NT-2.5B-multi</td>
+</tr>
+</tbody></table>
+<p><strong>开源</strong>：<a target="_blank" rel="noopener" href="https://huggingface.co/InstaDeepAI"><code>InstaDeepAI/nucleotide-transformer-*</code></a></p>
+<hr>
+<h2 id="4-其他重要-DNA-基础模型"><a href="#4-其他重要-DNA-基础模型" class="headerlink" title="4. 其他重要 DNA 基础模型"></a>4. 其他重要 DNA 基础模型</h2><h3 id="4-1-HyenaDNA（2023，NeurIPS）"><a href="#4-1-HyenaDNA（2023，NeurIPS）" class="headerlink" title="4.1 HyenaDNA（2023，NeurIPS）"></a>4.1 HyenaDNA（2023，NeurIPS）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据</strong></td>
+<td>人类参考基因组 HG38；Enformer 训练&#x2F;验证区间切分</td>
+</tr>
+<tr>
+<td><strong>分词</strong></td>
+<td><strong>单字符</strong>（A&#x2F;T&#x2F;C&#x2F;G + 特殊 token），单碱基分辨率</td>
+</tr>
+<tr>
+<td><strong>目标</strong></td>
+<td><strong>因果</strong>下一碱基预测（decoder-only，非 MLM）</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td>Hyena 算子栈（隐式长卷积 + 门控），<strong>非 Transformer 注意力</strong></td>
+</tr>
+<tr>
+<td><strong>规模</strong></td>
+<td>0.44M–<strong>6.6M</strong> 参数（2–8 层，width 128–256）；上下文 <strong>1k–1M</strong> token</td>
+</tr>
+<tr>
+<td><strong>训练</strong></td>
+<td>10–20k steps；1M 上下文模型约 <strong>2T tokens</strong>、4 周 8×A100</td>
+</tr>
+</tbody></table>
+<p><strong>优势</strong>：极长上下文（450k–1M）、参数极小、物种分类等远程依赖任务；<strong>劣势</strong>：单向、预训练数据仅人类参考基因组，短程调控任务需与 NT&#x2F;DNABERT-2 对比。</p>
+<h3 id="4-2-Caduceus（2024）"><a href="#4-2-Caduceus（2024）" class="headerlink" title="4.2 Caduceus（2024）"></a>4.2 Caduceus（2024）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据</strong></td>
+<td>人类参考基因组；Enformer 切分，训练段扩展至 <strong>2²⁰ &#x3D; 1,048,576 bp</strong>，合计约 <strong>35B</strong> 碱基</td>
+</tr>
+<tr>
+<td><strong>分词</strong></td>
+<td>单碱基（character-level）</td>
+</tr>
+<tr>
+<td><strong>目标</strong></td>
+<td><strong>双向 MLM</strong>（Caduceus-PS &#x2F; Caduceus-Ph）</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td><strong>Mamba &#x2F; BiMamba + MambaDNA</strong>；首个 <strong>反向互补等变（RC equivariant）</strong> DNA LM</td>
+</tr>
+<tr>
+<td><strong>规模（预训练）</strong></td>
+<td>例：131k 上下文 &#x2F; 16 层 &#x2F; hidden 256 &#x2F; 50k updates</td>
+</tr>
+<tr>
+<td><strong>特色</strong></td>
+<td>原生支持双链对称；长程任务上可超过 10× 更大的 Transformer</td>
+</tr>
+</tbody></table>
+<p><strong>选型提示</strong>：需要 <strong>双链一致性</strong>（变异效应、甲基化相关 CpG）或 <strong>100k+ 上下文</strong> 的编码器场景优先考虑；与 HyenaDNA 互补（双向 vs 单向）。</p>
+<h3 id="4-3-GROVER（2024，Nature-Machine-Intelligence）"><a href="#4-3-GROVER（2024，Nature-Machine-Intelligence）" class="headerlink" title="4.3 GROVER（2024，Nature Machine Intelligence）"></a>4.3 GROVER（2024，Nature Machine Intelligence）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据</strong></td>
+<td>人类基因组，<strong>&gt;500 万</strong> 训练样本</td>
+</tr>
+<tr>
+<td><strong>分词</strong></td>
+<td><strong>BPE-600</strong>（601 个 token + 特殊 token）；通过 next-k-mer 预测内在评估选优</td>
+</tr>
+<tr>
+<td><strong>目标</strong></td>
+<td>MLM（mask 概率 0.022；max_len <strong>50 token</strong> 的短窗口）</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td>BERT：<strong>12 层</strong> Transformer 编码器，标准 multi-head attention + FFN</td>
+</tr>
+<tr>
+<td><strong>特色</strong></td>
+<td>强调 <strong>词表即生物学</strong>——token 频率平衡、重复序列与 CpG 的显式建模；可解释性分析强</td>
+</tr>
+</tbody></table>
+<p><strong>局限</strong>：输入极短（~50 token），更适合 ** motif &#x2F; 局部上下文** 分析，而非长程调控。</p>
+<h3 id="4-4-Evo（2024，Arc-Institute）"><a href="#4-4-Evo（2024，Arc-Institute）" class="headerlink" title="4.4 Evo（2024，Arc Institute）"></a>4.4 Evo（2024，Arc Institute）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据</strong></td>
+<td><strong>OpenGenome</strong>：~<strong>80,000</strong> 细菌&#x2F;古菌基因组 + 噬菌体&#x2F;质粒预测序列，约 <strong>300B</strong> 碱基 token；<strong>排除感染真核的病毒</strong></td>
+</tr>
+<tr>
+<td><strong>分词</strong></td>
+<td>单碱基（byte-level）</td>
+</tr>
+<tr>
+<td><strong>目标</strong></td>
+<td><strong>因果</strong>下一 token 预测；两阶段上下文扩展 <strong>8k → 131k</strong></td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td><strong>StripedHyena</strong>（7B 参数），Hyena + 注意力混合</td>
+</tr>
+<tr>
+<td><strong>定位</strong></td>
+<td><strong>原核生物</strong> 分子–基因组尺度 <strong>生成与设计</strong>（CRISPR、转座子等），非人类调控预测首选</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-RNA-预训练模型（训练数据详解）"><a href="#5-RNA-预训练模型（训练数据详解）" class="headerlink" title="5. RNA 预训练模型（训练数据详解）"></a>5. RNA 预训练模型（训练数据详解）</h2><h3 id="5-0-先澄清：ncRNA-语料里到底有什么？"><a href="#5-0-先澄清：ncRNA-语料里到底有什么？" class="headerlink" title="5.0 先澄清：ncRNA 语料里到底有什么？"></a>5.0 先澄清：ncRNA 语料里到底有什么？</h3><p>多数 RNA 基础模型的预训练语料<strong>不是</strong>「只训 miRNA」或「只训 siRNA」的专用库，而是从 <strong>RNAcentral、Rfam、Ensembl、NCBI nt</strong> 等公共库汇总的 <strong>混合 ncRNA（有时还混入 mRNA）</strong>。论文通常只报告序列条数与去重规则，<strong>很少给出按生物类型的精确占比表</strong>；RNA-FM 的补充表 1–3 记录的是<strong>核苷酸组成与长度分布</strong>，而非 miRNA&#x2F;lncRNA 分项计数。</p>
+<blockquote>
+<p>段末注释：<strong>RNAcentral</strong> 是整合 50+ 专家库（Expert Database）的 ncRNA 统一入口；<strong>Rfam</strong> 按 RNA 家族（family）组织序列与协方差模型，覆盖 tRNA、rRNA、miRNA 等经典家族。</p>
+</blockquote>
+<h4 id="5-0-1-RNAcentral-源库与典型-ncRNA-类型（上游组成）"><a href="#5-0-1-RNAcentral-源库与典型-ncRNA-类型（上游组成）" class="headerlink" title="5.0.1 RNAcentral 源库与典型 ncRNA 类型（上游组成）"></a>5.0.1 RNAcentral 源库与典型 ncRNA 类型（上游组成）</h4><p>RNAcentral 通过专家库汇入各类 ncRNA。与预训练嵌入直接相关的常见类型及典型来源如下：</p>
+<table>
+<thead>
+<tr>
+<th>ncRNA 类型</th>
+<th>生物学角色（简述）</th>
+<th>典型专家库 &#x2F; 注释来源</th>
+<th>在预训练中的典型地位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>rRNA</strong>（核糖体 RNA）</td>
+<td>核糖体结构与翻译</td>
+<td>SILVA、RDP、RefSeq</td>
+<td><strong>条数占比往往最高</strong>（管家 RNA、拷贝数大）</td>
+</tr>
+<tr>
+<td><strong>tRNA</strong>（转运 RNA）</td>
+<td>氨基酸转运</td>
+<td>GtRNAdb、RefSeq</td>
+<td>同上，短序列、数量多</td>
+</tr>
+<tr>
+<td><strong>miRNA</strong>（微 RNA）</td>
+<td>转录后基因调控</td>
+<td><strong>miRBase</strong>、<strong>MirGeneDB</strong></td>
+<td>含 <strong>pre-miRNA</strong> 与成熟 miRNA，条数少于 rRNA&#x2F;tRNA</td>
+</tr>
+<tr>
+<td><strong>lncRNA</strong>（长非编码 RNA）</td>
+<td>染色质、转录、剪接调控等</td>
+<td>GENCODE&#x2F;Ensembl、<strong>NONCODE</strong>、lncRNAdb、EVlncRNAs</td>
+<td>序列长、异质性大；人类基因层面数量多</td>
+</tr>
+<tr>
+<td><strong>snRNA</strong>（小核 RNA）</td>
+<td>剪接体</td>
+<td>Rfam、RefSeq</td>
+<td>中等规模</td>
+</tr>
+<tr>
+<td><strong>snoRNA</strong>（小核仁 RNA）</td>
+<td>rRNA 修饰</td>
+<td>snoDB、Rfam</td>
+<td>中等规模</td>
+</tr>
+<tr>
+<td><strong>piRNA</strong>（PIWI 结合 RNA）</td>
+<td>转座子沉默等</td>
+<td>piRNAdb</td>
+<td>相对专门化</td>
+</tr>
+<tr>
+<td><strong>siRNA</strong>（小干扰 RNA）</td>
+<td>RNAi 通路、实验设计</td>
+<td>多为实验条目或间接注释</td>
+<td><strong>并非 RNAcentral 主流量</strong>；条数远小于 rRNA&#x2F;tRNA&#x2F;miRNA</td>
+</tr>
+<tr>
+<td><strong>tmRNA</strong>、<strong>SRP RNA</strong>、<strong>ribozyme</strong> 等</td>
+<td>翻译 rescue、蛋白定位、催化</td>
+<td>tmRNA Website、Rfam、Ribocentre</td>
+<td>RiNALMo 等通过 <strong>Rfam</strong> 显著加强</td>
+</tr>
+</tbody></table>
+<p>RNAcentral 官方检索 facet 与教程均指出：<strong>全库序列检索中，rRNA 与 tRNA 往往占绝大多数</strong>；miRNA、lncRNA 等调控类 RNA 条数较少但功能研究集中。因此，将 RNA-FM&#x2F;RiNALMo 称为「miRNA 模型」或「siRNA 模型」<strong>不准确</strong>——它们是 <strong>广谱 ncRNA 语言模型</strong>，只是在下游任务上常用于 miRNA 靶标、lncRNA 功能等场景。</p>
+<h4 id="5-0-2-各模型语料范围对照（是否纯-ncRNA）"><a href="#5-0-2-各模型语料范围对照（是否纯-ncRNA）" class="headerlink" title="5.0.2 各模型语料范围对照（是否纯 ncRNA）"></a>5.0.2 各模型语料范围对照（是否纯 ncRNA）</h4><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>是否仅 ncRNA</th>
+<th>是否含 mRNA&#x2F;CDS</th>
+<th>类型是否人工平衡</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RNA-FM</td>
+<td><strong>是</strong>（声明仅 ncRNA）</td>
+<td>否</td>
+<td><strong>否</strong>（保持 RNAcentral 自然比例）</td>
+</tr>
+<tr>
+<td>RiNALMo</td>
+<td><strong>是</strong></td>
+<td>否（Ensembl 取 ncRNA 相关条目）</td>
+<td><strong>否</strong>（聚类保证 batch 多样性）</td>
+</tr>
+<tr>
+<td>Uni-RNA</td>
+<td><strong>否</strong></td>
+<td><strong>是</strong>（明确含 coding + non-coding）</td>
+<td>否（MMseqs2 去冗余）</td>
+</tr>
+<tr>
+<td>mRNA-FM</td>
+<td><strong>否</strong>（专训 mRNA）</td>
+<td><strong>是</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>RNABERT</td>
+<td>人类 ncRNA 子集</td>
+<td>否</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<h4 id="5-0-3-siRNA-与-miRNA：选型时怎么理解？"><a href="#5-0-3-siRNA-与-miRNA：选型时怎么理解？" class="headerlink" title="5.0.3 siRNA 与 miRNA：选型时怎么理解？"></a>5.0.3 siRNA 与 miRNA：选型时怎么理解？</h4><table>
+<thead>
+<tr>
+<th>分子</th>
+<th>是否在预训练语料中</th>
+<th>对嵌入选型的含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>miRNA</strong></td>
+<td><strong>有</strong>，经 miRBase&#x2F;MirGeneDB 等进入 RNAcentral；RNA-FM 在 RNA Atlas 中单独可视化 <strong>miRNA</strong> 簇</td>
+<td>预测 pre-miRNA 结构、成熟体加工、靶基因相关任务时，RNA-FM&#x2F;RiNALMo <strong>可用</strong>，但语料并非 miRNA 专用</td>
+</tr>
+<tr>
+<td><strong>siRNA</strong></td>
+<td><strong>有少量</strong>（RNA-FM 论文在「调控 RNA」类群中列出 siRNA，说明库中存在该类序列）</td>
+<td><strong>没有</strong>主流模型在 siRNA 专用库上预训练；siRNA 设计&#x2F;脱靶更常需 <strong>微调</strong> 或专用模型，不要默认 RNA-FM 等价于「siRNA 嵌入」</td>
+</tr>
+<tr>
+<td><strong>shRNA &#x2F; 合成寡核苷酸</strong></td>
+<td>通常不在公共 ncRNA 库</td>
+<td>需自建语料或任务微调</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="5-1-RNA-FM（2022）与-RNAcentral100"><a href="#5-1-RNA-FM（2022）与-RNAcentral100" class="headerlink" title="5.1 RNA-FM（2022）与 RNAcentral100"></a>5.1 RNA-FM（2022）与 RNAcentral100</h3><h4 id="数据来源与构建流程"><a href="#数据来源与构建流程" class="headerlink" title="数据来源与构建流程"></a>数据来源与构建流程</h4><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原始库</td>
+<td><strong>RNAcentral</strong>（论文写作时约 <strong>2700 万</strong> 条，整合 <strong>47</strong> 个专家库）</td>
+</tr>
+<tr>
+<td>字母表</td>
+<td>全序列 <strong>T→U</strong>；支持 IUPAC 兼并碱基（共 16 种 token 类型 + 特殊符号）</td>
+</tr>
+<tr>
+<td>去冗余</td>
+<td><strong>CD-HIT-EST</strong>，相似度阈值 <strong>100%</strong>（仅去完全相同序列）</td>
+</tr>
+<tr>
+<td>最终语料</td>
+<td><strong>RNAcentral100</strong>：<strong>23.7M</strong> 条独特 ncRNA</td>
+</tr>
+<tr>
+<td>训练截断</td>
+<td>最大长度 <strong>1024 nt</strong>（更长序列在训练时被截断，以控制显存与 batch）</td>
+</tr>
+<tr>
+<td>类型标注</td>
+<td><strong>未</strong>按 miRNA&#x2F;lncRNA 分层采样；保持数据库自然组成</td>
+</tr>
+</tbody></table>
+<h4 id="预训练语料包含的-ncRNA-类型（论文实证）"><a href="#预训练语料包含的-ncRNA-类型（论文实证）" class="headerlink" title="预训练语料包含的 ncRNA 类型（论文实证）"></a>预训练语料包含的 ncRNA 类型（论文实证）</h4><p>RNA-FM 在 <strong>RNA Atlas</strong> 分析中，按功能&#x2F;结构将 RNAcentral100 中的类型显式分组（每类最多抽 1 万条做 UMAP），证明模型能区分：</p>
+<table>
+<thead>
+<tr>
+<th>分组</th>
+<th>包含类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>管家 RNA（housekeeping）</strong></td>
+<td><strong>rRNA</strong>、<strong>tRNA</strong></td>
+</tr>
+<tr>
+<td><strong>调控 RNA（regulatory）</strong></td>
+<td><strong>lncRNA</strong>、<strong>snoRNA</strong>、<strong>miRNA</strong>、<strong>siRNA</strong>、<strong>snRNA</strong>、<strong>piRNA</strong></td>
+</tr>
+<tr>
+<td><strong>长链 ncRNA</strong>（长度 $&gt;200$ nt）</td>
+<td>rRNA、<strong>tmRNA</strong> 等</td>
+</tr>
+<tr>
+<td><strong>短链 ncRNA</strong>（长度 $\leq 200$ nt）</td>
+<td>tRNA、<strong>sncRNA</strong>（小 ncRNA 总称）等</td>
+</tr>
+</tbody></table>
+<p>论文结论：嵌入空间主要按<strong>结构与功能</strong>聚类，而非单纯按长度；<strong>lncRNA</strong> 嵌入还可用于演化轨迹推断（VIA 伪时间）。</p>
+<blockquote>
+<p>段末注释：<strong>sncRNA</strong>（small ncRNA）是小 ncRNA 总称，可涵盖 miRNA、siRNA 等短链分子，与 lncRNA 相对。</p>
+</blockquote>
+<h4 id="架构与训练（摘要）"><a href="#架构与训练（摘要）" class="headerlink" title="架构与训练（摘要）"></a>架构与训练（摘要）</h4><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>架构</td>
+<td>BERT 编码器：12 层 &#x2F; 640 维 &#x2F; 20 头；~<strong>99M</strong> 参数</td>
+</tr>
+<tr>
+<td>目标</td>
+<td>MLM（15% mask；80% [MASK] &#x2F; 10% 随机 &#x2F; 10% 保持）</td>
+</tr>
+<tr>
+<td>算力</td>
+<td>8× A100-80GB，约 <strong>1 个月</strong></td>
+</tr>
+</tbody></table>
+<p><strong>任务匹配</strong>：ncRNA <strong>二级结构</strong>、3D 接触、lncRNA 相关分析、病毒基因组片段（如 SARS-CoV-2 UTR）——<strong>不适合</strong>直接当作纯 <strong>siRNA 设计</strong> 或 <strong>mRNA 密码子优化</strong> 的默认嵌入（后者见 mRNA-FM）。</p>
+<hr>
+<h3 id="5-2-mRNA-FM（2024，RNA-FM-生态）"><a href="#5-2-mRNA-FM（2024，RNA-FM-生态）" class="headerlink" title="5.2 mRNA-FM（2024，RNA-FM 生态）"></a>5.2 mRNA-FM（2024，RNA-FM 生态）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据</strong></td>
+<td><strong>4500 万（45M）</strong> 条 <strong>mRNA</strong>（信使 RNA，<strong>非 ncRNA</strong>）</td>
+</tr>
+<tr>
+<td><strong>与 RNA-FM 关系</strong></td>
+<td>独立语料、更大隐藏维；针对 CDS&#x2F;UTR、表达与翻译调控</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td>12 层 &#x2F; <strong>1280</strong> 维；~<strong>239M</strong> 参数</td>
+</tr>
+</tbody></table>
+<p>做 <strong>miRNA&#x2F;siRNA&#x2F;lncRNA</strong> 任务时不要与 RNA-FM 混用权重。</p>
+<hr>
+<h3 id="5-3-Uni-RNA（2023）"><a href="#5-3-Uni-RNA（2023）" class="headerlink" title="5.3 Uni-RNA（2023）"></a>5.3 Uni-RNA（2023）</h3><h4 id="数据来源"><a href="#数据来源" class="headerlink" title="数据来源"></a>数据来源</h4><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>RNAcentral</strong></td>
+<td>ncRNA（与 RNA-FM 同源，但未限制为 23.7M 子集）</td>
+</tr>
+<tr>
+<td><strong>NCBI nt</strong></td>
+<td>核酸综合库（含基因组片段、多种注释）</td>
+</tr>
+<tr>
+<td><strong>GWH</strong>（国家基因组科学数据中心等）</td>
+<td>基因组相关 RNA</td>
+</tr>
+<tr>
+<td>图示中另有</td>
+<td><strong>MG-RAST</strong>、<strong>MGnify</strong> 等宏基因组&#x2F;环境 RNA 来源</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>处理</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>长度过滤</td>
+<td>剔除 <strong>&gt;4096 nt</strong></td>
+</tr>
+<tr>
+<td>去冗余</td>
+<td><strong>MMseqs2</strong> 聚类</td>
+</tr>
+<tr>
+<td>规模</td>
+<td>约 <strong>10 亿（1B）</strong> 条「有效」序列</td>
+</tr>
+<tr>
+<td><strong>类型</strong></td>
+<td>论文明确：<strong>coding + non-coding 混合</strong>，含 <strong>miRNA、lncRNA、snRNA</strong> 等，<strong>不是纯 ncRNA 模型</strong></td>
+</tr>
+</tbody></table>
+<p>| 架构 | 25M–400M（L8–L24）；RoPE + Flash Attention；最大输入 <strong>1024</strong> |</p>
+<p><strong>公开性</strong>：权重未完全开放，复现与合规需单独评估。</p>
+<hr>
+<h3 id="5-4-RiNALMo（2024，Nature-Communications）"><a href="#5-4-RiNALMo（2024，Nature-Communications）" class="headerlink" title="5.4 RiNALMo（2024，Nature Communications）"></a>5.4 RiNALMo（2024，Nature Communications）</h3><h4 id="四库混合与预处理"><a href="#四库混合与预处理" class="headerlink" title="四库混合与预处理"></a>四库混合与预处理</h4><table>
+<thead>
+<tr>
+<th>数据源</th>
+<th>版本&#x2F;说明</th>
+<th>主要贡献的类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>RNAcentral</strong></td>
+<td>论文使用 <strong>release 22.0</strong> FASTA</td>
+<td>全谱 ncRNA（rRNA、tRNA、miRNA、lncRNA 等，比例随 RNAcentral 自然分布）</td>
+</tr>
+<tr>
+<td><strong>Rfam</strong></td>
+<td><code>Rfam.fa</code>（CURRENT）</td>
+<td><strong>家族级</strong> ncRNA：tRNA、rRNA、miRNA、snRNA、snoRNA、ribozyme、<strong>tmRNA</strong> 等（$&gt;2600$ 家族）</td>
+</tr>
+<tr>
+<td><strong>NCBI nt</strong></td>
+<td>BLAST nt FASTA</td>
+<td>大规模核酸序列；经长度与去重筛选后进入语料</td>
+</tr>
+<tr>
+<td><strong>Ensembl</strong></td>
+<td>基因组注释 RNA</td>
+<td>注释转录本中的 <strong>ncRNA</strong>（lncRNA、misc_RNA 等）</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>预处理步骤</th>
+<th>参数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>长度</td>
+<td>保留 <strong>16–8192 nt</strong></td>
+</tr>
+<tr>
+<td>去重</td>
+<td><strong>seqkit rmdup</strong></td>
+</tr>
+<tr>
+<td>聚类</td>
+<td><strong>MMseqs2 easy-linclust</strong>，<code>--min-seq-id 0.7</code>，<code>-c 0.8</code></td>
+</tr>
+<tr>
+<td>最终</td>
+<td><strong>36M</strong> 独特序列 → <strong>17M</strong> 簇；每 epoch 每簇采样 1 条以保证 batch 多样性</td>
+</tr>
+<tr>
+<td>碱基</td>
+<td>全库 <strong>U→T</strong>（与 BERT 词表一致）</td>
+</tr>
+</tbody></table>
+<p>论文<strong>未</strong>公布 36M 中 miRNA&#x2F;lncRNA&#x2F;rRNA 各占多少；相较 RNA-FM，RiNALMo 通过 <strong>Rfam + Ensembl</strong> 增强了<strong>家族结构化</strong>与<strong>真核注释 lncRNA</strong>，对 <strong>未见 Rfam 家族</strong> 的二级结构泛化更好（论文核心 claim）。</p>
+<h4 id="架构与训练（摘要）-1"><a href="#架构与训练（摘要）-1" class="headerlink" title="架构与训练（摘要）"></a>架构与训练（摘要）</h4><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>架构</td>
+<td>33 层 &#x2F; 1280 维 &#x2F; 20 头；<strong>650M</strong>（giga）；RoPE + SwiGLU + FlashAttention-2</td>
+</tr>
+<tr>
+<td>目标</td>
+<td>MLM（6 epochs，batch 1344，7×A100-80GB）</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="5-5-其他-RNA-模型（数据侧补充）"><a href="#5-5-其他-RNA-模型（数据侧补充）" class="headerlink" title="5.5 其他 RNA 模型（数据侧补充）"></a>5.5 其他 RNA 模型（数据侧补充）</h3><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>训练数据与 ncRNA 类型</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>RNABERT</strong>（2022）</td>
+<td>人类 <strong>RNAcentral 子集 ~76.2 万</strong> 条</td>
+<td>6 层小模型；<strong>非</strong> 23.7M 规模</td>
+</tr>
+<tr>
+<td><strong>ERNIE-RNA</strong></td>
+<td>大规模 RNA + <strong>结构对齐</strong></td>
+<td>显式引入二级结构，不仅序列</td>
+</tr>
+<tr>
+<td><strong>RNA-MSM</strong></td>
+<td>多序列比对（MSA）进化信息</td>
+<td>依赖同源序列，非纯单序列 LM</td>
+</tr>
+<tr>
+<td><strong>UTR-LM</strong></td>
+<td>mRNA <strong>5’&#x2F;3’ UTR</strong></td>
+<td>调控区，不是 miRNA&#x2F;siRNA</td>
+</tr>
+<tr>
+<td><strong>CodonBERT &#x2F; CaLM</strong></td>
+<td><strong>CDS &#x2F; cDNA</strong></td>
+<td>蛋白编码链，与 ncRNA 正交</td>
+</tr>
+<tr>
+<td><strong>SpliceBERT</strong></td>
+<td><strong>pre-mRNA</strong>（脊椎动物）</td>
+<td>剪接，不是小 RNA 专用</td>
+</tr>
+<tr>
+<td><strong>OpenRNA &#x2F; EVA</strong>（2025 前后）</td>
+<td><strong>1.14 亿</strong> 条全类型 RNA（显式标注 mRNA、lncRNA、miRNA、rRNA、tRNA、snoRNA、snRNA、piRNA、circRNA 等）</td>
+<td>新一类「全生物型」语料，可参考其类型统计做基准</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="5-6-ncRNA-类型-→-推荐嵌入模型（速查）"><a href="#5-6-ncRNA-类型-→-推荐嵌入模型（速查）" class="headerlink" title="5.6 ncRNA 类型 → 推荐嵌入模型（速查）"></a>5.6 ncRNA 类型 → 推荐嵌入模型（速查）</h3><table>
+<thead>
+<tr>
+<th>你的序列类型</th>
+<th>优先预训练模型</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>miRNA &#x2F; pre-miRNA</strong></td>
+<td>RNA-FM、RiNALMo</td>
+<td>语料含 miRBase，但混合大量 rRNA&#x2F;tRNA；长 pre-miRNA 注意 <strong>1024 nt</strong> 截断</td>
+</tr>
+<tr>
+<td><strong>lncRNA</strong></td>
+<td>RNA-FM、RiNALMo</td>
+<td>RiNALMo+Ensembl 对长链更友好；超长需滑窗池化</td>
+</tr>
+<tr>
+<td><strong>tRNA &#x2F; rRNA</strong></td>
+<td>RNA-FM、RiNALMo</td>
+<td>与预训练分布最一致，零样本往往较稳</td>
+</tr>
+<tr>
+<td><strong>siRNA &#x2F; shRNA（实验设计）</strong></td>
+<td>需 <strong>微调</strong> 或专用工具</td>
+<td>勿默认 RNA-FM 即 siRNA 专家</td>
+</tr>
+<tr>
+<td><strong>未知 ncRNA &#x2F; 新家族</strong></td>
+<td>RiNALMo（强调家族泛化）</td>
+<td>结构任务优先 RiNALMo</td>
+</tr>
+<tr>
+<td><strong>mRNA UTR &#x2F; CDS &#x2F; 表达</strong></td>
+<td><strong>mRNA-FM</strong>、Uni-RNA（含 coding）</td>
+<td>不用 RNA-FM</td>
+</tr>
+<tr>
+<td><strong>剪接位点</strong></td>
+<td>RiNALMo、SpliceBERT、NT（DNA 侧）</td>
+<td>任务决定用 RNA 还是 DNA 模型</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-横向对比总表"><a href="#6-横向对比总表" class="headerlink" title="6. 横向对比总表"></a>6. 横向对比总表</h2><h3 id="6-1-DNA-模型"><a href="#6-1-DNA-模型" class="headerlink" title="6.1 DNA 模型"></a>6.1 DNA 模型</h3><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>预训练碱基规模</th>
+<th>物种&#x2F;数据组成</th>
+<th>分词</th>
+<th>架构</th>
+<th>上下文</th>
+<th>预训练目标</th>
+<th>开源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DNABERT</td>
+<td>~110M</td>
+<td>2.75B</td>
+<td>人类 hg38</td>
+<td>重叠 3–6-mer</td>
+<td>BERT-12L</td>
+<td>~512 tok</td>
+<td>MLM span</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>DNABERT-2</td>
+<td>117M</td>
+<td>32.49B</td>
+<td>135 物种</td>
+<td>BPE-4096</td>
+<td>BERT+ALiBi+Flash</td>
+<td>128 tok（可外推）</td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>DNABERT-S</td>
+<td>117M+</td>
+<td>204.8 万对×10kb</td>
+<td>病毒&#x2F;真菌&#x2F;细菌</td>
+<td>同 DNABERT-2</td>
+<td>+对比学习</td>
+<td>10k bp 输入</td>
+<td>对比</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>NT-500M-human</td>
+<td>500M</td>
+<td>3.2B</td>
+<td>人类</td>
+<td>6-mer</td>
+<td>Transformer</td>
+<td>6 kb</td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>NT-500M-1000g</td>
+<td>500M</td>
+<td>3.2B ref + 3202 人</td>
+<td>人类多样性</td>
+<td>6-mer</td>
+<td>Transformer</td>
+<td>6 kb</td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>NT-2500M-multi</td>
+<td>2.5B</td>
+<td>174B</td>
+<td>850 物种</td>
+<td>6-mer</td>
+<td>Transformer-32L</td>
+<td>6 kb</td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>NT-v2-500M</td>
+<td>500M</td>
+<td>同 multi</td>
+<td>850 物种</td>
+<td>6-mer</td>
+<td>RoPE+SwiGLU</td>
+<td><strong>12 kb</strong></td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>HyenaDNA</td>
+<td>0.4–6.6M</td>
+<td>hg38</td>
+<td>人类</td>
+<td>单碱基</td>
+<td>Hyena 卷积</td>
+<td><strong>1M</strong></td>
+<td>下一碱基</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Caduceus</td>
+<td>~1–10M 级</td>
+<td>~35B</td>
+<td>人类</td>
+<td>单碱基</td>
+<td>Mamba&#x2F;BiMamba</td>
+<td><strong>131k</strong></td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>GROVER</td>
+<td>BERT-12L</td>
+<td>人类全基因组</td>
+<td>人类</td>
+<td>BPE-600</td>
+<td>BERT</td>
+<td><strong>~50 tok</strong></td>
+<td>MLM</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Evo-1</td>
+<td>7B</td>
+<td>300B</td>
+<td>原核+噬菌体</td>
+<td>单碱基</td>
+<td>StripedHyena</td>
+<td>131k</td>
+<td>下一 token</td>
+<td>✓</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-RNA-模型"><a href="#6-2-RNA-模型" class="headerlink" title="6.2 RNA 模型"></a>6.2 RNA 模型</h3><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>序列数</th>
+<th>语料类型组成（摘要）</th>
+<th>主要来源</th>
+<th>最大长度</th>
+<th>典型下游</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RNA-FM</td>
+<td>99M</td>
+<td>23.7M</td>
+<td><strong>纯 ncRNA</strong>；含 rRNA&#x2F;tRNA&#x2F;miRNA&#x2F;lncRNA&#x2F;siRNA 等自然混合</td>
+<td>RNAcentral100</td>
+<td>1024 nt</td>
+<td>结构、3D 接触、lncRNA</td>
+</tr>
+<tr>
+<td>mRNA-FM</td>
+<td>239M</td>
+<td>45M</td>
+<td><strong>仅 mRNA</strong></td>
+<td>mRNA 专用库</td>
+<td>1024 nt</td>
+<td>UTR、表达、CDS</td>
+</tr>
+<tr>
+<td>Uni-RNA</td>
+<td>25–400M</td>
+<td><strong>1B</strong></td>
+<td><strong>coding + ncRNA</strong> 混合</td>
+<td>RNAcentral+nt+GWH 等</td>
+<td>4096 nt（训练过滤）</td>
+<td>结构&#x2F;功能（权重受限）</td>
+</tr>
+<tr>
+<td>RiNALMo</td>
+<td>650M</td>
+<td>36M</td>
+<td><strong>纯 ncRNA</strong>；RNAcentral+Rfam+nt+Ensembl</td>
+<td>四库合并+MMseqs2</td>
+<td>8192 nt（训练上限）</td>
+<td>结构、剪接、MRL&#x2F;TE</td>
+</tr>
+<tr>
+<td>RNABERT</td>
+<td>0.5M</td>
+<td>~0.76M</td>
+<td>人类 ncRNA 子集</td>
+<td>RNAcentral</td>
+<td>440 nt</td>
+<td>早期基准</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-项目选型指南"><a href="#7-项目选型指南" class="headerlink" title="7. 项目选型指南"></a>7. 项目选型指南</h2><h3 id="7-1-按任务类型"><a href="#7-1-按任务类型" class="headerlink" title="7.1 按任务类型"></a>7.1 按任务类型</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    A[确定序列类型与任务] --&gt; B&#123;DNA 还是 RNA?&#125;</span><br><span class="line">    B --&gt;|RNA| R1&#123;需要 mRNA 还是 ncRNA?&#125;</span><br><span class="line">    R1 --&gt;|miRNA/lncRNA/结构| R2[RiNALMo / RNA-FM]</span><br><span class="line">    R1 --&gt;|siRNA 设计/脱靶| R4[需微调或专用模型]</span><br><span class="line">    R1 --&gt;|mRNA 表达/UTR| R3[mRNA-FM / UTR-LM]</span><br><span class="line">    B --&gt;|DNA| D1&#123;上下文要多长?&#125;</span><br><span class="line">    D1 --&gt;|≤ 512 bp 调控元件| D2[DNABERT-2 / NT-v2-500M]</span><br><span class="line">    D1 --&gt;|6–12 kb 增强子/剪接| D3[NT-v2 / NT-2.5B-multi]</span><br><span class="line">    D1 --&gt;|≥ 100 kb 远程调控| D4[Caduceus / HyenaDNA]</span><br><span class="line">    D1 --&gt;|物种聚类/宏基因组| D5[DNABERT-S]</span><br><span class="line">    D1 --&gt;|原核基因组设计/生成| D6[Evo]</span><br><span class="line">    D1 --&gt;|局部 motif 可解释| D7[GROVER / DNABERT-6mer]</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-2-按资源约束"><a href="#7-2-按资源约束" class="headerlink" title="7.2 按资源约束"></a>7.2 按资源约束</h3><table>
+<thead>
+<tr>
+<th>约束</th>
+<th>推荐</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>单卡 24GB，快速微调</strong></td>
+<td>DNABERT-2-117M</td>
+<td>117M 参数 + 全参数微调可行；GUE 上接近 NT</td>
+</tr>
+<tr>
+<td><strong>单卡 24GB，需 6kb+</strong></td>
+<td>NT-v2-50M&#x2F;100M + LoRA</td>
+<td>更小 NT-v2 + 参数高效微调</td>
+</tr>
+<tr>
+<td><strong>多卡 A100，追求 SOTA</strong></td>
+<td>NT-v2-500M 或 NT-2.5B-multi</td>
+<td>人类变异 &#x2F; 跨物种调控</td>
+</tr>
+<tr>
+<td><strong>极低算力嵌入提取</strong></td>
+<td>HyenaDNA-tiny（0.44M）</td>
+<td>推理轻量；适合长序列池化嵌入</td>
+</tr>
+<tr>
+<td><strong>无 GPU 批量推理</strong></td>
+<td>DNABERT-2 &#x2F; RNA-FM</td>
+<td>社区工具链成熟（HuggingFace）</td>
+</tr>
+</tbody></table>
+<h3 id="7-3-按数据域匹配（避免分布偏移）"><a href="#7-3-按数据域匹配（避免分布偏移）" class="headerlink" title="7.3 按数据域匹配（避免分布偏移）"></a>7.3 按数据域匹配（避免分布偏移）</h3><table>
+<thead>
+<tr>
+<th>你的数据</th>
+<th>优先匹配预训练域</th>
+<th>谨慎使用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>人类 SNP&#x2F;调控变异</td>
+<td>NT-1000g、NT-v2-human&#x2F;multi</td>
+<td>仅 hg38 的 DNABERT v1</td>
+</tr>
+<tr>
+<td>多物种保守元件</td>
+<td>NT-multi、DNABERT-2 multi-species</td>
+<td>GROVER（仅人类）</td>
+</tr>
+<tr>
+<td>细菌&#x2F;噬菌体 CRISPR</td>
+<td>Evo-1</td>
+<td>一切真核预训练模型</td>
+</tr>
+<tr>
+<td>病毒&#x2F;真菌&#x2F;细菌分类</td>
+<td>DNABERT-S</td>
+<td>通用 MLM 模型（无物种约束）</td>
+</tr>
+<tr>
+<td>lncRNA &#x2F; ribozyme</td>
+<td>RiNALMo、RNA-FM</td>
+<td>mRNA-FM</td>
+</tr>
+<tr>
+<td>miRNA &#x2F; pre-miRNA</td>
+<td>RNA-FM、RiNALMo</td>
+<td>专用 siRNA 库训练的模型（公共 LM 非专用）</td>
+</tr>
+<tr>
+<td>siRNA &#x2F; shRNA 设计</td>
+<td>任务微调 RNA-FM 或专用工具</td>
+<td>直接零样本 RNA-FM（语料中 siRNA 占比极低）</td>
+</tr>
+<tr>
+<td>密码子优化 &#x2F; CDS</td>
+<td>mRNA-FM、CodonBERT</td>
+<td>ncRNA 专用模型</td>
+</tr>
+</tbody></table>
+<h3 id="7-4-嵌入提取实践要点"><a href="#7-4-嵌入提取实践要点" class="headerlink" title="7.4 嵌入提取实践要点"></a>7.4 嵌入提取实践要点</h3><ol>
+<li><strong>池化策略</strong>：调控任务常用 <code>[CLS]</code> 或 <strong>mean pooling</strong>；DNABERT-S 明确使用 mean pooling。长序列可考虑 <strong>滑动窗口 + 平均</strong>。</li>
+<li><strong>链方向</strong>：非 RC 等变模型（DNABERT-2、NT）建议 <strong>正链 + 反向互补双路推理再融合</strong>；Caduceus-PS 原生支持。</li>
+<li><strong>分词一致性</strong>：微调与推理必须使用同一 tokenizer；k-mer 与 BPE <strong>不可</strong> 混用权重。</li>
+<li><strong>进一步预训练</strong>：DNABERT-2 论文显示，在下游任务训练集上做 <strong>continued MLM</strong> 对部分任务有效，但非普适增益。</li>
+<li><strong>评估基准</strong>：DNA 建议 GUE &#x2F; GenomicBenchmarks &#x2F; NT 下游 18 任务；RNA 建议 ArchiveII、TS0、SpliceSite 等。</li>
+</ol>
+<hr>
+<h2 id="8-总结与趋势"><a href="#8-总结与趋势" class="headerlink" title="8. 总结与趋势"></a>8. 总结与趋势</h2><ol>
+<li><strong>分词演进</strong>：重叠 k-mer → 非重叠 6-mer → <strong>BPE &#x2F; 单碱基</strong>，样本效率与远程对齐能力逐步提升。</li>
+<li><strong>数据演进</strong>：人类参考基因组 → <strong>1000 Genomes 人群多样性</strong> → <strong>850 物种 &#x2F; 135 物种</strong> 多物种；原核 <strong>OpenGenome</strong> 开辟独立赛道。</li>
+<li><strong>架构演进</strong>：纯 BERT 编码器 → <strong>ALiBi &#x2F; RoPE 长上下文</strong> → <strong>Hyena &#x2F; Mamba &#x2F; StripedHyena</strong> 亚二次复杂度；双向 MLM 与因果生成并存。</li>
+<li><strong>选型核心原则</strong>：<strong>预训练域 ⊇ 应用域</strong> 优先于单纯追大参数；短程调控 <strong>DNABERT-2 &#x2F; NT-v2</strong> 性价比最高；长程与生成 <strong>Caduceus &#x2F; HyenaDNA &#x2F; Evo</strong> 分工明确；RNA <strong>RiNALMo</strong> 正成为 ncRNA 新默认，<strong>RNA-FM</strong> 仍是轻量首选。</li>
+</ol>
+<hr>
+<h2 id="参考文献与资源"><a href="#参考文献与资源" class="headerlink" title="参考文献与资源"></a>参考文献与资源</h2><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>论文</th>
+<th>代码&#x2F;权重</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DNABERT</td>
+<td><a target="_blank" rel="noopener" href="https://doi.org/10.1093/bioinformatics/btab083">Bioinformatics 2021</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/jerryji1993/DNABERT">jerryji1993&#x2F;DNABERT</a></td>
+</tr>
+<tr>
+<td>DNABERT-2</td>
+<td><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2306.15006">ICLR 2024 &#x2F; arXiv:2306.15006</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/MAGICS-LAB/DNABERT_2">MAGICS-LAB&#x2F;DNABERT_2</a></td>
+</tr>
+<tr>
+<td>DNABERT-S</td>
+<td><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2402.08777">ICLR 2024 &#x2F; arXiv:2402.08777</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/MAGICS-LAB/DNABERT_S">MAGICS-LAB&#x2F;DNABERT_S</a></td>
+</tr>
+<tr>
+<td>Nucleotide Transformer</td>
+<td><a target="_blank" rel="noopener" href="https://doi.org/10.1038/s41592-024-02523-z">Nature Methods 2024</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/instadeepai/nucleotide-transformer">InstaDeepAI&#x2F;nucleotide-transformer</a></td>
+</tr>
+<tr>
+<td>HyenaDNA</td>
+<td><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2306.15794">NeurIPS 2023</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/HazyResearch/hyena-dna">HazyResearch&#x2F;hyena-dna</a></td>
+</tr>
+<tr>
+<td>Caduceus</td>
+<td><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2403.03224">ICML 2024</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/kuleshov-group/caduceus">kuleshov-group&#x2F;caduceus</a></td>
+</tr>
+<tr>
+<td>GROVER</td>
+<td><a target="_blank" rel="noopener" href="https://doi.org/10.1038/s42256-024-00872-0">Nat. Mach. Intell. 2024</a></td>
+<td>见论文补充材料</td>
+</tr>
+<tr>
+<td>Evo</td>
+<td><a target="_blank" rel="noopener" href="https://doi.org/10.1126/science.ado9336">Science 2024 &#x2F; bioRxiv</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/evo-design/evo">evo-design&#x2F;evo</a></td>
+</tr>
+<tr>
+<td>RNA-FM</td>
+<td><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2204.00300">arXiv:2204.00300</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/ml4bio/RNA-FM">ml4bio&#x2F;RNA-FM</a></td>
+</tr>
+<tr>
+<td>RiNALMo</td>
+<td><a target="_blank" rel="noopener" href="https://doi.org/10.1038/s41467-025-60872-5">Nat. Commun. 2025</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/lbcb-sci/RiNALMo">lbcb-sci&#x2F;RiNALMo</a></td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>文档版本：2026-05；数据与参数量均来自原始论文及 HuggingFace 模型卡，部署前请核对最新 checkpoint。</em></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RNA/" rel="tag"><i class="fa fa-tag"></i> RNA</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/DNABERT/" rel="tag"><i class="fa fa-tag"></i> DNABERT</a>
+          
+            <a href="/tags/%E5%9F%BA%E5%9B%A0%E7%BB%84/" rel="tag"><i class="fa fa-tag"></i> 基因组</a>
+          
+            <a href="/tags/%E5%B5%8C%E5%85%A5%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 嵌入模型</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-01-MDP%E4%B8%8EBellman%E6%96%B9%E7%A8%8B/" rel="next" title="RL-02-01-MDP与Bellman方程">
+                <i class="fa fa-chevron-left"></i> RL-02-01-MDP与Bellman方程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-16.siRNA/siRNA-00-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86-02-ncRNA%E7%B3%BB%E7%BB%9F%E7%BB%BC%E8%BF%B0/" rel="prev" title="siRNA-00-前置知识-02.ncRNA系统综述">
+                siRNA-00-前置知识-02.ncRNA系统综述 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%80%BB%E8%A7%88%EF%BC%9A%E6%A8%A1%E5%9E%8B%E8%B0%B1%E7%B3%BB%E4%B8%8E%E6%97%B6%E9%97%B4%E7%BA%BF"><span class="nav-number">1.</span> <span class="nav-text">1. 总览：模型谱系与时间线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-DNABERT-%E7%B3%BB%E5%88%97"><span class="nav-number">2.</span> <span class="nav-text">2. DNABERT 系列</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-DNABERT%EF%BC%88v1%EF%BC%8C2021%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 DNABERT（v1，2021）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE"><span class="nav-number">2.1.1.</span> <span class="nav-text">训练数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E8%AF%8D%E4%B8%8E%E9%A2%84%E8%AE%AD%E7%BB%83"><span class="nav-number">2.1.2.</span> <span class="nav-text">分词与预训练</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">2.1.3.</span> <span class="nav-text">架构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-DNABERT-2%EF%BC%882023-2024%EF%BC%8CICLR-2024%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 DNABERT-2（2023&#x2F;2024，ICLR 2024）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">训练数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E8%AF%8D%E4%B8%8E%E9%A2%84%E8%AE%AD%E7%BB%83-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">分词与预训练</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84-1"><span class="nav-number">2.2.3.</span> <span class="nav-text">架构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-DNABERT-S%EF%BC%882024%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 DNABERT-S（2024）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%EF%BC%88%E4%BA%8C%E9%98%B6%E6%AE%B5%EF%BC%89"><span class="nav-number">2.3.1.</span> <span class="nav-text">训练数据（二阶段）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%8E%E6%9E%B6%E6%9E%84"><span class="nav-number">2.3.2.</span> <span class="nav-text">方法与架构</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Nucleotide-Transformer%EF%BC%88NT%EF%BC%89%E7%B3%BB%E5%88%97"><span class="nav-number">3.</span> <span class="nav-text">3. Nucleotide Transformer（NT）系列</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-NT-v1%EF%BC%882023%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 NT v1（2023）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE-2"><span class="nav-number">3.1.1.</span> <span class="nav-text">训练数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84%EF%BC%88v1%EF%BC%89"><span class="nav-number">3.1.2.</span> <span class="nav-text">架构（v1）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-NT-v2%EF%BC%882024%EF%BC%8C%E5%90%8C%E8%AE%BA%E6%96%87%E6%89%A9%E5%B1%95%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 NT-v2（2024，同论文扩展）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%85%B6%E4%BB%96%E9%87%8D%E8%A6%81-DNA-%E5%9F%BA%E7%A1%80%E6%A8%A1%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 其他重要 DNA 基础模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-HyenaDNA%EF%BC%882023%EF%BC%8CNeurIPS%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 HyenaDNA（2023，NeurIPS）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-Caduceus%EF%BC%882024%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 Caduceus（2024）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-GROVER%EF%BC%882024%EF%BC%8CNature-Machine-Intelligence%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 GROVER（2024，Nature Machine Intelligence）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-Evo%EF%BC%882024%EF%BC%8CArc-Institute%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 Evo（2024，Arc Institute）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-RNA-%E9%A2%84%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B%EF%BC%88%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%E8%AF%A6%E8%A7%A3%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. RNA 预训练模型（训练数据详解）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-0-%E5%85%88%E6%BE%84%E6%B8%85%EF%BC%9AncRNA-%E8%AF%AD%E6%96%99%E9%87%8C%E5%88%B0%E5%BA%95%E6%9C%89%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">5.1.</span> <span class="nav-text">5.0 先澄清：ncRNA 语料里到底有什么？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-0-1-RNAcentral-%E6%BA%90%E5%BA%93%E4%B8%8E%E5%85%B8%E5%9E%8B-ncRNA-%E7%B1%BB%E5%9E%8B%EF%BC%88%E4%B8%8A%E6%B8%B8%E7%BB%84%E6%88%90%EF%BC%89"><span class="nav-number">5.1.1.</span> <span class="nav-text">5.0.1 RNAcentral 源库与典型 ncRNA 类型（上游组成）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-0-2-%E5%90%84%E6%A8%A1%E5%9E%8B%E8%AF%AD%E6%96%99%E8%8C%83%E5%9B%B4%E5%AF%B9%E7%85%A7%EF%BC%88%E6%98%AF%E5%90%A6%E7%BA%AF-ncRNA%EF%BC%89"><span class="nav-number">5.1.2.</span> <span class="nav-text">5.0.2 各模型语料范围对照（是否纯 ncRNA）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-0-3-siRNA-%E4%B8%8E-miRNA%EF%BC%9A%E9%80%89%E5%9E%8B%E6%97%B6%E6%80%8E%E4%B9%88%E7%90%86%E8%A7%A3%EF%BC%9F"><span class="nav-number">5.1.3.</span> <span class="nav-text">5.0.3 siRNA 与 miRNA：选型时怎么理解？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-RNA-FM%EF%BC%882022%EF%BC%89%E4%B8%8E-RNAcentral100"><span class="nav-number">5.2.</span> <span class="nav-text">5.1 RNA-FM（2022）与 RNAcentral100</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%9D%A5%E6%BA%90%E4%B8%8E%E6%9E%84%E5%BB%BA%E6%B5%81%E7%A8%8B"><span class="nav-number">5.2.1.</span> <span class="nav-text">数据来源与构建流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A2%84%E8%AE%AD%E7%BB%83%E8%AF%AD%E6%96%99%E5%8C%85%E5%90%AB%E7%9A%84-ncRNA-%E7%B1%BB%E5%9E%8B%EF%BC%88%E8%AE%BA%E6%96%87%E5%AE%9E%E8%AF%81%EF%BC%89"><span class="nav-number">5.2.2.</span> <span class="nav-text">预训练语料包含的 ncRNA 类型（论文实证）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84%E4%B8%8E%E8%AE%AD%E7%BB%83%EF%BC%88%E6%91%98%E8%A6%81%EF%BC%89"><span class="nav-number">5.2.3.</span> <span class="nav-text">架构与训练（摘要）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-mRNA-FM%EF%BC%882024%EF%BC%8CRNA-FM-%E7%94%9F%E6%80%81%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">5.2 mRNA-FM（2024，RNA-FM 生态）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-Uni-RNA%EF%BC%882023%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">5.3 Uni-RNA（2023）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%9D%A5%E6%BA%90"><span class="nav-number">5.4.1.</span> <span class="nav-text">数据来源</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-RiNALMo%EF%BC%882024%EF%BC%8CNature-Communications%EF%BC%89"><span class="nav-number">5.5.</span> <span class="nav-text">5.4 RiNALMo（2024，Nature Communications）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E5%BA%93%E6%B7%B7%E5%90%88%E4%B8%8E%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">5.5.1.</span> <span class="nav-text">四库混合与预处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84%E4%B8%8E%E8%AE%AD%E7%BB%83%EF%BC%88%E6%91%98%E8%A6%81%EF%BC%89-1"><span class="nav-number">5.5.2.</span> <span class="nav-text">架构与训练（摘要）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-%E5%85%B6%E4%BB%96-RNA-%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%95%B0%E6%8D%AE%E4%BE%A7%E8%A1%A5%E5%85%85%EF%BC%89"><span class="nav-number">5.6.</span> <span class="nav-text">5.5 其他 RNA 模型（数据侧补充）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-6-ncRNA-%E7%B1%BB%E5%9E%8B-%E2%86%92-%E6%8E%A8%E8%8D%90%E5%B5%8C%E5%85%A5%E6%A8%A1%E5%9E%8B%EF%BC%88%E9%80%9F%E6%9F%A5%EF%BC%89"><span class="nav-number">5.7.</span> <span class="nav-text">5.6 ncRNA 类型 → 推荐嵌入模型（速查）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%A8%AA%E5%90%91%E5%AF%B9%E6%AF%94%E6%80%BB%E8%A1%A8"><span class="nav-number">6.</span> <span class="nav-text">6. 横向对比总表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-DNA-%E6%A8%A1%E5%9E%8B"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 DNA 模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-RNA-%E6%A8%A1%E5%9E%8B"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 RNA 模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%A1%B9%E7%9B%AE%E9%80%89%E5%9E%8B%E6%8C%87%E5%8D%97"><span class="nav-number">7.</span> <span class="nav-text">7. 项目选型指南</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E6%8C%89%E4%BB%BB%E5%8A%A1%E7%B1%BB%E5%9E%8B"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 按任务类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E6%8C%89%E8%B5%84%E6%BA%90%E7%BA%A6%E6%9D%9F"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 按资源约束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-%E6%8C%89%E6%95%B0%E6%8D%AE%E5%9F%9F%E5%8C%B9%E9%85%8D%EF%BC%88%E9%81%BF%E5%85%8D%E5%88%86%E5%B8%83%E5%81%8F%E7%A7%BB%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 按数据域匹配（避免分布偏移）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4-%E5%B5%8C%E5%85%A5%E6%8F%90%E5%8F%96%E5%AE%9E%E8%B7%B5%E8%A6%81%E7%82%B9"><span class="nav-number">7.4.</span> <span class="nav-text">7.4 嵌入提取实践要点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%80%BB%E7%BB%93%E4%B8%8E%E8%B6%8B%E5%8A%BF"><span class="nav-number">8.</span> <span class="nav-text">8. 总结与趋势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%E4%B8%8E%E8%B5%84%E6%BA%90"><span class="nav-number">9.</span> <span class="nav-text">参考文献与资源</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

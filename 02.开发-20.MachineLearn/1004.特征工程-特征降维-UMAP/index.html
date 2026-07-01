@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="降维,特征工程,machine_learning,UMAP," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="均匀流形逼近与投影（UMAP）的产生背景、演进、算法原理、适用场景、局限性与可运行示例；配图示意。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="1004.特征工程-特征降维-UMAP">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="均匀流形逼近与投影（UMAP）的产生背景、演进、算法原理、适用场景、局限性与可运行示例；配图示意。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig01-evolution.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig02-principle.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig03-scenarios.svg">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig04-limitations.svg">
+<meta property="article:published_time" content="2026-06-17T08:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.570Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="UMAP">
+<meta property="article:tag" content="machine_learning">
+<meta property="article:tag" content="特征工程">
+<meta property="article:tag" content="降维">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig01-evolution.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/1004.特征工程-特征降维-UMAP/"/>
+
+
+
+
+
+  <title>1004.特征工程-特征降维-UMAP | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">1004.特征工程-特征降维-UMAP</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-17T16:30:00+08:00">
+                2026-06-17
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/machine-learning/" itemprop="url" rel="index">
+                    <span itemprop="name">machine_learning</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  均匀流形逼近与投影（UMAP）的产生背景、演进、算法原理、适用场景、局限性与可运行示例；配图示意。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>均匀流形逼近与投影</strong>（Uniform Manifold Approximation and Projection，<strong>UMAP</strong>）由 McInnes 等（2018）提出，是基于<strong>流形学习</strong>与<strong>拓扑数据分析</strong>的非线性降维方法。它将高维数据映射到 <strong>2D&#x2F;3D</strong>，在保留<strong>局部簇结构</strong>的同时，通常比 <strong>t-SNE</strong> <strong>更快</strong>、更好地保留<strong>全局拓扑</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>UMAP</strong> 与 <strong>t-SNE</strong> 一样，主用途是<strong>可视化与探索</strong>；低维坐标不宜直接当作监督学习特征。</p>
+</blockquote>
+<p><strong>读前说明</strong>：配图位于同名目录 <code>1004.特征工程-特征降维-UMAP/</code>；正文图链写 <code>./1004.特征工程-特征降维-UMAP/文件名</code>。系列索引：<a href="./1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4.md">降维概述</a> | <a href="./1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-PCA.md">PCA</a> | <a href="./1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-t-SNE.md">t-SNE</a></p>
+<hr>
+<h2 id="1-产生基础：为什么需要-UMAP"><a href="#1-产生基础：为什么需要-UMAP" class="headerlink" title="1. 产生基础：为什么需要 UMAP"></a>1. 产生基础：为什么需要 UMAP</h2><h3 id="1-1-问题来源"><a href="#1-1-问题来源" class="headerlink" title="1.1 问题来源"></a>1.1 问题来源</h3><p><strong>t-SNE</strong> 在 2010 年代成为高维数据可视化标配，但存在明显痛点：</p>
+<ol>
+<li><strong>速度慢</strong>：$N &gt; 10^4$ 时计算昂贵；  </li>
+<li><strong>全局结构差</strong>：簇间距离、连续轨迹（如发育过程）常被扭曲；  </li>
+<li><strong>超参敏感</strong>：perplexity 变化可导致图形大幅改变。</li>
+</ol>
+<p><strong>UMAP</strong> 的出发点：在<strong>流形假设</strong>下，用更高效的<strong>图拓扑对齐</strong>框架，同时保留<strong>局部邻域</strong>与<strong>部分全局相对位置</strong>。</p>
+<h3 id="1-2-核心假设"><a href="#1-2-核心假设" class="headerlink" title="1.2 核心假设"></a>1.2 核心假设</h3><p>高维观测 $\mathbf{x}_i \in \mathbb{R}^D$ 实际来自某个<strong>低维流形</strong> $\mathcal{M}$ 的嵌入：</p>
+<p>$$<br>\mathbf{x}_i &#x3D; f(\mathbf{z}_i) + \epsilon,\quad \mathbf{z}_i \in \mathcal{M},; \dim(\mathcal{M}) \ll D<br>$$</p>
+<p>UMAP 不直接估计 $f$，而是保留流形上的<strong>邻域关系</strong>（谁与谁相近）。</p>
+<hr>
+<h2 id="2-演进脉络"><a href="#2-演进脉络" class="headerlink" title="2. 演进脉络"></a>2. 演进脉络</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig01-evolution.svg" alt="图 1　UMAP 演进脉络（科普示意）"></p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>代表方法</th>
+<th>与 UMAP 关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>~1960s</strong></td>
+<td><strong>MDS</strong>（多维缩放）</td>
+<td>保留成对距离；全局但线性&#x2F;度量约束</td>
+</tr>
+<tr>
+<td><strong>~2000</strong></td>
+<td><strong>LLE</strong>、<strong>ISOMAP</strong></td>
+<td>局部流形学习先驱</td>
+</tr>
+<tr>
+<td><strong>2008</strong></td>
+<td><strong>t-SNE</strong></td>
+<td>局部概率对齐；UMAP 的重要对照基线</td>
+</tr>
+<tr>
+<td><strong>2018</strong></td>
+<td><strong>UMAP</strong></td>
+<td>McInnes, Healy, Melville；广义熵 + 模糊拓扑</td>
+</tr>
+<tr>
+<td><strong>2019+</strong></td>
+<td><strong>Scanpy</strong>、<strong>Seurat</strong></td>
+<td>单细胞分析默认降维之一</td>
+</tr>
+<tr>
+<td><strong>2023+</strong></td>
+<td><strong>ESM Atlas</strong> 等</td>
+<td>百万级蛋白结构 UMAP 探索</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MDS</strong> 通过保持距离矩阵降维；<strong>LLE</strong>（局部线性嵌入）假设每个点可由其近邻线性表示。</p>
+</blockquote>
+<hr>
+<h2 id="3-算法原理"><a href="#3-算法原理" class="headerlink" title="3. 算法原理"></a>3. 算法原理</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig02-principle.svg" alt="图 2　UMAP 算法原理（科普示意）"></p>
+<h3 id="3-1-两步总览"><a href="#3-1-两步总览" class="headerlink" title="3.1 两步总览"></a>3.1 两步总览</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">高维空间 X</span><br><span class="line">  → 步骤1：建 k 近邻图，构造模糊单纯集（边权 = 局部相似度）→ 高维图 P</span><br><span class="line">  → 步骤2：初始化低维 Y，构造低维图 Q</span><br><span class="line">  → 最小化交叉熵 CE(P, Q)，迭代优化 Y</span><br><span class="line">低维坐标 Y</span><br></pre></td></tr></table></figure>
+
+<p>直观理解：<strong>该连的边在低维仍连，不该连的仍断开</strong>。</p>
+<h3 id="3-2-高维：模糊拓扑"><a href="#3-2-高维：模糊拓扑" class="headerlink" title="3.2 高维：模糊拓扑"></a>3.2 高维：模糊拓扑</h3><p>对每个点 $i$，找 <strong>n_neighbors</strong> 个近邻，定义局部连通强度；经归一化得到高维边权 $p_{ij}$。远距离边权重趋近 0（稀疏图）。</p>
+<p>与 t-SNE 高斯核类似，但 UMAP 采用<strong>模糊单纯集</strong>（fuzzy simplicial set）框架，便于与拓扑数据分析衔接。</p>
+<h3 id="3-3-低维：交叉熵对齐"><a href="#3-3-低维：交叉熵对齐" class="headerlink" title="3.3 低维：交叉熵对齐"></a>3.3 低维：交叉熵对齐</h3><p>低维坐标 $\mathbf{y}<em>i$ 上定义边权 $q</em>{ij}$，最小化：</p>
+<p>$$<br>\mathrm{CE}(P, Q) &#x3D; \sum_{ij} \left[ p_{ij} \log \frac{p_{ij}}{q_{ij}} + (1-p_{ij}) \log \frac{1-p_{ij}}{1-q_{ij}} \right]<br>$$</p>
+<p>优化 $\mathbf{y}_i$ 使低维图拓扑逼近高维图。</p>
+<h3 id="3-4-与-t-SNE-的数学差异"><a href="#3-4-与-t-SNE-的数学差异" class="headerlink" title="3.4 与 t-SNE 的数学差异"></a>3.4 与 t-SNE 的数学差异</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th><strong>t-SNE</strong></th>
+<th><strong>UMAP</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>高维相似度</td>
+<td>高斯 + perplexity</td>
+<td>模糊拓扑 + n_neighbors</td>
+</tr>
+<tr>
+<td>低维分布</td>
+<td>t 分布</td>
+<td>可配置（默认类似 t 族）</td>
+</tr>
+<tr>
+<td>损失函数</td>
+<td>$\mathrm{KL}(P|Q)$</td>
+<td>交叉熵 $\mathrm{CE}(P,Q)$</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>Barnes-Hut 后 $O(N\log N)$</td>
+<td>近似近邻，百万级可行</td>
+</tr>
+<tr>
+<td>全局结构</td>
+<td>弱</td>
+<td>相对较好</td>
+</tr>
+</tbody></table>
+<h3 id="3-5-关键超参的拓扑含义"><a href="#3-5-关键超参的拓扑含义" class="headerlink" title="3.5 关键超参的拓扑含义"></a>3.5 关键超参的拓扑含义</h3><ul>
+<li><strong>n_neighbors</strong>：小 → 强调<strong>局部</strong>细节；大 → 更偏<strong>全局</strong>结构（类似 t-SNE 的 perplexity）。  </li>
+<li><strong>min_dist</strong>：低维点允许的最小间距；小 → 簇更<strong>紧</strong>；大 → 点更<strong>分散</strong>。</li>
+</ul>
+<hr>
+<h2 id="4-适用场景"><a href="#4-适用场景" class="headerlink" title="4. 适用场景"></a>4. 适用场景</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig03-scenarios.svg" alt="图 3　UMAP 适用场景（科普示意）"></p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>为什么选 UMAP</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>大规模单细胞图谱</strong></td>
+<td>速度快，可处理 $10^5$+ 细胞</td>
+<td>Scanpy <code>sc.tl.umap</code></td>
+</tr>
+<tr>
+<td><strong>蛋白结构&#x2F;序列宇宙</strong></td>
+<td>保留簇间拓扑，便于浏览</td>
+<td>ESM Atlas 2D 地图</td>
+</tr>
+<tr>
+<td><strong>酶变体嵌入探索</strong></td>
+<td>蛋白工程表征初筛首选</td>
+<td><a href="../../01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-06.ML%E8%BE%85%E5%8A%A9%E8%9B%8B%E7%99%BD%E5%B7%A5%E7%A8%8B%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.md">酶改造-06</a> §6.2</td>
+</tr>
+<tr>
+<td><strong>连续轨迹&#x2F;发育过程</strong></td>
+<td>比 t-SNE 更好保留全局连续结构</td>
+<td>拟时序分析辅助可视化</td>
+</tr>
+<tr>
+<td><strong>与 t-SNE 对照</strong></td>
+<td>需要<strong>紧簇边界</strong>时并用 t-SNE</td>
+<td>双图验证结论稳健性</td>
+</tr>
+</tbody></table>
+<p><strong>不适用</strong>：</p>
+<ul>
+<li>需要<strong>线性可解释</strong>主成分（用 <strong>PCA</strong>）；  </li>
+<li>需要<strong>稳定特征</strong>输入回归器（用原始嵌入）；  </li>
+<li>样本极少（$N &lt; 20$）且需精确定量（图噪声过大）。</li>
+</ul>
+<hr>
+<h2 id="5-局限性"><a href="#5-局限性" class="headerlink" title="5. 局限性"></a>5. 局限性</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-UMAP/umap-fig04-limitations.svg" alt="图 4　UMAP 局限性（科普示意）"></p>
+<table>
+<thead>
+<tr>
+<th>局限</th>
+<th>说明</th>
+<th>应对</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>超参仍影响结果</strong></td>
+<td>n_neighbors、min_dist 改变簇形态</td>
+<td>记录参数；小范围网格搜索；与 t-SNE 对照</td>
+</tr>
+<tr>
+<td><strong>小样本噪声大</strong></td>
+<td>$N &lt; 30$ 时拓扑不稳定</td>
+<td>结论保守；优先增加实验数据</td>
+</tr>
+<tr>
+<td><strong>不宜作训练特征</strong></td>
+<td>低维坐标语义随 fit 变化</td>
+<td>用原始高维嵌入或 PCA</td>
+</tr>
+<tr>
+<td><strong>fit 泄漏风险</strong></td>
+<td>全量 <code>fit_transform</code> 见过所有标签信息</td>
+<td>探索性可视化可全量 fit；严格评估时仅 train fit + test transform</td>
+</tr>
+<tr>
+<td><strong>非唯一解</strong></td>
+<td>随机初始化 + 非凸优化</td>
+<td>固定 <code>random_state</code>；多次运行取共识</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-主要超参数"><a href="#6-主要超参数" class="headerlink" title="6. 主要超参数"></a>6. 主要超参数</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>n_neighbors</strong></td>
+<td>局部邻域大小</td>
+<td>默认 <strong>15</strong>；小文库（$N&lt;50$）试 <strong>5～10</strong></td>
+</tr>
+<tr>
+<td><strong>min_dist</strong></td>
+<td>低维最小点间距</td>
+<td><strong>0.0～0.5</strong>；默认 <strong>0.1</strong></td>
+</tr>
+<tr>
+<td><strong>metric</strong></td>
+<td>距离度量</td>
+<td>高维嵌入常用 <code>&#39;euclidean&#39;</code></td>
+</tr>
+<tr>
+<td><strong>n_components</strong></td>
+<td>输出维度</td>
+<td>可视化 <strong>2</strong> 或 <strong>3</strong></td>
+</tr>
+<tr>
+<td><strong>random_state</strong></td>
+<td>随机种子</td>
+<td>固定以便复现</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-示例展示与代码"><a href="#7-示例展示与代码" class="headerlink" title="7. 示例展示与代码"></a>7. 示例展示与代码</h2><p>安装：<code>pip install umap-learn</code></p>
+<h3 id="7-1-合成数据演示（可直接运行）"><a href="#7-1-合成数据演示（可直接运行）" class="headerlink" title="7.1 合成数据演示（可直接运行）"></a>7.1 合成数据演示（可直接运行）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;UMAP 合成示例：digits 数据集，与 t-SNE 对照&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> umap</span><br><span class="line"><span class="keyword">from</span> sklearn.datasets <span class="keyword">import</span> load_digits</span><br><span class="line"><span class="keyword">from</span> sklearn.manifold <span class="keyword">import</span> TSNE</span><br><span class="line"><span class="keyword">from</span> sklearn.preprocessing <span class="keyword">import</span> StandardScaler</span><br><span class="line"></span><br><span class="line">digits = load_digits()</span><br><span class="line">X = StandardScaler().fit_transform(digits.data)</span><br><span class="line">y = digits.target</span><br><span class="line"></span><br><span class="line"><span class="comment"># UMAP</span></span><br><span class="line">Z_umap = umap.UMAP(n_neighbors=<span class="number">15</span>, min_dist=<span class="number">0.1</span>, random_state=<span class="number">42</span>).fit_transform(X)</span><br><span class="line"></span><br><span class="line"><span class="comment"># t-SNE 对照</span></span><br><span class="line">Z_tsne = TSNE(n_components=<span class="number">2</span>, perplexity=<span class="number">30</span>, init=<span class="string">&quot;pca&quot;</span>, random_state=<span class="number">42</span>).fit_transform(X)</span><br><span class="line"></span><br><span class="line">fig, axes = plt.subplots(<span class="number">1</span>, <span class="number">2</span>, figsize=(<span class="number">14</span>, <span class="number">5</span>))</span><br><span class="line"><span class="keyword">for</span> ax, Z, title <span class="keyword">in</span> <span class="built_in">zip</span>(axes, [Z_umap, Z_tsne], [<span class="string">&quot;UMAP&quot;</span>, <span class="string">&quot;t-SNE&quot;</span>]):</span><br><span class="line">    sc = ax.scatter(Z[:, <span class="number">0</span>], Z[:, <span class="number">1</span>], c=y, cmap=<span class="string">&quot;tab10&quot;</span>, s=<span class="number">12</span>, alpha=<span class="number">0.8</span>)</span><br><span class="line">    ax.set_title(<span class="string">f&quot;digits — <span class="subst">&#123;title&#125;</span>&quot;</span>)</span><br><span class="line">    ax.set_xlabel(<span class="string">&quot;dim 1&quot;</span>); ax.set_ylabel(<span class="string">&quot;dim 2&quot;</span>)</span><br><span class="line">plt.colorbar(sc, ax=axes[<span class="number">1</span>], label=<span class="string">&quot;digit&quot;</span>)</span><br><span class="line">plt.tight_layout()</span><br><span class="line">plt.savefig(<span class="string">&quot;umap_vs_tsne_digits.png&quot;</span>, dpi=<span class="number">150</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>预期观察</strong>：两者均能将 0～9 分开；UMAP 往往<strong>簇间相对位置</strong>更有规律，t-SNE 簇边界有时更「紧」。</p>
+<h3 id="7-2-蛋白变体嵌入质控"><a href="#7-2-蛋白变体嵌入质控" class="headerlink" title="7.2 蛋白变体嵌入质控"></a>7.2 蛋白变体嵌入质控</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;蛋白变体 UMAP 质控 + 超参扫描&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> umap</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"></span><br><span class="line">X = np.load(<span class="string">&quot;embeddings.npy&quot;</span>)   <span class="comment"># (N, D)</span></span><br><span class="line">y = np.load(<span class="string">&quot;labels.npy&quot;</span>)       <span class="comment"># log10(activity/WT)</span></span><br><span class="line"></span><br><span class="line">n_neighbors = <span class="built_in">min</span>(<span class="number">15</span>, <span class="built_in">max</span>(<span class="number">5</span>, X.shape[<span class="number">0</span>] // <span class="number">5</span>))</span><br><span class="line"></span><br><span class="line">reducer = umap.UMAP(</span><br><span class="line">    n_neighbors=n_neighbors,</span><br><span class="line">    min_dist=<span class="number">0.1</span>,</span><br><span class="line">    n_components=<span class="number">2</span>,</span><br><span class="line">    metric=<span class="string">&quot;euclidean&quot;</span>,</span><br><span class="line">    random_state=<span class="number">42</span>,</span><br><span class="line">)</span><br><span class="line">Z = reducer.fit_transform(X)</span><br><span class="line"></span><br><span class="line">plt.figure(figsize=(<span class="number">7</span>, <span class="number">6</span>))</span><br><span class="line">plt.scatter(Z[:, <span class="number">0</span>], Z[:, <span class="number">1</span>], c=y, cmap=<span class="string">&quot;viridis&quot;</span>, s=<span class="number">18</span>, alpha=<span class="number">0.75</span>)</span><br><span class="line">plt.colorbar(label=<span class="string">&quot;log10(activity/WT)&quot;</span>)</span><br><span class="line">plt.xlabel(<span class="string">&quot;UMAP 1&quot;</span>); plt.ylabel(<span class="string">&quot;UMAP 2&quot;</span>)</span><br><span class="line">plt.title(<span class="string">f&quot;Protein variants (n_neighbors=<span class="subst">&#123;n_neighbors&#125;</span>)&quot;</span>)</span><br><span class="line">plt.savefig(<span class="string">&quot;umap_protein_qc.png&quot;</span>, dpi=<span class="number">150</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-3-n-neighbors-敏感性对照"><a href="#7-3-n-neighbors-敏感性对照" class="headerlink" title="7.3 n_neighbors 敏感性对照"></a>7.3 n_neighbors 敏感性对照</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;n_neighbors 对簇结构的影响&quot;&quot;&quot;</span></span><br><span class="line">fig, axes = plt.subplots(<span class="number">1</span>, <span class="number">3</span>, figsize=(<span class="number">15</span>, <span class="number">4</span>))</span><br><span class="line"><span class="keyword">for</span> ax, k <span class="keyword">in</span> <span class="built_in">zip</span>(axes, [<span class="number">5</span>, <span class="number">15</span>, <span class="number">50</span>]):</span><br><span class="line">    Z = umap.UMAP(n_neighbors=k, min_dist=<span class="number">0.1</span>, random_state=<span class="number">42</span>).fit_transform(X)</span><br><span class="line">    ax.scatter(Z[:, <span class="number">0</span>], Z[:, <span class="number">1</span>], c=y, cmap=<span class="string">&quot;viridis&quot;</span>, s=<span class="number">10</span>, alpha=<span class="number">0.7</span>)</span><br><span class="line">    ax.set_title(<span class="string">f&quot;n_neighbors=<span class="subst">&#123;k&#125;</span>&quot;</span>)</span><br><span class="line">plt.savefig(<span class="string">&quot;umap_neighbors_sweep.png&quot;</span>, dpi=<span class="number">150</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-4-避免-fit-泄漏的写法（建模流水线）"><a href="#7-4-避免-fit-泄漏的写法（建模流水线）" class="headerlink" title="7.4 避免 fit 泄漏的写法（建模流水线）"></a>7.4 避免 fit 泄漏的写法（建模流水线）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;训练集 fit，测试集 transform — 用于严格评估场景&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split</span><br><span class="line"></span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="number">0.2</span>, random_state=<span class="number">42</span>)</span><br><span class="line"></span><br><span class="line">reducer = umap.UMAP(n_neighbors=<span class="number">15</span>, random_state=<span class="number">42</span>)</span><br><span class="line">Z_train = reducer.fit_transform(X_train)</span><br><span class="line">Z_test = reducer.transform(X_test)   <span class="comment"># 仅探索性可视化；仍不建议将 Z 喂给回归器</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="8-UMAP-vs-t-SNE-速查"><a href="#8-UMAP-vs-t-SNE-速查" class="headerlink" title="8. UMAP vs t-SNE 速查"></a>8. UMAP vs t-SNE 速查</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th><strong>UMAP</strong></th>
+<th><strong>t-SNE</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>速度</td>
+<td>通常更快，百万级可行</td>
+<td>大数据需采样&#x2F;PCA 预处理</td>
+</tr>
+<tr>
+<td>全局结构</td>
+<td>较好</td>
+<td>不可靠</td>
+</tr>
+<tr>
+<td>稳定性</td>
+<td>对默认超参相对稳健</td>
+<td>perplexity 敏感</td>
+</tr>
+<tr>
+<td>transform</td>
+<td>支持 <code>transform</code> 新样本</td>
+<td>sklearn 需全量 <code>fit_transform</code></td>
+</tr>
+<tr>
+<td>生态</td>
+<td>Scanpy、Seurat、<code>umap-learn</code></td>
+<td>sklearn 内置</td>
+</tr>
+</tbody></table>
+<p><strong>实践建议</strong>：蛋白变体嵌入探索<strong>优先 UMAP</strong>；强调紧簇边界时<strong>并用 t-SNE</strong> 对照。</p>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ul>
+<li><strong>UMAP</strong> 承继流形学习脉络，以<strong>模糊拓扑 + 交叉熵</strong>对齐高低维图结构。  </li>
+<li>适合<strong>大规模可视化</strong>、<strong>蛋白&#x2F;单细胞探索</strong>、<strong>保留部分全局拓扑</strong>的场景。  </li>
+<li>与 t-SNE 相同，<strong>看图是初筛</strong>；定量评估仍需监督模型指标与实验验证。  </li>
+<li>详见 <a href="../../01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-06.ML%E8%BE%85%E5%8A%A9%E8%9B%8B%E7%99%BD%E5%B7%A5%E7%A8%8B%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.md">酶改造-06</a> 与 <a href="./1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-t-SNE.md">t-SNE 专篇</a>。</li>
+</ul>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>McInnes L., Healy J., Melville J. UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. <em>arXiv:1802.03426</em> <strong>2018</strong>.  </li>
+<li><a target="_blank" rel="noopener" href="https://umap-learn.readthedocs.io/">umap-learn 官方文档</a>  </li>
+<li>Becht E. et al. Dimensionality reduction for visualizing single-cell data using UMAP. <em>Nat. Biotechnol.</em> <strong>2019</strong>, <em>37</em>, 38–44.  </li>
+<li><a target="_blank" rel="noopener" href="https://www.sciencedirect.com/science/article/abs/pii/S1574013721000186">特征降维算法比较综述</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E9%99%8D%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 降维</a>
+          
+            <a href="/tags/%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 特征工程</a>
+          
+            <a href="/tags/machine-learning/" rel="tag"><i class="fa fa-tag"></i> machine_learning</a>
+          
+            <a href="/tags/UMAP/" rel="tag"><i class="fa fa-tag"></i> UMAP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1004.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E7%89%B9%E5%BE%81%E9%99%8D%E7%BB%B4-t-SNE/" rel="next" title="1004.特征工程-特征降维-t-SNE">
+                <i class="fa fa-chevron-left"></i> 1004.特征工程-特征降维-t-SNE
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-00.%E6%95%B0%E5%AD%A6%E5%88%86%E5%B8%83-00.%E7%B3%BB%E5%88%97%E8%A7%84%E5%88%92/" rel="prev" title="Math-00.数学分布-00.系列规划">
+                Math-00.数学分布-00.系列规划 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BA%A7%E7%94%9F%E5%9F%BA%E7%A1%80%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-UMAP"><span class="nav-number">1.</span> <span class="nav-text">1. 产生基础：为什么需要 UMAP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E9%97%AE%E9%A2%98%E6%9D%A5%E6%BA%90"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 问题来源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E6%A0%B8%E5%BF%83%E5%81%87%E8%AE%BE"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 核心假设</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%BC%94%E8%BF%9B%E8%84%89%E7%BB%9C"><span class="nav-number">2.</span> <span class="nav-text">2. 演进脉络</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">3. 算法原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%B8%A4%E6%AD%A5%E6%80%BB%E8%A7%88"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 两步总览</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%AB%98%E7%BB%B4%EF%BC%9A%E6%A8%A1%E7%B3%8A%E6%8B%93%E6%89%91"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 高维：模糊拓扑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E4%BD%8E%E7%BB%B4%EF%BC%9A%E4%BA%A4%E5%8F%89%E7%86%B5%E5%AF%B9%E9%BD%90"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 低维：交叉熵对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E4%B8%8E-t-SNE-%E7%9A%84%E6%95%B0%E5%AD%A6%E5%B7%AE%E5%BC%82"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 与 t-SNE 的数学差异</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%85%B3%E9%94%AE%E8%B6%85%E5%8F%82%E7%9A%84%E6%8B%93%E6%89%91%E5%90%AB%E4%B9%89"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 关键超参的拓扑含义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">4.</span> <span class="nav-text">4. 适用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">5.</span> <span class="nav-text">5. 局限性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%B8%BB%E8%A6%81%E8%B6%85%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">6. 主要超参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E7%A4%BA%E4%BE%8B%E5%B1%95%E7%A4%BA%E4%B8%8E%E4%BB%A3%E7%A0%81"><span class="nav-number">7.</span> <span class="nav-text">7. 示例展示与代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E5%90%88%E6%88%90%E6%95%B0%E6%8D%AE%E6%BC%94%E7%A4%BA%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%BF%90%E8%A1%8C%EF%BC%89"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 合成数据演示（可直接运行）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E8%9B%8B%E7%99%BD%E5%8F%98%E4%BD%93%E5%B5%8C%E5%85%A5%E8%B4%A8%E6%8E%A7"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 蛋白变体嵌入质控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-n-neighbors-%E6%95%8F%E6%84%9F%E6%80%A7%E5%AF%B9%E7%85%A7"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 n_neighbors 敏感性对照</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4-%E9%81%BF%E5%85%8D-fit-%E6%B3%84%E6%BC%8F%E7%9A%84%E5%86%99%E6%B3%95%EF%BC%88%E5%BB%BA%E6%A8%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%EF%BC%89"><span class="nav-number">7.4.</span> <span class="nav-text">7.4 避免 fit 泄漏的写法（建模流水线）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-UMAP-vs-t-SNE-%E9%80%9F%E6%9F%A5"><span class="nav-number">8.</span> <span class="nav-text">8. UMAP vs t-SNE 速查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">10.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

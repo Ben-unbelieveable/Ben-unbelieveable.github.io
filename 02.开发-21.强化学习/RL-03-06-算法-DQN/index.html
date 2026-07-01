@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Reinforcement-Learning,Deep-Learning,DQN," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Deep Q-Network（DQN）：函数逼近、经验回放、目标网络、损失函数与训练流程；Atari 离散控制入门。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RL-03-06-算法-DQN">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-06-%E7%AE%97%E6%B3%95-DQN/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Deep Q-Network（DQN）：函数逼近、经验回放、目标网络、损失函数与训练流程；Atari 离散控制入门。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-06-%E7%AE%97%E6%B3%95-DQN/fig-dqn-architecture.png">
+<meta property="article:published_time" content="2026-05-26T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.829Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DQN">
+<meta property="article:tag" content="Deep-Learning">
+<meta property="article:tag" content="Reinforcement-Learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-06-%E7%AE%97%E6%B3%95-DQN/fig-dqn-architecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-21.强化学习/RL-03-06-算法-DQN/"/>
+
+
+
+
+
+  <title>RL-03-06-算法-DQN | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-06-%E7%AE%97%E6%B3%95-DQN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">RL-03-06-算法-DQN</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-26T12:00:00+08:00">
+                2026-05-26
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">强化学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Deep Q-Network（DQN）：函数逼近、经验回放、目标网络、损失函数与训练流程；Atari 离散控制入门。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>← 上级：<a href="RL-03.%E7%AE%97%E6%B3%95%E5%88%86%E7%B1%BB%E4%B8%8E%E9%80%89%E5%9E%8B.md">RL-03.算法分类与选型</a> · 前置：<a href="RL-03-02-%E7%AE%97%E6%B3%95-Q-Learning.md">RL-03-02-算法-Q-Learning</a> · 数据结构：<a href="RL-05.%E4%B8%93%E5%B1%9E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.md">RL-05.专属数据结构</a></p>
+<p>当状态空间高维（如 Atari 像素）时，表格 Q 无法扩展。<strong>深度 Q 网络</strong>（Deep Q-Network，<strong>DQN</strong>）用神经网络 $Q_\phi(s,a)$ 逼近动作价值，并引入<strong>经验回放</strong>与<strong>目标网络</strong>稳定训练（Mnih et al., 2015）。</p>
+<blockquote>
+<p>段末注释：<strong>深度 Q 网络</strong>（Deep Q-Network，<strong>DQN</strong>）以深度神经网络参数化 Q 函数，结合经验回放与目标网络；后文沿用 <strong>DQN</strong>。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-06-%E7%AE%97%E6%B3%95-DQN/fig-dqn-architecture.png" alt="DQN 架构示意"></p>
+<hr>
+<h2 id="一、从-Q-Learning-到-DQN"><a href="#一、从-Q-Learning-到-DQN" class="headerlink" title="一、从 Q-Learning 到 DQN"></a>一、从 Q-Learning 到 DQN</h2><p>表格更新：</p>
+<p>$$<br>Q(s,a) \leftarrow Q(s,a) + \alpha \left[ r + \gamma \max_{a’} Q(s’,a’) - Q(s,a) \right]<br>$$</p>
+<p>DQN 用网络 $Q_\phi$ 替代表格，最小化 TD 误差平方：</p>
+<p>$$<br>\mathcal{L}(\phi) &#x3D; \mathbb{E}<em>{(s,a,r,s’) \sim \mathcal{D}} \left[ \left( y - Q</em>\phi(s,a) \right)^2 \right]<br>$$</p>
+<p>其中 <strong>TD 目标</strong>（用目标网络 $Q_{\bar{\phi}}$）：</p>
+<p>$$<br>y &#x3D; r + \gamma (1-d) \max_{a’} Q_{\bar{\phi}}(s’, a’)<br>$$</p>
+<p>$d$ 为终止标志；$(1-d)$ 防止在终止状态 Bootstrap。</p>
+<hr>
+<h2 id="二、三大稳定技巧"><a href="#二、三大稳定技巧" class="headerlink" title="二、三大稳定技巧"></a>二、三大稳定技巧</h2><table>
+<thead>
+<tr>
+<th align="left">技巧</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>经验回放</strong> $\mathcal{D}$</td>
+<td align="left">打破样本相关性，重复利用数据</td>
+</tr>
+<tr>
+<td align="left"><strong>目标网络</strong> $Q_{\bar{\phi}}$</td>
+<td align="left">固定 TD 目标，减少追逐移动目标</td>
+</tr>
+<tr>
+<td align="left"><strong>$\varepsilon$-greedy</strong></td>
+<td align="left">持续探索</td>
+</tr>
+</tbody></table>
+<h3 id="2-1-目标网络更新"><a href="#2-1-目标网络更新" class="headerlink" title="2.1 目标网络更新"></a>2.1 目标网络更新</h3><ul>
+<li><strong>Hard update</strong>：每 $C$ 步 $\bar{\phi} \leftarrow \phi$  </li>
+<li><strong>Soft update</strong>（Polyak）：$\bar{\phi} \leftarrow \tau \phi + (1-\tau) \bar{\phi}$，常用 $\tau&#x3D;0.005$</li>
+</ul>
+<h3 id="2-2-经验回放"><a href="#2-2-经验回放" class="headerlink" title="2.2 经验回放"></a>2.2 经验回放</h3><p>从 Buffer 均匀采样 mini-batch；字段 $(s,a,r,s’,done)$ 见 <a href="RL-05.%E4%B8%93%E5%B1%9E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.md">RL-05 Replay Buffer</a>。</p>
+<hr>
+<h2 id="三、网络结构（Atari-例）"><a href="#三、网络结构（Atari-例）" class="headerlink" title="三、网络结构（Atari 例）"></a>三、网络结构（Atari 例）</h2><ol>
+<li>输入：$84 \times 84 \times 4$ 灰度帧堆叠  </li>
+<li>3 层卷积 + ReLU  </li>
+<li>全连接 → 输出 $|A|$ 维 Q 值（每动作一个标量）</li>
+</ol>
+<p>选动作：$a &#x3D; \arg\max_a Q_\phi(s,a)$（推理时）。</p>
+<hr>
+<h2 id="四、训练流程"><a href="#四、训练流程" class="headerlink" title="四、训练流程"></a>四、训练流程</h2><ol>
+<li>初始化 $Q_\phi$、$Q_{\bar{\phi}}$（$\bar{\phi} \leftarrow \phi$）、空 Replay  </li>
+<li>环境交互得 $(s,a,r,s’,d)$，存入 Replay  </li>
+<li>若 $|Replay| &gt; \text{warmup}$：采样 batch，算 $\mathcal{L}$，梯度下降更新 $\phi$  </li>
+<li>每 $C$ 步同步 $\bar{\phi}$  </li>
+<li>重复至收敛</li>
+</ol>
+<p>实现要点见 <a href="RL-04.%E5%AE%9E%E7%8E%B0%E6%A1%86%E6%9E%B6%E4%B8%8E%E5%AE%9E%E8%B7%B5.md">RL-04.实现框架与实践</a>。</p>
+<hr>
+<h2 id="五、伪代码（核心）"><a href="#五、伪代码（核心）" class="headerlink" title="五、伪代码（核心）"></a>五、伪代码（核心）</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># sample batch from replay</span></span><br><span class="line">s, a, r, s_next, done = replay.sample(batch_size)</span><br><span class="line"><span class="keyword">with</span> torch.no_grad():</span><br><span class="line">    q_next = target_net(s_next).<span class="built_in">max</span>(dim=<span class="number">1</span>).values</span><br><span class="line">    y = r + gamma * (<span class="number">1</span> - done) * q_next</span><br><span class="line">q_sa = online_net(s).gather(<span class="number">1</span>, a.unsqueeze(<span class="number">1</span>)).squeeze(<span class="number">1</span>)</span><br><span class="line">loss = F.mse_loss(q_sa, y)</span><br><span class="line">optimizer.zero_grad()</span><br><span class="line">loss.backward()</span><br><span class="line">optimizer.step()</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="六、超参数（Atari-量级参考）"><a href="#六、超参数（Atari-量级参考）" class="headerlink" title="六、超参数（Atari 量级参考）"></a>六、超参数（Atari 量级参考）</h2><table>
+<thead>
+<tr>
+<th align="left">超参</th>
+<th align="left">典型值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Replay 容量</td>
+<td align="left">$10^6$</td>
+</tr>
+<tr>
+<td align="left">Batch</td>
+<td align="left">32</td>
+</tr>
+<tr>
+<td align="left">$\gamma$</td>
+<td align="left">0.99</td>
+</tr>
+<tr>
+<td align="left">学习率</td>
+<td align="left">$2.5 \times 10^{-4}$（RMSprop&#x2F;Adam）</td>
+</tr>
+<tr>
+<td align="left">目标网络周期 $C$</td>
+<td align="left">1000 ~ 10000 步</td>
+</tr>
+<tr>
+<td align="left">$\varepsilon$</td>
+<td align="left">1.0 → 0.1，前 $10^6$ 步线性衰减</td>
+</tr>
+<tr>
+<td align="left">Frame skip</td>
+<td align="left">4（Atari）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、已知问题"><a href="#七、已知问题" class="headerlink" title="七、已知问题"></a>七、已知问题</h2><table>
+<thead>
+<tr>
+<th align="left">问题</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Q 过估计</strong></td>
+<td align="left">$\max$ 算子 + 函数逼近导致乐观偏差 → Double DQN</td>
+</tr>
+<tr>
+<td align="left"><strong>连续动作</strong></td>
+<td align="left">$\max_{a’} Q(s’,a’)$ 难算 → DDPG &#x2F; SAC</td>
+</tr>
+<tr>
+<td align="left"><strong>样本效率</strong></td>
+<td align="left">纯 DQN 仍需大量交互</td>
+</tr>
+</tbody></table>
+<p>改进见 <a href="RL-03-07-%E7%AE%97%E6%B3%95-DQN%E5%8F%98%E4%BD%93.md">RL-03-07-算法-DQN变体</a>。</p>
+<hr>
+<h2 id="八、小结"><a href="#八、小结" class="headerlink" title="八、小结"></a>八、小结</h2><ul>
+<li>DQN &#x3D; <strong>Q-Learning + 神经网络 + Replay + 目标网络</strong>。  </li>
+<li>损失 &#x3D; MSE$(Q_\phi(s,a), ; r + \gamma \max Q_{\bar{\phi}}(s’,\cdot))$。  </li>
+<li>下一篇：<a href="RL-03-07-%E7%AE%97%E6%B3%95-DQN%E5%8F%98%E4%BD%93.md">DQN 变体</a>。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Reinforcement-Learning/" rel="tag"><i class="fa fa-tag"></i> Reinforcement-Learning</a>
+          
+            <a href="/tags/Deep-Learning/" rel="tag"><i class="fa fa-tag"></i> Deep-Learning</a>
+          
+            <a href="/tags/DQN/" rel="tag"><i class="fa fa-tag"></i> DQN</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-04-%E7%AE%97%E6%B3%95-%E8%92%99%E7%89%B9%E5%8D%A1%E6%B4%9B/" rel="next" title="RL-03-04-算法-蒙特卡洛">
+                <i class="fa fa-chevron-left"></i> RL-03-04-算法-蒙特卡洛
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-07-%E7%AE%97%E6%B3%95-DQN%E5%8F%98%E4%BD%93/" rel="prev" title="RL-03-07-算法-DQN变体">
+                RL-03-07-算法-DQN变体 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%BB%8E-Q-Learning-%E5%88%B0-DQN"><span class="nav-number">1.</span> <span class="nav-text">一、从 Q-Learning 到 DQN</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%B8%89%E5%A4%A7%E7%A8%B3%E5%AE%9A%E6%8A%80%E5%B7%A7"><span class="nav-number">2.</span> <span class="nav-text">二、三大稳定技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E7%9B%AE%E6%A0%87%E7%BD%91%E7%BB%9C%E6%9B%B4%E6%96%B0"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 目标网络更新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E7%BB%8F%E9%AA%8C%E5%9B%9E%E6%94%BE"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 经验回放</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E7%BD%91%E7%BB%9C%E7%BB%93%E6%9E%84%EF%BC%88Atari-%E4%BE%8B%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">三、网络结构（Atari 例）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E8%AE%AD%E7%BB%83%E6%B5%81%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">四、训练流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E4%BC%AA%E4%BB%A3%E7%A0%81%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">五、伪代码（核心）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E8%B6%85%E5%8F%82%E6%95%B0%EF%BC%88Atari-%E9%87%8F%E7%BA%A7%E5%8F%82%E8%80%83%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">六、超参数（Atari 量级参考）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%B7%B2%E7%9F%A5%E9%97%AE%E9%A2%98"><span class="nav-number">7.</span> <span class="nav-text">七、已知问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">八、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

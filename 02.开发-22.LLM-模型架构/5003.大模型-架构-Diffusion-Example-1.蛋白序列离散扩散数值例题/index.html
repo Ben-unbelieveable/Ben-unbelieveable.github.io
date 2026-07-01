@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,Diffusion,D3PM,离散扩散,蛋白质序列,数值例题," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="用长度 L&#x3D;4 的玩具肽段手算 MASK 吸收态离散扩散的一步训练与 motif inpainting 采样；对照 Example-0 连续 DDPM，说明蛋白序列如何用转移矩阵构造 x_t 与交叉熵监督。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-Diffusion-Example-1.蛋白序列离散扩散数值例题">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="用长度 L&#x3D;4 的玩具肽段手算 MASK 吸收态离散扩散的一步训练与 motif inpainting 采样；对照 Example-0 连续 DDPM，说明蛋白序列如何用转移矩阵构造 x_t 与交叉熵监督。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig04-protein-mask-corruption.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig05-protein-discrete-training-step.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig06-protein-motif-inpainting.png">
+<meta property="article:published_time" content="2026-06-11T13:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:18.128Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="D3PM">
+<meta property="article:tag" content="Diffusion">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="数值例题">
+<meta property="article:tag" content="离散扩散">
+<meta property="article:tag" content="蛋白质序列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig04-protein-mask-corruption.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-Diffusion-Example-1.蛋白序列离散扩散数值例题/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-Diffusion-Example-1.蛋白序列离散扩散数值例题 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-Diffusion-Example-1.蛋白序列离散扩散数值例题</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T21:30:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  用长度 L=4 的玩具肽段手算 MASK 吸收态离散扩散的一步训练与 motif inpainting 采样；对照 Example-0 连续 DDPM，说明蛋白序列如何用转移矩阵构造 x_t 与交叉熵监督。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>蛋白质一级序列</strong>是有限字母表 (\mathcal{V}) 上的离散 token 串，不能对氨基酸直接加高斯噪声。<strong>离散扩散（Discrete Diffusion）</strong>——以 <strong>D3PM</strong>（Austin <em>et al.</em>, 2021）及 <strong>MASK 吸收态</strong>变体为代表——用<strong>转移矩阵</strong>逐步把 token「腐蚀」为 <strong>[MASK]</strong>，再训练网络逐步填回。本文与 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 连续 DDPM 手算</a> <strong>平行</strong>：同样走「采样 (x_0) → 随机 (t) → 固定前向造 (x_t) → 网络预测 → 损失反传」，但符号从 (\epsilon\in\mathbb{R}^d) 换成 <strong>分类分布 + 交叉熵</strong>。</p>
+<blockquote>
+<p>段末注释：<strong>D3PM</strong> 为 Structured Denoising Diffusion Models in Discrete State-Spaces；<strong>MASK 吸收态</strong>指 token 一旦变为 [MASK] 则保持，类似多步 MLM。</p>
+</blockquote>
+<p><strong>前置阅读</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 离散扩散与序列生成</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 前向训练数值例题</a><br><strong>连续 DDPM 对照</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C.md">Diffusion-1 §5</a><br><strong>条件 &#x2F; CFG</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90.md">Diffusion-3 §4–§5</a></p>
+<p><strong>插图</strong>：<code>5003.大模型-架构-Diffusion-Example/example-fig04–06*.png</code></p>
+<hr>
+<h2 id="1-与-Example-0-的对照"><a href="#1-与-Example-0-的对照" class="headerlink" title="1. 与 Example-0 的对照"></a>1. 与 Example-0 的对照</h2><table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left"><strong>Example-0（图像&#x2F;坐标）</strong></th>
+<th align="left"><strong>Example-1（蛋白序列）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">数据 (x_0)</td>
+<td align="left">向量 (\mathbb{R}^2)</td>
+<td align="left">token 串 (\mathcal{V}^L)</td>
+</tr>
+<tr>
+<td align="left">前向</td>
+<td align="left">高斯加噪 (x_t&#x3D;\sqrt{\bar\alpha_t}x_0+\cdots)</td>
+<td align="left">转移矩阵 (Q_t)，MASK 吸收</td>
+</tr>
+<tr>
+<td align="left">损坏形态</td>
+<td align="left">连续噪声</td>
+<td align="left">部分位置变为 [MASK]</td>
+</tr>
+<tr>
+<td align="left">网络输出</td>
+<td align="left">预测 (\epsilon)</td>
+<td align="left">每位置 <strong>(|\mathcal{V}|) 维 logits</strong>（常等价预测 (x_0)）</td>
+</tr>
+<tr>
+<td align="left">损失</td>
+<td align="left">MSE (|\epsilon-\epsilon_\theta|^2)</td>
+<td align="left"><strong>交叉熵</strong> (-\log p_\theta(x_0\mid x_t,t))</td>
+</tr>
+<tr>
+<td align="left">生成</td>
+<td align="left">从 (x_T\sim\mathcal{N}(0,I)) 去噪</td>
+<td align="left">从全 [MASK] 逐步填 token</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-玩具设定：四肽-x-0"><a href="#2-玩具设定：四肽-x-0" class="headerlink" title="2. 玩具设定：四肽 (x_0)"></a>2. 玩具设定：四肽 (x_0)</h2><p>取长度 <strong>(L&#x3D;4)</strong> 的肽段（真实蛋白常用 (L\gg4)，此处仅手算）：</p>
+<p>[<br>x_0 &#x3D; [,\mathrm{M},,\mathrm{K},,\mathrm{G},,\mathrm{D},]<br>]</p>
+<p><strong>简化词汇表</strong>（玩具，便于表格；标准蛋白为 20 种氨基酸 + 特殊 token）：</p>
+<table>
+<thead>
+<tr>
+<th align="center">索引</th>
+<th align="left">0</th>
+<th align="left">1</th>
+<th align="left">2</th>
+<th align="left">3</th>
+<th align="left">4</th>
+<th align="left">5</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">token</td>
+<td align="left">A</td>
+<td align="left">D</td>
+<td align="left">G</td>
+<td align="left">K</td>
+<td align="left">M</td>
+<td align="left">[MASK]</td>
+</tr>
+</tbody></table>
+<p>故 (x_0 &#x3D; [4,,3,,2,,1])（M–K–G–D）。扩散步 <strong>(T&#x3D;4)</strong>，与 Example-0 一致。</p>
+<p><strong>噪声日程</strong>（每步独立 MASK 概率 (\beta_t)）：</p>
+<table>
+<thead>
+<tr>
+<th align="center">(t)</th>
+<th align="center">(\beta_t)</th>
+<th align="left">该步「变为 MASK」概率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">0.20</td>
+<td align="left">20%</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">0.35</td>
+<td align="left">35%</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">0.50</td>
+<td align="left">50%</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">0.65</td>
+<td align="left">65%</td>
+</tr>
+</tbody></table>
+<p><strong>吸收规则</strong>：某位置一旦成为 [MASK]，后续步保持 [MASK]（不再变回原氨基酸）。</p>
+<hr>
+<h2 id="3-前向：MASK-吸收态如何腐蚀-x-0"><a href="#3-前向：MASK-吸收态如何腐蚀-x-0" class="headerlink" title="3. 前向：MASK 吸收态如何腐蚀 (x_0)"></a>3. 前向：MASK 吸收态如何腐蚀 (x_0)</h2><p>对<strong>每个位置独立</strong>，单步转移：</p>
+<p>[<br>q(x_t^{(\ell)} \mid x_{t-1}^{(\ell)}) &#x3D;<br>\begin{cases}<br>1-\beta_t &amp; x_{t-1}^{(\ell)} \text{ 保持} \<br>\beta_t &amp; x_{t-1}^{(\ell)} \to [\mathrm{MASK}]<br>\end{cases}<br>]</p>
+<p>从 (x_0) 到 (x_t) 闭式：位置 (\ell) 仍为原 token 当且仅当<strong>前 (t) 步都未被打 MASK</strong>：</p>
+<p>[<br>\mathbb{P}(x_t^{(\ell)} &#x3D; x_0^{(\ell)}) &#x3D; \bar\gamma_t &#x3D; \prod_{s&#x3D;1}^{t}(1-\beta_s).<br>]</p>
+<p><strong>手算 (\bar\gamma_t)</strong>：</p>
+<table>
+<thead>
+<tr>
+<th align="center">(t)</th>
+<th align="center">(\bar\gamma_t)</th>
+<th align="left">仍保留原 token 的概率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">0.800</td>
+<td align="left">80%</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">0.520</td>
+<td align="left">52%</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">0.260</td>
+<td align="left">26%</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">0.091</td>
+<td align="left">9.1%</td>
+</tr>
+</tbody></table>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig04-protein-mask-corruption.png" alt="图 1　MASK 吸收扩散：\(t\) 增大时序列中 [MASK] 增多"></p>
+<hr>
+<h2 id="4-训练第-1–2-步：采样-x-0-与-t"><a href="#4-训练第-1–2-步：采样-x-0-与-t" class="headerlink" title="4. 训练第 1–2 步：采样 (x_0) 与 (t)"></a>4. 训练第 1–2 步：采样 (x_0) 与 (t)</h2><p>[<br>x_0 &#x3D; [\mathrm{M},,\mathrm{K},,\mathrm{G},,\mathrm{D}] \sim q(x_0), \qquad t &#x3D; 3.<br>]</p>
+<p>(x_0) 来自训练集（UniRef、Pfam 等上的真实肽段&#x2F;蛋白窗口）；(t&#x3D;3) 表示「中等腐蚀」档。</p>
+<hr>
+<h2 id="5-训练第-3-步：构造损坏序列-x-t"><a href="#5-训练第-3-步：构造损坏序列-x-t" class="headerlink" title="5. 训练第 3 步：构造损坏序列 (x_t)"></a>5. 训练第 3 步：构造损坏序列 (x_t)</h2><h3 id="5-1-逐步腐蚀（理解用）"><a href="#5-1-逐步腐蚀（理解用）" class="headerlink" title="5.1 逐步腐蚀（理解用）"></a>5.1 逐步腐蚀（理解用）</h3><table>
+<thead>
+<tr>
+<th align="center">步</th>
+<th align="left">操作（本例指定随机结果）</th>
+<th align="left">序列</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">0</td>
+<td align="left">(x_0)</td>
+<td align="left">M – K – G – D</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="left">位置 1 以 (\beta_1) 被 MASK</td>
+<td align="left"><strong>[MASK]</strong> – K – G – D</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="left">位置 3 被 MASK</td>
+<td align="left">[MASK] – K – <strong>[MASK]</strong> – D</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="left">位置 4 被 MASK</td>
+<td align="left">[MASK] – K – [MASK] – <strong>[MASK]</strong></td>
+</tr>
+</tbody></table>
+<h3 id="5-2-训练用写法"><a href="#5-2-训练用写法" class="headerlink" title="5.2 训练用写法"></a>5.2 训练用写法</h3><p>[<br>\boxed{<br>x_3 &#x3D; [,\mathrm{[MASK]},,\mathrm{K},,\mathrm{[MASK]},,\mathrm{[MASK]},]<br>}<br>]</p>
+<p>等价索引 ([5,,3,,5,,5])。<strong>监督标签仍是完整 (x_0)</strong>——与 Example-0 里「已知 (\epsilon)」类比：损坏样本 (x_t) 由<strong>固定规则 + 已知随机 MASK 结果</strong>构造，<strong>真实 token (x_0)</strong> 来自数据集。</p>
+<blockquote>
+<p>段末注释：实现中常对 (x_t \sim q(x_t\mid x_0)) <strong>采样</strong>而非逐步枚举；本例固定一条轨迹便于阅读。</p>
+</blockquote>
+<hr>
+<h2 id="6-训练第-4-步：网络与交叉熵损失"><a href="#6-训练第-4-步：网络与交叉熵损失" class="headerlink" title="6. 训练第 4 步：网络与交叉熵损失"></a>6. 训练第 4 步：网络与交叉熵损失</h2><h3 id="6-1-输入-输出"><a href="#6-1-输入-输出" class="headerlink" title="6.1 输入 &#x2F; 输出"></a>6.1 输入 &#x2F; 输出</h3><p><strong>输入</strong>：((x_3,, t&#x3D;3))——损坏 token 串 + 时间步 embedding。</p>
+<p><strong>输出</strong>：每位置 (\ell) 一组 logits (\mathbf{z}<em>\ell \in \mathbb{R}^{|\mathcal{V}|})，经 softmax 得 (p</em>\theta(x_0^{(\ell)}\mid x_3,t))。</p>
+<p>骨干常用 <strong>Transformer</strong>（双向，非 AR）；(t) 注入方式与 Example-0 相同（正弦 &#x2F; MLP embedding）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig05-protein-discrete-training-step.png" alt="图 2　蛋白序列离散扩散单步训练流程"></p>
+<h3 id="6-2-简化训练目标（-x-0-prediction）"><a href="#6-2-简化训练目标（-x-0-prediction）" class="headerlink" title="6.2 简化训练目标（(x_0)-prediction）"></a>6.2 简化训练目标（(x_0)-prediction）</h3><p>常见目标：直接预测干净 token（与 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §3</a> 的 ELBO  surrogates 一致）：</p>
+<p>[<br>\mathcal{L}<em>{\mathrm{CE}} &#x3D; -\sum</em>{\ell&#x3D;1}^{L} \log p_\theta\big(x_0^{(\ell)} \mid x_3,, t&#x3D;3\big).<br>]</p>
+<p><strong>情形 A · 四位置全预测正确</strong></p>
+<table>
+<thead>
+<tr>
+<th align="center">位置 (\ell)</th>
+<th align="center">真实 (x_0^{(\ell)})</th>
+<th align="center">(x_3^{(\ell)})</th>
+<th align="center">网络预测</th>
+<th align="center">损失贡献</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">M</td>
+<td align="center">[MASK]</td>
+<td align="center">M ✓</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">K</td>
+<td align="center">K</td>
+<td align="center">K ✓</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">G</td>
+<td align="center">[MASK]</td>
+<td align="center">G ✓</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">D</td>
+<td align="center">[MASK]</td>
+<td align="center">D ✓</td>
+<td align="center">0</td>
+</tr>
+</tbody></table>
+<p>(\mathcal{L}_{\mathrm{CE}} &#x3D; 0)。</p>
+<p><strong>情形 B · 位置 3 错猜为 A</strong></p>
+<p>设 (p_\theta(\mathrm{G})&#x3D;0.2)，(p_\theta(\mathrm{A})&#x3D;0.5)（其余忽略），则第 3 位贡献 (-\log 0.2 \approx 1.61)，梯度增大 (p_\theta(\mathrm{G}))。</p>
+<p><strong>与 Example-0 MSE 的对照</strong>：</p>
+<table>
+<thead>
+<tr>
+<th align="left">Example-0</th>
+<th align="left">Example-1</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">标签：噪声 (\epsilon)</td>
+<td align="left">标签：原 token (x_0^{(\ell)})</td>
+</tr>
+<tr>
+<td align="left">(|\epsilon-\epsilon_\theta|^2)</td>
+<td align="left">(-\log p_\theta(x_0^{(\ell)}\mid x_t,t))</td>
+</tr>
+<tr>
+<td align="left">猜对噪声 &#x3D; 还原 (x_0)</td>
+<td align="left">猜对 token &#x3D; 直接还原 (x_0)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-一个-minibatch-里发生什么"><a href="#7-一个-minibatch-里发生什么" class="headerlink" title="7. 一个 minibatch 里发生什么"></a>7. 一个 minibatch 里发生什么</h2><table>
+<thead>
+<tr>
+<th align="center">样本</th>
+<th align="left">(x_0)（数据集肽段）</th>
+<th align="center">随机 (t)</th>
+<th align="left">构造 (x_t)</th>
+<th align="left">损失</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="left">MKFL…</td>
+<td align="center">512</td>
+<td align="left">(q(x_t\mid x_0)) 采样</td>
+<td align="left">(\sum_\ell -\log p_\theta(x_0^{(\ell)}\mid x_t,t))</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="left">AGVT…</td>
+<td align="center">8</td>
+<td align="left">…</td>
+<td align="left">…</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="left">CPQY…</td>
+<td align="center">301</td>
+<td align="left">…</td>
+<td align="left">…</td>
+</tr>
+</tbody></table>
+<p><strong>同一套 (\theta)</strong> 在所有序列、所有 (t) 上共享——学的是<strong>蛋白序列分布</strong> (q(x_0))，不是「每条序列一个模型」。(t) 经 embedding 注入、<strong>非每档独立网络</strong>，与 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §6.3</a> 连续 DDPM 相同。</p>
+<hr>
+<h2 id="8-条件生成：motif-与「提示词」的蛋白版"><a href="#8-条件生成：motif-与「提示词」的蛋白版" class="headerlink" title="8. 条件生成：motif 与「提示词」的蛋白版"></a>8. 条件生成：motif 与「提示词」的蛋白版</h2><p>无条件训练学 (p(x_0))。<strong>Motif scaffolding &#x2F; 条件 design</strong> 学 (p(x_0\mid c))：</p>
+<table>
+<thead>
+<tr>
+<th align="left">文生图</th>
+<th align="left">蛋白序列离散扩散</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">条件 (c) &#x3D; 文本 prompt（CLIP 嵌入）</td>
+<td align="left">(c) &#x3D; <strong>固定 motif</strong>、二级结构标签、pH&#x2F;温度等</td>
+</tr>
+<tr>
+<td align="left">训练 (\epsilon_\theta(x_t,t,c))</td>
+<td align="left">训练 (p_\theta(x_{t-1}\mid x_t,t,c)) 或 (p_\theta(x_0\mid x_t,t,c))</td>
+</tr>
+<tr>
+<td align="left">CFG 强化 prompt</td>
+<td align="left">CFG 强化 motif &#x2F; 结构条件（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90.md">Diffusion-3 §4.1</a>）</td>
+</tr>
+</tbody></table>
+<h3 id="8-1-Motif-Inpainting-手算示意"><a href="#8-1-Motif-Inpainting-手算示意" class="headerlink" title="8.1 Motif Inpainting 手算示意"></a>8.1 Motif Inpainting 手算示意</h3><p>设计 <strong>8 肽</strong>，<strong>固定</strong>活性位点 (\mathrm{H}\mathrm{D}) 于位置 3–4，侧翼 6 个位置由扩散生成：</p>
+<p>[<br>x &#x3D; [\text{?},,\text{?},,\mathrm{H},,\mathrm{D},,\text{?},,\text{?},,\text{?},,\text{?}]<br>]</p>
+<p><strong>采样</strong>（(t&#x3D;T\to1)）每步：</p>
+<ol>
+<li>网络对<strong>全序列</strong>输出 logits；  </li>
+<li><strong>非固定位置</strong>按 (p_\theta) 采样 token；  </li>
+<li><strong>固定位置</strong>强制为 (\mathrm{H},\mathrm{D})（或从 (q(x_{t-1}\mid x_0^{\mathrm{fixed}})) 重采样，与 inpainting 一致）。</li>
+</ol>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/example-fig06-protein-motif-inpainting.png" alt="图 3　Motif Inpainting：固定 HD，扩散生成侧翼序列"></p>
+<p>这与 Example-0 §11 <strong>文生图条件</strong> 同构：<strong>损坏&#x2F;去噪骨架不变</strong>，额外条件 (c) 告诉网络「哪些 token 必须保留、其余填什么分布」。</p>
+<hr>
+<h2 id="9-生成阶段：从全-MASK-到肽段"><a href="#9-生成阶段：从全-MASK-到肽段" class="headerlink" title="9. 生成阶段：从全 MASK 到肽段"></a>9. 生成阶段：从全 MASK 到肽段</h2><p>训练完成后（<strong>不再使用 (x_0)</strong>）。与连续图像从 (x_T\sim\mathcal{N}(0,I))、(t&#x3D;T) 起去噪（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §10</a>）类比：</p>
+<ol>
+<li>初始化 (x_T &#x3D; [\mathrm{MASK},\ldots,\mathrm{MASK}])（或均匀随机 token）——对应离散扩散的<strong>最大腐蚀档</strong>；  </li>
+<li>(t &#x3D; T,\ldots,1)：同一 (p_\theta) 输出每位置分类分布，采样 (x_{t-1})；  </li>
+<li>得到 (x_0) 作为<strong>新设计序列</strong>；  </li>
+<li>可选：用 <strong>ESMFold</strong>、<strong>OmegaFold</strong> 等做结构一致性筛选（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §6</a>）。</li>
+</ol>
+<hr>
+<h2 id="10-与-AR-MLM-的一句话选型"><a href="#10-与-AR-MLM-的一句话选型" class="headerlink" title="10. 与 AR &#x2F; MLM 的一句话选型"></a>10. 与 AR &#x2F; MLM 的一句话选型</h2><table>
+<thead>
+<tr>
+<th align="left">范式</th>
+<th align="left">本玩具例是否适用</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>离散扩散（本文）</strong></td>
+<td align="left">✓</td>
+<td align="left">motif inpainting、并行填 MASK</td>
+</tr>
+<tr>
+<td align="left"><strong>AR（ProGen2 等）</strong></td>
+<td align="left">左→右生成，非本例</td>
+<td align="left">长序列生态成熟</td>
+</tr>
+<tr>
+<td align="left"><strong>MLM（ESM）</strong></td>
+<td align="left">单步遮盖，非多步 schedule</td>
+<td align="left">常作表征而非生成</td>
+</tr>
+</tbody></table>
+<p>多数 <strong>3D 蛋白 design</strong> 仍用 <strong>RFdiffusion（连续结构扩散）+ ProteinMPNN（序列）</strong>；<strong>纯序列</strong>离散扩散适合 <strong>motif 侧翼</strong>、<strong>全局编辑</strong> 等场景（见 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §5–§6</a>）。</p>
+<hr>
+<h2 id="11-小结"><a href="#11-小结" class="headerlink" title="11. 小结"></a>11. 小结</h2><table>
+<thead>
+<tr>
+<th align="left">环节</th>
+<th align="left">Example-1 中的角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">(x_0 \sim q(x_0))</td>
+<td align="left">真实肽段&#x2F;蛋白窗口</td>
+</tr>
+<tr>
+<td align="left">固定前向 (q(x_t\mid x_{t-1}))</td>
+<td align="left">MASK 吸收转移，<strong>不训练</strong></td>
+</tr>
+<tr>
+<td align="left">随机 (t)</td>
+<td align="left">噪声档位</td>
+</tr>
+<tr>
+<td align="left">构造 (x_t)</td>
+<td align="left">部分 [MASK] + 部分可见 token</td>
+</tr>
+<tr>
+<td align="left">(p_\theta(x_0\mid x_t,t))</td>
+<td align="left">Transformer <strong>分类去噪</strong></td>
+</tr>
+<tr>
+<td align="left">(\mathcal{L}_{\mathrm{CE}})</td>
+<td align="left">各位置 token 交叉熵之和</td>
+</tr>
+<tr>
+<td align="left">条件 (c)</td>
+<td align="left">motif &#x2F; 结构 &#x2F; CFG（§8）</td>
+</tr>
+</tbody></table>
+<p><strong>记忆</strong>：连续 DDPM 猜 <strong>(\epsilon)</strong>；离散序列扩散猜 <strong>原 token</strong>（或 (x_{t-1}) 分布）——<strong>监督都来自已知 (x_0)</strong>，前向只是「把 (x_0) 弄坏」的机制不同。</p>
+<hr>
+<h2 id="本篇概念索引"><a href="#本篇概念索引" class="headerlink" title="本篇概念索引"></a>本篇概念索引</h2><table>
+<thead>
+<tr>
+<th align="left">概念</th>
+<th align="left">出现章节</th>
+<th align="left">延伸阅读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">MASK 吸收态 &#x2F; (\beta_t,,\bar\gamma_t)</td>
+<td align="left">§2–§3</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §2.1</a></td>
+</tr>
+<tr>
+<td align="left">构造 (x_t)</td>
+<td align="left">§5</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §2</a></td>
+</tr>
+<tr>
+<td align="left">(\mathcal{L}_{\mathrm{CE}}) &#x2F; (x_0)-prediction</td>
+<td align="left">§6</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §3</a></td>
+</tr>
+<tr>
+<td align="left">Motif inpainting &#x2F; 条件 (c)</td>
+<td align="left">§8</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-3.%E9%87%87%E6%A0%B7%E5%8A%A0%E9%80%9F%E4%B8%8E%E5%BC%95%E5%AF%BC%E7%94%9F%E6%88%90.md">Diffusion-3 §4–§5</a>；<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §11</a></td>
+</tr>
+<tr>
+<td align="left">与 AR&#x2F;MLM 选型</td>
+<td align="left">§10</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4 §6</a></td>
+</tr>
+<tr>
+<td align="left">连续 DDPM 对照</td>
+<td align="left">§1</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考与延伸阅读"><a href="#参考与延伸阅读" class="headerlink" title="参考与延伸阅读"></a>参考与延伸阅读</h2><ul>
+<li>Austin <em>et al.</em>, <em>Structured Denoising Diffusion Models in Discrete State-Spaces</em>（<strong>D3PM</strong>）.  </li>
+<li>Ho &amp; Salimans, <em>Classifier-Free Diffusion Guidance</em>（CFG，条件序列&#x2F;结构通用）.  </li>
+<li>本仓库 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-4.%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E4%B8%8E%E5%BA%8F%E5%88%97%E7%94%9F%E6%88%90.md">Diffusion-4</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0</a>。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/Diffusion/" rel="tag"><i class="fa fa-tag"></i> Diffusion</a>
+          
+            <a href="/tags/D3PM/" rel="tag"><i class="fa fa-tag"></i> D3PM</a>
+          
+            <a href="/tags/%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3/" rel="tag"><i class="fa fa-tag"></i> 离散扩散</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E5%BA%8F%E5%88%97/" rel="tag"><i class="fa fa-tag"></i> 蛋白质序列</a>
+          
+            <a href="/tags/%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/" rel="tag"><i class="fa fa-tag"></i> 数值例题</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/" rel="next" title="5003.大模型-架构-Diffusion-Example-0.前向训练数值例题">
+                <i class="fa fa-chevron-left"></i> 5003.大模型-架构-Diffusion-Example-0.前向训练数值例题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/" rel="prev" title="5003.大模型-架构-ProteinMPNN-0.概述与训练框架">
+                5003.大模型-架构-ProteinMPNN-0.概述与训练框架 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%8E-Example-0-%E7%9A%84%E5%AF%B9%E7%85%A7"><span class="nav-number">1.</span> <span class="nav-text">1. 与 Example-0 的对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%8E%A9%E5%85%B7%E8%AE%BE%E5%AE%9A%EF%BC%9A%E5%9B%9B%E8%82%BD-x-0"><span class="nav-number">2.</span> <span class="nav-text">2. 玩具设定：四肽 (x_0)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%89%8D%E5%90%91%EF%BC%9AMASK-%E5%90%B8%E6%94%B6%E6%80%81%E5%A6%82%E4%BD%95%E8%85%90%E8%9A%80-x-0"><span class="nav-number">3.</span> <span class="nav-text">3. 前向：MASK 吸收态如何腐蚀 (x_0)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%AE%AD%E7%BB%83%E7%AC%AC-1%E2%80%932-%E6%AD%A5%EF%BC%9A%E9%87%87%E6%A0%B7-x-0-%E4%B8%8E-t"><span class="nav-number">4.</span> <span class="nav-text">4. 训练第 1–2 步：采样 (x_0) 与 (t)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%AE%AD%E7%BB%83%E7%AC%AC-3-%E6%AD%A5%EF%BC%9A%E6%9E%84%E9%80%A0%E6%8D%9F%E5%9D%8F%E5%BA%8F%E5%88%97-x-t"><span class="nav-number">5.</span> <span class="nav-text">5. 训练第 3 步：构造损坏序列 (x_t)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E9%80%90%E6%AD%A5%E8%85%90%E8%9A%80%EF%BC%88%E7%90%86%E8%A7%A3%E7%94%A8%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 逐步腐蚀（理解用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E8%AE%AD%E7%BB%83%E7%94%A8%E5%86%99%E6%B3%95"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 训练用写法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%AE%AD%E7%BB%83%E7%AC%AC-4-%E6%AD%A5%EF%BC%9A%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BA%A4%E5%8F%89%E7%86%B5%E6%8D%9F%E5%A4%B1"><span class="nav-number">6.</span> <span class="nav-text">6. 训练第 4 步：网络与交叉熵损失</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E8%BE%93%E5%85%A5-%E8%BE%93%E5%87%BA"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 输入 &#x2F; 输出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E7%AE%80%E5%8C%96%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87%EF%BC%88-x-0-prediction%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 简化训练目标（(x_0)-prediction）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%80%E4%B8%AA-minibatch-%E9%87%8C%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88"><span class="nav-number">7.</span> <span class="nav-text">7. 一个 minibatch 里发生什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%9D%A1%E4%BB%B6%E7%94%9F%E6%88%90%EF%BC%9Amotif-%E4%B8%8E%E3%80%8C%E6%8F%90%E7%A4%BA%E8%AF%8D%E3%80%8D%E7%9A%84%E8%9B%8B%E7%99%BD%E7%89%88"><span class="nav-number">8.</span> <span class="nav-text">8. 条件生成：motif 与「提示词」的蛋白版</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#8-1-Motif-Inpainting-%E6%89%8B%E7%AE%97%E7%A4%BA%E6%84%8F"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 Motif Inpainting 手算示意</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E7%94%9F%E6%88%90%E9%98%B6%E6%AE%B5%EF%BC%9A%E4%BB%8E%E5%85%A8-MASK-%E5%88%B0%E8%82%BD%E6%AE%B5"><span class="nav-number">9.</span> <span class="nav-text">9. 生成阶段：从全 MASK 到肽段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E4%B8%8E-AR-MLM-%E7%9A%84%E4%B8%80%E5%8F%A5%E8%AF%9D%E9%80%89%E5%9E%8B"><span class="nav-number">10.</span> <span class="nav-text">10. 与 AR &#x2F; MLM 的一句话选型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E5%B0%8F%E7%BB%93"><span class="nav-number">11.</span> <span class="nav-text">11. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E7%AF%87%E6%A6%82%E5%BF%B5%E7%B4%A2%E5%BC%95"><span class="nav-number">12.</span> <span class="nav-text">本篇概念索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">13.</span> <span class="nav-text">参考与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

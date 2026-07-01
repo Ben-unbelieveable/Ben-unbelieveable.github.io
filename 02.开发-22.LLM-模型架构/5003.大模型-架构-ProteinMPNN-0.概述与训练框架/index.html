@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="蛋白质设计,GNN,逆折叠,LLM,MPNN,ProteinMPNN," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="ProteinMPNN 架构与训练全景：骨架图输入、顺序无关自回归目标、Encoder-Decoder MPNN 结构框架与约 1.68M 参数组成；与 RFdiffusion pipeline 及 MPNN 抽象对照。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-ProteinMPNN-0.概述与训练框架">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="ProteinMPNN 架构与训练全景：骨架图输入、顺序无关自回归目标、Encoder-Decoder MPNN 结构框架与约 1.68M 参数组成；与 RFdiffusion pipeline 及 MPNN 抽象对照。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig01-architecture.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig02-training-io.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig03-parameters.png">
+<meta property="article:published_time" content="2026-06-11T14:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:18.382Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="GNN">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="MPNN">
+<meta property="article:tag" content="ProteinMPNN">
+<meta property="article:tag" content="蛋白质设计">
+<meta property="article:tag" content="逆折叠">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig01-architecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-ProteinMPNN-0.概述与训练框架/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-ProteinMPNN-0.概述与训练框架 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-ProteinMPNN-0.概述与训练框架</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T22:00:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  ProteinMPNN 架构与训练全景：骨架图输入、顺序无关自回归目标、Encoder-Decoder MPNN 结构框架与约 1.68M 参数组成；与 RFdiffusion pipeline 及 MPNN 抽象对照。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>ProteinMPNN</strong>（Dauparas <em>et al.</em>, <em>Science</em> 2022）是 <strong>蛋白质逆折叠（inverse folding）</strong> 的代表模型：给定<strong>骨架三维结构</strong>（backbone coordinates），预测<strong>氨基酸序列</strong>，使序列在该构象下稳定折叠。与 <strong>AlphaFold2</strong>「序列 → 结构」相反，ProteinMPNN 服务 <strong>de novo design</strong> pipeline 中「<strong>结构已定 → 填序列</strong>」环节——典型组合为 <strong>RFdiffusion &#x2F; Chroma 生成骨架 → ProteinMPNN 设计序列 → AlphaFold2 自洽筛选</strong>（见 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-5.%E6%BD%9C%E7%A9%BA%E9%97%B4%E6%89%A9%E6%95%A3%E4%B8%8E%E7%BB%93%E6%9E%84%E7%94%9F%E6%88%90%E5%AE%9E%E8%B7%B5.md">Diffusion-5</a>）。</p>
+<blockquote>
+<p>段末注释：<strong>逆折叠</strong> 指由目标构象反推氨基酸序列；<strong>de novo design</strong> 指从头设计而非天然序列微调。</p>
+</blockquote>
+<p><strong>前置阅读</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-MPNN-0.%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">MPNN-0 消息传递神经网络</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-0.%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84%E8%8C%83%E5%BC%8F%E7%BB%BC%E8%BF%B0.md">范式综述 §GNN</a><br><strong>对照</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Diffusion-Example-1 序列离散扩散</a>（纯序列生成范式）</p>
+<p><strong>插图</strong>：<code>5003.大模型-架构-ProteinMPNN-0.概述/proteinmpnn-fig*.png</code><br><strong>官方代码</strong>：<a target="_blank" rel="noopener" href="https://github.com/dauparas/ProteinMPNN">github.com&#x2F;dauparas&#x2F;ProteinMPNN</a></p>
+<hr>
+<h2 id="1-任务定义与在-design-pipeline-中的位置"><a href="#1-任务定义与在-design-pipeline-中的位置" class="headerlink" title="1. 任务定义与在 design pipeline 中的位置"></a>1. 任务定义与在 design pipeline 中的位置</h2><table>
+<thead>
+<tr>
+<th align="left">步骤</th>
+<th align="left">模型&#x2F;工具</th>
+<th align="left">输入 → 输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1. 骨架生成</td>
+<td align="left">RFdiffusion、Chroma 等</td>
+<td align="left">条件 → 3D 骨架</td>
+</tr>
+<tr>
+<td align="left"><strong>2. 序列设计</strong></td>
+<td align="left"><strong>ProteinMPNN</strong></td>
+<td align="left"><strong>骨架 → 氨基酸序列</strong></td>
+</tr>
+<tr>
+<td align="left">3. 验证</td>
+<td align="left">AlphaFold2、ESMFold</td>
+<td align="left">序列 → 预测结构，算 scRMSD &#x2F; pLDDT</td>
+</tr>
+</tbody></table>
+<p>ProteinMPNN 不预测结构，只建模 <strong>(p(\mathrm{seq}\mid\mathrm{backbone}))</strong>；结构质量由上游扩散&#x2F;优化与下游折叠器负责。</p>
+<hr>
+<h2 id="2-结构框架总览"><a href="#2-结构框架总览" class="headerlink" title="2. 结构框架总览"></a>2. 结构框架总览</h2><p>ProteinMPNN &#x3D; <strong>稀疏 kNN 图</strong> + <strong>Encoder MPNN</strong>（仅看骨架）+ <strong>Decoder MPNN</strong>（骨架 + 部分序列上下文）+ <strong>顺序无关自回归（order-agnostic autoregressive）</strong> 解码。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig01-architecture.png" alt="图 1　ProteinMPNN 整体架构：kNN 图 → Encoder → 部分序列 + 图特征 → Decoder → 氨基酸 logits"></p>
+<h3 id="2-1-图构建"><a href="#2-1-图构建" class="headerlink" title="2.1 图构建"></a>2.1 图构建</h3><ul>
+<li><strong>节点</strong>：每个残基一个节点（以 <strong>Cα</strong> 为中心建 k 近邻图）。  </li>
+<li><strong>边</strong>：每个节点连 <strong>(k)</strong> 个空间最近邻（官方默认 <strong>(k&#x3D;48)</strong>，按 Cα–Cα 距离）。  </li>
+<li><strong>多链</strong>：全复合物所有链的残基置于<strong>同一图</strong>；边特征含<strong>同链 &#x2F; 异链</strong>标识。</li>
+</ul>
+<h3 id="2-2-Encoder（骨架编码器）"><a href="#2-2-Encoder（骨架编码器）" class="headerlink" title="2.2 Encoder（骨架编码器）"></a>2.2 Encoder（骨架编码器）</h3><ul>
+<li><strong>3 层</strong>消息传递，<strong>hidden_dim &#x3D; 128</strong>，含 <strong>边更新（edge update）</strong>（非仅节点更新）。  </li>
+<li><strong>输入</strong>：不依赖氨基酸类型（或仅用 mask 占位），主要编码<strong>几何</strong>：  <ul>
+<li>N、Cα、C、O 与<strong>虚拟 Cβ</strong> 之间的<strong>距离</strong>（RBF 展开）；  </li>
+<li>相对 <strong>Cα–Cα–Cα</strong> 局部坐标系方向&#x2F;旋转；  </li>
+<li>骨架二面角等（早期 baseline 以二面角为主，最终版以<strong>原子间距离</strong>为主，恢复率更高）。</li>
+</ul>
+</li>
+<li><strong>输出</strong>：每个残基节点特征 (\mathbf{h}<em>i)、边特征 (\mathbf{e}</em>{ij})（供 Decoder 复用）。</li>
+</ul>
+<h3 id="2-3-Decoder（序列解码器）"><a href="#2-3-Decoder（序列解码器）" class="headerlink" title="2.3 Decoder（序列解码器）"></a>2.3 Decoder（序列解码器）</h3><ul>
+<li><strong>3 层</strong> MPNN，hidden <strong>128</strong>。  </li>
+<li><strong>输入</strong>：Encoder 输出的 (\mathbf{h}<em>i,\mathbf{e}</em>{ij}) + <strong>已部分解码的氨基酸序列</strong>（one-hot 或 embedding）。  </li>
+<li><strong>输出</strong>：每个位置 <strong>20 种标准氨基酸</strong>（+ 掩码 token）的 <strong>logits</strong>。  </li>
+<li><strong>顺序无关自回归</strong>：训练时解码顺序 (\pi) 从<strong>全排列</strong>中随机采样；推理时可任意顺序，<strong>先解码固定 motif、再设计侧翼</strong>（Fig. 1B）。</li>
+</ul>
+<h3 id="2-4-对称-多链-tying"><a href="#2-4-对称-多链-tying" class="headerlink" title="2.4 对称 &#x2F; 多链 tying"></a>2.4 对称 &#x2F; 多链 tying</h3><ul>
+<li><strong>Tied positions</strong>：指定多个位置（可跨链）<strong>共享同一 logits</strong>（对数概率平均后采样），用于<strong>同源寡聚体、重复蛋白、环对称</strong> design（Fig. 1C）。</li>
+</ul>
+<hr>
+<h2 id="3-训练输入信息（详细）"><a href="#3-训练输入信息（详细）" class="headerlink" title="3. 训练输入信息（详细）"></a>3. 训练输入信息（详细）</h2><p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig02-training-io.png" alt="图 2　ProteinMPNN 训练输入与监督目标"></p>
+<h3 id="3-1-数据来源与过滤"><a href="#3-1-数据来源与过滤" class="headerlink" title="3.1 数据来源与过滤"></a>3.1 数据来源与过滤</h3><table>
+<thead>
+<tr>
+<th align="left">项目</th>
+<th align="left">设置（论文 &#x2F; 官方 <code>training.py</code>）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">数据库</td>
+<td align="left">PDB（训练集快照 <strong>2021-08-02</strong>）</td>
+</tr>
+<tr>
+<td align="left">方法</td>
+<td align="left">X-ray 或 <strong>cryoEM</strong></td>
+</tr>
+<tr>
+<td align="left">分辨率</td>
+<td align="left"><strong>≤ 3.5 Å</strong>（<code>rescut=3.5</code>）</td>
+</tr>
+<tr>
+<td align="left">组装</td>
+<td align="left"><strong>生物组装（biological assembly）</strong>，多链复合物</td>
+</tr>
+<tr>
+<td align="left">划分</td>
+<td align="left">序列聚类 <strong>30% identity</strong>；CATH 80&#x2F;10&#x2F;10（单体开发实验）；<code>valid_clusters</code> &#x2F; <code>test_clusters</code></td>
+</tr>
+</tbody></table>
+<p>官方 <code>.pt</code> 每条链字段（<a target="_blank" rel="noopener" href="https://github.com/dauparas/ProteinMPNN/blob/main/training/README.md">training README</a>）：</p>
+<table>
+<thead>
+<tr>
+<th align="left">字段</th>
+<th align="left">shape &#x2F; 类型</th>
+<th align="left">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>seq</code></td>
+<td align="left">string</td>
+<td align="left">氨基酸序列（<strong>监督标签</strong>）</td>
+</tr>
+<tr>
+<td align="left"><code>xyz</code></td>
+<td align="left"><code>[L, 14, 3]</code></td>
+<td align="left">原子坐标（骨架 + 侧链槽位）</td>
+</tr>
+<tr>
+<td align="left"><code>mask</code></td>
+<td align="left"><code>[L, 14]</code> bool</td>
+<td align="left">原子是否存在于 PDB</td>
+</tr>
+<tr>
+<td align="left"><code>bfac</code> &#x2F; <code>occ</code></td>
+<td align="left"><code>[L, 14]</code></td>
+<td align="left">温度因子、占有率</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-几何特征（模型实际「看到」的输入）"><a href="#3-2-几何特征（模型实际「看到」的输入）" class="headerlink" title="3.2 几何特征（模型实际「看到」的输入）"></a>3.2 几何特征（模型实际「看到」的输入）</h3><table>
+<thead>
+<tr>
+<th align="left">特征类</th>
+<th align="left">内容</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>距离 RBF</strong></td>
+<td align="left">N、Cα、C、O、虚拟 Cβ 间距离（残基对 &#x2F; 局部）</td>
+<td align="left">主归纳偏置；替代纯二面角更优（论文 Table 1 Exp.1）</td>
+</tr>
+<tr>
+<td align="left"><strong>局部取向</strong></td>
+<td align="left">Cα 邻域刚体帧相对旋转</td>
+<td align="left">编码侧链朝向、氢键几何</td>
+</tr>
+<tr>
+<td align="left"><strong>序列位置</strong></td>
+<td align="left">残基索引差 <strong>截断 ±32</strong>；<strong>同链 &#x2F; 异链</strong> bit</td>
+<td align="left">多链与界面设计</td>
+</tr>
+<tr>
+<td align="left"><strong>kNN 拓扑</strong></td>
+<td align="left">Cα 距离 Top-(k) 邻接</td>
+<td align="left">稀疏 MPNN 计算域</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-训练时动态输入"><a href="#3-3-训练时动态输入" class="headerlink" title="3.3 训练时动态输入"></a>3.3 训练时动态输入</h3><table>
+<thead>
+<tr>
+<th align="left">机制</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>随机解码顺序</strong> (\pi)</td>
+<td align="left">每步从排列中采样；已解码位置提供序列上下文，未解码为 mask</td>
+</tr>
+<tr>
+<td align="left"><strong>骨架噪声</strong></td>
+<td align="left">对坐标加高斯扰动（官方默认 <code>backbone_noise=0.2</code> Å 量级；发布权重有 <strong>0.02 &#x2F; 0.10 &#x2F; 0.20</strong> Å 三档）</td>
+</tr>
+<tr>
+<td align="left"><strong>Dropout</strong></td>
+<td align="left">默认 <strong>0.1</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Batch</strong></td>
+<td align="left">按 <strong>token 数</strong>计，默认 <strong>10,000 tokens&#x2F;batch</strong>（多蛋白拼 batch）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-训练目标"><a href="#4-训练目标" class="headerlink" title="4. 训练目标"></a>4. 训练目标</h2><h3 id="4-1-顺序无关自回归交叉熵"><a href="#4-1-顺序无关自回归交叉熵" class="headerlink" title="4.1 顺序无关自回归交叉熵"></a>4.1 顺序无关自回归交叉熵</h3><p>对解码顺序 (\pi&#x3D;(\pi_1,\ldots,\pi_L))，在第 (s) 步预测位置 (\pi_s) 的氨基酸 (a_{\pi_s})：</p>
+<p>[<br>\mathcal{L} &#x3D; -\frac{1}{N_{\mathrm{norm}}}\sum_{s&#x3D;1}^{L} \log p_\theta\big(a_{\pi_s} ,\big|, \mathrm{backbone},, a_{\pi_1},\ldots,a_{\pi_{s-1}}\big)<br>]</p>
+<ul>
+<li>(p_\theta)：Decoder 输出的 <strong>21 类</strong> softmax（20 AA + mask&#x2F;unknown）。  </li>
+<li>(N_{\mathrm{norm}})：实现中按 batch 总 token 归一（论文报告 <strong>perplexity &#x3D; (\exp()平均 NLL())</strong>）。  </li>
+<li><strong>无结构损失</strong>：不对坐标回归；结构信息只经 Encoder 进入条件。</li>
+</ul>
+<blockquote>
+<p>段末注释：<strong>Perplexity</strong> 为 (\exp()交叉熵())，越低表示序列预测越 confident 且与标签一致。</p>
+</blockquote>
+<h3 id="4-2-评估指标（非训练-loss）"><a href="#4-2-评估指标（非训练-loss）" class="headerlink" title="4.2 评估指标（非训练 loss）"></a>4.2 评估指标（非训练 loss）</h3><table>
+<thead>
+<tr>
+<th align="left">指标</th>
+<th align="left">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Sequence recovery</strong></td>
+<td align="left">预测序列与天然序列相同的残基比例（%）</td>
+</tr>
+<tr>
+<td align="left"><strong>Perplexity</strong></td>
+<td align="left">held-out 集上的 (\exp(\mathrm{NLL}))</td>
+</tr>
+<tr>
+<td align="left"><strong>AlphaFold consistency</strong></td>
+<td align="left">设计序列单序列折叠与输入骨架的 TM-score &#x2F; scRMSD</td>
+</tr>
+</tbody></table>
+<p>论文最终 <strong>ProteinMPNN</strong>（Exp.3+4，随机顺序）：PDB 测试集 recovery <strong>≈ 50.8%</strong>（无噪训练）&#x2F; <strong>47.9%</strong>（训练时 0.02 Å 噪）；相对 baseline <strong>41.2%</strong> 显著提升。</p>
+<h3 id="4-3-优化与-schedule"><a href="#4-3-优化与-schedule" class="headerlink" title="4.3 优化与 schedule"></a>4.3 优化与 schedule</h3><table>
+<thead>
+<tr>
+<th align="left">超参</th>
+<th align="left">典型值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">优化器</td>
+<td align="left"><strong>Adam</strong></td>
+</tr>
+<tr>
+<td align="left">Epoch</td>
+<td align="left">150–200（发布 <code>v_48_*</code> 为 150 epoch）</td>
+</tr>
+<tr>
+<td align="left">混合精度</td>
+<td align="left">默认开启</td>
+</tr>
+<tr>
+<td align="left">梯度裁剪</td>
+<td align="left">可选（<code>gradient_norm</code>）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-参数组成与模型变体"><a href="#5-参数组成与模型变体" class="headerlink" title="5. 参数组成与模型变体"></a>5. 参数组成与模型变体</h2><p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-ProteinMPNN-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A1%86%E6%9E%B6/proteinmpnn-fig03-parameters.png" alt="图 3　ProteinMPNN 参数模块组成（约 1.68M）"></p>
+<h3 id="5-1-默认架构超参（与-training-py-一致）"><a href="#5-1-默认架构超参（与-training-py-一致）" class="headerlink" title="5.1 默认架构超参（与 training.py 一致）"></a>5.1 默认架构超参（与 <code>training.py</code> 一致）</h3><table>
+<thead>
+<tr>
+<th align="left">超参数</th>
+<th align="center">默认值</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>hidden_dim</code></td>
+<td align="center"><strong>128</strong></td>
+<td align="left">节点&#x2F;边隐层宽度</td>
+</tr>
+<tr>
+<td align="left"><code>num_encoder_layers</code></td>
+<td align="center"><strong>3</strong></td>
+<td align="left">骨架 Encoder MPNN 层数</td>
+</tr>
+<tr>
+<td align="left"><code>num_decoder_layers</code></td>
+<td align="center"><strong>3</strong></td>
+<td align="left">序列 Decoder MPNN 层数</td>
+</tr>
+<tr>
+<td align="left"><code>num_neighbors</code></td>
+<td align="center"><strong>48</strong></td>
+<td align="left">kNN 邻居数 (k)</td>
+</tr>
+<tr>
+<td align="left"><code>dropout</code></td>
+<td align="center"><strong>0.1</strong></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><strong>参数量</strong></td>
+<td align="center"><strong>≈ 1.68 M</strong></td>
+<td align="left">论文 Table 1 Exp.3&#x2F;4（含边更新）</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-参数模块分解（数量级）"><a href="#5-2-参数模块分解（数量级）" class="headerlink" title="5.2 参数模块分解（数量级）"></a>5.2 参数模块分解（数量级）</h3><table>
+<thead>
+<tr>
+<th align="left">模块</th>
+<th align="left">角色</th>
+<th align="left">参数量级</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>距离 RBF + 边&#x2F;节点嵌入 MLP</strong></td>
+<td align="left">几何标量 → 向量</td>
+<td align="left">~10⁴–10⁵</td>
+</tr>
+<tr>
+<td align="left"><strong>Encoder（3× MPNN + edge update）</strong></td>
+<td align="left">骨架 → (\mathbf{h},\mathbf{e})</td>
+<td align="left">~<strong>45%</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Decoder（3× MPNN）</strong></td>
+<td align="left">部分序列 + 图 → logits</td>
+<td align="left">~<strong>45%</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>氨基酸嵌入 + 输出线性层</strong></td>
+<td align="left">21 类分类头</td>
+<td align="left">~10⁴</td>
+</tr>
+</tbody></table>
+<p>增大 <code>hidden_dim</code> 主要降低训练 loss，<strong>验证 recovery 增益边际</strong>（论文：&gt;128 收益有限）。</p>
+<h3 id="5-3-官方发布权重"><a href="#5-3-官方发布权重" class="headerlink" title="5.3 官方发布权重"></a>5.3 官方发布权重</h3><table>
+<thead>
+<tr>
+<th align="left">权重文件</th>
+<th align="center">训练骨架噪声 (\sigma)</th>
+<th align="left">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>v_48_002.pt</code></td>
+<td align="center">0.02 Å</td>
+<td align="left">近天然、高精度骨架</td>
+</tr>
+<tr>
+<td align="left"><code>v_48_010.pt</code></td>
+<td align="center">0.10 Å</td>
+<td align="left">中等</td>
+</tr>
+<tr>
+<td align="left"><code>v_48_020.pt</code></td>
+<td align="center">0.20 Å</td>
+<td align="left"><strong>hallucinated &#x2F; 低精度</strong> 骨架（RFdiffusion 常用）</td>
+</tr>
+</tbody></table>
+<p>推理时可调 <strong>temperature</strong> 控制序列多样性；固定位置设 <code>fixed_positions</code> 做 <strong>motif scaffolding</strong>。</p>
+<hr>
+<h2 id="6-推理与训练的关键差异"><a href="#6-推理与训练的关键差异" class="headerlink" title="6. 推理与训练的关键差异"></a>6. 推理与训练的关键差异</h2><table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">训练</th>
+<th align="left">推理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">序列上下文</td>
+<td align="left">随机顺序 (\pi) 下已知前缀</td>
+<td align="left">可<strong>指定顺序</strong>（先固定、后设计）</td>
+</tr>
+<tr>
+<td align="left">骨架</td>
+<td align="left">真实 PDB + 可选噪声</td>
+<td align="left">设计模型输出的 idealized 骨架</td>
+</tr>
+<tr>
+<td align="left">输出</td>
+<td align="left">CE loss</td>
+<td align="left">自回归采样 + optional tying</td>
+</tr>
+<tr>
+<td align="left">多链</td>
+<td align="left">生物组装图</td>
+<td align="left">界面 &#x2F;  binder design 同一套 API</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-与-MPNN-抽象及-LLM-的对照"><a href="#7-与-MPNN-抽象及-LLM-的对照" class="headerlink" title="7. 与 MPNN 抽象及 LLM 的对照"></a>7. 与 MPNN 抽象及 LLM 的对照</h2><table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left"><strong>MPNN-0 抽象</strong></th>
+<th align="left"><strong>ProteinMPNN</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">图</td>
+<td align="left">((V,E))</td>
+<td align="left">kNN on Cα，(k&#x3D;48)</td>
+</tr>
+<tr>
+<td align="left">消息</td>
+<td align="left">(\mathrm{MSG}(h_u,h_v,e_{uv}))</td>
+<td align="left">几何边特征 + 边更新</td>
+</tr>
+<tr>
+<td align="left">读出</td>
+<td align="left">图级 pool</td>
+<td align="left"><strong>逐残基</strong> 氨基酸分类</td>
+</tr>
+<tr>
+<td align="left">序列性</td>
+<td align="left">无 inherent 顺序</td>
+<td align="left"><strong>顺序无关 AR</strong></td>
+</tr>
+</tbody></table>
+<p>与 <strong>Transformer LLM</strong> 不同：ProteinMPNN <strong>不</strong>做自回归语言建模；<strong>结构先验</strong>在稀疏 3D 图上，序列仅 <strong>~1.7M</strong> 参数即可高 recovery——归纳偏置来自 <strong>几何距离 + 局部 MPNN</strong> 而非 billion-scale 预训练。</p>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><table>
+<thead>
+<tr>
+<th align="left">维度</th>
+<th align="left">ProteinMPNN 要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>输入</strong></td>
+<td align="left">骨架 N&#x2F;Cα&#x2F;C&#x2F;O（+ 虚拟 Cβ）坐标 → kNN 图 + RBF 距离&#x2F;取向；多链 biounit</td>
+</tr>
+<tr>
+<td align="left"><strong>目标</strong></td>
+<td align="left">顺序无关自回归 <strong>交叉熵</strong>，预测天然序列</td>
+</tr>
+<tr>
+<td align="left"><strong>结构</strong></td>
+<td align="left">3+3 层 MPNN Encoder–Decoder，hidden&#x3D;128，~<strong>1.68M</strong> 参数</td>
+</tr>
+<tr>
+<td align="left"><strong>工程</strong></td>
+<td align="left">骨架噪声增强、tied positions、固定残基 inpainting</td>
+</tr>
+<tr>
+<td align="left"><strong>生态</strong></td>
+<td align="left">RFdiffusion 之后的事实标准序列设计模块</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="本篇索引"><a href="#本篇索引" class="headerlink" title="本篇索引"></a>本篇索引</h2><table>
+<thead>
+<tr>
+<th align="left">主题</th>
+<th align="left">章节</th>
+<th align="left">延伸阅读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">MPNN 消息传递</td>
+<td align="left">§2</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-MPNN-0.%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">MPNN-0</a></td>
+</tr>
+<tr>
+<td align="left">训练数据格式</td>
+<td align="left">§3.1</td>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/dauparas/ProteinMPNN/blob/main/training/README.md">官方 training README</a></td>
+</tr>
+<tr>
+<td align="left">损失与 recovery</td>
+<td align="left">§4</td>
+<td align="left">论文 Table 1</td>
+</tr>
+<tr>
+<td align="left">design pipeline</td>
+<td align="left">§1</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-5.%E6%BD%9C%E7%A9%BA%E9%97%B4%E6%89%A9%E6%95%A3%E4%B8%8E%E7%BB%93%E6%9E%84%E7%94%9F%E6%88%90%E5%AE%9E%E8%B7%B5.md">Diffusion-5</a></td>
+</tr>
+<tr>
+<td align="left">序列扩散替代</td>
+<td align="left">§7</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Diffusion-Example-1</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考与延伸阅读"><a href="#参考与延伸阅读" class="headerlink" title="参考与延伸阅读"></a>参考与延伸阅读</h2><ul>
+<li>Dauparas <em>et al.</em>, <em>Robust deep learning–based protein sequence design using ProteinMPNN</em>, <strong>Science</strong> 378, 49–56 (2022). <a target="_blank" rel="noopener" href="https://doi.org/10.1126/science.add2187">doi:10.1126&#x2F;science.add2187</a>  </li>
+<li>Jumper <em>et al.</em>, <em>AlphaFold2</em>（结构预测对照）.  </li>
+<li>Watson <em>et al.</em>, <em>RFdiffusion</em>（上游骨架生成）.  </li>
+<li>官方实现：<a target="_blank" rel="noopener" href="https://github.com/dauparas/ProteinMPNN">dauparas&#x2F;ProteinMPNN</a>.</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AE%BE%E8%AE%A1/" rel="tag"><i class="fa fa-tag"></i> 蛋白质设计</a>
+          
+            <a href="/tags/GNN/" rel="tag"><i class="fa fa-tag"></i> GNN</a>
+          
+            <a href="/tags/%E9%80%86%E6%8A%98%E5%8F%A0/" rel="tag"><i class="fa fa-tag"></i> 逆折叠</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/MPNN/" rel="tag"><i class="fa fa-tag"></i> MPNN</a>
+          
+            <a href="/tags/ProteinMPNN/" rel="tag"><i class="fa fa-tag"></i> ProteinMPNN</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-1.%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E7%A6%BB%E6%95%A3%E6%89%A9%E6%95%A3%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98/" rel="next" title="5003.大模型-架构-Diffusion-Example-1.蛋白序列离散扩散数值例题">
+                <i class="fa fa-chevron-left"></i> 5003.大模型-架构-Diffusion-Example-1.蛋白序列离散扩散数值例题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E5%8F%A3%E8%A2%8B%E7%BB%93%E6%9E%84-01.%E7%94%9F%E7%89%A9%E5%AD%A6%E6%A6%82%E5%BF%B5%E4%B8%8E%E6%B4%BB%E6%80%A7%E5%85%B3%E8%81%94/" rel="prev" title="口袋结构-01.生物学概念、指征与活性关联">
+                口袋结构-01.生物学概念、指征与活性关联 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BB%BB%E5%8A%A1%E5%AE%9A%E4%B9%89%E4%B8%8E%E5%9C%A8-design-pipeline-%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">1. 任务定义与在 design pipeline 中的位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%BB%93%E6%9E%84%E6%A1%86%E6%9E%B6%E6%80%BB%E8%A7%88"><span class="nav-number">2.</span> <span class="nav-text">2. 结构框架总览</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%9B%BE%E6%9E%84%E5%BB%BA"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 图构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Encoder%EF%BC%88%E9%AA%A8%E6%9E%B6%E7%BC%96%E7%A0%81%E5%99%A8%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Encoder（骨架编码器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-Decoder%EF%BC%88%E5%BA%8F%E5%88%97%E8%A7%A3%E7%A0%81%E5%99%A8%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 Decoder（序列解码器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E5%AF%B9%E7%A7%B0-%E5%A4%9A%E9%93%BE-tying"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 对称 &#x2F; 多链 tying</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E8%AE%AD%E7%BB%83%E8%BE%93%E5%85%A5%E4%BF%A1%E6%81%AF%EF%BC%88%E8%AF%A6%E7%BB%86%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 训练输入信息（详细）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%95%B0%E6%8D%AE%E6%9D%A5%E6%BA%90%E4%B8%8E%E8%BF%87%E6%BB%A4"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 数据来源与过滤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%87%A0%E4%BD%95%E7%89%B9%E5%BE%81%EF%BC%88%E6%A8%A1%E5%9E%8B%E5%AE%9E%E9%99%85%E3%80%8C%E7%9C%8B%E5%88%B0%E3%80%8D%E7%9A%84%E8%BE%93%E5%85%A5%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 几何特征（模型实际「看到」的输入）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%AE%AD%E7%BB%83%E6%97%B6%E5%8A%A8%E6%80%81%E8%BE%93%E5%85%A5"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 训练时动态输入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">4. 训练目标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E9%A1%BA%E5%BA%8F%E6%97%A0%E5%85%B3%E8%87%AA%E5%9B%9E%E5%BD%92%E4%BA%A4%E5%8F%89%E7%86%B5"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 顺序无关自回归交叉熵</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87%EF%BC%88%E9%9D%9E%E8%AE%AD%E7%BB%83-loss%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 评估指标（非训练 loss）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E4%BC%98%E5%8C%96%E4%B8%8E-schedule"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 优化与 schedule</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%8F%82%E6%95%B0%E7%BB%84%E6%88%90%E4%B8%8E%E6%A8%A1%E5%9E%8B%E5%8F%98%E4%BD%93"><span class="nav-number">5.</span> <span class="nav-text">5. 参数组成与模型变体</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E9%BB%98%E8%AE%A4%E6%9E%B6%E6%9E%84%E8%B6%85%E5%8F%82%EF%BC%88%E4%B8%8E-training-py-%E4%B8%80%E8%87%B4%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 默认架构超参（与 training.py 一致）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%8F%82%E6%95%B0%E6%A8%A1%E5%9D%97%E5%88%86%E8%A7%A3%EF%BC%88%E6%95%B0%E9%87%8F%E7%BA%A7%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 参数模块分解（数量级）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%AE%98%E6%96%B9%E5%8F%91%E5%B8%83%E6%9D%83%E9%87%8D"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 官方发布权重</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%8E%A8%E7%90%86%E4%B8%8E%E8%AE%AD%E7%BB%83%E7%9A%84%E5%85%B3%E9%94%AE%E5%B7%AE%E5%BC%82"><span class="nav-number">6.</span> <span class="nav-text">6. 推理与训练的关键差异</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%8E-MPNN-%E6%8A%BD%E8%B1%A1%E5%8F%8A-LLM-%E7%9A%84%E5%AF%B9%E7%85%A7"><span class="nav-number">7.</span> <span class="nav-text">7. 与 MPNN 抽象及 LLM 的对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E7%AF%87%E7%B4%A2%E5%BC%95"><span class="nav-number">9.</span> <span class="nav-text">本篇索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">10.</span> <span class="nav-text">参考与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

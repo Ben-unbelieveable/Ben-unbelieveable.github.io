@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,Embedding,向量检索,MTEB," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="系统梳理文本&#x2F;多模 Embedding 模型的评测维度：语义相似度、检索、分类聚类、MTEB&#x2F;CMTEB&#x2F;BEIR 基准、领域对齐评测与工程指标；给出公平对比协议与可复现实践流程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Embedding-01.模型性能对比与评测方法">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="系统梳理文本&#x2F;多模 Embedding 模型的评测维度：语义相似度、检索、分类聚类、MTEB&#x2F;CMTEB&#x2F;BEIR 基准、领域对齐评测与工程指标；给出公平对比协议与可复现实践流程。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/fig01-eval-dimensions.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/fig02-compare-workflow.png">
+<meta property="article:published_time" content="2026-06-16T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.454Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Embedding">
+<meta property="article:tag" content="MTEB">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="向量检索">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/fig01-eval-dimensions.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-17.Embedding/Embedding-01.模型性能对比与评测方法/"/>
+
+
+
+
+
+  <title>Embedding-01.模型性能对比与评测方法 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Embedding-01.模型性能对比与评测方法</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-16T10:00:00+08:00">
+                2026-06-16
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  系统梳理文本/多模 Embedding 模型的评测维度：语义相似度、检索、分类聚类、MTEB/CMTEB/BEIR 基准、领域对齐评测与工程指标；给出公平对比协议与可复现实践流程。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>文本嵌入</strong>（text embedding）将变长文本映射为固定维度的稠密向量，供语义检索、聚类、分类与 RAG 等下游任务使用。OpenAI、Google、阿里、火山、BGE、E5 等厂商与开源社区均提供多种 Embedding 模型——<strong>排行榜上的第一名，未必是你业务场景的最优解</strong>。</p>
+<p>本文给出<strong>多维度、可复现</strong>的对比框架：先区分「测什么」，再选「用什么指标」，最后约定「怎么测才公平」。文中不重复介绍 Embedding 的基本概念；概念入门可参考 <a href="../02.%E5%BC%80%E5%8F%91-20.MachineLearn/0009.%E6%A6%82%E5%BF%B5-%E6%9C%AF%E8%AF%AD-embeddings%E5%B5%8C%E5%85%A5.md">0009.概念-术语-embeddings嵌入</a>。</p>
+<p><strong>缩写体例</strong>：缩写首次出现写「中文全称（English，ABB）」；段末 <strong>段末注释</strong> 释义；后文沿用缩写。</p>
+<hr>
+<h2 id="1-评测前先回答三个问题"><a href="#1-评测前先回答三个问题" class="headerlink" title="1. 评测前先回答三个问题"></a>1. 评测前先回答三个问题</h2><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>决定什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>下游任务是什么？</strong></td>
+<td>检索、重排序、分类、聚类、STS，指标完全不同</td>
+</tr>
+<tr>
+<td><strong>语料域是否匹配？</strong></td>
+<td>通用新闻 vs 医学文献 vs 代码&#x2F;蛋白序列，泛化能力不可外推</td>
+</tr>
+<tr>
+<td><strong>部署约束是什么？</strong></td>
+<td>维度、延迟、GPU&#x2F;CPU、API 成本往往与精度 trade-off</td>
+</tr>
+</tbody></table>
+<p><strong>核心原则</strong>：Embedding 评测是<strong>任务对齐</strong>（task-aligned）的，不是单一标量排名。MTEB 均分适合初筛；上线前必须在<strong>自有验证集</strong>上复测。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RAG</strong>（Retrieval-Augmented Generation，检索增强生成）先检索相关文档再喂给 LLM；Embedding 质量直接决定召回上限。</p>
+</blockquote>
+<hr>
+<h2 id="2-评测维度总览"><a href="#2-评测维度总览" class="headerlink" title="2. 评测维度总览"></a>2. 评测维度总览</h2><p><img src="/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/fig01-eval-dimensions.png" alt="Embedding 评测维度总览"></p>
+<p><strong>图 1</strong> 评测维度总览：内在语义、检索排序、下游代理三类任务指标汇入 MTEB&#x2F;CMTEB 等公开基准；工程指标（延迟、维度、成本）与基准分数共同决定选型，不可只看单一排行榜分数。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>典型指标</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>语义相似度</strong></td>
+<td>Spearman $\rho$、Pearson $r$</td>
+<td>STS、去重、问答匹配</td>
+</tr>
+<tr>
+<td><strong>检索</strong></td>
+<td>Recall@$k$、MRR@$k$、nDCG@$k$</td>
+<td>RAG、搜索引擎、文档库</td>
+</tr>
+<tr>
+<td><strong>分类</strong></td>
+<td>Accuracy、F1、AUROC</td>
+<td>意图识别、主题分类</td>
+</tr>
+<tr>
+<td><strong>聚类</strong></td>
+<td>V-measure、NMI</td>
+<td>文档挖掘、无监督分组</td>
+</tr>
+<tr>
+<td><strong>重排序</strong></td>
+<td>MAP、MRR</td>
+<td>两阶段检索的 rerank 头</td>
+</tr>
+<tr>
+<td><strong>工程</strong></td>
+<td>QPS、P99 延迟、$&#x2F;1M tokens</td>
+<td>生产 SLA 与成本核算</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-相似度与检索类指标"><a href="#3-相似度与检索类指标" class="headerlink" title="3. 相似度与检索类指标"></a>3. 相似度与检索类指标</h2><h3 id="3-1-余弦相似度"><a href="#3-1-余弦相似度" class="headerlink" title="3.1 余弦相似度"></a>3.1 余弦相似度</h3><p>给定向量 $\mathbf{u}, \mathbf{v} \in \mathbb{R}^d$，<strong>余弦相似度</strong>（cosine similarity）为：</p>
+<p>[<br>\mathrm{sim}(\mathbf{u}, \mathbf{v}) &#x3D; \frac{\mathbf{u} \cdot \mathbf{v}}{|\mathbf{u}| , |\mathbf{v}|}<br>]</p>
+<p>多数 Embedding 模型输出已 L2 归一化，此时 $\mathrm{sim}$ 等价于点积。对比不同模型时，<strong>必须统一</strong>：是否归一化、距离度量（cosine vs L2 vs inner product）、ANN 索引参数（HNSW 的 <code>efConstruction</code> &#x2F; <code>M</code>）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ANN</strong>（Approximate Nearest Neighbor，近似最近邻）在大规模向量库上加速检索；不同索引参数会改变 Recall@$k$，对比时需固定。</p>
+</blockquote>
+<h3 id="3-2-语义文本相似度-STS"><a href="#3-2-语义文本相似度-STS" class="headerlink" title="3.2 语义文本相似度 STS"></a>3.2 语义文本相似度 STS</h3><p><strong>语义文本相似度</strong>（Semantic Textual Similarity，<strong>STS</strong>）任务：人工标注句子对相似度 $s \in [0,5]$（或 $[0,1]$），模型用 $\mathrm{sim}(\mathbf{e}_1, \mathbf{e}_2)$ 预测，报告 <strong>Spearman 秩相关系数</strong> $\rho$ 或 Pearson $r$：</p>
+<p>[<br>\rho &#x3D; 1 - \frac{6\sum_i d_i^2}{n(n^2-1)}<br>]</p>
+<p>其中 $d_i$ 为第 $i$ 对样本在「人工排序」与「模型相似度排序」中的秩差。STS 衡量<strong>连续语义梯度</strong>是否保序，对 paraphrase、问答匹配敏感；但对<strong>长文档检索</strong>代表性不足。</p>
+<h3 id="3-3-检索指标"><a href="#3-3-检索指标" class="headerlink" title="3.3 检索指标"></a>3.3 检索指标</h3><p>设查询 $q$，语料库文档集合 $\mathcal{C}$，相关文档集合 $\mathrm{rel}(q) \subset \mathcal{C}$。按相似度降序得到排名列表 $\pi_q$。</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>公式 &#x2F; 含义</th>
+<th>解读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Recall@$k$</strong></td>
+<td>$|\mathrm{rel}(q) \cap \pi_q[:k]| &#x2F; |\mathrm{rel}(q)|$</td>
+<td>前 $k$ 条是否覆盖足够多相关文档；RAG 常用 $k&#x3D;5,10,20$</td>
+</tr>
+<tr>
+<td><strong>MRR@$k$</strong></td>
+<td>$\frac{1}{</td>
+<td>Q</td>
+</tr>
+<tr>
+<td><strong>nDCG@$k$</strong></td>
+<td>归一化折损累积增益，考虑多级相关度</td>
+<td>多级标注（高相关 &#x2F; 部分相关）时使用</td>
+</tr>
+<tr>
+<td><strong>MAP</strong></td>
+<td>各查询 AP 的均值</td>
+<td>多相关文档、排序质量整体评估</td>
+</tr>
+</tbody></table>
+<p><strong>nDCG@$k$</strong> 的 DCG 定义为：</p>
+<p>[<br>\mathrm{DCG@}k &#x3D; \sum_{i&#x3D;1}^{k} \frac{2^{\mathrm{rel}_i} - 1}{\log_2(i+1)}<br>]</p>
+<p>再除以理想排序下的 IDCG 得到 nDCG。RAG 场景建议<strong>同时报告 Recall@$k$ 与 MRR@$k$</strong>：前者看「有没有召回」，后者看「排得靠不靠前」。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>nDCG</strong>（normalized Discounted Cumulative Gain，归一化折损累积增益）是信息检索（Information Retrieval，IR）经典排序指标。</p>
+</blockquote>
+<hr>
+<h2 id="4-下游任务代理指标"><a href="#4-下游任务代理指标" class="headerlink" title="4. 下游任务代理指标"></a>4. 下游任务代理指标</h2><p>公开基准（如 MTEB）很少端到端训练大模型，而是用 <strong>Embedding + 轻量头</strong> 代理下游能力：</p>
+<table>
+<thead>
+<tr>
+<th>任务类型</th>
+<th>典型做法</th>
+<th>主指标</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>文本分类</strong></td>
+<td>冻结 Embedding，训练 logistic regression</td>
+<td>Accuracy、Macro-F1</td>
+</tr>
+<tr>
+<td><strong>聚类</strong></td>
+<td>mini-batch k-means，$k$&#x3D;真实类别数</td>
+<td>V-measure、NMI</td>
+</tr>
+<tr>
+<td><strong>句子对分类</strong></td>
+<td>拼接或差分向量 + 分类器</td>
+<td>Average Precision</td>
+</tr>
+<tr>
+<td><strong>重排序</strong></td>
+<td>query-doc 向量相似度排序</td>
+<td>MRR@$k$、MAP</td>
+</tr>
+<tr>
+<td><strong>检索</strong></td>
+<td>双塔编码 query&#x2F;doc，全库 brute-force 或 ANN</td>
+<td>nDCG@$k$、Recall@$k$</td>
+</tr>
+</tbody></table>
+<p>这些指标反映 Embedding 的<strong>线性可分性</strong>与<strong>度量空间结构</strong>，与「只调 API、不重训分类头」的生产用法部分一致，但不等于完整 RAG 链路（分块、重排、LLM）的最终效果。</p>
+<hr>
+<h2 id="5-公开基准：初筛与横向对比"><a href="#5-公开基准：初筛与横向对比" class="headerlink" title="5. 公开基准：初筛与横向对比"></a>5. 公开基准：初筛与横向对比</h2><h3 id="5-1-MTEB"><a href="#5-1-MTEB" class="headerlink" title="5.1 MTEB"></a>5.1 MTEB</h3><p><strong>大规模文本嵌入基准</strong>（Massive Text Embedding Benchmark，<strong>MTEB</strong>）覆盖 8 类任务、58+ 数据集、100+ 语言，是英文及多语场景最通用的横向对比框架。</p>
+<ul>
+<li>排行榜：<a target="_blank" rel="noopener" href="https://huggingface.co/spaces/mteb/leaderboard">MTEB Leaderboard</a></li>
+<li>论文：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2210.07316">MTEB: Massive Text Embedding Benchmark</a></li>
+<li>代码：<a target="_blank" rel="noopener" href="https://github.com/embeddings-benchmark/mteb">embeddings-benchmark&#x2F;mteb</a></li>
+</ul>
+<p><strong>使用注意</strong>：</p>
+<ol>
+<li>看<strong>任务分组均分</strong>（Retrieval &#x2F; Classification &#x2F; Clustering …），不要只看总分；</li>
+<li>确认模型是否针对 MTEB 任务<strong>过拟合</strong>（训练数据污染）；</li>
+<li>多语模型在英文子集上的分数可能与英文专用模型不可直接比「性价比」。</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 最小可复现：单任务评测</span></span><br><span class="line"><span class="keyword">from</span> mteb <span class="keyword">import</span> MTEB</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> SentenceTransformer</span><br><span class="line"></span><br><span class="line">model_name = <span class="string">&quot;BAAI/bge-small-en-v1.5&quot;</span></span><br><span class="line">model = SentenceTransformer(model_name)</span><br><span class="line"></span><br><span class="line">evaluation = MTEB(tasks=[<span class="string">&quot;Banking77Classification&quot;</span>])</span><br><span class="line">results = evaluation.run(model, output_folder=<span class="string">f&quot;results/<span class="subst">&#123;model_name&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-CMTEB"><a href="#5-2-CMTEB" class="headerlink" title="5.2 CMTEB"></a>5.2 CMTEB</h3><p><strong>中文大规模文本嵌入基准</strong>（Chinese Massive Text Embedding Benchmark，<strong>CMTEB</strong>）基于 MTEB 扩展，含 TNews、DuRetrieval、CMedQA 等 35 个中文数据集，分 6 类任务。中文 RAG &#x2F; 分类选型应<strong>优先参考 CMTEB 对应子任务</strong>，而非英文 MTEB 排名外推。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 中文任务列表示例（完整列表见 FlagEmbedding / MTEB 文档）</span></span><br><span class="line">ChineseTaskList = [</span><br><span class="line">    <span class="string">&quot;TNews&quot;</span>, <span class="string">&quot;IFlyTek&quot;</span>, <span class="string">&quot;DuRetrieval&quot;</span>, <span class="string">&quot;MMarcoRetrieval&quot;</span>,</span><br><span class="line">    <span class="string">&quot;T2Retrieval&quot;</span>, <span class="string">&quot;ATEC&quot;</span>, <span class="string">&quot;BQ&quot;</span>, <span class="string">&quot;LCQMC&quot;</span>, <span class="string">&quot;STSB&quot;</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> mteb</span><br><span class="line"><span class="keyword">from</span> mteb <span class="keyword">import</span> MTEB</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> SentenceTransformer</span><br><span class="line"></span><br><span class="line">model = SentenceTransformer(<span class="string">&quot;BAAI/bge-large-zh-v1.5&quot;</span>)</span><br><span class="line">tasks = mteb.get_tasks(task_types=<span class="literal">None</span>, languages=[<span class="string">&quot;cmn&quot;</span>, <span class="string">&quot;cmn-Hans&quot;</span>])</span><br><span class="line"><span class="comment"># 或显式传入 ChineseTaskList 子集</span></span><br><span class="line"><span class="keyword">for</span> task <span class="keyword">in</span> tasks[:<span class="number">3</span>]:  <span class="comment"># 演示：实际应跑全量或选定子集</span></span><br><span class="line">    MTEB(tasks=[task]).run(model, output_folder=<span class="string">&quot;zh_results/bge-large-zh&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>更完整的 CMTEB 跑分脚本见：<a href="../02.%E5%BC%80%E5%8F%91-20.MachineLearn/1001.%E7%89%B9%E5%BE%81%E5%B7%A5%E7%A8%8B-%E6%95%B0%E6%8D%AE%E7%BC%96%E7%A0%81-Embedding%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%84%E6%96%B9%E5%BC%8F.md">特征工程-数据编码-Embedding性能测评方式</a>。</p>
+<h3 id="5-3-BEIR-与其他检索基准"><a href="#5-3-BEIR-与其他检索基准" class="headerlink" title="5.3 BEIR 与其他检索基准"></a>5.3 BEIR 与其他检索基准</h3><p><strong>BEIR</strong>（Benchmarking IR，零样本信息检索基准）强调<strong>跨域零样本检索</strong>：模型未在目标域微调，直接 encode query 与 corpus。适合评估 RAG 知识库「冷启动」泛化。</p>
+<table>
+<thead>
+<tr>
+<th>基准</th>
+<th>侧重点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>BEIR</strong></td>
+<td>18 个异构检索数据集，nDCG@10</td>
+</tr>
+<tr>
+<td><strong>AIR-Bench</strong></td>
+<td>对齐 RAG 真实 query 分布</td>
+</tr>
+<tr>
+<td><strong>LoCo &#x2F; LongEmbed</strong></td>
+<td>长上下文、长文档检索</td>
+</tr>
+<tr>
+<td><strong>MLDR &#x2F; C-MTEB Retrieval</strong></td>
+<td>多语 &#x2F; 中文检索子集</td>
+</tr>
+</tbody></table>
+<p>蛋白、药物、代码等<strong>垂直域</strong>另有专用评测；蛋白域详见 <a href="./Embedding-02.%E8%9B%8B%E7%99%BDEmbedding%E6%A8%A1%E5%9E%8B%E8%AF%84%E4%BB%B7%E6%A0%87%E5%87%86%E4%B8%8E%E5%B8%B8%E7%94%A8%E6%96%B9%E6%B3%95.md">Embedding-02.蛋白Embedding模型评价标准与常用方法</a>，通用 MTEB 高分不代表域内最优。</p>
+<hr>
+<h2 id="6-领域对齐评测（上线前必做）"><a href="#6-领域对齐评测（上线前必做）" class="headerlink" title="6. 领域对齐评测（上线前必做）"></a>6. 领域对齐评测（上线前必做）</h2><p>公开基准是<strong>代理任务</strong>；生产效果取决于你的 query、文档长度、分块策略与标注方式。推荐构建三层验证集：</p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>内容</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Gold 检索集</strong></td>
+<td>$(q, d^+, {d^-})$ 或 $(q, \mathrm{rel_rankings})$</td>
+<td>Recall@$k$、MRR、nDCG</td>
+</tr>
+<tr>
+<td><strong>Hard negative 集</strong></td>
+<td>语义相近但错误的 chunk</td>
+<td>区分「看起来像我」的误召回</td>
+</tr>
+<tr>
+<td><strong>端到端 RAG 集</strong></td>
+<td>同一 $q$ 下对比 answer faithfulness &#x2F; EM</td>
+<td>链路级验收（Embedding 只是其中一环）</td>
+</tr>
+</tbody></table>
+<p><strong>Hard negative 构造</strong>：</p>
+<ul>
+<li>同文档相邻 chunk（边界混淆）；</li>
+<li>BM25 高分但语义无关段落；</li>
+<li>同主题不同实体（如不同酶家族条目）。</li>
+</ul>
+<p><strong>标注规模</strong>：检索对比至少 200–500 条 query 可有稳定排序；少样本可用 k-fold 重复 encode，但结论置信区间会变宽。</p>
+<hr>
+<h2 id="7-工程与成本指标"><a href="#7-工程与成本指标" class="headerlink" title="7. 工程与成本指标"></a>7. 工程与成本指标</h2><p>精度相近时，生产选型常由工程指标决定：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>测量方法</th>
+<th>典型 trade-off</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>向量维度</strong> $d$</td>
+<td>模型 card</td>
+<td>$d$ 越大存储与 ANN 内存越高</td>
+</tr>
+<tr>
+<td><strong>编码延迟</strong></td>
+<td>batch&#x3D;1 &#x2F; batch&#x3D;32 的 P50&#x2F;P99 ms</td>
+<td>小模型 + CPU 可胜过大模型 + GPU</td>
+</tr>
+<tr>
+<td><strong>吞吐 QPS</strong></td>
+<td>固定硬件下 tokens&#x2F;s</td>
+<td>批处理与 ONNX&#x2F;TensorRT 优化</td>
+</tr>
+<tr>
+<td><strong>索引体积</strong></td>
+<td>$N \times d \times 4$ bytes（float32）</td>
+<td>量化（int8）可省 4× 内存，略损 Recall</td>
+</tr>
+<tr>
+<td><strong>API 成本</strong></td>
+<td>$&#x2F;1M tokens</td>
+<td>云 API vs 自托管 break-even 点</td>
+</tr>
+</tbody></table>
+<p>对比示例（需在同硬件、同 batch、同序列长度下测）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> SentenceTransformer</span><br><span class="line"></span><br><span class="line">texts = [<span class="string">&quot;示例句子&quot;</span>] * <span class="number">128</span></span><br><span class="line">model = SentenceTransformer(<span class="string">&quot;BAAI/bge-small-en-v1.5&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 预热</span></span><br><span class="line">model.encode(texts[:<span class="number">8</span>])</span><br><span class="line"></span><br><span class="line">t0 = time.perf_counter()</span><br><span class="line">emb = model.encode(texts, batch_size=<span class="number">32</span>, normalize_embeddings=<span class="literal">True</span>)</span><br><span class="line">elapsed = time.perf_counter() - t0</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;dim=<span class="subst">&#123;emb.shape[<span class="number">1</span>]&#125;</span>, ms/doc=<span class="subst">&#123;elapsed/<span class="built_in">len</span>(texts)*<span class="number">1000</span>:<span class="number">.2</span>f&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>公平对比清单</strong>：</p>
+<ul>
+<li><input disabled type="checkbox"> 相同硬件、驱动、精度（fp32 &#x2F; fp16 &#x2F; bf16）</li>
+<li><input disabled type="checkbox"> 相同 <code>max_seq_length</code> 与截断策略</li>
+<li><input disabled type="checkbox"> 相同 <code>normalize_embeddings</code> 与距离度量</li>
+<li><input disabled type="checkbox"> 相同 ANN 索引类型与 <code>efSearch</code></li>
+<li><input disabled type="checkbox"> 相同分块大小、overlap、metadata 拼接方式（RAG）</li>
+<li><input disabled type="checkbox"> 报告均值 ± 标准差（多 seed 或 bootstrap）</li>
+</ul>
+<hr>
+<h2 id="8-推荐对比流程"><a href="#8-推荐对比流程" class="headerlink" title="8. 推荐对比流程"></a>8. 推荐对比流程</h2><p><img src="/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-01.%E6%A8%A1%E5%9E%8B%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%96%B9%E6%B3%95/fig02-compare-workflow.png" alt="Embedding 模型对比流程"></p>
+<p><strong>图 2</strong> 推荐对比流程：从明确下游任务出发，经公开基准初筛、自有 Gold 集与 hard negative 压测、工程指标过滤，再到端到端 RAG A&#x2F;B，最终选定模型并文档化评测协议。</p>
+<p><strong>Step 1 — 初筛</strong>：按任务类型从 MTEB&#x2F;CMTEB 取对应列（如 Retrieval、Classification），剔除维度 &#x2F; 延迟明显不满足的模型。</p>
+<p><strong>Step 2 — 域内检索</strong>：在 Gold 集上算 Recall@5&#x2F;10、MRR@10、nDCG@10；画 <strong>Recall–延迟</strong> Pareto 前沿。</p>
+<p><strong>Step 3 — 统计检验</strong>：多模型在同一验证集上的指标差是否显著，可用 bootstrap 或 paired t-test（$p&lt;0.05$ 且效应量 $\Delta$ Recall@10 &gt; 2% 再宣称「更好」）。</p>
+<p><strong>Step 4 — 链路验收</strong>：固定 chunk、top-$k$、prompt，只换 Embedding，测 LLM 答案质量（如 RAGAS context precision、人工评分）。</p>
+<hr>
+<h2 id="9-常见误区"><a href="#9-常见误区" class="headerlink" title="9. 常见误区"></a>9. 常见误区</h2><table>
+<thead>
+<tr>
+<th>误区</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>只看 MTEB 总分</strong></td>
+<td>检索任务与分类任务权重不同，总分掩盖短板</td>
+</tr>
+<tr>
+<td><strong>英文榜外推中文</strong></td>
+<td>多语模型中文子集仍可能与中文专用模型有 gap</td>
+</tr>
+<tr>
+<td><strong>忽略分块</strong></td>
+<td>同一 Embedding，chunk 512 vs 1024 可差 10+ pt Recall</td>
+</tr>
+<tr>
+<td><strong>混用 API 与本地版本</strong></td>
+<td>同名模型不同 revision、量化方式结果不同</td>
+</tr>
+<tr>
+<td><strong>不设 hard negative</strong></td>
+<td>高 Recall 可能来自「容易的正样本」，线上误召回到位</td>
+</tr>
+<tr>
+<td><strong>单指标决策</strong></td>
+<td>Recall@10 高但 MRR 低 → 相关文档排得靠后，RAG 仍差</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-模型对比报告模板"><a href="#10-模型对比报告模板" class="headerlink" title="10. 模型对比报告模板"></a>10. 模型对比报告模板</h2><p>对内或论文附录建议固定表格，便于复现：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>维度</th>
+<th>CMTEB Ret.</th>
+<th>自有 Recall@10</th>
+<th>MRR@10</th>
+<th>P99 ms&#x2F;doc</th>
+<th>索引 GB&#x2F;100万条</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>model-A</td>
+<td>768</td>
+<td>0.62</td>
+<td><strong>0.81</strong></td>
+<td>0.54</td>
+<td>12</td>
+<td>2.9</td>
+</tr>
+<tr>
+<td>model-B</td>
+<td>1024</td>
+<td><strong>0.65</strong></td>
+<td>0.78</td>
+<td><strong>0.58</strong></td>
+<td>28</td>
+<td>3.9</td>
+</tr>
+</tbody></table>
+<p>附：<strong>评测日期、代码 commit、数据集版本、硬件、分块参数、ANN 配置</strong>。</p>
+<hr>
+<h2 id="11-工具链速查"><a href="#11-工具链速查" class="headerlink" title="11. 工具链速查"></a>11. 工具链速查</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/embeddings-benchmark/mteb">mteb</a></td>
+<td>MTEB &#x2F; CMTEB 标准跑分</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://www.sbert.net/">sentence-transformers</a></td>
+<td>本地 encode + 简易评测</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/FlagOpen/FlagEmbedding">FlagEmbedding</a></td>
+<td>BGE 系列与 C-MTEB 脚本</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/AmenRa/ranx">ranx</a></td>
+<td>nDCG、MRR、MAP 快速计算</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/explodinggradients/ragas">RAGAS</a></td>
+<td>RAG 链路级指标</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/facebookresearch/faiss">fAISS &#x2F; Milvus &#x2F; Qdrant</a></td>
+<td>大规模 ANN 与召回评测</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="12-小结"><a href="#12-小结" class="headerlink" title="12. 小结"></a>12. 小结</h2><ul>
+<li>Embedding 性能<strong>不是单一分数</strong>，而是「任务指标 + 领域数据 + 工程约束」的联合优化。</li>
+<li><strong>MTEB &#x2F; CMTEB &#x2F; BEIR</strong> 适合缩小候选范围；<strong>自有 Gold 集 + hard negative</strong> 才是上线依据。</li>
+<li>对比时必须<strong>写清协议</strong>：归一化、截断、分块、索引、硬件；否则数值不可复现、不可信。</li>
+</ul>
+<p>下一步可在本系列补充：分块策略对 Recall 的敏感性实验、多模态 Embedding（图文）评测；蛋白域评测见 <a href="./Embedding-02.%E8%9B%8B%E7%99%BDEmbedding%E6%A8%A1%E5%9E%8B%E8%AF%84%E4%BB%B7%E6%A0%87%E5%87%86%E4%B8%8E%E5%B8%B8%E7%94%A8%E6%96%B9%E6%B3%95.md">Embedding-02</a>。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/Embedding/" rel="tag"><i class="fa fa-tag"></i> Embedding</a>
+          
+            <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"><i class="fa fa-tag"></i> 向量检索</a>
+          
+            <a href="/tags/MTEB/" rel="tag"><i class="fa fa-tag"></i> MTEB</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-14.%E8%81%9A%E5%90%88%E9%85%B6/%E7%BB%93%E6%9E%84%E9%A2%84%E6%B5%8B-01.%E7%BB%93%E6%9E%84%E5%87%86%E7%A1%AE%E5%BA%A6%E8%AF%84%E4%BB%B7%E6%8C%87%E6%A0%87/" rel="next" title="结构预测-01.结构准确度评价指标">
+                <i class="fa fa-chevron-left"></i> 结构预测-01.结构准确度评价指标
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-17.Embedding/Embedding-02.%E8%9B%8B%E7%99%BDEmbedding%E6%A8%A1%E5%9E%8B%E8%AF%84%E4%BB%B7%E6%A0%87%E5%87%86%E4%B8%8E%E5%B8%B8%E7%94%A8%E6%96%B9%E6%B3%95/" rel="prev" title="Embedding-02.蛋白Embedding模型评价标准与常用方法">
+                Embedding-02.蛋白Embedding模型评价标准与常用方法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%AF%84%E6%B5%8B%E5%89%8D%E5%85%88%E5%9B%9E%E7%AD%94%E4%B8%89%E4%B8%AA%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">1. 评测前先回答三个问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%AF%84%E6%B5%8B%E7%BB%B4%E5%BA%A6%E6%80%BB%E8%A7%88"><span class="nav-number">2.</span> <span class="nav-text">2. 评测维度总览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E7%9B%B8%E4%BC%BC%E5%BA%A6%E4%B8%8E%E6%A3%80%E7%B4%A2%E7%B1%BB%E6%8C%87%E6%A0%87"><span class="nav-number">3.</span> <span class="nav-text">3. 相似度与检索类指标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%BD%99%E5%BC%A6%E7%9B%B8%E4%BC%BC%E5%BA%A6"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 余弦相似度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E8%AF%AD%E4%B9%89%E6%96%87%E6%9C%AC%E7%9B%B8%E4%BC%BC%E5%BA%A6-STS"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 语义文本相似度 STS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%A3%80%E7%B4%A2%E6%8C%87%E6%A0%87"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 检索指标</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%B8%8B%E6%B8%B8%E4%BB%BB%E5%8A%A1%E4%BB%A3%E7%90%86%E6%8C%87%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">4. 下游任务代理指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%85%AC%E5%BC%80%E5%9F%BA%E5%87%86%EF%BC%9A%E5%88%9D%E7%AD%9B%E4%B8%8E%E6%A8%AA%E5%90%91%E5%AF%B9%E6%AF%94"><span class="nav-number">5.</span> <span class="nav-text">5. 公开基准：初筛与横向对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-MTEB"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 MTEB</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-CMTEB"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 CMTEB</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-BEIR-%E4%B8%8E%E5%85%B6%E4%BB%96%E6%A3%80%E7%B4%A2%E5%9F%BA%E5%87%86"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 BEIR 与其他检索基准</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%A2%86%E5%9F%9F%E5%AF%B9%E9%BD%90%E8%AF%84%E6%B5%8B%EF%BC%88%E4%B8%8A%E7%BA%BF%E5%89%8D%E5%BF%85%E5%81%9A%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 领域对齐评测（上线前必做）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B7%A5%E7%A8%8B%E4%B8%8E%E6%88%90%E6%9C%AC%E6%8C%87%E6%A0%87"><span class="nav-number">7.</span> <span class="nav-text">7. 工程与成本指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%8E%A8%E8%8D%90%E5%AF%B9%E6%AF%94%E6%B5%81%E7%A8%8B"><span class="nav-number">8.</span> <span class="nav-text">8. 推荐对比流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B8%B8%E8%A7%81%E8%AF%AF%E5%8C%BA"><span class="nav-number">9.</span> <span class="nav-text">9. 常见误区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94%E6%8A%A5%E5%91%8A%E6%A8%A1%E6%9D%BF"><span class="nav-number">10.</span> <span class="nav-text">10. 模型对比报告模板</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E5%B7%A5%E5%85%B7%E9%93%BE%E9%80%9F%E6%9F%A5"><span class="nav-number">11.</span> <span class="nav-text">11. 工具链速查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-%E5%B0%8F%E7%BB%93"><span class="nav-number">12.</span> <span class="nav-text">12. 小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Reinforcement-Learning,Dynamic-Programming," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="动态规划 DP：策略评估、策略迭代、价值迭代；已知模型 P&#x2F;R 下的表格求解与收敛性。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RL-03-01-算法-动态规划">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-01-%E7%AE%97%E6%B3%95-%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="动态规划 DP：策略评估、策略迭代、价值迭代；已知模型 P&#x2F;R 下的表格求解与收敛性。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-05-28T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-01T09:09:17.810Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Dynamic-Programming">
+<meta property="article:tag" content="Reinforcement-Learning">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-21.强化学习/RL-03-01-算法-动态规划/"/>
+
+
+
+
+
+  <title>RL-03-01-算法-动态规划 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-01-%E7%AE%97%E6%B3%95-%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">RL-03-01-算法-动态规划</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-28T16:00:00+08:00">
+                2026-05-28
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">强化学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  动态规划 DP：策略评估、策略迭代、价值迭代；已知模型 P/R 下的表格求解与收敛性。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>← 上级：<a href="RL-03.%E7%AE%97%E6%B3%95%E5%88%86%E7%B1%BB%E4%B8%8E%E9%80%89%E5%9E%8B.md">RL-03.算法分类与选型</a> · 原理：<a href="RL-02-02-%E4%BB%B7%E5%80%BC%E5%87%BD%E6%95%B0%E4%B8%8E%E7%AD%96%E7%95%A5.md">RL-02-02-价值函数与策略</a> · 后续：<a href="RL-03-04-%E7%AE%97%E6%B3%95-%E8%92%99%E7%89%B9%E5%8D%A1%E6%B4%9B.md">RL-03-04-算法-蒙特卡洛</a></p>
+<p><strong>动态规划</strong>（Dynamic Programming，<strong>DP</strong>）在<strong>已知完整环境模型</strong> $P(s’|s,a)$ 与 $R(s,a)$ 时，通过 Bellman 方程<strong>迭代</strong>求解 $V^<em>$、$Q^</em>$ 与 $\pi^<em>$。它不采样、不试错，是理解 MC &#x2F; TD &#x2F; Q-Learning 的*<em>理论起点</em></em>。</p>
+<blockquote>
+<p>段末注释：<strong>动态规划</strong>（Dynamic Programming，<strong>DP</strong>）指利用 Bellman 递推在状态空间上批量更新价值或策略的方法；后文沿用 <strong>DP</strong>。</p>
+</blockquote>
+<hr>
+<h2 id="一、前提与定位"><a href="#一、前提与定位" class="headerlink" title="一、前提与定位"></a>一、前提与定位</h2><table>
+<thead>
+<tr>
+<th align="left">条件</th>
+<th align="left">DP</th>
+<th align="left">采样方法（MC &#x2F; TD）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">已知 $P, R$</td>
+<td align="left">✓ 必需</td>
+<td align="left">✗ 不需要</td>
+</tr>
+<tr>
+<td align="left">状态空间</td>
+<td align="left">有限、可枚举</td>
+<td align="left">可很大或连续</td>
+</tr>
+<tr>
+<td align="left">数据</td>
+<td align="left">无交互</td>
+<td align="left">需与环境交互</td>
+</tr>
+<tr>
+<td align="left">典型用途</td>
+<td align="left">小 MDP 精确解、教学</td>
+<td align="left">实际 RL 主流</td>
+</tr>
+</tbody></table>
+<p>DP 解决的是<strong>规划</strong>（Planning）；真实 RL 多为<strong>模型未知</strong>，但 DP 思想体现在：Bellman 备份、策略改进、价值迭代——以及 Dyna-Q 等「学模型 + 规划」方法。</p>
+<hr>
+<h2 id="二、策略评估（Policy-Evaluation）"><a href="#二、策略评估（Policy-Evaluation）" class="headerlink" title="二、策略评估（Policy Evaluation）"></a>二、策略评估（Policy Evaluation）</h2><p>给定策略 $\pi$，求 $V^\pi$。</p>
+<p><strong>迭代策略评估</strong>（同步更新）：</p>
+<p>$$<br>V_{k+1}(s) &#x3D; \sum_a \pi(a|s) \sum_{s’} P(s’|s,a) \left[ R(s,a,s’) + \gamma V_k(s’) \right]<br>$$</p>
+<p>直到 $\max_s |V_{k+1}(s) - V_k(s)| &lt; \theta$。</p>
+<p>对 $Q^\pi$ 同理，用 <a href="RL-02-01-MDP%E4%B8%8EBellman%E6%96%B9%E7%A8%8B.md">Bellman 期望方程</a> 备份 $Q$。</p>
+<hr>
+<h2 id="三、策略迭代（Policy-Iteration）"><a href="#三、策略迭代（Policy-Iteration）" class="headerlink" title="三、策略迭代（Policy Iteration）"></a>三、策略迭代（Policy Iteration）</h2><p>交替两步直至策略不变：</p>
+<ol>
+<li><strong>评估</strong>：对当前 $\pi$，解 $V^\pi$（可迭代至收敛或若干步）  </li>
+<li><strong>改进</strong>：$\pi’(s) &#x3D; \arg\max_a \sum_{s’} P(s’|s,a)[R + \gamma V^\pi(s’)]$</li>
+</ol>
+<p>由 <a href="RL-02-02-%E4%BB%B7%E5%80%BC%E5%87%BD%E6%95%B0%E4%B8%8E%E7%AD%96%E7%95%A5.md">策略改进定理</a>，$V^{\pi’} \geq V^\pi$，有限 MDP 下有限步收敛到 $\pi^*$。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">π₀ 任意 → 评估 V^π → 贪心改进 π&#x27; → 评估 → … → π*</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四、价值迭代（Value-Iteration）"><a href="#四、价值迭代（Value-Iteration）" class="headerlink" title="四、价值迭代（Value Iteration）"></a>四、价值迭代（Value Iteration）</h2><p>直接用 <strong>Bellman 最优算子</strong> $\mathcal{T}^*$ 更新：</p>
+<p>$$<br>V_{k+1}(s) &#x3D; \max_a \sum_{s’} P(s’|s,a) \left[ R(s,a,s’) + \gamma V_k(s’) \right]<br>$$</p>
+<p>收敛后导出策略：</p>
+<p>$$<br>\pi^<em>(s) &#x3D; \arg\max_a \sum_{s’} P(s’|s,a) \left[ R + \gamma V^</em>(s’) \right]<br>$$</p>
+<table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">策略迭代</th>
+<th align="left">价值迭代</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">每轮</td>
+<td align="left">完整&#x2F;部分策略评估 + 改进</td>
+<td align="left">仅最优 Bellman 备份</td>
+</tr>
+<tr>
+<td align="left">策略</td>
+<td align="left">每轮显式 $\pi$</td>
+<td align="left">收敛后一次导出</td>
+</tr>
+<tr>
+<td align="left">收敛速度</td>
+<td align="left">评估可能慢</td>
+<td align="left">常更少外层轮数</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="五、网格世界算例（梗概）"><a href="#五、网格世界算例（梗概）" class="headerlink" title="五、网格世界算例（梗概）"></a>五、网格世界算例（梗概）</h2><p>$4\times4$ 网格，每步 $-1$，目标格 $0$，撞墙不动。已知 $P$（确定性转移），运行价值迭代：</p>
+<ol>
+<li>初始化 $V(s)&#x3D;0$  </li>
+<li>对每个 $s$ 用 $\mathcal{T}^*$ 更新  </li>
+<li>重复至变化 $&lt; \theta$  </li>
+<li>$\pi^<em>(s) &#x3D; \arg\max_a Q^</em>(s,a)$</li>
+</ol>
+<p>可手算验证：最优策略为最短路径指向目标。</p>
+<hr>
+<h2 id="六、伪代码（价值迭代）"><a href="#六、伪代码（价值迭代）" class="headerlink" title="六、伪代码（价值迭代）"></a>六、伪代码（价值迭代）</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">value_iteration</span>(<span class="params">P, R, gamma, theta=<span class="number">1e-6</span></span>):</span><br><span class="line">    V = &#123;s: <span class="number">0.0</span> <span class="keyword">for</span> s <span class="keyword">in</span> states&#125;</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        delta = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> s <span class="keyword">in</span> states:</span><br><span class="line">            v = V[s]</span><br><span class="line">            V[s] = <span class="built_in">max</span>(</span><br><span class="line">                <span class="built_in">sum</span>(P[s][a][sp] * (R[s][a][sp] + gamma * V[sp]) <span class="keyword">for</span> sp <span class="keyword">in</span> states)</span><br><span class="line">                <span class="keyword">for</span> a <span class="keyword">in</span> actions(s)</span><br><span class="line">            )</span><br><span class="line">            delta = <span class="built_in">max</span>(delta, <span class="built_in">abs</span>(v - V[s]))</span><br><span class="line">        <span class="keyword">if</span> delta &lt; theta:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    pi = &#123;s: argmax_a Q_from_V(s, a, V, P, R, gamma) <span class="keyword">for</span> s <span class="keyword">in</span> states&#125;</span><br><span class="line">    <span class="keyword">return</span> V, pi</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="七、局限与延伸"><a href="#七、局限与延伸" class="headerlink" title="七、局限与延伸"></a>七、局限与延伸</h2><table>
+<thead>
+<tr>
+<th align="left">局限</th>
+<th align="left">延伸</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">需完整 $P$</td>
+<td align="left">模型未知 → <a href="RL-03-04-%E7%AE%97%E6%B3%95-%E8%92%99%E7%89%B9%E5%8D%A1%E6%B4%9B.md">蒙特卡洛</a>、<a href="RL-03-05-%E7%AE%97%E6%B3%95-%E6%97%B6%E5%BA%8F%E5%B7%AE%E5%88%86.md">时序差分</a></td>
+</tr>
+<tr>
+<td align="left">状态空间大</td>
+<td align="left">函数逼近、采样近似</td>
+</tr>
+<tr>
+<td align="left">无探索问题</td>
+<td align="left">模型已知时直接算最优</td>
+</tr>
+</tbody></table>
+<p><strong>异步 DP</strong>、<strong>实时 DP</strong>（RTDP）在部分状态上更新，适合大空间稀疏访问；深度时代 <strong>MCTS &#x2F; MuZero</strong> 可看作在 learned model 上的规划。</p>
+<hr>
+<h2 id="八、在算法谱系中的位置"><a href="#八、在算法谱系中的位置" class="headerlink" title="八、在算法谱系中的位置"></a>八、在算法谱系中的位置</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">已知 P, R</span><br><span class="line">    ↓</span><br><span class="line">动态规划（策略迭代 / 价值迭代）→ V*, π*</span><br><span class="line">    ↓ 模型未知，采样</span><br><span class="line">蒙特卡洛 MC → 时序差分 TD → Q-Learning / SARSA</span><br><span class="line">    ↓ 学近似模型 + 规划</span><br><span class="line">Dyna-Q → Model-Based（MCTS / Dreamer）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="九、小结"><a href="#九、小结" class="headerlink" title="九、小结"></a>九、小结</h2><ul>
+<li><strong>DP</strong> &#x3D; 已知模型 + Bellman 备份 + 策略&#x2F;价值迭代。  </li>
+<li><strong>策略迭代</strong>与<strong>价值迭代</strong>均收敛到 $V^<em>, \pi^</em>$（有限 MDP、$\gamma &lt; 1$）。  </li>
+<li>下一篇：<a href="RL-03-02-%E7%AE%97%E6%B3%95-Q-Learning.md">Q-Learning</a>（无模型 Off-Policy TD 控制）· 采样理论：<a href="RL-03-04-%E7%AE%97%E6%B3%95-%E8%92%99%E7%89%B9%E5%8D%A1%E6%B4%9B.md">蒙特卡洛</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Reinforcement-Learning/" rel="tag"><i class="fa fa-tag"></i> Reinforcement-Learning</a>
+          
+            <a href="/tags/Dynamic-Programming/" rel="tag"><i class="fa fa-tag"></i> Dynamic-Programming</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-06-01-Gymnasium%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%8E%A5%E5%8F%A3/" rel="next" title="RL-06-01-Gymnasium与环境接口">
+                <i class="fa fa-chevron-left"></i> RL-06-01-Gymnasium与环境接口
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-06-02-%E7%BB%8F%E5%85%B8%E5%9F%BA%E5%87%86%E7%8E%AF%E5%A2%83/" rel="prev" title="RL-06-02-经典基准环境">
+                RL-06-02-经典基准环境 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">857</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">105</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">677</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E6%8F%90%E4%B8%8E%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">一、前提与定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E7%AD%96%E7%95%A5%E8%AF%84%E4%BC%B0%EF%BC%88Policy-Evaluation%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">二、策略评估（Policy Evaluation）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E7%AD%96%E7%95%A5%E8%BF%AD%E4%BB%A3%EF%BC%88Policy-Iteration%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">三、策略迭代（Policy Iteration）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%BB%B7%E5%80%BC%E8%BF%AD%E4%BB%A3%EF%BC%88Value-Iteration%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">四、价值迭代（Value Iteration）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E7%BD%91%E6%A0%BC%E4%B8%96%E7%95%8C%E7%AE%97%E4%BE%8B%EF%BC%88%E6%A2%97%E6%A6%82%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">五、网格世界算例（梗概）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E4%BC%AA%E4%BB%A3%E7%A0%81%EF%BC%88%E4%BB%B7%E5%80%BC%E8%BF%AD%E4%BB%A3%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">六、伪代码（价值迭代）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%B1%80%E9%99%90%E4%B8%8E%E5%BB%B6%E4%BC%B8"><span class="nav-number">7.</span> <span class="nav-text">七、局限与延伸</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E5%9C%A8%E7%AE%97%E6%B3%95%E8%B0%B1%E7%B3%BB%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-number">8.</span> <span class="nav-text">八、在算法谱系中的位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">九、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
