@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="结构生物学,聚合酶,DSSP,mkdssp,二级结构," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="介绍 mkdssp（DSSP 4 命令行程序）的定位、输入输出、安装与典型工作流；澄清其基于三维坐标做二级结构注释而非从氨基酸序列直接预测，并给出与 PSIPRED 等序列预测器的选用建议。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二级结构-mkdssp：蛋白二级结构注释工具介绍与使用指南">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-40.%E8%9B%8B%E7%99%BD%E7%BB%84%E5%AD%A6/%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84-mkdssp%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="介绍 mkdssp（DSSP 4 命令行程序）的定位、输入输出、安装与典型工作流；澄清其基于三维坐标做二级结构注释而非从氨基酸序列直接预测，并给出与 PSIPRED 等序列预测器的选用建议。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-08T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.189Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DSSP">
+<meta property="article:tag" content="mkdssp">
+<meta property="article:tag" content="二级结构">
+<meta property="article:tag" content="结构生物学">
+<meta property="article:tag" content="聚合酶">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-40.蛋白组学/二级结构-mkdssp工具介绍与使用指南/"/>
+
+
+
+
+
+  <title>二级结构-mkdssp：蛋白二级结构注释工具介绍与使用指南 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-40.%E8%9B%8B%E7%99%BD%E7%BB%84%E5%AD%A6/%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84-mkdssp%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">二级结构-mkdssp：蛋白二级结构注释工具介绍与使用指南</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-08T10:00:00+08:00">
+                2026-06-08
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  介绍 mkdssp（DSSP 4 命令行程序）的定位、输入输出、安装与典型工作流；澄清其基于三维坐标做二级结构注释而非从氨基酸序列直接预测，并给出与 PSIPRED 等序列预测器的选用建议。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <h2 id="1-工具定位：注释，而非序列预测"><a href="#1-工具定位：注释，而非序列预测" class="headerlink" title="1. 工具定位：注释，而非序列预测"></a>1. 工具定位：注释，而非序列预测</h2><p><strong>mkdssp</strong> 是 <strong>蛋白质二级结构定义程序</strong>（Define Secondary Structure of Proteins，<strong>DSSP</strong>）第 4 代的命令行可执行程序，由 <strong>PDB-REDO</strong> 团队用 <strong>C++20</strong> 重写，核心算法库为 <strong>libdssp</strong>。官方文档明确说明：</p>
+<blockquote>
+<p><strong>mkdssp does not predict secondary structure.</strong></p>
+</blockquote>
+<p>也就是说，<strong>mkdssp 不能仅凭氨基酸序列给出二级结构</strong>；它读取的是<strong>已有三维原子坐标</strong>（实验结构或结构预测模型），依据主链氢键能量与几何判据，为每个残基分配二级结构类型。在结构生物学领域，<strong>DSSP</strong> 长期被视为二级结构**注释（assignment&#x2F;annotation）**的事实标准之一，而非“预测器”。</p>
+<p>若手头只有 <strong>FASTA 序列</strong>、尚无结构，应使用 <strong>PSIPRED</strong>、<strong>SPOT-1D</strong> 等<strong>序列二级结构预测</strong>工具；若已有 <strong>PDB&#x2F;mmCIF</strong> 或 <strong>AlphaFold</strong> 等预测结构，则用 <strong>mkdssp</strong> 做标准化注释。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>DSSP</strong> 解决的是“给定坐标，如何一致地标注 $\alpha$-螺旋、$\beta$-折叠等”；序列预测解决的是“无坐标时，从序列推断可能折叠”——二者问题层级不同。</p>
+</blockquote>
+<p><strong>与系列内其他文档的关系</strong>：算法细节、<strong>FAIR</strong> 数据原则、全库统计与性能评估见 <a href="./%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84-DSSP4-FAIR%E6%B3%A8%E9%87%8A%E5%8E%9F%E7%90%86%E4%B8%8E%E5%AE%9E%E8%B7%B5.md">二级结构-DSSP4：FAIR 注释原理、数据流与性能评估</a>。</p>
+<hr>
+<h2 id="2-算法概要"><a href="#2-算法概要" class="headerlink" title="2. 算法概要"></a>2. 算法概要</h2><p><strong>DSSP</strong> 判定逻辑由 Kabsch &amp; Sander (1983) 确立，<strong>DSSP 4</strong> 对除 <strong>$\kappa$-螺旋</strong> 外的类型保持原判据不变：</p>
+<ol>
+<li><strong>氢键识别</strong>：根据骨架 <strong>N–H…O&#x3D;C</strong> 模式计算氢键能量，识别氢键转角与 <strong>$\beta$-桥</strong>。</li>
+<li><strong>螺旋</strong>：连续重叠的转角组成螺旋——3-转角 $\rightarrow$ <strong>$3_{10}$-螺旋（G）</strong>；4-转角 $\rightarrow$ <strong>$\alpha$-螺旋（H）</strong>；5-转角 $\rightarrow$ <strong>$\pi$-螺旋（I）</strong>。</li>
+<li><strong>$\beta$-折叠</strong>：连续 <strong>$\beta$-桥</strong> 形成梯（ladder）与 <strong>$\beta$-片</strong>；孤立桥标 <strong>B</strong>，参与梯的伸展链标 <strong>E</strong>。</li>
+<li><strong>其余残基</strong>：按 <strong>C$\alpha$</strong> 几何标 <strong>弯曲（S）</strong>、<strong>转角（T）</strong> 或 <strong>无明确二级结构（loop，空白）</strong>。</li>
+<li><strong>DSSP 4 新增</strong>：左手 <strong>poly-Proline II（PPII）</strong> 构象，单字母码 <strong>P</strong>（<strong>$\kappa$-螺旋</strong>），由二面角 $\phi$、$\psi$ 容差判定（Mansiaux 等, 2011）。</li>
+</ol>
+<hr>
+<h2 id="3-单字母二级结构代码"><a href="#3-单字母二级结构代码" class="headerlink" title="3. 单字母二级结构代码"></a>3. 单字母二级结构代码</h2><table>
+<thead>
+<tr>
+<th>代码</th>
+<th>含义</th>
+<th>mmCIF 类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H</td>
+<td>$\alpha$-螺旋</td>
+<td>HELX_RH_AL_P</td>
+</tr>
+<tr>
+<td>G</td>
+<td>$3_{10}$-螺旋</td>
+<td>HELX_RH_3T_P</td>
+</tr>
+<tr>
+<td>I</td>
+<td>$\pi$-螺旋</td>
+<td>HELX_RH_PI_P</td>
+</tr>
+<tr>
+<td>E</td>
+<td>$\beta$-伸展链（参与 $\beta$-梯）</td>
+<td>STRN</td>
+</tr>
+<tr>
+<td>B</td>
+<td>孤立 $\beta$-桥</td>
+<td>STRN</td>
+</tr>
+<tr>
+<td>T</td>
+<td>氢键转角</td>
+<td>TURN_TY1_P</td>
+</tr>
+<tr>
+<td>S</td>
+<td>弯曲</td>
+<td>BEND</td>
+</tr>
+<tr>
+<td>P</td>
+<td>$\kappa$-螺旋（PPII）</td>
+<td>HELX_LH_PP_P</td>
+</tr>
+<tr>
+<td>空白</td>
+<td>loop &#x2F; coil</td>
+<td>OTHER</td>
+</tr>
+</tbody></table>
+<p>机器学习管道中常将 8 类归并为 <strong>DSSP3</strong>（H&#x2F;E&#x2F;C）或保留 <strong>DSSP8</strong>；与图神经网络节点特征、Rosetta 结构特征对齐时，需统一注释版本与归并规则（参见本系列「图神经网络-蛋白结构编码」）。</p>
+<hr>
+<h2 id="4-输入与输出"><a href="#4-输入与输出" class="headerlink" title="4. 输入与输出"></a>4. 输入与输出</h2><h3 id="4-1-输入要求"><a href="#4-1-输入要求" class="headerlink" title="4.1 输入要求"></a>4.1 输入要求</h3><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>要求</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>文件格式</strong></td>
+<td><strong>mmCIF</strong>（首选）或 <strong>PDB</strong>；支持 <strong>gzip&#x2F;bzip2</strong> 压缩</td>
+</tr>
+<tr>
+<td><strong>必需信息</strong></td>
+<td>标准氨基酸主链原子（N, CA, C, O 等）的三维坐标</td>
+</tr>
+<tr>
+<td><strong>格式规范</strong></td>
+<td>PDB 输入需含 <strong>CRYST1</strong> 等合法记录；文件须格式正确</td>
+</tr>
+<tr>
+<td><strong>化学组分</strong></td>
+<td>默认使用 <strong>libcifpp</strong> 安装的 <strong>components.cif</strong>；非标准残基可用 <code>--components</code> &#x2F; <code>--extra-compounds</code> 覆盖</td>
+</tr>
+<tr>
+<td><strong>不需要</strong></td>
+<td>仅序列的 FASTA、MSA、进化信息或电子密度图</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-输出格式"><a href="#4-2-输出格式" class="headerlink" title="4.2 输出格式"></a>4.2 输出格式</h3><ul>
+<li><strong>默认</strong>：带注释的 <strong>mmCIF</strong>，二级结构写入 <code>_struct_conf</code> 及 <code>_dssp_*</code> 等类别（<strong>FAIR</strong> 主格式）。</li>
+<li><strong>legacy</strong>：加 <code>--output-format=dssp</code> 可输出经典固定列 <strong>DSSP</strong> 文本格式（含逐残基氢键、二面角、溶剂可及表面积等）；超大结构可能无法生成 legacy 文件。</li>
+<li><strong>mmCIF 默认不算溶剂可及表面积（ACC）</strong>；需要暴露度时须加 <code>--calculate-accessibility</code>。</li>
+</ul>
+<p>legacy 格式每残基一行，除单字母码 <strong>S</strong> 外，还含 <strong>PHI&#x2F;PSI</strong>、<strong>KAPPA</strong>、<strong>ACC</strong>（Å²）、<strong>$\beta$-桥</strong> 伙伴残基、<strong>C$\alpha$</strong> 坐标等，便于下游特征工程。</p>
+<hr>
+<h2 id="5-安装"><a href="#5-安装" class="headerlink" title="5. 安装"></a>5. 安装</h2><h3 id="5-1-包管理器（推荐）"><a href="#5-1-包管理器（推荐）" class="headerlink" title="5.1 包管理器（推荐）"></a>5.1 包管理器（推荐）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Debian / Ubuntu</span></span><br><span class="line"><span class="built_in">sudo</span> apt install dssp</span><br><span class="line"><span class="comment"># 可执行文件名为 mkdssp</span></span><br><span class="line">mkdssp --version</span><br></pre></td></tr></table></figure>
+
+<p><strong>CCP4</strong> 晶体学套件亦已集成 <strong>DSSP 4</strong>。</p>
+<h3 id="5-2-源码编译"><a href="#5-2-源码编译" class="headerlink" title="5.2 源码编译"></a>5.2 源码编译</h3><p>依赖 <strong>C++20</strong> 编译器、<strong>CMake</strong> 与 <strong><a target="_blank" rel="noopener" href="https://github.com/PDB-REDO/libcifpp">libcifpp</a></strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/PDB-REDO/dssp.git</span><br><span class="line"><span class="built_in">cd</span> dssp</span><br><span class="line">cmake -S . -B build</span><br><span class="line">cmake --build build</span><br><span class="line"><span class="built_in">sudo</span> cmake --install build</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-Python-模块（≥-4-5-2）"><a href="#5-3-Python-模块（≥-4-5-2）" class="headerlink" title="5.3 Python 模块（≥ 4.5.2）"></a>5.3 Python 模块（≥ 4.5.2）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cmake -S . -B build -DBUILD_PYTHON_MODULE=ON</span><br><span class="line">cmake --build build &amp;&amp; <span class="built_in">sudo</span> cmake --install build</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> mkdssp <span class="keyword">import</span> dssp</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(<span class="string">&quot;structure.cif.gz&quot;</span>, <span class="string">&quot;rt&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    content = f.read()</span><br><span class="line"></span><br><span class="line">result = dssp(content)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;残基数:&quot;</span>, result.statistics.residues)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> res <span class="keyword">in</span> result:</span><br><span class="line">    <span class="built_in">print</span>(res.asym_id, res.seq_id, res.compound_id, res.<span class="built_in">type</span>)</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-命令行用法"><a href="#6-命令行用法" class="headerlink" title="6. 命令行用法"></a>6. 命令行用法</h2><h3 id="6-1-基本示例"><a href="#6-1-基本示例" class="headerlink" title="6.1 基本示例"></a>6.1 基本示例</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># mmCIF 输入 → 注释 mmCIF 输出（默认）</span></span><br><span class="line">mkdssp -i structure.cif -o structure_annotated.cif</span><br><span class="line"></span><br><span class="line"><span class="comment"># PDB 输入 → legacy DSSP 格式</span></span><br><span class="line">mkdssp --input structure.pdb --output structure.dssp --output-format=dssp</span><br><span class="line"></span><br><span class="line"><span class="comment"># 计算溶剂可及表面积</span></span><br><span class="line">mkdssp -i structure.cif -o out.cif --calculate-accessibility</span><br><span class="line"></span><br><span class="line"><span class="comment"># 调整 κ-螺旋（PPII）最小长度</span></span><br><span class="line">mkdssp -i structure.cif -o out.cif --min-pp-stretch=3</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-2-常用选项"><a href="#6-2-常用选项" class="headerlink" title="6.2 常用选项"></a>6.2 常用选项</h3><table>
+<thead>
+<tr>
+<th>选项</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--output-format=[dssp|mmcif]</code></td>
+<td>强制输出格式</td>
+</tr>
+<tr>
+<td><code>--calculate-accessibility</code></td>
+<td>在 mmCIF 中写入 ACC</td>
+</tr>
+<tr>
+<td><code>--min-pp-stretch</code></td>
+<td><strong>$\kappa$-螺旋</strong> 最小残基数</td>
+</tr>
+<tr>
+<td><code>--no-dssp-categories</code></td>
+<td>写 mmCIF 时不输出 <code>_dssp_*</code> 类别</td>
+</tr>
+<tr>
+<td><code>--write-other</code></td>
+<td>写入 OTHER 组分的结构信息</td>
+</tr>
+<tr>
+<td><code>--components</code> &#x2F; <code>--mmcif-dictionary</code></td>
+<td>覆盖默认化学组分或 mmCIF 字典</td>
+</tr>
+</tbody></table>
+<p>未指定输出文件时，结果写入 <strong>stdout</strong>；输出文件名以 <code>.gz</code> &#x2F; <code>.bz2</code> 结尾则自动压缩。</p>
+<hr>
+<h2 id="7-典型工作流"><a href="#7-典型工作流" class="headerlink" title="7. 典型工作流"></a>7. 典型工作流</h2><h3 id="7-1-仅有实验结构或预测结构"><a href="#7-1-仅有实验结构或预测结构" class="headerlink" title="7.1 仅有实验结构或预测结构"></a>7.1 仅有实验结构或预测结构</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    A[PDB / mmCIF 结构文件] --&gt; B[mkdssp]</span><br><span class="line">    B --&gt; C[注释 mmCIF 或 legacy DSSP]</span><br><span class="line">    C --&gt; D[逐残基二级结构标签 / 特征管道]</span><br></pre></td></tr></table></figure>
+
+<p>适用于：<strong>PDB</strong> 实验条目、<strong>AlphaFold</strong> &#x2F; <strong>ESMFold</strong> 预测结构、分子动力学轨迹取代表象等。</p>
+<h3 id="7-2-仅有氨基酸序列"><a href="#7-2-仅有氨基酸序列" class="headerlink" title="7.2 仅有氨基酸序列"></a>7.2 仅有氨基酸序列</h3><p><strong>mkdssp 无法直接处理序列。</strong> 常见两阶段流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    S[FASTA 序列] --&gt; F[AlphaFold2 / ESMFold / ColabFold]</span><br><span class="line">    F --&gt; M[预测结构 PDB/mmCIF]</span><br><span class="line">    M --&gt; D[mkdssp]</span><br><span class="line">    D --&gt; L[二级结构标签]</span><br></pre></td></tr></table></figure>
+
+<p>注意：预测结构上的 <strong>DSSP</strong> 标签反映的是<strong>模型坐标</strong>下的注释，与实验结构或纯序列预测器（<strong>PSIPRED</strong>）在 loop 比例、$\beta$ 含量上可能存在系统差异；训练与评估数据集应统一结构来源与 <strong>DSSP</strong> 版本。</p>
+<h3 id="7-3-在线服务与预计算库"><a href="#7-3-在线服务与预计算库" class="headerlink" title="7.3 在线服务与预计算库"></a>7.3 在线服务与预计算库</h3><p>无需本地安装时：</p>
+<ul>
+<li><strong>DSSP 服务器</strong>：<a target="_blank" rel="noopener" href="https://pdb-redo.eu/dssp">https://pdb-redo.eu/dssp</a> — 上传模型、下载注释；API：<a target="_blank" rel="noopener" href="https://pdb-redo.eu/dssp/api-doc">https://pdb-redo.eu/dssp/api-doc</a></li>
+<li><strong>DSSP 数据库</strong>：覆盖全 <strong>PDB</strong>，每周更新；单条目例如 <code>https://pdb-redo.eu/dssp/db/{PDBID}/mmcif</code></li>
+<li><strong>rsync</strong>：<code>rsync://rsync.pdb-redo.eu/dssp/</code></li>
+</ul>
+<hr>
+<h2 id="8-与序列预测工具的对照"><a href="#8-与序列预测工具的对照" class="headerlink" title="8. 与序列预测工具的对照"></a>8. 与序列预测工具的对照</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th><strong>mkdssp（DSSP 4）</strong></th>
+<th><strong>PSIPRED &#x2F; SPOT-1D 等</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>输入</td>
+<td>三维坐标（PDB&#x2F;mmCIF）</td>
+<td>氨基酸序列（常需 MSA）</td>
+</tr>
+<tr>
+<td>任务</td>
+<td>结构注释</td>
+<td>二级结构预测</td>
+</tr>
+<tr>
+<td>氢键&#x2F;几何</td>
+<td>基于实际坐标计算</td>
+<td>基于序列模式与统计&#x2F;深度学习</td>
+</tr>
+<tr>
+<td>典型场景</td>
+<td>结构已知的特征提取、与 <strong>PDB</strong> 注释对齐</td>
+<td>无结构时的初筛或模板-free 预测</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>千残基级 $&lt;1$ 秒（普通 PC）</td>
+<td>依赖 MSA，单条序列亦需秒～分钟级</td>
+</tr>
+</tbody></table>
+<p>在酶&#x2F;聚合酶工程中：<strong>定向进化筛选</strong>阶段若只有序列，先用 <strong>PSIPRED</strong> 等；<strong>结构建模或突变体结构解析</strong>后，用 <strong>mkdssp</strong> 提取与 <strong>PDB</strong> 一致的 <strong>DSSP8</strong> 标签供图神经网络或稳定性分析使用。</p>
+<hr>
+<h2 id="9-聚合酶场景下的使用注意"><a href="#9-聚合酶场景下的使用注意" class="headerlink" title="9. 聚合酶场景下的使用注意"></a>9. 聚合酶场景下的使用注意</h2><ol>
+<li><strong>版本统一</strong>：<strong>DSSP 4</strong> 新增 <strong>P（PPII）</strong> 标签，旧版注释中常被标为 loop；重跑训练集时须固定 <strong>mkdssp</strong> 版本。</li>
+<li><strong>柔性区域</strong>：聚合酶 linker、无序 loop 在实验结构中常未建模，在 <strong>AlphaFold</strong> 模型中则可能被折叠并赋予 <strong>H&#x2F;E</strong>；解读组成统计时需结合 <strong>pLDDT</strong> 或实验方法。</li>
+<li><strong>ACC 特征</strong>：依赖溶剂暴露度的管道（如 <strong>DeepEnzyme</strong> 类方法）须在 <strong>mmCIF</strong> 输出时显式开启 <code>--calculate-accessibility</code>。</li>
+<li><strong>链 ID</strong>：<strong>mmCIF</strong> 支持多字符链 ID；legacy 格式对超长链 ID 有限制，超大复合物优先用 <strong>mmCIF</strong> 输出。</li>
+</ol>
+<hr>
+<h2 id="10-引用与资源"><a href="#10-引用与资源" class="headerlink" title="10. 引用与资源"></a>10. 引用与资源</h2><p><strong>软件与文档</strong></p>
+<ul>
+<li>源码：<a target="_blank" rel="noopener" href="https://github.com/PDB-REDO/dssp">https://github.com/PDB-REDO/dssp</a>（<strong>BSD-2-Clause</strong>）</li>
+<li>官网与字段说明：<a target="_blank" rel="noopener" href="https://pdb-redo.eu/dssp">https://pdb-redo.eu/dssp</a>、<a target="_blank" rel="noopener" href="https://pdb-redo.eu/dssp/about">About DSSP</a></li>
+<li>手册：<code>doc/mkdssp.md</code></li>
+</ul>
+<p><strong>请引用</strong></p>
+<blockquote>
+<p>Hekkelman ML, Salmoral DÁ, Perrakis A, Joosten RP. DSSP 4: FAIR annotation of protein secondary structure. <em>Protein Science</em>. 2025;34(8):e70208. doi:<a target="_blank" rel="noopener" href="https://doi.org/10.1002/pro.70208">10.1002&#x2F;pro.70208</a></p>
+</blockquote>
+<p>算法根基：</p>
+<blockquote>
+<p>Kabsch W, Sander C. Dictionary of protein secondary structure: pattern recognition of hydrogen-bonded and geometrical features. <em>Biopolymers</em>. 1983;22(12):2577-2637.</p>
+</blockquote>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>mkdssp</strong> 是 <strong>DSSP 4</strong> 的命令行入口，对<strong>三维蛋白结构</strong>做标准化二级结构<strong>注释</strong>，<strong>不</strong>从序列直接预测。</li>
+<li><strong>输入</strong>：<strong>mmCIF&#x2F;PDB</strong> 坐标；<strong>输出</strong>：注释 <strong>mmCIF</strong>（默认）或 legacy <strong>DSSP</strong> 文本；可选 <strong>ACC</strong> 与 <strong>PPII（P）</strong> 识别。</li>
+<li><strong>安装</strong>：<code>apt install dssp</code>、<strong>CCP4</strong> 集成，或 GitHub 源码编译；支持 <strong>Python</strong> 模块。</li>
+<li>仅有序列时：先 <strong>结构预测</strong>（<strong>AlphaFold</strong> 等）再 <strong>mkdssp</strong>；纯序列场景用 <strong>PSIPRED</strong> 等预测器。</li>
+<li>酶&#x2F;聚合酶建模管道中，<strong>DSSP8</strong> 标签常与结构特征联用；注意 <strong>DSSP 4</strong> 与旧版、实验结构 vs 预测结构之间的系统性差异。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E7%BB%93%E6%9E%84%E7%94%9F%E7%89%A9%E5%AD%A6/" rel="tag"><i class="fa fa-tag"></i> 结构生物学</a>
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/DSSP/" rel="tag"><i class="fa fa-tag"></i> DSSP</a>
+          
+            <a href="/tags/mkdssp/" rel="tag"><i class="fa fa-tag"></i> mkdssp</a>
+          
+            <a href="/tags/%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84/" rel="tag"><i class="fa fa-tag"></i> 二级结构</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-07.%E6%A1%88%E4%BE%8B-%E9%98%BF%E9%87%8C%E4%BA%91Argo%E4%B8%8E%E5%A4%9AMCP%E8%9B%8B%E7%99%BD%E8%AE%BE%E8%AE%A1/" rel="next" title="MCP开发-07.案例-阿里云Argo与多MCP蛋白设计">
+                <i class="fa fa-chevron-left"></i> MCP开发-07.案例-阿里云Argo与多MCP蛋白设计
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-AiCE/" rel="prev" title="酶改造-modelpaper-AiCE">
+                酶改造-modelpaper-AiCE <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%B7%A5%E5%85%B7%E5%AE%9A%E4%BD%8D%EF%BC%9A%E6%B3%A8%E9%87%8A%EF%BC%8C%E8%80%8C%E9%9D%9E%E5%BA%8F%E5%88%97%E9%A2%84%E6%B5%8B"><span class="nav-number">1.</span> <span class="nav-text">1. 工具定位：注释，而非序列预测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%AE%97%E6%B3%95%E6%A6%82%E8%A6%81"><span class="nav-number">2.</span> <span class="nav-text">2. 算法概要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8D%95%E5%AD%97%E6%AF%8D%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">3. 单字母二级结构代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%BE%93%E5%85%A5%E4%B8%8E%E8%BE%93%E5%87%BA"><span class="nav-number">4.</span> <span class="nav-text">4. 输入与输出</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E8%BE%93%E5%85%A5%E8%A6%81%E6%B1%82"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 输入要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E8%BE%93%E5%87%BA%E6%A0%BC%E5%BC%8F"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 输出格式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%AE%89%E8%A3%85"><span class="nav-number">5.</span> <span class="nav-text">5. 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 包管理器（推荐）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%BA%90%E7%A0%81%E7%BC%96%E8%AF%91"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 源码编译</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-Python-%E6%A8%A1%E5%9D%97%EF%BC%88%E2%89%A5-4-5-2%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 Python 模块（≥ 4.5.2）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%91%BD%E4%BB%A4%E8%A1%8C%E7%94%A8%E6%B3%95"><span class="nav-number">6.</span> <span class="nav-text">6. 命令行用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%9F%BA%E6%9C%AC%E7%A4%BA%E4%BE%8B"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 基本示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E5%B8%B8%E7%94%A8%E9%80%89%E9%A1%B9"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 常用选项</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%85%B8%E5%9E%8B%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="nav-number">7.</span> <span class="nav-text">7. 典型工作流</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E4%BB%85%E6%9C%89%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%84%E6%88%96%E9%A2%84%E6%B5%8B%E7%BB%93%E6%9E%84"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 仅有实验结构或预测结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E4%BB%85%E6%9C%89%E6%B0%A8%E5%9F%BA%E9%85%B8%E5%BA%8F%E5%88%97"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 仅有氨基酸序列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-%E5%9C%A8%E7%BA%BF%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%A2%84%E8%AE%A1%E7%AE%97%E5%BA%93"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 在线服务与预计算库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E5%BA%8F%E5%88%97%E9%A2%84%E6%B5%8B%E5%B7%A5%E5%85%B7%E7%9A%84%E5%AF%B9%E7%85%A7"><span class="nav-number">8.</span> <span class="nav-text">8. 与序列预测工具的对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E8%81%9A%E5%90%88%E9%85%B6%E5%9C%BA%E6%99%AF%E4%B8%8B%E7%9A%84%E4%BD%BF%E7%94%A8%E6%B3%A8%E6%84%8F"><span class="nav-number">9.</span> <span class="nav-text">9. 聚合酶场景下的使用注意</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E5%BC%95%E7%94%A8%E4%B8%8E%E8%B5%84%E6%BA%90"><span class="nav-number">10.</span> <span class="nav-text">10. 引用与资源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">11.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

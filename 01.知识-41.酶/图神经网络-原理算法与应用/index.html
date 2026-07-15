@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="深度学习,GNN,图神经网络,消息传递,分子建模," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="从图的基本表示与置换不变性出发，系统介绍图神经网络（GNN）的消息传递范式、GCN&#x2F;GAT&#x2F;GraphSAGE 等代表算法、图级读出与 PyG 工程要点，并衔接三维几何与 SE(3)-等变 GNN；含五幅科普动漫示意图。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图神经网络：原理、算法与分子建模入门">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="从图的基本表示与置换不变性出发，系统介绍图神经网络（GNN）的消息传递范式、GCN&#x2F;GAT&#x2F;GraphSAGE 等代表算法、图级读出与 PyG 工程要点，并衔接三维几何与 SE(3)-等变 GNN；含五幅科普动漫示意图。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig01-graph-representation.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig03-gnn-vs-mlp.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig02-message-passing.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig04-readout-pooling.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig05-applications.png">
+<meta property="article:published_time" content="2026-05-18T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.359Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="GNN">
+<meta property="article:tag" content="分子建模">
+<meta property="article:tag" content="图神经网络">
+<meta property="article:tag" content="消息传递">
+<meta property="article:tag" content="深度学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig01-graph-representation.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-41.酶/图神经网络-原理算法与应用/"/>
+
+
+
+
+
+  <title>图神经网络：原理、算法与分子建模入门 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">图神经网络：原理、算法与分子建模入门</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-18T10:00:00+08:00">
+                2026-05-18
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  从图的基本表示与置换不变性出发，系统介绍图神经网络（GNN）的消息传递范式、GCN/GAT/GraphSAGE 等代表算法、图级读出与 PyG 工程要点，并衔接三维几何与 SE(3)-等变 GNN；含五幅科普动漫示意图。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>许多科学对象天然是<strong>关系数据</strong>：分子中原子通过化学键相连、蛋白质残基通过接触或共价键构成网络、引物–模板–酶之间是相互作用图。若把每个实体当作<strong>节点</strong>（node）、把关系当作<strong>边</strong>（edge），就得到<strong>图</strong>（graph）$G&#x3D;(V,E)$。<strong>图神经网络</strong>（Graph Neural Network，<strong>GNN</strong>）在图上做可微分的<strong>邻居信息聚合</strong>，学习既尊重局部连接、又对节点排列顺序不敏感（<strong>置换不变</strong>，permutation invariant）的表示。本文是 <a href="./SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">SE(3)-等变图神经网络：原理、算法与应用场景</a> 的<strong>前置导读</strong>：先掌握普通 GNN 的「消息–聚合–更新」骨架，再进入带三维坐标与对称性约束的几何等变模型会顺畅得多。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>GNN</strong> 泛指在图结构上通过多层邻居聚合学习表示的神经网络族；<strong>置换不变</strong>指打乱节点编号后，合理的图级输出应保持不变。</p>
+</blockquote>
+<hr>
+<h2 id="1-为什么用图而不是表格或网格"><a href="#1-为什么用图而不是表格或网格" class="headerlink" title="1. 为什么用图而不是表格或网格"></a>1. 为什么用图而不是表格或网格</h2><table>
+<thead>
+<tr>
+<th>数据形态</th>
+<th>典型例子</th>
+<th>归纳偏置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>表格（独立样本）</td>
+<td>溶解度数据库的一行一个分子描述符</td>
+<td>样本之间无结构关联</td>
+</tr>
+<tr>
+<td>网格（规则邻域）</td>
+<td>二维图像像素</td>
+<td>平移局部性、固定邻域</td>
+</tr>
+<tr>
+<td><strong>图（不规则邻域）</strong></td>
+<td>分子、知识图谱、蛋白质接触图</td>
+<td><strong>谁与谁相连</strong>因样本而异</td>
+</tr>
+</tbody></table>
+<p>分子用<strong>SMILES</strong> 或<strong>指纹</strong>（fingerprint）也能喂给<strong>多层感知机</strong>（Multi-Layer Perceptron，MLP），但键连拓扑、环结构、官能团上下文被压扁后不易显式传递。<strong>GNN</strong> 把「第 $k$ 个原子的邻居是谁」写进计算图，使每一层表示自动融合<strong>多跳邻域</strong>（multi-hop neighborhood）信息。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig01-graph-representation.png" alt="分子可表示为节点（原子）与边（化学键或相互作用）的图"></p>
+<p><strong>图 1（科普示意）</strong>：左为三维分子直观图；右为抽象图 $G&#x3D;(V,E)$，节点携带原子类型等特征，边可编码键级或距离。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SMILES</strong> 为分子的一维字符串表示；<strong>指纹</strong>为固定长度的二进制或实值向量，常由子结构枚举得到。</p>
+</blockquote>
+<hr>
+<h2 id="2-图的数学表示与特征"><a href="#2-图的数学表示与特征" class="headerlink" title="2. 图的数学表示与特征"></a>2. 图的数学表示与特征</h2><h3 id="2-1-邻接与度"><a href="#2-1-邻接与度" class="headerlink" title="2.1 邻接与度"></a>2.1 邻接与度</h3><ul>
+<li><strong>邻接矩阵</strong> $\mathbf{A}\in{0,1}^{n\times n}$：$A_{ij}&#x3D;1$ 表示 $i$ 与 $j$ 相连（无向图常令 $\mathbf{A}$ 对称）。</li>
+<li><strong>邻接表</strong> $\mathcal{N}(i)&#x3D;{j:(i,j)\in E}$：稀疏存储，大规模图与<strong>小批量</strong>（mini-batch）训练更常用。</li>
+<li><strong>节点特征矩阵</strong> $\mathbf{X}\in\mathbb{R}^{n\times d}$：第 $i$ 行为 $\mathbf{x}_i$（原子序数 one-hot、杂化、形式电荷等）。</li>
+<li><strong>边特征</strong>（可选）$\mathbf{e}<em>{ij}$：键型、空间距离 $r</em>{ij}$、是否共价等。</li>
+</ul>
+<h3 id="2-2-同构图-vs-异构图"><a href="#2-2-同构图-vs-异构图" class="headerlink" title="2.2 同构图 vs 异构图"></a>2.2 同构图 vs 异构图</h3><ul>
+<li><strong>同构图</strong>（homogeneous graph）：节点、边类型单一（如「全是碳链原子 + 单&#x2F;双键」）。</li>
+<li><strong>异构图</strong>（heterogeneous graph）：多种节点&#x2F;边类型（蛋白质中残基、配体、离子；边分「共价」「氢键」「接触」）。可用<strong>关系图卷积</strong>（R-GCN）等扩展，核心仍是分类型消息传递。</li>
+</ul>
+<h3 id="2-3-有向、无向与加权"><a href="#2-3-有向、无向与加权" class="headerlink" title="2.3 有向、无向与加权"></a>2.3 有向、无向与加权</h3><p>无向化学键常把消息沿边<strong>双向</strong>传递；信息流、引物延伸方向等场景可用<strong>有向边</strong>。边权 $w_{ij}$ 可表示接触强度、共现频率或 $1&#x2F;r_{ij}$ 等。</p>
+<hr>
+<h2 id="3-普通-MLP-CNN-的局限"><a href="#3-普通-MLP-CNN-的局限" class="headerlink" title="3. 普通 MLP &#x2F; CNN 的局限"></a>3. 普通 MLP &#x2F; CNN 的局限</h2><p><strong>MLP</strong> 把每个节点当作独立向量：节点 $i$ 的预测无法直接利用邻居 $j$ 的标签或特征，除非手工拼接固定长度邻居列表（长度随图变化，不便）。</p>
+<p><strong>卷积神经网络</strong>（Convolutional Neural Network，CNN）的卷积核在规则网格上滑动；图的邻域大小 $|\mathcal{N}(i)|$ 随节点变化，没有统一的「$3\times3$ 窗口」。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig03-gnn-vs-mlp.png" alt="左：节点孤立输入 MLP；右：GNN 沿边聚合邻居，表示随层数扩大感受野"></p>
+<p><strong>图 2（科普示意）</strong>：GNN 通过边共享信息；堆叠 $L$ 层后，节点 $i$ 的表示近似融合 <strong>$L$ 跳</strong> 内邻居（类似 CNN 的感受野）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>感受野</strong>指输出依赖的输入范围；GNN 中常由层数与跳数刻画。</p>
+</blockquote>
+<hr>
+<h2 id="4-消息传递神经网络（核心范式）"><a href="#4-消息传递神经网络（核心范式）" class="headerlink" title="4. 消息传递神经网络（核心范式）"></a>4. 消息传递神经网络（核心范式）</h2><p><strong>消息传递神经网络</strong>（Message Passing Neural Network，<strong>MPNN</strong>）将一层 GNN 抽象为三步（Gilmer et al., 2017）：</p>
+<ol>
+<li><strong>消息</strong>（message）：$\mathbf{m}_{ij}^{(t)}&#x3D;\phi_m!\left(\mathbf{h}_i^{(t)},\mathbf{h}<em>j^{(t)},\mathbf{e}</em>{ij}\right)$</li>
+<li><strong>聚合</strong>（aggregate）：$\bar{\mathbf{m}}<em>i^{(t)}&#x3D;\bigoplus</em>{j\in\mathcal{N}(i)}\mathbf{m}_{ij}^{(t)}$，其中 $\bigoplus$ 常为 sum &#x2F; mean &#x2F; max</li>
+<li><strong>更新</strong>（update）：$\mathbf{h}_i^{(t+1)}&#x3D;\phi_u!\left(\mathbf{h}_i^{(t)},\bar{\mathbf{m}}_i^{(t)}\right)$</li>
+</ol>
+<p>初始 $\mathbf{h}_i^{(0)}&#x3D;\mathbf{x}_i$。图级预测再经<strong>读出</strong>（readout）函数 $\mathbf{h}_G &#x3D; \rho({\mathbf{h}<em>i^{(T)}}</em>{i\in V})$。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig02-message-passing.png" alt="消息、聚合、更新三步；边上传导特征，中心节点被邻居「告知」"></p>
+<p><strong>图 3（科普示意）</strong>：与后续 <strong>SE(3)-等变 GNN</strong> 相同的外壳；区别主要在于消息函数 $\phi_m$ 是否使用三维坐标、是否保证旋转等变。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MPNN</strong> 是多数 GNN 变体的统一写法；<strong>读出</strong> $\rho$ 将节点集合映射为图向量。</p>
+</blockquote>
+<hr>
+<h2 id="5-代表算法（由经典到常用）"><a href="#5-代表算法（由经典到常用）" class="headerlink" title="5. 代表算法（由经典到常用）"></a>5. 代表算法（由经典到常用）</h2><h3 id="5-1-图卷积网络（GCN）"><a href="#5-1-图卷积网络（GCN）" class="headerlink" title="5.1 图卷积网络（GCN）"></a>5.1 图卷积网络（GCN）</h3><p>Kipf &amp; Welling (2017) 的<strong>图卷积网络</strong>（Graph Convolutional Network，<strong>GCN</strong>）在谱域近似下得到简洁形式。令 $\tilde{\mathbf{A}}&#x3D;\mathbf{A}+\mathbf{I}$，$\tilde{\mathbf{D}}$ 为 $\tilde{\mathbf{A}}$ 的度矩阵，则一层可写为：</p>
+<p>$$<br>\mathbf{H}^{(t+1)} &#x3D; \sigma!\left(\tilde{\mathbf{D}}^{-\frac{1}{2}}\tilde{\mathbf{A}}\tilde{\mathbf{D}}^{-\frac{1}{2}}\mathbf{H}^{(t)}\mathbf{W}^{(t)}\right).<br>$$</p>
+<p>直觉：先对邻居特征做<strong>对称归一化</strong>加权平均，再经可学习线性 $\mathbf{W}^{(t)}$ 与非线性 $\sigma$。多层 GCN 加深时可能出现<strong>过平滑</strong>（over-smoothing）：各节点表示趋于相同，需残差、跳连或层数控制。</p>
+<h3 id="5-2-图注意力网络（GAT）"><a href="#5-2-图注意力网络（GAT）" class="headerlink" title="5.2 图注意力网络（GAT）"></a>5.2 图注意力网络（GAT）</h3><p><strong>图注意力网络</strong>（Graph Attention Network，<strong>GAT</strong>，Veličković et al., 2018）为不同邻居赋予<strong>可学习权重</strong> $\alpha_{ij}$（常经 masked softmax 归一化），适合「并非所有邻居同等重要」的接触图或知识图谱。</p>
+<p>$$<br>\mathbf{h}<em>i^{(t+1)}&#x3D;\sigma!\left(\sum</em>{j\in\mathcal{N}(i)\cup{i}}\alpha_{ij},\mathbf{W}\mathbf{h}_j^{(t)}\right).<br>$$</p>
+<h3 id="5-3-GraphSAGE"><a href="#5-3-GraphSAGE" class="headerlink" title="5.3 GraphSAGE"></a>5.3 GraphSAGE</h3><p><strong>GraphSAGE</strong>（Hamilton et al., 2017）强调<strong>归纳式</strong>（inductive）学习：训练时见过部分图结构，推理时可对<strong>新节点&#x2F;新图</strong>做前向。聚合器除 mean 外，常用 <strong>LSTM 聚合器</strong>（需对邻居随机排列）或 <strong>pooling 聚合器</strong>（$\max$ &#x2F; mean 后再 MLP）。</p>
+<h3 id="5-4-其它常遇变体（点到为止）"><a href="#5-4-其它常遇变体（点到为止）" class="headerlink" title="5.4 其它常遇变体（点到为止）"></a>5.4 其它常遇变体（点到为止）</h3><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>GIN</strong></td>
+<td>用 sum 聚合 + MLP，在 WL 测试意义下表达力较强</td>
+</tr>
+<tr>
+<td><strong>GINE</strong></td>
+<td>边特征进入消息，适合分子键型</td>
+</tr>
+<tr>
+<td><strong>SchNet &#x2F; DimeNet</strong></td>
+<td>分子<strong>三维坐标</strong>进入，但主要用<strong>距离</strong>等不变量（为 $\mathrm{SE}(3)$ 续篇铺垫）</td>
+</tr>
+<tr>
+<td><strong>R-GCN</strong></td>
+<td>异构关系类型分通道</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-图级读出与置换不变性"><a href="#6-图级读出与置换不变性" class="headerlink" title="6. 图级读出与置换不变性"></a>6. 图级读出与置换不变性</h2><p>节点级任务（原子电荷、残基溶剂可及性）直接用 $\mathbf{h}_i^{(T)}$。图级任务（分子能量、毒性分类、蛋白–配体结合有无）需<strong>置换不变</strong>的 $\rho$，常见：</p>
+<ul>
+<li><strong>全局平均池化</strong>（global mean pooling）：$\mathbf{h}_G&#x3D;\frac{1}{|V|}\sum_i \mathbf{h}_i^{(T)}$</li>
+<li><strong>全局求和池化</strong>（global sum pooling）</li>
+<li><strong>Set2Set &#x2F; 注意力池化</strong>：可学习权重但仍对排列不变</li>
+</ul>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig04-readout-pooling.png" alt="多层 GNN 后的节点嵌入经池化得到图表示 $\mathbf{h}_G$；节点标号置换不改变 $\mathbf{h}_G$"></p>
+<p><strong>图 4（科普示意）</strong>：读出层保证「同一图、不同节点编号」得到相同图级向量（对合理的 $\rho$）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>WL 测试</strong>（Weisfeiler–Lehman test）是衡量 GNN 区分图结构能力的经典工具；过弱的聚合可能无法区分某些非同构图。</p>
+</blockquote>
+<hr>
+<h2 id="7-分子与蛋白场景中的构图实践"><a href="#7-分子与蛋白场景中的构图实践" class="headerlink" title="7. 分子与蛋白场景中的构图实践"></a>7. 分子与蛋白场景中的构图实践</h2><h3 id="7-1-节点与边怎么定"><a href="#7-1-节点与边怎么定" class="headerlink" title="7.1 节点与边怎么定"></a>7.1 节点与边怎么定</h3><table>
+<thead>
+<tr>
+<th>设定</th>
+<th>节点</th>
+<th>边</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>小分子</td>
+<td>原子</td>
+<td>共价键；或 <strong>半径图</strong>（$r_{ij} &lt; r_{\mathrm{cut}}$ 时连边）</td>
+</tr>
+<tr>
+<td>蛋白质</td>
+<td>残基 $C_\alpha$ 或全原子</td>
+<td>序列相邻 + 空间接触（实践见 <a href="./%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5.md">蛋白结构 Python 编码</a>）</td>
+</tr>
+<tr>
+<td>蛋白–配体</td>
+<td>异构节点</td>
+<td>跨分子接触边</td>
+</tr>
+</tbody></table>
+<p>半径图能编码<strong>非共价相互作用</strong>，但边数随截断半径增大；$k$ <strong>近邻图</strong>（$k$NN）可控制度数上界。</p>
+<h3 id="7-2-特征与标签"><a href="#7-2-特征与标签" class="headerlink" title="7.2 特征与标签"></a>7.2 特征与标签</h3><ul>
+<li>节点：元素、杂化、芳香性、B-factor（结构）、进化保守性（MSA）等。</li>
+<li>边：键级、$r_{ij}$、相对方向（进入等变模型时关键）。</li>
+<li>图级标签：溶解度、活性、结合亲和力；节点级：原子电荷、残基二级结构。</li>
+</ul>
+<h3 id="7-3-与普通-GNN-相关的坑"><a href="#7-3-与普通-GNN-相关的坑" class="headerlink" title="7.3 与普通 GNN 相关的坑"></a>7.3 与普通 GNN 相关的坑</h3><ul>
+<li><strong>数据泄漏</strong>：随机划分分子时，高度相似骨架应归入同一折（<strong>骨架聚类划分</strong>，scaffold split）。</li>
+<li><strong>图大小差异</strong>：批处理需 <strong>padding + batch 向量</strong> 或 <strong>PyG</strong> 的 <code>Batch</code> 合并。</li>
+<li><strong>对称性</strong>：普通 GNN <strong>不</strong>保证旋转坐标后向量输出同步旋转；标量性质可用距离等不变特征缓解。若需力、取向等<strong>向量</strong>输出，见下文衔接。</li>
+</ul>
+<hr>
+<h2 id="8-训练与工程速览"><a href="#8-训练与工程速览" class="headerlink" title="8. 训练与工程速览"></a>8. 训练与工程速览</h2><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PyTorch Geometric（PyG）</strong></td>
+<td><code>Data(x, edge_index, edge_attr, y)</code>，<code>DataLoader</code> 批图</td>
+</tr>
+<tr>
+<td><strong>DGL</strong></td>
+<td>另一主流图深度学习框架，API 不同但 MPNN 思想一致</td>
+</tr>
+<tr>
+<td><strong>损失</strong></td>
+<td>图级交叉熵 &#x2F; MSE；节点级 mask 未标注节点</td>
+</tr>
+<tr>
+<td><strong>深度</strong></td>
+<td>3–5 层常见起点；观察验证集是否过平滑</td>
+</tr>
+</tbody></table>
+<p>最小数据流（伪代码）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># x: [N, d_in], edge_index: [2, E]</span></span><br><span class="line">h = x</span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> gnn_layers:</span><br><span class="line">    h = layer(h, edge_index, edge_attr)  <span class="comment"># 内部: message -&gt; aggregate -&gt; update</span></span><br><span class="line">h_graph = global_mean_pool(h, batch)      <span class="comment"># batch 区分图中的节点属于哪张图</span></span><br><span class="line">y_hat = mlp_readout(h_graph)</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="9-典型应用场景"><a href="#9-典型应用场景" class="headerlink" title="9. 典型应用场景"></a>9. 典型应用场景</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/gnn-fig05-applications.png" alt="分子性质、蛋白网络、推荐、材料、药物发现等 GNN 应用示意"></p>
+<p><strong>图 5（科普示意）</strong>：GNN 已广泛用于化学信息学、生物网络与关系型数据；科学计算中常与<strong>三维几何</strong>模型衔接。</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>任务类型</th>
+<th>GNN 作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>分子性质预测</strong></td>
+<td>图级回归&#x2F;分类</td>
+<td>聚合原子环境预测溶解度、毒性等</td>
+</tr>
+<tr>
+<td><strong>反应产率 &#x2F; 选择性</strong></td>
+<td>图级</td>
+<td>反应物–试剂构图或产物图</td>
+</tr>
+<tr>
+<td><strong>蛋白质功能注释</strong></td>
+<td>节点&#x2F;图级</td>
+<td>残基图上传导序列与接触信息</td>
+</tr>
+<tr>
+<td><strong>虚拟筛选</strong></td>
+<td>图级打分</td>
+<td>蛋白–配体异构图</td>
+</tr>
+<tr>
+<td><strong>引物&#x2F;序列–结构</strong></td>
+<td>序列图或 $k$-mer 图</td>
+<td>局部上下文编码（与本文聚合酶系列主题相邻）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-从普通-GNN-到-SE-3-等变-GNN"><a href="#10-从普通-GNN-到-SE-3-等变-GNN" class="headerlink" title="10. 从普通 GNN 到 SE(3)-等变 GNN"></a>10. 从普通 GNN 到 SE(3)-等变 GNN</h2><p>掌握本文后，你已具备阅读 <a href="./SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">SE(3)-等变图神经网络</a> 的前置概念：</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>普通 GNN（本文）</th>
+<th>SE(3)-等变 GNN（续篇）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>输入几何</td>
+<td>可选 $r_{ij}$、拓扑</td>
+<td>显式 $\mathbf{x}_i \in \mathbb{R}^3$，相对方向进消息</td>
+</tr>
+<tr>
+<td>对称性</td>
+<td>常仅对<strong>置换</strong>不变</td>
+<td>另需对<strong>旋转&#x2F;平移</strong>等变或不变</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>多为标量图级</td>
+<td>标量（能量）+ <strong>向量</strong>（力、位移）</td>
+</tr>
+<tr>
+<td>代表模型</td>
+<td>GCN、GAT、GraphSAGE</td>
+<td>EGNN、SE(3)-Transformer、NequIP</td>
+</tr>
+</tbody></table>
+<p>续篇将回答：「坐标旋转后，网络输出的<strong>力</strong>为何应随坐标系一起转？」——那是在 MPNN 骨架上，把 $\phi_m$ 换成<strong>等变张量积</strong>与<strong>球谐方向编码</strong>后的结果。</p>
+<hr>
+<h2 id="11-小结"><a href="#11-小结" class="headerlink" title="11. 小结"></a>11. 小结</h2><p><strong>图神经网络</strong>把「关系」写进前向计算：通过<strong>消息–聚合–更新</strong>在局部邻域反复交换信息，再用<strong>置换不变读出</strong>得到图级表示。<strong>GCN</strong> 提供归一化邻域平均的简洁基线，<strong>GAT</strong> 与 <strong>GraphSAGE</strong> 分别强化注意力与归纳场景。分子与蛋白建模中，构图方式（共价 vs 半径图）、划分策略与池化读出往往决定基线强弱；当任务涉及<strong>三维向量</strong>与<strong>刚体对称性</strong>时，应在同一 MPNN 范式上升级为 <strong>SE(3)-等变</strong> 架构。</p>
+<hr>
+<h2 id="参考文献与延伸阅读"><a href="#参考文献与延伸阅读" class="headerlink" title="参考文献与延伸阅读"></a>参考文献与延伸阅读</h2><ol>
+<li>Gilmer, J. et al. <em>Neural Message Passing for Quantum Chemistry.</em> ICML 2017.  </li>
+<li>Kipf, T. N. &amp; Welling, M. <em>Semi-Supervised Classification with Graph Convolutional Networks.</em> ICLR 2017.  </li>
+<li>Veličković, P. et al. <em>Graph Attention Networks.</em> ICLR 2018.  </li>
+<li>Hamilton, W. L. et al. <em>Inductive Representation Learning on Large Graphs.</em> NeurIPS 2017 (<strong>GraphSAGE</strong>).  </li>
+<li>Xu, K. et al. <em>How Powerful are Graph Neural Networks?</em> ICLR 2019 (<strong>GIN</strong>).  </li>
+<li>PyTorch Geometric 文档: <a target="_blank" rel="noopener" href="https://pytorch-geometric.readthedocs.io/">https://pytorch-geometric.readthedocs.io</a>  </li>
+<li>实践：<a href="./%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5.md">图神经网络处理蛋白结构：Python 数据流与编码实践</a>  </li>
+<li>续篇：<a href="./SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">SE(3)-等变图神经网络：原理、算法与应用场景</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" rel="tag"><i class="fa fa-tag"></i> 深度学习</a>
+          
+            <a href="/tags/GNN/" rel="tag"><i class="fa fa-tag"></i> GNN</a>
+          
+            <a href="/tags/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" rel="tag"><i class="fa fa-tag"></i> 图神经网络</a>
+          
+            <a href="/tags/%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92/" rel="tag"><i class="fa fa-tag"></i> 消息传递</a>
+          
+            <a href="/tags/%E5%88%86%E5%AD%90%E5%BB%BA%E6%A8%A1/" rel="tag"><i class="fa fa-tag"></i> 分子建模</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/" rel="next" title="酶改造-Rosetta 蛋白序列设计的原理与方法">
+                <i class="fa fa-chevron-left"></i> 酶改造-Rosetta 蛋白序列设计的原理与方法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/" rel="prev" title="SE(3)-等变图神经网络：原理、算法与应用场景">
+                SE(3)-等变图神经网络：原理、算法与应用场景 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E5%9B%BE%E8%80%8C%E4%B8%8D%E6%98%AF%E8%A1%A8%E6%A0%BC%E6%88%96%E7%BD%91%E6%A0%BC"><span class="nav-number">1.</span> <span class="nav-text">1. 为什么用图而不是表格或网格</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%9B%BE%E7%9A%84%E6%95%B0%E5%AD%A6%E8%A1%A8%E7%A4%BA%E4%B8%8E%E7%89%B9%E5%BE%81"><span class="nav-number">2.</span> <span class="nav-text">2. 图的数学表示与特征</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E9%82%BB%E6%8E%A5%E4%B8%8E%E5%BA%A6"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 邻接与度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E5%90%8C%E6%9E%84%E5%9B%BE-vs-%E5%BC%82%E6%9E%84%E5%9B%BE"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 同构图 vs 异构图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E6%9C%89%E5%90%91%E3%80%81%E6%97%A0%E5%90%91%E4%B8%8E%E5%8A%A0%E6%9D%83"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 有向、无向与加权</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%99%AE%E9%80%9A-MLP-CNN-%E7%9A%84%E5%B1%80%E9%99%90"><span class="nav-number">3.</span> <span class="nav-text">3. 普通 MLP &#x2F; CNN 的局限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88%E6%A0%B8%E5%BF%83%E8%8C%83%E5%BC%8F%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. 消息传递神经网络（核心范式）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BB%A3%E8%A1%A8%E7%AE%97%E6%B3%95%EF%BC%88%E7%94%B1%E7%BB%8F%E5%85%B8%E5%88%B0%E5%B8%B8%E7%94%A8%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 代表算法（由经典到常用）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%9B%BE%E5%8D%B7%E7%A7%AF%E7%BD%91%E7%BB%9C%EF%BC%88GCN%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 图卷积网络（GCN）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%9B%BE%E6%B3%A8%E6%84%8F%E5%8A%9B%E7%BD%91%E7%BB%9C%EF%BC%88GAT%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 图注意力网络（GAT）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-GraphSAGE"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 GraphSAGE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E5%85%B6%E5%AE%83%E5%B8%B8%E9%81%87%E5%8F%98%E4%BD%93%EF%BC%88%E7%82%B9%E5%88%B0%E4%B8%BA%E6%AD%A2%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 其它常遇变体（点到为止）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%9B%BE%E7%BA%A7%E8%AF%BB%E5%87%BA%E4%B8%8E%E7%BD%AE%E6%8D%A2%E4%B8%8D%E5%8F%98%E6%80%A7"><span class="nav-number">6.</span> <span class="nav-text">6. 图级读出与置换不变性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%88%86%E5%AD%90%E4%B8%8E%E8%9B%8B%E7%99%BD%E5%9C%BA%E6%99%AF%E4%B8%AD%E7%9A%84%E6%9E%84%E5%9B%BE%E5%AE%9E%E8%B7%B5"><span class="nav-number">7.</span> <span class="nav-text">7. 分子与蛋白场景中的构图实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E8%8A%82%E7%82%B9%E4%B8%8E%E8%BE%B9%E6%80%8E%E4%B9%88%E5%AE%9A"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 节点与边怎么定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E7%89%B9%E5%BE%81%E4%B8%8E%E6%A0%87%E7%AD%BE"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 特征与标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-%E4%B8%8E%E6%99%AE%E9%80%9A-GNN-%E7%9B%B8%E5%85%B3%E7%9A%84%E5%9D%91"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 与普通 GNN 相关的坑</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E8%AE%AD%E7%BB%83%E4%B8%8E%E5%B7%A5%E7%A8%8B%E9%80%9F%E8%A7%88"><span class="nav-number">8.</span> <span class="nav-text">8. 训练与工程速览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%85%B8%E5%9E%8B%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">9.</span> <span class="nav-text">9. 典型应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E4%BB%8E%E6%99%AE%E9%80%9A-GNN-%E5%88%B0-SE-3-%E7%AD%89%E5%8F%98-GNN"><span class="nav-number">10.</span> <span class="nav-text">10. 从普通 GNN 到 SE(3)-等变 GNN</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E5%B0%8F%E7%BB%93"><span class="nav-number">11.</span> <span class="nav-text">11. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">12.</span> <span class="nav-text">参考文献与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

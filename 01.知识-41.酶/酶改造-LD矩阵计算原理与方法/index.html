@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="聚合酶,蛋白工程,AiCE,连锁不平衡,PLINK," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="连锁不平衡（LD）矩阵的定义、数学形式与 AiCE 框架中的完整计算流程：蛋白 MSA → 伪 DNA → VCF → PLINK r²，及组合突变下游打分方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-LD矩阵计算原理与方法">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-LD%E7%9F%A9%E9%98%B5%E8%AE%A1%E7%AE%97%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="连锁不平衡（LD）矩阵的定义、数学形式与 AiCE 框架中的完整计算流程：蛋白 MSA → 伪 DNA → VCF → PLINK r²，及组合突变下游打分方法。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-08T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.542Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="AiCE">
+<meta property="article:tag" content="PLINK">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白工程">
+<meta property="article:tag" content="连锁不平衡">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-41.酶/酶改造-LD矩阵计算原理与方法/"/>
+
+
+
+
+
+  <title>酶改造-LD矩阵计算原理与方法 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-LD%E7%9F%A9%E9%98%B5%E8%AE%A1%E7%AE%97%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-LD矩阵计算原理与方法</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-08T16:00:00+08:00">
+                2026-06-08
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  连锁不平衡（LD）矩阵的定义、数学形式与 AiCE 框架中的完整计算流程：蛋白 MSA → 伪 DNA → VCF → PLINK r²，及组合突变下游打分方法。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本文详解 <strong>连锁不平衡（Linkage Disequilibrium，LD）</strong> 矩阵的计算原理与实现方法，重点对应 <strong>AiCE</strong>（AI-informed Constraints for protein Engineering，人工智能约束蛋白工程）框架 <strong>AiCEmulti</strong> 模块中的 <code>02.caculated_ld.py</code> 流水线。与 <strong>酶改造-modelpaper-AiCE</strong> 中 §4.4 互补：该文侧重框架总览，本篇专述 LD 的数学定义、编码策略与组合打分。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>AiCE</strong> 为 <em>Cell</em> 2025 发表的通用蛋白突变设计框架，详见 <strong>酶改造-modelpaper-AiCE</strong>；<strong>AiCEmulti</strong> 为其组合突变提名模块。</p>
+</blockquote>
+<hr>
+<h2 id="1-什么是-LD-矩阵"><a href="#1-什么是-LD-矩阵" class="headerlink" title="1. 什么是 LD 矩阵"></a>1. 什么是 LD 矩阵</h2><p><strong>连锁不平衡（Linkage Disequilibrium，LD）</strong> 描述两个位点上<strong>等位基因（allele）在样本间非随机共现</strong>的程度。在群体遗传学中，若位点 A 的等位基因与位点 B 的等位基因在个体间<strong>倾向于一起出现</strong>（或一起不出现），则称二者存在 LD。</p>
+<p>AiCE 将这一概念<strong>借用于蛋白工程</strong>：把逆折叠采样得到的多序列比对（Multiple Sequence Alignment，MSA）中每条序列视为一个「个体」，把各位点的氨基酸（经伪 DNA 编码后）视为「等位基因型」，用 LD 衡量<strong>哪些位点的突变在采样序列中倾向于协同出现</strong>。高 LD 的组合突变，<strong>负向上位效应（negative epistasis）</strong> 风险相对更低。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>等位基因</strong>指同一基因座上的不同变异形式；AiCE 中「基因座」被映射为序列位点。<strong>MSA</strong> 为多条同源序列按位点对齐的表示。</p>
+</blockquote>
+<hr>
+<h2 id="2-经典-LD-的数学定义"><a href="#2-经典-LD-的数学定义" class="headerlink" title="2. 经典 LD 的数学定义"></a>2. 经典 LD 的数学定义</h2><p>对两个双等位基因位点，记：</p>
+<ul>
+<li>位点 A：等位基因 (A&#x2F;a)，(A) 的频率为 (p_A)</li>
+<li>位点 B：等位基因 (B&#x2F;b)，(B) 的频率为 (p_B)</li>
+<li>单倍型 (AB) 的联合频率为 (p_{AB})</li>
+</ul>
+<h3 id="2-1-连锁不平衡系数-D"><a href="#2-1-连锁不平衡系数-D" class="headerlink" title="2.1 连锁不平衡系数 (D)"></a>2.1 连锁不平衡系数 (D)</h3><p>[<br>D &#x3D; p_{AB} - p_A \cdot p_B<br>]</p>
+<ul>
+<li>(D &#x3D; 0)：两地位点<strong>统计独立</strong>（无 LD）</li>
+<li>(D \neq 0)：存在非随机关联</li>
+</ul>
+<h3 id="2-2-标准化-D’-（Lewontin-标准化）"><a href="#2-2-标准化-D’-（Lewontin-标准化）" class="headerlink" title="2.2 标准化 (D’)（Lewontin 标准化）"></a>2.2 标准化 (D’)（Lewontin 标准化）</h3><p>[<br>D’ &#x3D; \frac{D}{D_{\max}}, \quad D_{\max} &#x3D; \min\bigl(p_A p_b,; p_a p_B\bigr)<br>]</p>
+<p>(D’) 取值范围为 ([-1, 1])，便于在不同等位基因频率下比较 LD 强度。</p>
+<h3 id="2-3-平方相关系数-r-2-（AiCE-实际使用）"><a href="#2-3-平方相关系数-r-2-（AiCE-实际使用）" class="headerlink" title="2.3 平方相关系数 (r^2)（AiCE 实际使用）"></a>2.3 平方相关系数 (r^2)（AiCE 实际使用）</h3><p>[<br>r^2 &#x3D; \frac{D^2}{p_A(1-p_A), p_B(1-p_B)}<br>]</p>
+<p>(r^2 \in [0, 1])：</p>
+<table>
+<thead>
+<tr>
+<th>(r^2)</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>(&#x3D; 1)</td>
+<td>两地位点<strong>完全共变</strong></td>
+</tr>
+<tr>
+<td>(\approx 0)</td>
+<td>两地位点<strong>近似独立</strong></td>
+</tr>
+</tbody></table>
+<p>AiCE 官方实现通过 <strong>PLINK</strong> 的 <code>--r2 square</code> 输出 <strong>(r^2) 方阵</strong>，即 <code>.ld</code> 文件中的数值。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PLINK</strong> 为群体遗传学常用基因型分析工具；<strong>Hardy–Weinberg 平衡（HWE）</strong> 等群体遗传假设在 AiCE 场景下不适用，故流水线中关闭 HWE 检验。</p>
+</blockquote>
+<hr>
+<h2 id="3-AiCE-中-LD-矩阵的计算流程"><a href="#3-AiCE-中-LD-矩阵的计算流程" class="headerlink" title="3. AiCE 中 LD 矩阵的计算流程"></a>3. AiCE 中 LD 矩阵的计算流程</h2><p>AiCE 的 LD 计算在官方仓库 <code>scripts/02.caculated_ld.py</code> 中实现，整体为四步流水线：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    A[&quot;蛋白 MSA (.fa)&quot;] --&gt; B[&quot;伪 DNA 翻译&quot;]</span><br><span class="line">    B --&gt; C[&quot;VCF 变异文件&quot;]</span><br><span class="line">    C --&gt; D[&quot;PLINK --r2 square&quot;]</span><br><span class="line">    D --&gt; E[&quot;LD 矩阵 (.ld)&quot;]</span><br></pre></td></tr></table></figure>
+
+<p><strong>命令</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python scripts/02.caculated_ld.py &lt;seq_dir&gt; &lt;output_ld_dir&gt;</span><br></pre></td></tr></table></figure>
+
+<p>对每个 <code>*.fa</code> 输入，输出同前缀的 <code>.vcf</code> 与 <code>.ld</code> 文件。</p>
+<hr>
+<h3 id="3-1-Step-1：蛋白-MSA-→-伪-DNA"><a href="#3-1-Step-1：蛋白-MSA-→-伪-DNA" class="headerlink" title="3.1 Step 1：蛋白 MSA → 伪 DNA"></a>3.1 Step 1：蛋白 MSA → 伪 DNA</h3><p><strong>输入</strong>：逆折叠采样得到的 <code>.fa</code> 文件。首条序列为野生型（wild type，WT）参考，其余 (N) 条为采样序列（默认 (N &#x3D; 1000)）。</p>
+<p><strong>方法</strong>：每条氨基酸序列按<strong>固定最优密码子表</strong>逐残基翻译为 DNA。这不是真实基因组编码，仅为 PLINK 提供等位基因型表示：</p>
+<table>
+<thead>
+<tr>
+<th>氨基酸</th>
+<th>伪 DNA 密码子</th>
+<th>氨基酸</th>
+<th>伪 DNA 密码子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>GCG</td>
+<td>M</td>
+<td>ATG</td>
+</tr>
+<tr>
+<td>R</td>
+<td>CGT</td>
+<td>F</td>
+<td>TTT</td>
+</tr>
+<tr>
+<td>N</td>
+<td>AAC</td>
+<td>P</td>
+<td>CCG</td>
+</tr>
+<tr>
+<td>D</td>
+<td>GAT</td>
+<td>S</td>
+<td>AGC</td>
+</tr>
+<tr>
+<td>C</td>
+<td>TGC</td>
+<td>T</td>
+<td>ACC</td>
+</tr>
+<tr>
+<td>Q</td>
+<td>CAG</td>
+<td>W</td>
+<td>TGG</td>
+</tr>
+<tr>
+<td>E</td>
+<td>GAA</td>
+<td>Y</td>
+<td>TAT</td>
+</tr>
+<tr>
+<td>G</td>
+<td>GGC</td>
+<td>V</td>
+<td>GTG</td>
+</tr>
+<tr>
+<td>H</td>
+<td>CAT</td>
+<td>L</td>
+<td>CTG</td>
+</tr>
+<tr>
+<td>I</td>
+<td>ATT</td>
+<td>K</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td>- &#x2F; X</td>
+<td>—</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>设计意图</strong>：PLINK 处理的是碱基型 SNP 数据，不能直接读蛋白 MSA。最优密码子映射是<strong>格式适配</strong>——同一氨基酸始终对应同一密码子，因此<strong>氨基酸层面的共现结构完整传递到核苷酸层面</strong>。</p>
+<p>蛋白长度为 (L) 残基时，伪 DNA 长度为 (3L) bp。</p>
+<hr>
+<h3 id="3-2-Step-2：DNA-FASTA-→-VCF"><a href="#3-2-Step-2：DNA-FASTA-→-VCF" class="headerlink" title="3.2 Step 2：DNA FASTA → VCF"></a>3.2 Step 2：DNA FASTA → VCF</h3><p><strong>参考序列</strong>：首条 DNA 序列（对应 WT）。</p>
+<p><strong>逐碱基扫描</strong>（<code>convert_fasta_to_vcf</code>）：</p>
+<ol>
+<li>对每个碱基位点 (pos)，统计所有样本（除参考外）的碱基分布  </li>
+<li>若存在与 REF 不同的碱基 → 写入一条 VCF 记录  </li>
+<li>每个样本基因型编码为二倍体纯合：<code>0|0</code>（REF）或 <code>1|1</code>（ALT）等</li>
+</ol>
+<p><strong>VCF 示例</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#CHROM  POS  REF  ALT  ...  FORMAT  sample1  sample2  ...</span><br><span class="line">chr1    3    G    A    ...  GT      1|1      0|0      ...</span><br></pre></td></tr></table></figure>
+
+<p><strong>变异过滤</strong>：无变异的位点跳过；gap（<code>-</code>）与插入&#x2F;缺失简化为 <code>&lt;INS&gt;</code> &#x2F; <code>&lt;DEL&gt;</code> 标记。</p>
+<p><strong>重要细节</strong>：由于每个氨基酸对应 3 个碱基，一个氨基酸位点的变异通常会在伪 DNA 上产生<strong>最多 3 个高度相关的 SNP</strong>（同一密码子内共变）。最终 VCF 中的 SNP 数 (M) 一般<strong>小于</strong> (3L)，且不一定等于氨基酸位点数 (L)。</p>
+<hr>
+<h3 id="3-3-Step-3：PLINK-计算-r-2-矩阵"><a href="#3-3-Step-3：PLINK-计算-r-2-矩阵" class="headerlink" title="3.3 Step 3：PLINK 计算 (r^2) 矩阵"></a>3.3 Step 3：PLINK 计算 (r^2) 矩阵</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">plink --vcf prefix.vcf \</span><br><span class="line">      --r2 square \</span><br><span class="line">      --out prefix \</span><br><span class="line">      --allow-no-sex \</span><br><span class="line">      --keep-allele-order \</span><br><span class="line">      --geno 1 \</span><br><span class="line">      --mind 1 \</span><br><span class="line">      --maf 0.00001 \</span><br><span class="line">      --hwe 0 \</span><br><span class="line">      --snps-only \</span><br><span class="line">      --allow-extra-chr</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--r2 square</code></td>
+<td>输出 (M \times M) 的 (r^2) 对称方阵</td>
+</tr>
+<tr>
+<td><code>--maf 0.00001</code></td>
+<td>极低最小等位基因频率阈值，保留稀有变异</td>
+</tr>
+<tr>
+<td><code>--hwe 0</code></td>
+<td>关闭 Hardy–Weinberg 检验（合成序列不适用）</td>
+</tr>
+<tr>
+<td><code>--geno 1</code> &#x2F; <code>--mind 1</code></td>
+<td>允许 100% 样本&#x2F;位点保留</td>
+</tr>
+</tbody></table>
+<p><strong>输出</strong>：<code>prefix.ld</code>，(M \times M) 矩阵，(L_{ij} &#x3D; r^2_{ij})。</p>
+<hr>
+<h3 id="3-4-Step-4：格式转换与清理"><a href="#3-4-Step-4：格式转换与清理" class="headerlink" title="3.4 Step 4：格式转换与清理"></a>3.4 Step 4：格式转换与清理</h3><ul>
+<li>用 <code>sed</code> 将 <code>.ld</code> 中 tab 分隔转为逗号分隔，供 <code>com_mut_prediction.py</code> 读取  </li>
+<li>删除中间文件（<code>.log</code>、<code>.nosex</code>、<code>_dna.fasta</code> 等）</li>
+</ul>
+<hr>
+<h2 id="4-矩阵元素的生物学（工程）含义"><a href="#4-矩阵元素的生物学（工程）含义" class="headerlink" title="4. 矩阵元素的生物学（工程）含义"></a>4. 矩阵元素的生物学（工程）含义</h2><p>在 AiCE 语境下，(L_{ij} &#x3D; r^2_{ij}) 表示：</p>
+<blockquote>
+<p>在 (N) 条逆折叠采样序列中，SNP (i) 与 SNP (j) 的等位基因型<strong>共变强度</strong>。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>(r^2) 范围</th>
+<th>解读（AiCEmulti 视角）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>接近 1</td>
+<td>两位点突变在采样序列中<strong>几乎总是一起出现</strong> → 组合协同性好</td>
+</tr>
+<tr>
+<td>0.5–0.8</td>
+<td>中等共现；AiCE 默认阈值 <strong>≥ 0.5</strong> 即推荐</td>
+</tr>
+<tr>
+<td>接近 0</td>
+<td>两位点<strong>独立变化</strong> → 组合可能遭遇负向上位</td>
+</tr>
+</tbody></table>
+<p><strong>与 SCA 的分工</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>刻画对象</th>
+<th>数据来源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LD</strong></td>
+<td>采样序列中的<strong>统计共现</strong></td>
+<td>伪 DNA → VCF → PLINK</td>
+</tr>
+<tr>
+<td><strong>SCA</strong>（Statistical Coupling Analysis，统计耦合分析）</td>
+<td><strong>进化耦合</strong>结构</td>
+<td>pySCA 对蛋白 MSA 的协方差分解</td>
+</tr>
+</tbody></table>
+<p>AiCEmulti 两者联合使用，LD 作为<strong>数据驱动的共现过滤器</strong>，SCA 作为<strong>进化约束过滤器</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SCA</strong> 原用于从天然 MSA 识别功能 sector；AiCE 将其与 LD 一并应用于逆折叠合成 MSA。</p>
+</blockquote>
+<hr>
+<h2 id="5-组合突变的下游打分"><a href="#5-组合突变的下游打分" class="headerlink" title="5. 组合突变的下游打分"></a>5. 组合突变的下游打分</h2><p>对候选位点组合 (\mathcal{S} &#x3D; {p_1, p_2, \ldots, p_k})（1-based 氨基酸位点编号），从 LD 矩阵提取子矩阵 (\mathbf{L}_{\mathcal{S}})，由 <code>com_mut_prediction.py</code> 计算以下导出指标：</p>
+<h3 id="5-1-Mean-Pairwise-LD（默认筛选用）"><a href="#5-1-Mean-Pairwise-LD（默认筛选用）" class="headerlink" title="5.1 Mean Pairwise LD（默认筛选用）"></a>5.1 Mean Pairwise LD（默认筛选用）</h3><p>[<br>\overline{\mathrm{LD}} &#x3D; \frac{2}{k(k-1)} \sum_{i &lt; j} L_{p_i p_j}<br>]</p>
+<p>取子矩阵<strong>上三角非对角元素</strong>的算术均值。</p>
+<h3 id="5-2-Log-Mean-Pairwise-LD"><a href="#5-2-Log-Mean-Pairwise-LD" class="headerlink" title="5.2 Log Mean Pairwise LD"></a>5.2 Log Mean Pairwise LD</h3><p>[<br>\overline{\log\mathrm{LD}} &#x3D; \mathrm{mean}<em>{i&lt;j}\bigl[\log(L</em>{p_i p_j} + 10^{-10})\bigr]<br>]</p>
+<p>对数变换压缩极值，使分布更平滑。</p>
+<h3 id="5-3-Multilocus-LD（连乘形式）"><a href="#5-3-Multilocus-LD（连乘形式）" class="headerlink" title="5.3 Multilocus LD（连乘形式）"></a>5.3 Multilocus LD（连乘形式）</h3><p>[<br>\mathrm{MLD} &#x3D; \prod_{i &lt; j} L_{p_i p_j}<br>]</p>
+<p>强调<strong>所有位点对同时高关联</strong>的组合。</p>
+<h3 id="5-4-推荐规则"><a href="#5-4-推荐规则" class="headerlink" title="5.4 推荐规则"></a>5.4 推荐规则</h3><p>输出格式（<code>.ld.result</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Mutation Type    Mean Pairwise score    Log Mean Pairwise score    Logical Flag (0/1)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>默认：<strong>Mean Pairwise LD ≥ 0.5</strong> → Logical Flag &#x3D; 1（推荐该组合）  </li>
+<li>阈值可通过 <code>04.com_mut_prediction.sh</code> 的 <code>-t</code> 参数自定义</li>
+</ul>
+<p><strong>完整 AiCEmulti 命令示例</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 构建 LD 矩阵</span></span><br><span class="line">python scripts/02.caculated_ld.py ../output/ ../output/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 构建 SCA 矩阵（并行步骤，见 AiCE 文档 §5.2）</span></span><br><span class="line">bash scripts/03.caculated_sca.sh ../scripts/pySCA/ ../output ../output</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 组合突变提名（k=2 表示双突变）</span></span><br><span class="line">bash scripts/04.com_mut_prediction.sh ../scripts ../output/ 2 ../output</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-实现细节与使用注意"><a href="#6-实现细节与使用注意" class="headerlink" title="6. 实现细节与使用注意"></a>6. 实现细节与使用注意</h2><h3 id="6-1-伪-DNA-编码的必要性"><a href="#6-1-伪-DNA-编码的必要性" class="headerlink" title="6.1 伪 DNA 编码的必要性"></a>6.1 伪 DNA 编码的必要性</h3><p>PLINK 设计用于真实基因型数据（VCF 格式），不能直接读取蛋白 MSA。最优密码子翻译是<strong>接口适配层</strong>，不改变「哪些序列在哪些位点共变」的统计结构。</p>
+<h3 id="6-2-矩阵维度与位点索引"><a href="#6-2-矩阵维度与位点索引" class="headerlink" title="6.2 矩阵维度与位点索引"></a>6.2 矩阵维度与位点索引</h3><ul>
+<li>LD 矩阵行&#x2F;列对应 VCF 中<strong>有变异的核苷酸 SNP</strong>（(M) 个），而非直接的氨基酸位点数 (L)  </li>
+<li>SCA 矩阵为 (L \times L)（氨基酸位点级）  </li>
+<li>组合打分时，<code>.comb</code> 文件中的位点编号为<strong>氨基酸 1-based 索引</strong>；使用时需确保与 LD 矩阵维度对齐。若 (M \neq L)，需检查 VCF 构建逻辑或做显式位点映射</li>
+</ul>
+<h3 id="6-3-样本量对估计稳定性的影响"><a href="#6-3-样本量对估计稳定性的影响" class="headerlink" title="6.3 样本量对估计稳定性的影响"></a>6.3 样本量对估计稳定性的影响</h3><p>(r^2) 估计依赖采样序列数 (N)（ProteinMPNN 默认 <code>num_seq_per_target=1000</code>）：</p>
+<ul>
+<li>(N) 过小 → LD 估计方差大、假阳性&#x2F;假阴性增多  </li>
+<li>(N) 增大 → 共现模式更可靠，但计算成本线性增加</li>
+</ul>
+<h3 id="6-4-与群体遗传学用法的差异"><a href="#6-4-与群体遗传学用法的差异" class="headerlink" title="6.4 与群体遗传学用法的差异"></a>6.4 与群体遗传学用法的差异</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>群体遗传学</th>
+<th>AiCE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>「个体」</td>
+<td>真实生物样本</td>
+<td>逆折叠采样序列</td>
+</tr>
+<tr>
+<td>「等位基因」</td>
+<td>天然 SNP</td>
+<td>伪 DNA 碱基型</td>
+</tr>
+<tr>
+<td>HWE 假设</td>
+<td>通常检验</td>
+<td>关闭（<code>--hwe 0</code>）</td>
+</tr>
+<tr>
+<td>生物学解释</td>
+<td>连锁、选择、漂变</td>
+<td>结构兼容序列的<strong>共变模式</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-输入输出文件一览"><a href="#7-输入输出文件一览" class="headerlink" title="7. 输入输出文件一览"></a>7. 输入输出文件一览</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>阶段</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>prefix.fa</code></td>
+<td>输入</td>
+<td>蛋白 MSA（参考 + 采样序列）</td>
+</tr>
+<tr>
+<td><code>prefix_dna.fasta</code></td>
+<td>中间</td>
+<td>伪 DNA 序列（运行后删除）</td>
+</tr>
+<tr>
+<td><code>prefix.vcf</code></td>
+<td>中间&#x2F;输出</td>
+<td>变异位点与基因型</td>
+</tr>
+<tr>
+<td><code>prefix.ld</code></td>
+<td><strong>输出</strong></td>
+<td>(M \times M) 的 (r^2) 矩阵</td>
+</tr>
+<tr>
+<td><code>prefix.ld.result</code></td>
+<td>下游</td>
+<td>组合突变的 LD 打分与推荐标志</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>方法</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>输入</td>
+<td>逆折叠 MSA（<code>.fa</code>）</td>
+<td>参考 + (N) 条采样序列</td>
+</tr>
+<tr>
+<td>编码</td>
+<td>最优密码子表 → 伪 DNA</td>
+<td>每条序列 (3L) bp</td>
+</tr>
+<tr>
+<td>变异检测</td>
+<td>逐碱基与 REF 比较 → VCF</td>
+<td>有变异位点 + 基因型</td>
+</tr>
+<tr>
+<td>LD 计算</td>
+<td>PLINK <code>--r2 square</code></td>
+<td>(M \times M) 的 (r^2) 矩阵</td>
+</tr>
+<tr>
+<td>组合筛选</td>
+<td>子矩阵 Mean Pairwise LD ≥ 0.5</td>
+<td><code>.ld.result</code></td>
+</tr>
+</tbody></table>
+<p><strong>核心思想</strong>：AiCE 不直接用 LD 预测实验活性，而是用 LD 矩阵识别「在结构兼容的采样序列中<strong>倾向于一起出现</strong>的突变位点组合」，作为规避负向上位的<strong>统计共现过滤器</strong>。</p>
+<hr>
+<h2 id="9-延伸阅读"><a href="#9-延伸阅读" class="headerlink" title="9. 延伸阅读"></a>9. 延伸阅读</h2><ul>
+<li><strong>酶改造-modelpaper-AiCE</strong>：AiCE 框架总览与全部指标链  </li>
+<li><strong>AiCE 官方仓库</strong>：<a target="_blank" rel="noopener" href="https://github.com/ScorpioLea/AiCE">https://github.com/ScorpioLea/AiCE</a>  </li>
+<li>检索关键词：<code>linkage disequilibrium protein engineering</code>, <code>AiCE LD matrix</code>, <code>PLINK r2</code>, <code>pseudo-DNA MSA</code>, <code>combinatorial mutation epistasis</code></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E5%B7%A5%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白工程</a>
+          
+            <a href="/tags/AiCE/" rel="tag"><i class="fa fa-tag"></i> AiCE</a>
+          
+            <a href="/tags/%E8%BF%9E%E9%94%81%E4%B8%8D%E5%B9%B3%E8%A1%A1/" rel="tag"><i class="fa fa-tag"></i> 连锁不平衡</a>
+          
+            <a href="/tags/PLINK/" rel="tag"><i class="fa fa-tag"></i> PLINK</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-40.%E8%9B%8B%E7%99%BD%E7%BB%84%E5%AD%A6/%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84-%E6%B0%A8%E5%9F%BA%E9%85%B8%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84%E6%A6%82%E8%AE%BA/" rel="next" title="二级结构-氨基酸二级结构：折叠形态、生物学功能与酶工程中的角色">
+                <i class="fa fa-chevron-left"></i> 二级结构-氨基酸二级结构：折叠形态、生物学功能与酶工程中的角色
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-snakemake-%E4%BB%A3%E7%A0%81%E7%89%87%E6%AE%B5%E6%A8%A1%E6%9D%BF/" rel="prev" title="Snakemake - 代码片段模板（VS Code）">
+                Snakemake - 代码片段模板（VS Code） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AF-LD-%E7%9F%A9%E9%98%B5"><span class="nav-number">1.</span> <span class="nav-text">1. 什么是 LD 矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%BB%8F%E5%85%B8-LD-%E7%9A%84%E6%95%B0%E5%AD%A6%E5%AE%9A%E4%B9%89"><span class="nav-number">2.</span> <span class="nav-text">2. 经典 LD 的数学定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%BF%9E%E9%94%81%E4%B8%8D%E5%B9%B3%E8%A1%A1%E7%B3%BB%E6%95%B0-D"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 连锁不平衡系数 (D)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E6%A0%87%E5%87%86%E5%8C%96-D%E2%80%99-%EF%BC%88Lewontin-%E6%A0%87%E5%87%86%E5%8C%96%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 标准化 (D’)（Lewontin 标准化）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%B9%B3%E6%96%B9%E7%9B%B8%E5%85%B3%E7%B3%BB%E6%95%B0-r-2-%EF%BC%88AiCE-%E5%AE%9E%E9%99%85%E4%BD%BF%E7%94%A8%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 平方相关系数 (r^2)（AiCE 实际使用）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-AiCE-%E4%B8%AD-LD-%E7%9F%A9%E9%98%B5%E7%9A%84%E8%AE%A1%E7%AE%97%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">3. AiCE 中 LD 矩阵的计算流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Step-1%EF%BC%9A%E8%9B%8B%E7%99%BD-MSA-%E2%86%92-%E4%BC%AA-DNA"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 Step 1：蛋白 MSA → 伪 DNA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Step-2%EF%BC%9ADNA-FASTA-%E2%86%92-VCF"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Step 2：DNA FASTA → VCF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-Step-3%EF%BC%9APLINK-%E8%AE%A1%E7%AE%97-r-2-%E7%9F%A9%E9%98%B5"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 Step 3：PLINK 计算 (r^2) 矩阵</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-Step-4%EF%BC%9A%E6%A0%BC%E5%BC%8F%E8%BD%AC%E6%8D%A2%E4%B8%8E%E6%B8%85%E7%90%86"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 Step 4：格式转换与清理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%9F%A9%E9%98%B5%E5%85%83%E7%B4%A0%E7%9A%84%E7%94%9F%E7%89%A9%E5%AD%A6%EF%BC%88%E5%B7%A5%E7%A8%8B%EF%BC%89%E5%90%AB%E4%B9%89"><span class="nav-number">4.</span> <span class="nav-text">4. 矩阵元素的生物学（工程）含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E7%BB%84%E5%90%88%E7%AA%81%E5%8F%98%E7%9A%84%E4%B8%8B%E6%B8%B8%E6%89%93%E5%88%86"><span class="nav-number">5.</span> <span class="nav-text">5. 组合突变的下游打分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-Mean-Pairwise-LD%EF%BC%88%E9%BB%98%E8%AE%A4%E7%AD%9B%E9%80%89%E7%94%A8%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Mean Pairwise LD（默认筛选用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-Log-Mean-Pairwise-LD"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 Log Mean Pairwise LD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-Multilocus-LD%EF%BC%88%E8%BF%9E%E4%B9%98%E5%BD%A2%E5%BC%8F%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 Multilocus LD（连乘形式）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E6%8E%A8%E8%8D%90%E8%A7%84%E5%88%99"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 推荐规则</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%E4%B8%8E%E4%BD%BF%E7%94%A8%E6%B3%A8%E6%84%8F"><span class="nav-number">6.</span> <span class="nav-text">6. 实现细节与使用注意</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E4%BC%AA-DNA-%E7%BC%96%E7%A0%81%E7%9A%84%E5%BF%85%E8%A6%81%E6%80%A7"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 伪 DNA 编码的必要性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E7%9F%A9%E9%98%B5%E7%BB%B4%E5%BA%A6%E4%B8%8E%E4%BD%8D%E7%82%B9%E7%B4%A2%E5%BC%95"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 矩阵维度与位点索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E6%A0%B7%E6%9C%AC%E9%87%8F%E5%AF%B9%E4%BC%B0%E8%AE%A1%E7%A8%B3%E5%AE%9A%E6%80%A7%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 样本量对估计稳定性的影响</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E4%B8%8E%E7%BE%A4%E4%BD%93%E9%81%97%E4%BC%A0%E5%AD%A6%E7%94%A8%E6%B3%95%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="nav-number">6.4.</span> <span class="nav-text">6.4 与群体遗传学用法的差异</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E6%96%87%E4%BB%B6%E4%B8%80%E8%A7%88"><span class="nav-number">7.</span> <span class="nav-text">7. 输入输出文件一览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">9.</span> <span class="nav-text">9. 延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

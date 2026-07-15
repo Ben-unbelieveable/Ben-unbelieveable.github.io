@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="蛋白质语言模型,ESMFold2,ESM Atlas,宏基因组,Sparse Autoencoder,可解释性," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="当模型看过 28 亿条蛋白序列，它记住了什么？ESMFold2 的团队同时发布了一个 11 亿预测结构的蛋白宇宙图谱 ESM Atlas，以及一套用 Sparse Autoencoder 破解语言模型「概念词典」的方法。生物学的新发现，正在这些数据中浮现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-模型论文-ESMFold2 与 ESM Atlas：一张 11 亿蛋白结构的暗物质地图">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="当模型看过 28 亿条蛋白序列，它记住了什么？ESMFold2 的团队同时发布了一个 11 亿预测结构的蛋白宇宙图谱 ESM Atlas，以及一套用 Sparse Autoencoder 破解语言模型「概念词典」的方法。生物学的新发现，正在这些数据中浮现。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/esm_atlas_galaxy.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/crispr_fungi.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/sae_concepts.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/esmfold2_vs_af3.png">
+<meta property="article:published_time" content="2026-06-10T04:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.544Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="ESM Atlas">
+<meta property="article:tag" content="ESMFold2">
+<meta property="article:tag" content="Sparse Autoencoder">
+<meta property="article:tag" content="可解释性">
+<meta property="article:tag" content="宏基因组">
+<meta property="article:tag" content="蛋白质语言模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/esm_atlas_galaxy.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-41.酶/酶改造-modelpaper-ESM-Atlas蛋白宇宙图谱/"/>
+
+
+
+
+
+  <title>酶改造-模型论文-ESMFold2 与 ESM Atlas：一张 11 亿蛋白结构的暗物质地图 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-模型论文-ESMFold2 与 ESM Atlas：一张 11 亿蛋白结构的暗物质地图</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-10T12:30:00+08:00">
+                2026-06-10
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  当模型看过 28 亿条蛋白序列，它记住了什么？ESMFold2 的团队同时发布了一个 11 亿预测结构的蛋白宇宙图谱 ESM Atlas，以及一套用 Sparse Autoencoder 破解语言模型「概念词典」的方法。生物学的新发现，正在这些数据中浮现。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>前置阅读</strong>：<a href="./%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESMFold2%E5%85%A8%E9%9D%A2%E8%A7%A3%E8%AF%BB.md">酶改造-模型论文-ESMFold2全面解读</a>。本文配套公众号版本为「ESMFold2 全面解读」下篇。</p>
+<p><strong>缩写体例</strong>：缩写<strong>首次出现</strong>写「中文全称（英文全称，缩写）」；在该段末尾用 <strong>段末注释</strong> 框简要解释概念，后文沿用缩写。</p>
+<p>2026 年 5 月，Nature报道了 ESMFold2。</p>
+<p>但如果你只关注模型本身，你可能会错过这场发布中真正有意思的部分——<strong>ESM Atlas</strong>，一个包含 11 亿个预测结构的蛋白序列宇宙，以及 <strong>Sparse Autoencoder（SAE）</strong>——一套用来解析蛋白质语言模型「脑子里在想什么」的工具。</p>
+<p>这篇不讲架构，不跑 benchmark，我们来聊聊 ESM Atlas 里的发现，以及那些藏在模型 latent space 里的「蛋白概念词典」。</p>
+<hr>
+<h2 id="一、ESM-Atlas：11-亿蛋白结构的宇宙"><a href="#一、ESM-Atlas：11-亿蛋白结构的宇宙" class="headerlink" title="一、ESM Atlas：11 亿蛋白结构的宇宙"></a>一、ESM Atlas：11 亿蛋白结构的宇宙</h2><p>ESM Atlas 是 EvolutionaryScale 同时发布的大规模蛋白结构数据库。它的规模是：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>蛋白序列总数</strong></td>
+<td>68 亿条</td>
+</tr>
+<tr>
+<td><strong>预测结构数</strong></td>
+<td><strong>11 亿个</strong></td>
+</tr>
+<tr>
+<td><strong>相比 AlphaFold DB</strong></td>
+<td>多 8 亿条</td>
+</tr>
+<tr>
+<td><strong>相比上一版 ESM Atlas</strong></td>
+<td>多 3 亿条</td>
+</tr>
+</tbody></table>
+<p>这是目前世界上最大的公开预测蛋白结构数据库。</p>
+<blockquote>
+<p>打个比方：如果把每个蛋白结构想象成宇宙中的一个星系，AlphaFold DB 覆盖的只是银河系内几千颗恒星。而 ESM Atlas 覆盖的，是整整一个星系团——而且还在扩张。</p>
+</blockquote>
+<p>ESM Atlas 提供了 <strong>UMAP 可视化</strong>：把 11 亿个蛋白结构投影到二维平面，相似的结构聚集在一起，形成清晰的蛋白家族聚类。你可以在地图上看到 Kinase 家族、GPCR 家族、抗体家族、酶家族各自占据的区域。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/esm_atlas_galaxy.png" alt="ESM Atlas 11亿蛋白宇宙"></p>
+<p>数据来源包括大量<strong>宏基因组（metagenomics）数据</strong>——这些来自土壤、海洋、深海的微生物蛋白，在实验室里从未被表征过，但它们在自然界中无处不在。宏基因组数据的引入，让 ESM Atlas 极大地扩展了对「非典型蛋白折叠」的了解。</p>
+<hr>
+<h2 id="二、一个意外发现：真菌里的-CRISPR"><a href="#二、一个意外发现：真菌里的-CRISPR" class="headerlink" title="二、一个意外发现：真菌里的 CRISPR"></a>二、一个意外发现：真菌里的 CRISPR</h2><p>ESM Atlas 最有意思的发现，是用它做「结构相似性检索」时无意中找到的：</p>
+<p><strong>在 2023 年发现的土壤真菌中，研究者找到了与 CRISPR 系统极其相似的蛋白结构。</strong></p>
+<p>这是一个真核生物（eukaryote）中的 CRISPR-like 蛋白。</p>
+<p>CRISPR 系统长期以来被认为主要存在于原核生物（细菌、古菌）中，是它们对抗病毒和质粒的免疫机制。真核生物中是否存在类似的系统，一直是悬而未决的问题。</p>
+<p>ESM Atlas 通过结构比对发现：土壤真菌里有一种蛋白折叠，与 CRISPR-Cas9 的关键结构域高度相似。这可能意味着：</p>
+<ul>
+<li>真核生物拥有自己版本的 CRISPR样系统</li>
+<li>或者，这是一个趋同进化（convergent evolution）的案例，类似的防御机制独立演化过多次</li>
+</ul>
+<blockquote>
+<p>这个发现目前还是初步的结构预测，需要湿实验验证。但它展示了 ESM Atlas 作为「发现工具」的价值——不是被动存储数据，而是主动引导新假设。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/crispr_fungi.png" alt="CRISPR-like 蛋白在真菌中的发现"></p>
+<hr>
+<h2 id="三、Sparse-Autoencoder：破解模型的「概念词典」"><a href="#三、Sparse-Autoencoder：破解模型的「概念词典」" class="headerlink" title="三、Sparse Autoencoder：破解模型的「概念词典」"></a>三、Sparse Autoencoder：破解模型的「概念词典」</h2><p>这是 ESMFold2 论文中最具哲学意味的部分。</p>
+<p>论文用 Sparse Autoencoder 对 ESMC 的 latent space 进行了分解，试图回答一个问题：<strong>蛋白质语言模型内部，到底在表示什么？</strong></p>
+<p>结果让人意外：模型在训练过程中，自发地形成了可解释的「概念方向」。</p>
+<h3 id="3-1-找到了哪些概念？"><a href="#3-1-找到了哪些概念？" class="headerlink" title="3.1 找到了哪些概念？"></a>3.1 找到了哪些概念？</h3><p>SAE 解析出来的方向包括：</p>
+<table>
+<thead>
+<tr>
+<th>概念方向</th>
+<th>生物学含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Catalytic motif</strong></td>
+<td>催化位点特征</td>
+</tr>
+<tr>
+<td><strong>Disulfide bond</strong></td>
+<td>二硫键模式</td>
+</tr>
+<tr>
+<td><strong>Beta barrel</strong></td>
+<td>β-桶折叠</td>
+</tr>
+<tr>
+<td><strong>DNA polymerase clamp domain</strong></td>
+<td>DNA 聚合酶夹结构域</td>
+</tr>
+<tr>
+<td><strong>Membrane helix transition</strong></td>
+<td>膜螺旋过渡区</td>
+</tr>
+<tr>
+<td><strong>Glycoside hydrolase active sites</strong></td>
+<td>糖苷水解酶活性位点</td>
+</tr>
+</tbody></table>
+<p>这些不是人为定义的标签，而是模型在训练过程中自发形成的表征方向。SAE 的作用相当于一把钥匙，把这些隐藏在神经网络参数里的「概念」显式地提取出来。</p>
+<h3 id="3-2-一个层级组织"><a href="#3-2-一个层级组织" class="headerlink" title="3.2 一个层级组织"></a>3.2 一个层级组织</h3><p>更有意思的是，这些概念之间存在<strong>层级组织</strong>：</p>
+<blockquote>
+<p><strong>局部氨基酸性质 → 二级结构（α螺旋&#x2F;β折叠）→ 三级 motif → Domain&#x2F;Fold → 亚细胞定位 → 功能位点</strong></p>
+</blockquote>
+<p>从最底层的氨基酸性质开始，模型逐步构建起对蛋白质结构的高层理解。这与人类生物学家理解蛋白质的方式，有着奇妙的相似性。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/sae_concepts.png" alt="SAE 概念分解图"></p>
+<h3 id="3-3-这意味着什么？"><a href="#3-3-这意味着什么？" class="headerlink" title="3.3 这意味着什么？"></a>3.3 这意味着什么？</h3><p>论文的标题是 <em>Language Modeling Materializes a World Model of Protein Biology</em>——「语言建模使蛋白质生物学的世界模型具象化」。</p>
+<p>这个说法并不夸张。如果模型能在 latent space 中自组织出「催化位点」「膜螺旋」「DNA聚合酶夹」这样的概念，并且这些概念按层级排列，那么模型确实学到了关于蛋白质世界的某种<strong>结构性知识</strong>，而不仅仅是记住了序列。</p>
+<blockquote>
+<p>但这里有一个重要的提醒：这些「概念」是模型空间中的统计结构，不等于真实的物理机制。它们是模型对训练数据规律的压缩表示，用来预测结构可能很有效，但「为什么有效」仍然是开放的科学问题。</p>
+</blockquote>
+<hr>
+<h2 id="四、与-AlphaFold3-的关系：补充，不是替代"><a href="#四、与-AlphaFold3-的关系：补充，不是替代" class="headerlink" title="四、与 AlphaFold3 的关系：补充，不是替代"></a>四、与 AlphaFold3 的关系：补充，不是替代</h2><p>ESMFold2 发布后，MIT 的 Sergey Ovchinnikov（AlphaFold 系列的核心贡献者）给出了一个评价：<strong>ESMFold2 是对 AlphaFold3 的补充，不是替代</strong>。</p>
+<p>两者的技术路线有本质差异：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>ESMFold2</th>
+<th>AlphaFold3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>技术路线</strong></td>
+<td>语言模型表示优先</td>
+<td>显式结构建模路线</td>
+</tr>
+<tr>
+<td><strong>MSA 依赖</strong></td>
+<td>单序列即可很强</td>
+<td>依赖 MSA（进化信息）</td>
+</tr>
+<tr>
+<td><strong>强项</strong></td>
+<td>宏基因组泛化、高通量筛选、抗体设计</td>
+<td>高精度小分子&#x2F;离子&#x2F;配体结合</td>
+</tr>
+<tr>
+<td><strong>训练数据</strong></td>
+<td>28 亿条（含宏基因组）</td>
+<td>~20 万条 PDB + 大量 MSA</td>
+</tr>
+</tbody></table>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESM-Atlas%E8%9B%8B%E7%99%BD%E5%AE%87%E5%AE%99%E5%9B%BE%E8%B0%B1/esmfold2_vs_af3.png" alt="ESMFold2 vs AlphaFold3 路线对比"></p>
+<blockquote>
+<p>Sergey Ovchinnikov 的原话大致是：ESMFold2 在宏基因组和非典型蛋白上有明显优势，但 AF3 在有高质量 MSA 的场景下仍然是 gold standard。两者结合使用才是最优策略。</p>
+</blockquote>
+<hr>
+<h2 id="五、ESM-Atlas-能做什么？"><a href="#五、ESM-Atlas-能做什么？" class="headerlink" title="五、ESM Atlas 能做什么？"></a>五、ESM Atlas 能做什么？</h2><p>ESM Atlas 不只是一个数据库，它是一个<strong>生态系统的入口</strong>。</p>
+<p>几个实际的使用场景：</p>
+<p><strong>1. 结构相似性检索</strong></p>
+<p>上传你的蛋白序列，ESM Atlas 可以告诉你：在11 亿个已知结构中，哪些与你的序列最相似？这对于预测功能、发现 homolog、找结合口袋都非常有用。</p>
+<p><strong>2. 蛋白家族调查</strong></p>
+<p>想知道某个蛋白家族在自然界中有多大的多样性？ESM Atlas 的聚类可视化可以帮你快速了解家族成员的分布和进化关系。</p>
+<p><strong>3. 新发现加速</strong></p>
+<p>土壤真菌 CRISPR-like 蛋白的发现证明：当你有一个足够大的结构数据库，再加上高效的相似性检索，新的生物学发现会自动浮现。</p>
+<p><strong>4. 训练数据来源</strong></p>
+<p>ESM Atlas 的 68 亿条序列和 11 亿个预测结构，是未来蛋白质语言模型训练的重要数据来源。更大的训练集 → 更好的泛化能力 → 更好的结构预测——这个正循环是 ESMFold2 路线最核心的优势。</p>
+<hr>
+<h2 id="六、结语"><a href="#六、结语" class="headerlink" title="六、结语"></a>六、结语</h2><p>ESMFold2 的发布，不只是一个新模型的问世。</p>
+<p>它背后是三条相互交织的线索：</p>
+<ul>
+<li><strong>更大的语言模型</strong>（ESMC，28 亿条序列训练）</li>
+<li><strong>更大的结构数据库</strong>（ESM Atlas，11 亿个预测结构）</li>
+<li><strong>更深的可解释性工具</strong>（SAE，破解模型的「概念词典」）</li>
+</ul>
+<p>这三条线索合在一起，指向一个更大的愿景：不是让 AI 来预测蛋白质结构，而是让 AI 来<strong>理解</strong>蛋白质——以一种可解释、可验证、可以引导新发现的方式。</p>
+<blockquote>
+<p>「Move over, AlphaFold」——这个标题或许有些夸张。但 ESMFold2 确实在告诉我们：蛋白质的世界里，还有一大片从未被系统探索过的暗物质。而 ESM Atlas，正在打开那张地图。</p>
+</blockquote>
+<p>GitHub：<a target="_blank" rel="noopener" href="https://github.com/EvolutionaryScale/ESMFold">github.com&#x2F;EvolutionaryScale&#x2F;ESMFold</a><br>ESM Atlas：<a target="_blank" rel="noopener" href="https://atlas.evolutionaryscale.com/">atlas.evolutionaryscale.com</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 蛋白质语言模型</a>
+          
+            <a href="/tags/ESMFold2/" rel="tag"><i class="fa fa-tag"></i> ESMFold2</a>
+          
+            <a href="/tags/ESM-Atlas/" rel="tag"><i class="fa fa-tag"></i> ESM Atlas</a>
+          
+            <a href="/tags/%E5%AE%8F%E5%9F%BA%E5%9B%A0%E7%BB%84/" rel="tag"><i class="fa fa-tag"></i> 宏基因组</a>
+          
+            <a href="/tags/Sparse-Autoencoder/" rel="tag"><i class="fa fa-tag"></i> Sparse Autoencoder</a>
+          
+            <a href="/tags/%E5%8F%AF%E8%A7%A3%E9%87%8A%E6%80%A7/" rel="tag"><i class="fa fa-tag"></i> 可解释性</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-modelpaper-ESMFold2%E5%85%A8%E9%9D%A2%E8%A7%A3%E8%AF%BB/" rel="next" title="酶改造-模型论文-ESMFold2全面解读：开源、复合物、world model">
+                <i class="fa fa-chevron-left"></i> 酶改造-模型论文-ESMFold2全面解读：开源、复合物、world model
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-26.%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/02.Neo4j-04.%E6%95%B0%E6%8D%AE%E5%AF%BC%E5%85%A5%E4%B8%8E%E5%AF%B9%E6%8E%A5%E5%B7%A5%E5%85%B7/" rel="prev" title="Neo4j-04.数据导入与对接工具">
+                Neo4j-04.数据导入与对接工具 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81ESM-Atlas%EF%BC%9A11-%E4%BA%BF%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%9A%84%E5%AE%87%E5%AE%99"><span class="nav-number">1.</span> <span class="nav-text">一、ESM Atlas：11 亿蛋白结构的宇宙</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%B8%80%E4%B8%AA%E6%84%8F%E5%A4%96%E5%8F%91%E7%8E%B0%EF%BC%9A%E7%9C%9F%E8%8F%8C%E9%87%8C%E7%9A%84-CRISPR"><span class="nav-number">2.</span> <span class="nav-text">二、一个意外发现：真菌里的 CRISPR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Sparse-Autoencoder%EF%BC%9A%E7%A0%B4%E8%A7%A3%E6%A8%A1%E5%9E%8B%E7%9A%84%E3%80%8C%E6%A6%82%E5%BF%B5%E8%AF%8D%E5%85%B8%E3%80%8D"><span class="nav-number">3.</span> <span class="nav-text">三、Sparse Autoencoder：破解模型的「概念词典」</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%89%BE%E5%88%B0%E4%BA%86%E5%93%AA%E4%BA%9B%E6%A6%82%E5%BF%B5%EF%BC%9F"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 找到了哪些概念？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%B8%80%E4%B8%AA%E5%B1%82%E7%BA%A7%E7%BB%84%E7%BB%87"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 一个层级组织</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%BF%99%E6%84%8F%E5%91%B3%E7%9D%80%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 这意味着什么？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%B8%8E-AlphaFold3-%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%9A%E8%A1%A5%E5%85%85%EF%BC%8C%E4%B8%8D%E6%98%AF%E6%9B%BF%E4%BB%A3"><span class="nav-number">4.</span> <span class="nav-text">四、与 AlphaFold3 的关系：补充，不是替代</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81ESM-Atlas-%E8%83%BD%E5%81%9A%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">五、ESM Atlas 能做什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E7%BB%93%E8%AF%AD"><span class="nav-number">6.</span> <span class="nav-text">六、结语</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

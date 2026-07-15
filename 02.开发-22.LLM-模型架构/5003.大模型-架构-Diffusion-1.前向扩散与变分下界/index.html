@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="变分推断,ELBO,LLM,Diffusion,DDPM," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="从马尔可夫前向过程、重参数化到 ELBO 分解，完整推导 DDPM 的训练目标与逆向采样公式；含 v-prediction 与噪声日程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-Diffusion-1.前向扩散与变分下界">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="从马尔可夫前向过程、重参数化到 ELBO 分解，完整推导 DDPM 的训练目标与逆向采样公式；含 v-prediction 与噪声日程。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig02-random-variable.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig07-markov-chain.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig08-reparameterization.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig09-noise-schedule.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig10-snr-signal-noise.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig06-kl-divergence.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig12-elbo.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig04-conditional-distribution.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/fig03-ddpm-sampling-loop.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig11-score-function.png">
+<meta property="article:published_time" content="2026-06-11T03:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:57.537Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DDPM">
+<meta property="article:tag" content="Diffusion">
+<meta property="article:tag" content="ELBO">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="变分推断">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig02-random-variable.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-Diffusion-1.前向扩散与变分下界/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-Diffusion-1.前向扩散与变分下界 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-Diffusion-1.前向扩散与变分下界</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-11T11:00:00+08:00">
+                2026-06-11
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  从马尔可夫前向过程、重参数化到 ELBO 分解，完整推导 DDPM 的训练目标与逆向采样公式；含 v-prediction 与噪声日程。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>去噪扩散概率模型（Denoising Diffusion Probabilistic Model，DDPM）</strong>（Ho <em>et al.</em>, 2020）把生成建模拆成两个马尔可夫链：<strong>前向链</strong>固定、把数据渐变为高斯噪声；<strong>逆向链</strong>参数化、从噪声恢复数据。本文在<strong>变分推断（Variational Inference，VI）<strong>框架下推导 <strong>证据下界（Evidence Lower Bound，ELBO）</strong>，说明为何「预测噪声 (\epsilon)」的 <strong>MSE 损失</strong>是合理训练目标，并给出离散时间</strong>采样算法</strong>——这是阅读蛋白质结构扩散、分子 3D 生成等论文的数学基础。</p>
+<blockquote>
+<p>段末注释：<strong>VI</strong> 用易处理分布近似难采样的后验；<strong>ELBO</strong> 为 (\log p(x)) 的可优化下界；<strong>DDPM</strong> 为离散时间高斯扩散的标准表述。</p>
+</blockquote>
+<p><strong>前置阅读</strong>：<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-0.%E6%A6%82%E8%BF%B0%E4%B8%8E%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF%E5%AD%A6%E5%BA%94%E7%94%A8%E5%85%A8%E6%99%AF.md">5003.大模型-架构-Diffusion-0.概述与生物信息学应用全景</a>、<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md">Diffusion-Math-0 概率与扩散数学基础</a></p>
+<hr>
+<h2 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h2><p>给定独立同分布数据集 ({x_0^{(i)}} \sim q(x_0))，目标是学习生成分布 (p_\theta(x_0)) 以便采样新样本（如蛋白质骨架坐标、配体构象、表达谱向量）。</p>
+<p>引入潜变量 (x_{1:T} &#x3D; (x_1,\ldots,x_T))，构造联合分布：</p>
+<p>[<br>p_\theta(x_{0:T}) &#x3D; p(x_T),\prod_{t&#x3D;1}^{T} p_\theta(x_{t-1}\mid x_t),<br>\quad p(x_T) &#x3D; \mathcal{N}(0, \mathbf{I}).<br>]</p>
+<p><strong>生成</strong>即：采样 (x_T)，依次逆向采样 (x_{T-1},\ldots,x_0)。</p>
+<p><strong>概念锚点 · 随机变量</strong>：(x_0^{(i)} \in \mathbb{R}^d) 是 (d) 维数据向量（蛋白坐标、像素等），(q(x_0)) 为数据分布；潜变量 (x_{1:T}) 构成扩散轨迹（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#2-%E9%9A%8F%E6%9C%BA%E5%8F%98%E9%87%8F%E4%BB%8E%E7%BB%93%E6%9E%9C%E5%88%B0%E6%95%B0%E6%8D%AE%E5%90%91%E9%87%8F">Math-0 §2</a>）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig02-random-variable.png" alt="概念图　随机变量 \(X\) 将样本映射到 \(\mathbb{R}^d\) 数据向量"></p>
+<hr>
+<h2 id="2-前向扩散过程（固定）"><a href="#2-前向扩散过程（固定）" class="headerlink" title="2. 前向扩散过程（固定）"></a>2. 前向扩散过程（固定）</h2><p>前向链是<strong>马尔可夫链</strong>：(q(x_t \mid x_{t-1}, x_{t-2}, \ldots, x_0) &#x3D; q(x_t \mid x_{t-1}))（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#7-%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E9%93%BE%E6%89%A9%E6%95%A3%E7%9A%84%E6%97%A0%E8%AE%B0%E5%BF%86%E7%BB%93%E6%9E%84">Math-0 §7</a>）。对每个 (t&#x3D;1,\ldots,T)，定义<strong>条件高斯</strong>转移：</p>
+<p>[<br>q(x_t \mid x_{t-1}) &#x3D; \mathcal{N}\big(x_t;,\sqrt{1-\beta_t},x_{t-1},,\beta_t \mathbf{I}\big),<br>]</p>
+<p>(\beta_t \in (0,1)) 为<strong>噪声方差日程</strong>。令 (\alpha_t &#x3D; 1-\beta_t)，(\bar\alpha_t &#x3D; \prod_{s&#x3D;1}^{t}\alpha_s)。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig07-markov-chain.png" alt="概念图　马尔可夫链无记忆结构"></p>
+<p><strong>关键性质</strong>（重参数化）：可一步从 (x_0) 采样 (x_t)：</p>
+<p>[<br>q(x_t \mid x_0) &#x3D; \mathcal{N}\big(x_t;,\sqrt{\bar\alpha_t},x_0,,(1-\bar\alpha_t)\mathbf{I}\big),<br>]</p>
+<p>等价写法（后续训练最常用）：</p>
+<p>[<br>x_t &#x3D; \sqrt{\bar\alpha_t},x_0 + \sqrt{1-\bar\alpha_t},\epsilon,<br>\quad \epsilon \sim \mathcal{N}(0, \mathbf{I}).<br>]</p>
+<p><strong>概念锚点 · 重参数化</strong>：上式把采样 (x_t) 拆成确定性缩放 + 标准高斯 (\epsilon)，使梯度可穿过 (x_0) 与 (t)；这是训练时随机构造 (x_t) 的标准做法（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#8-%E9%87%8D%E5%8F%82%E6%95%B0%E5%8C%96%E6%8A%80%E5%B7%A7%E5%8F%AF%E5%BE%AE%E7%9A%84%E9%9A%8F%E6%9C%BA%E9%87%87%E6%A0%B7">Math-0 §8</a>）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig08-reparameterization.png" alt="概念图　重参数化 \(x &#x3D; \mu + \sigma\epsilon\)"></p>
+<p>当 (T\to\infty) 且 (\beta_t) 足够小，(x_T) 近似标准高斯——前向过程<strong>无需训练</strong>。</p>
+<h3 id="2-1-噪声日程的选择"><a href="#2-1-噪声日程的选择" class="headerlink" title="2.1 噪声日程的选择"></a>2.1 噪声日程的选择</h3><table>
+<thead>
+<tr>
+<th align="left">日程</th>
+<th align="left">定义</th>
+<th align="left">特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>线性</strong></td>
+<td align="left">(\beta_t) 从 (\beta_1) 线性增至 (\beta_T)</td>
+<td align="left">DDPM 原文默认；高 (t) 时信噪比下降快</td>
+</tr>
+<tr>
+<td align="left"><strong>余弦（cosine）</strong></td>
+<td align="left">(\bar\alpha_t &#x3D; \cos^2!\big(\frac{t&#x2F;T+s}{1+s}\cdot\frac{\pi}{2}\big))</td>
+<td align="left">Nichol &amp; Dhariwal；低频信息保留更好，图像&#x2F;结构常用</td>
+</tr>
+</tbody></table>
+<p>对<strong>蛋白质坐标</strong>等连续变量，余弦日程常使中间步信噪比更均衡，有利于学习全局折叠。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig09-noise-schedule.png" alt="概念图　噪声日程 \(\beta_t\) 与 \(\bar\alpha_t\) 曲线"></p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig10-snr-signal-noise.png" alt="概念图　信噪比 SNR 与 \(x_t\) 分解"></p>
+<hr>
+<h2 id="3-逆向过程（待学习）"><a href="#3-逆向过程（待学习）" class="headerlink" title="3. 逆向过程（待学习）"></a>3. 逆向过程（待学习）</h2><p>真实逆向条件 (q(x_{t-1}\mid x_t)) 依赖整个数据集，不可闭式使用。设：</p>
+<p>[<br>p_\theta(x_{t-1}\mid x_t) &#x3D; \mathcal{N}\big(x_{t-1};,\mu_\theta(x_t, t),,\Sigma_\theta(x_t, t)\big).<br>]</p>
+<p><strong>DDPM</strong> 取<strong>固定方差</strong> (\Sigma_\theta &#x3D; \sigma_t^2 \mathbf{I})（常取 (\sigma_t^2 &#x3D; \beta_t) 或 (\tilde\beta_t)，见下），只学习均值 (\mu_\theta)。</p>
+<hr>
+<h2 id="4-变分下界-ELBO-推导"><a href="#4-变分下界-ELBO-推导" class="headerlink" title="4. 变分下界 ELBO 推导"></a>4. 变分下界 ELBO 推导</h2><p>最大化 (\mathbb{E}<em>{q(x_0)}[\log p</em>\theta(x_0)])，对 (x_{1:T}) 引入 (q(x_{1:T}\mid x_0))：</p>
+<p>[<br>\log p_\theta(x_0) \geq \mathbb{E}<em>{q(x</em>{1:T}\mid x_0)}\Big[\log \frac{p_\theta(x_{0:T})}{q(x_{1:T}\mid x_0)}\Big] &#x3D;: \mathcal{L}_{\mathrm{VLB}}.<br>]</p>
+<p><strong>概念锚点 · ELBO 与 KL</strong>：下式中每项 (L_{t-1}) 是 two Gaussians 之间的 <strong>KL 散度</strong> (\mathrm{KL}(P|Q))，衡量真实后验与模型预测的差异（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md">Math-0 §6、§12</a>）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig06-kl-divergence.png" alt="概念图　KL 散度 \(\mathrm{KL}(P\|Q)\)"></p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig12-elbo.png" alt="概念图　ELBO 分解与 \(\log p(x_0)\) 下界"></p>
+<p>展开（标准 VAE 技巧）：</p>
+<p>[<br>\mathcal{L}<em>{\mathrm{VLB}} &#x3D;<br>\underbrace{\mathrm{KL}\big(q(x_T\mid x_0),|,p(x_T)\big)}</em>{L_T}</p>
+<ul>
+<li>\sum_{t&#x3D;2}^{T} \underbrace{\mathbb{E}<em>{q(x_t\mid x_0)}\Big[\mathrm{KL}\big(q(x</em>{t-1}\mid x_t,x_0),|,p_\theta(x_{t-1}\mid x_t)\big)\Big]}<em>{L</em>{t-1}}</li>
+</ul>
+<ul>
+<li>\underbrace{\mathbb{E}<em>{q(x_1\mid x_0)}[\log p</em>\theta(x_0\mid x_1)]}_{L_0}.<br>]</li>
+</ul>
+<h3 id="4-1-真实后验-q-x-t-1-mid-x-t-x-0-（Bayes-闭式）"><a href="#4-1-真实后验-q-x-t-1-mid-x-t-x-0-（Bayes-闭式）" class="headerlink" title="4.1 真实后验 (q(x_{t-1}\mid x_t, x_0))（Bayes 闭式）"></a>4.1 真实后验 (q(x_{t-1}\mid x_t, x_0))（Bayes 闭式）</h3><p><strong>概念锚点 · 条件分布</strong>：在已知「干净数据 (x_0)」与「当前 noisy (x_t)」时，贝叶斯公式给出最优一步去噪的后验——仍是高斯（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#4-%E6%9D%A1%E4%BB%B6%E5%88%86%E5%B8%83%E4%B8%8E%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%B7%B2%E7%9F%A5%E4%B8%80%E9%83%A8%E5%88%86%E5%85%B6%E4%BD%99%E6%80%8E%E4%B9%88%E5%8F%98">Math-0 §4</a>）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig04-conditional-distribution.png" alt="概念图　条件分布 \(q(x_t \mid x_0)\) 与贝叶斯后验"></p>
+<p>前向为高斯马尔可夫链，后验仍是高斯：</p>
+<p>[<br>q(x_{t-1}\mid x_t, x_0) &#x3D; \mathcal{N}\big(x_{t-1};,\tilde\mu_t(x_t, x_0),,\tilde\beta_t \mathbf{I}\big),<br>]</p>
+<p>其中：</p>
+<p>[<br>\tilde\mu_t(x_t, x_0) &#x3D; \frac{\sqrt{\bar\alpha_{t-1}},\beta_t}{1-\bar\alpha_t},x_0</p>
+<ul>
+<li>\frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t},x_t,<br>]</li>
+</ul>
+<p>[<br>\tilde\beta_t &#x3D; \frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t},\beta_t.<br>]</p>
+<p><strong>直觉</strong>：若已知「最终要回到的 (x_0)」与「当前 noisy (x_t)」，最优一步去噪均值 (\tilde\mu_t) 是二者的加权平均。</p>
+<h3 id="4-2-用-epsilon-参数化-mu-theta"><a href="#4-2-用-epsilon-参数化-mu-theta" class="headerlink" title="4.2 用 (\epsilon) 参数化 (\mu_\theta)"></a>4.2 用 (\epsilon) 参数化 (\mu_\theta)</h3><p>由 (x_t &#x3D; \sqrt{\bar\alpha_t},x_0 + \sqrt{1-\bar\alpha_t},\epsilon) 得 (x_0 &#x3D; \frac{1}{\sqrt{\bar\alpha_t}}(x_t - \sqrt{1-\bar\alpha_t},\epsilon))。代入 (\tilde\mu_t)，可写成：</p>
+<p>[<br>\tilde\mu_t &#x3D; \frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1-\bar\alpha_t}},\epsilon\Big).<br>]</p>
+<p>令 (\mu_\theta(x_t,t)) 同形，用网络 (\epsilon_\theta(x_t,t)) 替代未知 (\epsilon)：</p>
+<p>[<br>\mu_\theta(x_t,t) &#x3D; \frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1-\bar\alpha_t}},\epsilon_\theta(x_t,t)\Big).<br>]</p>
+<p>对固定 (\Sigma_\theta &#x3D; \tilde\beta_t \mathbf{I})，(L_{t-1}) 中的 KL 等价于：</p>
+<p>[<br>\mathbb{E}<em>{q(x_0,x_t)}\Big[\big|\epsilon - \epsilon</em>\theta(x_t,t)\big|^2\Big] + \text{const}.<br>]</p>
+<hr>
+<h2 id="5-简化训练目标-mathcal-L-mathrm-simple"><a href="#5-简化训练目标-mathcal-L-mathrm-simple" class="headerlink" title="5. 简化训练目标 (\mathcal{L}_{\mathrm{simple}})"></a>5. 简化训练目标 (\mathcal{L}_{\mathrm{simple}})</h2><p>Ho <em>et al.</em> 发现对 (L_{t-1}) 加权求和不如<strong>去掉部分权重</strong>的简化损失有效：</p>
+<p>[<br>\mathcal{L}<em>{\mathrm{simple}} &#x3D; \mathbb{E}</em>{t,,x_0,,\epsilon}\Big[\big|\epsilon - \epsilon_\theta(x_t, t)\big|^2\Big],<br>]</p>
+<p>其中 (t \sim \mathrm{Uniform}{1,\ldots,T})，(x_0 \sim q(x_0))，(\epsilon \sim \mathcal{N}(0,\mathbf{I}))，(x_t &#x3D; \sqrt{\bar\alpha_t}x_0 + \sqrt{1-\bar\alpha_t}\epsilon)。</p>
+<p><strong>训练算法（单步）</strong>：</p>
+<ol>
+<li>采样 minibatch (x_0)；</li>
+<li>采样 (t) 与 (\epsilon)；</li>
+<li>构造 (x_t)；</li>
+<li>最小化 (|\epsilon - \epsilon_\theta(x_t,t)|^2)。</li>
+</ol>
+<p><strong>数值手算例题</strong>（2 维玩具数据、逐步算 (x_t) 与损失）：见 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Diffusion-Example-0 前向训练数值例题</a>。</p>
+<p>网络 (\epsilon_\theta) 常见骨干：<strong>U-Net</strong>（图像）、<strong>等变 Transformer</strong>（3D 点&#x2F;原子）、<strong>纯 MLP</strong>（低维表达谱）。</p>
+<h3 id="5-1-等价参数化"><a href="#5-1-等价参数化" class="headerlink" title="5.1 等价参数化"></a>5.1 等价参数化</h3><table>
+<thead>
+<tr>
+<th align="left">预测目标</th>
+<th align="left">关系</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>(\epsilon)-prediction</strong></td>
+<td align="left">上式</td>
+<td align="left">最常用</td>
+</tr>
+<tr>
+<td align="left"><strong>(x_0)-prediction</strong></td>
+<td align="left">(\hat x_0 &#x3D; f_\theta(x_t,t))，再转 (\epsilon)</td>
+<td align="left">有时直接约束物理量（坐标界）</td>
+</tr>
+<tr>
+<td align="left"><strong>v-prediction</strong></td>
+<td align="left">(v &#x3D; \sqrt{\bar\alpha_t}\epsilon - \sqrt{1-\bar\alpha_t},x_0)</td>
+<td align="left">Salimans &amp; Ho；大 (t) 与小 (t) 梯度更均衡，视频&#x2F;结构模型常用</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-时间步-t-：共享参数，非每档独立"><a href="#5-2-时间步-t-：共享参数，非每档独立" class="headerlink" title="5.2 时间步 (t)：共享参数，非每档独立"></a>5.2 时间步 (t)：共享参数，非每档独立</h3><p>所有 (t\in{1,\ldots,T}) 共用<strong>同一</strong> (\epsilon_\theta)（同一套权重 (\theta)）。(t) 不是「第 (t) 套网络」，而是<strong>条件输入</strong>：</p>
+<p>[<br>\epsilon_\theta(x_t,, t) ;\leftarrow; \text{共享 U-Net &#x2F; Transformer} + \text{timestep embedding}(t).<br>]</p>
+<p>训练时每步随机 (t \sim \mathrm{Uniform}{1,\ldots,T})，各 batch 样本可能对应不同 (t)，但梯度更新<strong>同一 (\theta)</strong>。若改为每档独立 (\epsilon_{\theta_t})，参数量约为 (T) 倍（(T&#x3D;1000) 时不可行），且无法在相邻 (t) 间共享结构。</p>
+<p><strong>实现要点</strong>（Ho <em>et al.</em>）：对 (t) 做正弦位置编码，经 MLP 后与 (x_t) 特征融合，或注入 <strong>AdaGN</strong> 调制各层。详见 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §6.3</a>。</p>
+<blockquote>
+<p>段末注释：固定的是前向 (\beta_t)；可学习的是逆向 (\theta)，对所有 (t) 共享。</p>
+</blockquote>
+<hr>
+<h2 id="6-逆向采样算法"><a href="#6-逆向采样算法" class="headerlink" title="6. 逆向采样算法"></a>6. 逆向采样算法</h2><p>学习 (\epsilon_\theta) 后，从 (x_T \sim \mathcal{N}(0,\mathbf{I})) 出发，对 (t &#x3D; T,\ldots,1)：</p>
+<p><strong>训练 vs 推理的 (t)</strong>：训练时 (t) <strong>随机</strong>（覆盖各档）；推理时<strong>不抽 (t)</strong>，从<strong>最大档 (t&#x3D;T)</strong> 的纯噪 (x_T) 起，沿 (T!\to!1) 逐步去噪（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §10</a>）。循环中每一步调用<strong>同一</strong> (\epsilon_\theta(\cdot,t))，仅改变输入 (t) 的 embedding。</p>
+<p>[<br>x_{t-1} &#x3D; \frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1-\bar\alpha_t}},\epsilon_\theta(x_t,t)\Big) + \sigma_t z,<br>\quad z \sim \mathcal{N}(0,\mathbf{I}),<br>]</p>
+<p>(\sigma_t) 常取 (\sqrt{\beta_t}) 或 0（确定性最后一步）。(t&#x3D;1) 时可设 (\sigma_1&#x3D;0) 得到最终 (x_0)。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/fig03-ddpm-sampling-loop.png" alt="图 1　DDPM 逆向采样迭代流程（从 x_T 逐步去噪至 x_0）"></p>
+<p><strong>复杂度</strong>：每样本需 (T) 次网络前向；(T&#x3D;1000) 时推理昂贵——系列第 3 篇讨论 <strong>DDIM</strong> 跳步。</p>
+<hr>
+<h2 id="7-与得分匹配的联系（预告）"><a href="#7-与得分匹配的联系（预告）" class="headerlink" title="7. 与得分匹配的联系（预告）"></a>7. 与得分匹配的联系（预告）</h2><p>定义<strong>得分函数</strong> (\nabla_{x_t}\log q(x_t))。对高斯 (q(x_t\mid x_0)) 可证：</p>
+<p>[<br>\nabla_{x_t}\log q(x_t\mid x_0) &#x3D; -\frac{\epsilon}{\sqrt{1-\bar\alpha_t}}.<br>]</p>
+<p>故 (\epsilon)-prediction 等价于学习<strong>缩放得分</strong>；连续时间极限下得到 <strong>SDE</strong> 形式（系列第 2 篇）。</p>
+<p><strong>概念锚点 · 得分函数</strong>：(\nabla_{x_t}\log q(x_t) &#x3D; -\epsilon&#x2F;\sqrt{1-\bar\alpha_t}) 指向密度增大方向（<a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#11-%E5%BE%97%E5%88%86%E5%87%BD%E6%95%B0%E5%AF%B9%E6%95%B0%E5%AF%86%E5%BA%A6%E7%9A%84%E6%A2%AF%E5%BA%A6">Math-0 §11</a>）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-1.%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E4%B8%8E%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C/math-fig11-score-function.png" alt="概念图　得分函数 \(\nabla_x \log p(x)\) 与密度「上坡」方向"></p>
+<hr>
+<h2 id="8-生物信息学实现注意点"><a href="#8-生物信息学实现注意点" class="headerlink" title="8. 生物信息学实现注意点"></a>8. 生物信息学实现注意点</h2><p><strong>数据尺度</strong></p>
+<ul>
+<li>蛋白质 (C_\alpha) 坐标常<strong>中心化</strong>（减质心）并归一化到 Å 或无量纲单位；否则 (\beta_t) 需与方差匹配。</li>
+<li>多链复合物：可对每条链分别中心化，或以复合物质心为原点。</li>
+</ul>
+<p><strong>损失加权</strong></p>
+<ul>
+<li>对骨架原子、侧链、主链二面角可设<strong>异方差</strong>或分区域 MSE。</li>
+<li><strong>Rigid-body</strong> 块内扩散时，应在 <strong>SE(3)</strong> 流形上定义噪声（见第 5 篇），而非直接对全局坐标加各向同性高斯。</li>
+</ul>
+<p><strong>与 VAE 混合</strong></p>
+<ul>
+<li><strong>潜扩散（Latent Diffusion）</strong> 先在 VAE 潜空间 (z) 上跑 DDPM，降低维度——图像 <strong>Stable Diffusion</strong> 与部分分子 <strong>LDM</strong> 采用此路线。</li>
+</ul>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><p><strong>DDPM</strong> 通过固定前向高斯链与可学习逆向高斯链，将生成转化为<strong>多步去噪回归</strong>；<strong>ELBO</strong> 中每项 KL 在 (\epsilon)-参数化下化为 MSE。<strong>训练</strong>只需采样随机 (t) 与噪声；<strong>采样</strong>沿逆向马尔可夫链迭代。掌握 (\bar\alpha_t)、(\tilde\mu_t)、(\epsilon_\theta) 三者的代数关系，即可读懂结构扩散论文中的网络输入输出定义。</p>
+<blockquote>
+<p>段末注释：<strong>SE(3)</strong> 为三维特殊欧氏群，描述刚体旋转与平移；在群上扩散需保持等变性而非欧氏空间各向同性噪声。</p>
+</blockquote>
+<hr>
+<h2 id="本篇数学概念索引"><a href="#本篇数学概念索引" class="headerlink" title="本篇数学概念索引"></a>本篇数学概念索引</h2><table>
+<thead>
+<tr>
+<th align="left">概念</th>
+<th align="left">出现章节</th>
+<th align="left">延伸阅读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">随机变量 (x_0, x_{1:T})</td>
+<td align="left">§1</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#2-%E9%9A%8F%E6%9C%BA%E5%8F%98%E9%87%8F%E4%BB%8E%E7%BB%93%E6%9E%9C%E5%88%B0%E6%95%B0%E6%8D%AE%E5%90%91%E9%87%8F">Math-0 §2</a></td>
+</tr>
+<tr>
+<td align="left">马尔可夫链 &#x2F; 重参数化 &#x2F; 噪声日程 &#x2F; SNR</td>
+<td align="left">§2</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md">Math-0 §7–§10</a></td>
+</tr>
+<tr>
+<td align="left">KL 散度 &#x2F; ELBO &#x2F; 条件后验</td>
+<td align="left">§4</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md">Math-0 §4、§6、§12</a></td>
+</tr>
+<tr>
+<td align="left">(\mathcal{L}_{\mathrm{simple}}) &#x2F; 训练算法</td>
+<td align="left">§5</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 数值例题</a></td>
+</tr>
+<tr>
+<td align="left">共享 (\theta) &#x2F; timestep embedding</td>
+<td align="left">§5.2</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §6.3</a></td>
+</tr>
+<tr>
+<td align="left">逆向采样 &#x2F; 生成从 (t&#x3D;T)</td>
+<td align="left">§6</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Example-0.%E5%89%8D%E5%90%91%E8%AE%AD%E7%BB%83%E6%95%B0%E5%80%BC%E4%BE%8B%E9%A2%98.md">Example-0 §10</a></td>
+</tr>
+<tr>
+<td align="left">得分函数</td>
+<td align="left">§7</td>
+<td align="left"><a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-Math-0.%E6%A6%82%E7%8E%87%E4%B8%8E%E6%89%A9%E6%95%A3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80.md#11-%E5%BE%97%E5%88%86%E5%87%BD%E6%95%B0%E5%AF%B9%E6%95%B0%E5%AF%86%E5%BA%A6%E7%9A%84%E6%A2%AF%E5%BA%A6">Math-0 §11</a> → <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-2.%E5%BE%97%E5%88%86%E5%8C%B9%E9%85%8D%E4%B8%8E%E9%9A%8F%E6%9C%BA%E5%BE%AE%E5%88%86%E6%96%B9%E7%A8%8B.md">Diffusion-2</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考与延伸阅读"><a href="#参考与延伸阅读" class="headerlink" title="参考与延伸阅读"></a>参考与延伸阅读</h2><ul>
+<li>Ho <em>et al.</em>, <em>Denoising Diffusion Probabilistic Models</em>（NeurIPS 2020）.  </li>
+<li>Sohl-Dickstein <em>et al.</em>, <em>Deep Unsupervised Learning using Nonequilibrium Thermodynamics</em>（扩散思想早期工作）.  </li>
+<li>Nichol &amp; Dhariwal, <em>Improved Denoising Diffusion Probabilistic Models</em>（余弦日程、学习方差）.  </li>
+<li>Salimans &amp; Ho, <em>Progressive Distillation for Fast Sampling of Diffusion Models</em>（<strong>v-prediction</strong> 等）.</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD/" rel="tag"><i class="fa fa-tag"></i> 变分推断</a>
+          
+            <a href="/tags/ELBO/" rel="tag"><i class="fa fa-tag"></i> ELBO</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/Diffusion/" rel="tag"><i class="fa fa-tag"></i> Diffusion</a>
+          
+            <a href="/tags/DDPM/" rel="tag"><i class="fa fa-tag"></i> DDPM</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-argo-04.Argo%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%B0%81%E8%A3%85MCP%E6%8E%A5%E5%8F%A3/" rel="next" title="pipeline-frameworks-argo-04.Argo工作流封装MCP接口">
+                <i class="fa fa-chevron-left"></i> pipeline-frameworks-argo-04.Argo工作流封装MCP接口
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-Diffusion-2.%E5%BE%97%E5%88%86%E5%8C%B9%E9%85%8D%E4%B8%8E%E9%9A%8F%E6%9C%BA%E5%BE%AE%E5%88%86%E6%96%B9%E7%A8%8B/" rel="prev" title="5003.大模型-架构-Diffusion-2.得分匹配与随机微分方程">
+                5003.大模型-架构-Diffusion-2.得分匹配与随机微分方程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">1. 问题设定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%89%8D%E5%90%91%E6%89%A9%E6%95%A3%E8%BF%87%E7%A8%8B%EF%BC%88%E5%9B%BA%E5%AE%9A%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. 前向扩散过程（固定）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%99%AA%E5%A3%B0%E6%97%A5%E7%A8%8B%E7%9A%84%E9%80%89%E6%8B%A9"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 噪声日程的选择</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E9%80%86%E5%90%91%E8%BF%87%E7%A8%8B%EF%BC%88%E5%BE%85%E5%AD%A6%E4%B9%A0%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 逆向过程（待学习）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C-ELBO-%E6%8E%A8%E5%AF%BC"><span class="nav-number">4.</span> <span class="nav-text">4. 变分下界 ELBO 推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E7%9C%9F%E5%AE%9E%E5%90%8E%E9%AA%8C-q-x-t-1-mid-x-t-x-0-%EF%BC%88Bayes-%E9%97%AD%E5%BC%8F%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 真实后验 (q(x_{t-1}\mid x_t, x_0))（Bayes 闭式）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E7%94%A8-epsilon-%E5%8F%82%E6%95%B0%E5%8C%96-mu-theta"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 用 (\epsilon) 参数化 (\mu_\theta)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E7%AE%80%E5%8C%96%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87-mathcal-L-mathrm-simple"><span class="nav-number">5.</span> <span class="nav-text">5. 简化训练目标 (\mathcal{L}_{\mathrm{simple}})</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E7%AD%89%E4%BB%B7%E5%8F%82%E6%95%B0%E5%8C%96"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 等价参数化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%97%B6%E9%97%B4%E6%AD%A5-t-%EF%BC%9A%E5%85%B1%E4%BA%AB%E5%8F%82%E6%95%B0%EF%BC%8C%E9%9D%9E%E6%AF%8F%E6%A1%A3%E7%8B%AC%E7%AB%8B"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 时间步 (t)：共享参数，非每档独立</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%80%86%E5%90%91%E9%87%87%E6%A0%B7%E7%AE%97%E6%B3%95"><span class="nav-number">6.</span> <span class="nav-text">6. 逆向采样算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%8E%E5%BE%97%E5%88%86%E5%8C%B9%E9%85%8D%E7%9A%84%E8%81%94%E7%B3%BB%EF%BC%88%E9%A2%84%E5%91%8A%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 与得分匹配的联系（预告）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF%E5%AD%A6%E5%AE%9E%E7%8E%B0%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="nav-number">8.</span> <span class="nav-text">8. 生物信息学实现注意点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E7%AF%87%E6%95%B0%E5%AD%A6%E6%A6%82%E5%BF%B5%E7%B4%A2%E5%BC%95"><span class="nav-number">10.</span> <span class="nav-text">本篇数学概念索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">11.</span> <span class="nav-text">参考与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

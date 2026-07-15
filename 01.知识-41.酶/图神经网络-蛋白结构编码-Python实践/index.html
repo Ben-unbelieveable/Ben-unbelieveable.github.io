@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="蛋白质结构,GNN,PyTorch Geometric,BioPython,Python," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="从 PDB&#x2F;mmCIF 解析、BioPython 层次对象与 NumPy 张量，到残基图构图与 PyG Data 批训练，用 Python 串起「蛋白结构 → GNN 输入」全流程；含五幅数据流示意图与可复用代码骨架。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图神经网络处理蛋白结构：Python 数据流与编码实践">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="从 PDB&#x2F;mmCIF 解析、BioPython 层次对象与 NumPy 张量，到残基图构图与 PyG Data 批训练，用 Python 串起「蛋白结构 → GNN 输入」全流程；含五幅数据流示意图与可复用代码骨架。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig01-pipeline.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig02-python-layers.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig03-graph-build.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig04-pyg-data.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig05-batch.png">
+<meta property="article:published_time" content="2026-05-19T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.396Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="BioPython">
+<meta property="article:tag" content="GNN">
+<meta property="article:tag" content="PyTorch Geometric">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="蛋白质结构">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig01-pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-41.酶/图神经网络-蛋白结构编码-Python实践/"/>
+
+
+
+
+
+  <title>图神经网络处理蛋白结构：Python 数据流与编码实践 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">图神经网络处理蛋白结构：Python 数据流与编码实践</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-19T10:00:00+08:00">
+                2026-05-19
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  从 PDB/mmCIF 解析、BioPython 层次对象与 NumPy 张量，到残基图构图与 PyG Data 批训练，用 Python 串起「蛋白结构 → GNN 输入」全流程；含五幅数据流示意图与可复用代码骨架。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>前置阅读</strong>：<a href="./%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">图神经网络：原理、算法与分子建模入门</a>（图、消息传递、PyG 字段）；需要三维几何与对称性时再读 <a href="./SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">SE(3)-等变图神经网络</a>。PDB 文件字段含义可对照 <a href="../01.%E7%9F%A5%E8%AF%86-03.standard/fileformat-pdb.md">PDB 格式说明</a>。</p>
+<p>本文只谈<strong>数据层</strong>：如何把「一个蛋白结构文件」变成 GNN 能吃的 <code>Data(x, edge_index, pos, …)</code>，并对途中每一类 Python 数据结构建立整体印象。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PyTorch Geometric（PyG）</strong> 是 PyTorch 上的图深度学习扩展库；<strong>BioPython</strong> 是常用的生物序列&#x2F;结构解析 Python 包；<strong>mmCIF</strong> 为 PDB 的现代化文本格式。</p>
+</blockquote>
+<hr>
+<h2 id="1-端到端数据流（先建立地图）"><a href="#1-端到端数据流（先建立地图）" class="headerlink" title="1. 端到端数据流（先建立地图）"></a>1. 端到端数据流（先建立地图）</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig01-pipeline.png" alt="蛋白结构到 GNN：文件 → 解析 → 数组 → 图 → PyG Data"></p>
+<p><strong>图 1（科普示意）</strong>：实践中的主路径可概括为五步。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>输入</th>
+<th>输出</th>
+<th>典型 Python 类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>① 读文件</td>
+<td><code>.pdb</code> &#x2F; <code>.cif</code></td>
+<td>文本记录</td>
+<td><code>str</code>、路径 <code>Path</code></td>
+</tr>
+<tr>
+<td>② 解析</td>
+<td>ATOM&#x2F;HETATM 行</td>
+<td>层次化结构对象</td>
+<td>BioPython <code>Structure</code></td>
+</tr>
+<tr>
+<td>③ 抽表</td>
+<td>选定原子&#x2F;残基</td>
+<td>坐标与特征表</td>
+<td><code>numpy.ndarray</code>、<code>torch.Tensor</code></td>
+</tr>
+<tr>
+<td>④ 构图</td>
+<td>坐标 + 规则</td>
+<td>邻接关系</td>
+<td><code>edge_index</code> <code>[2, E]</code></td>
+</tr>
+<tr>
+<td>⑤ 封装</td>
+<td>张量集合</td>
+<td>单样本图</td>
+<td><code>torch_geometric.data.Data</code></td>
+</tr>
+</tbody></table>
+<p><strong>结构编码</strong>在 GNN 语境下指：用图 $G&#x3D;(V,E)$ 把三维构象离散化，并把每个节点 $i$ 编成特征向量 $\mathbf{x}<em>i$（可选边特征 $\mathbf{e}</em>{ij}$、坐标 $\mathbf{p}_i$），供消息传递学习 $\mathbf{h}_i$ 乃至图级 $\mathbf{h}_G$。</p>
+<hr>
+<h2 id="2-结构文件里有什么"><a href="#2-结构文件里有什么" class="headerlink" title="2. 结构文件里有什么"></a>2. 结构文件里有什么</h2><p>实验或预测结构常见 <strong>PDB</strong>（Protein Data Bank 文本格式）与 <strong>mmCIF</strong>（macromolecular Crystallographic Information File）。对 GNN 最重要的是：</p>
+<ul>
+<li><strong>谁</strong>：残基名、链 ID、残基序号、原子名（<code>CA</code> &#x3D; $C_\alpha$）</li>
+<li><strong>在哪</strong>：$x,y,z$（Å）</li>
+<li><strong>可选置信度</strong>：预测结构常把 <strong>pLDDT</strong>（predicted Local Distance Difference Test）写在 B-factor 列</li>
+</ul>
+<p>一条 <strong>ATOM</strong> 行（概念分区，列宽以 <a target="_blank" rel="noopener" href="https://www.wwpdb.org/documentation/file-format">wwPDB 文档</a> 为准）包含：原子坐标、占有率、温度因子 B 等。GNN 构图时通常<strong>不</strong>把整行原样喂进网络，而是<strong>抽取</strong>成数值张量。</p>
+<hr>
+<h2 id="3-Python-中的结构表示：三层结构"><a href="#3-Python-中的结构表示：三层结构" class="headerlink" title="3. Python 中的结构表示：三层结构"></a>3. Python 中的结构表示：三层结构</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig02-python-layers.png" alt="三层：文件行 → BioPython 对象树 → NumPy&#x2F;PyTorch 张量"></p>
+<p><strong>图 2（科普示意）</strong>：同一份结构在内存里会同时存在「对象树」与「扁平张量」两种视图，后者才直接对接 GNN。</p>
+<h3 id="3-1-层次对象（BioPython）"><a href="#3-1-层次对象（BioPython）" class="headerlink" title="3.1 层次对象（BioPython）"></a>3.1 层次对象（BioPython）</h3><p>BioPython 的 <strong>PDB 解析器</strong>（<code>Bio.PDB.PDBParser</code>）把文件读成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Structure(id)          # 一个文件常对应一个 Structure（或 NMR 多模型）</span><br><span class="line"> └── Model(id)</span><br><span class="line">      └── Chain(id)</span><br><span class="line">           └── Residue(resname, seqid, icode)</span><br><span class="line">                └── Atom(name)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>适合：按链筛选、跳过 HETATM、访问 <code>residue.get_resname()</code> 等<strong>语义操作</strong></li>
+<li>不适合：直接做批量矩阵运算（需再导出为数组）</li>
+</ul>
+<h3 id="3-2-扁平张量（NumPy-PyTorch）"><a href="#3-2-扁平张量（NumPy-PyTorch）" class="headerlink" title="3.2 扁平张量（NumPy &#x2F; PyTorch）"></a>3.2 扁平张量（NumPy &#x2F; PyTorch）</h3><p>GNN 实际使用的是「表格式」数据：</p>
+<table>
+<thead>
+<tr>
+<th>张量</th>
+<th>形状</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>pos</code></td>
+<td><code>[N, 3]</code></td>
+<td>节点坐标，常取 $C_\alpha$</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td><code>[N, F]</code></td>
+<td>节点特征（氨基酸类型 one-hot、B-factor、pLDDT 等）</td>
+</tr>
+<tr>
+<td><code>edge_index</code></td>
+<td><code>[2, E]</code></td>
+<td>源节点、目标节点索引（COO 格式）</td>
+</tr>
+<tr>
+<td><code>edge_attr</code></td>
+<td><code>[E, D_e]</code></td>
+<td>边长、序列距离、接触类型等</td>
+</tr>
+<tr>
+<td><code>seq_pos</code></td>
+<td><code>[N]</code></td>
+<td>序列位置 0…$L{-}1$（可选）</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-其它常用库（选型）"><a href="#3-3-其它常用库（选型）" class="headerlink" title="3.3 其它常用库（选型）"></a>3.3 其它常用库（选型）</h3><table>
+<thead>
+<tr>
+<th>库</th>
+<th>特点</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>BioPython</strong></td>
+<td>对象树清晰、教程多</td>
+<td>PDB 解析、快速原型</td>
+</tr>
+<tr>
+<td><strong>biotite</strong></td>
+<td>数组优先、<code>AtomArray</code></td>
+<td>高性能筛选、几何运算</td>
+</tr>
+<tr>
+<td><strong>MDAnalysis</strong></td>
+<td>轨迹、大规模动力学</td>
+<td>MD 轨迹 → 接触图</td>
+</tr>
+<tr>
+<td><strong>ASE</strong></td>
+<td>更偏材料&#x2F;通用原子</td>
+<td>与化学模拟衔接</td>
+</tr>
+</tbody></table>
+<p>下文示例以 <strong>BioPython + PyTorch + PyG</strong> 为主，换 biotite 时只需把「对象树 → <code>pos</code>&#x2F;<code>x</code>」一步改成 <code>AtomArray</code> 索引。</p>
+<hr>
+<h2 id="4-步骤-①②：解析-PDB-并提取-C-alpha"><a href="#4-步骤-①②：解析-PDB-并提取-C-alpha" class="headerlink" title="4. 步骤 ①②：解析 PDB 并提取 $C_\alpha$"></a>4. 步骤 ①②：解析 PDB 并提取 $C_\alpha$</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">from</span> Bio.PDB <span class="keyword">import</span> PDBParser</span><br><span class="line"></span><br><span class="line"><span class="comment"># 三字母氨基酸 -&gt; 整数编号（可按项目扩展为 20+1 维 one-hot）</span></span><br><span class="line">AA3_TO_IDX = &#123;</span><br><span class="line">    <span class="string">&quot;ALA&quot;</span>: <span class="number">0</span>, <span class="string">&quot;ARG&quot;</span>: <span class="number">1</span>, <span class="string">&quot;ASN&quot;</span>: <span class="number">2</span>, <span class="string">&quot;ASP&quot;</span>: <span class="number">3</span>, <span class="string">&quot;CYS&quot;</span>: <span class="number">4</span>,</span><br><span class="line">    <span class="string">&quot;GLN&quot;</span>: <span class="number">5</span>, <span class="string">&quot;GLU&quot;</span>: <span class="number">6</span>, <span class="string">&quot;GLY&quot;</span>: <span class="number">7</span>, <span class="string">&quot;HIS&quot;</span>: <span class="number">8</span>, <span class="string">&quot;ILE&quot;</span>: <span class="number">9</span>,</span><br><span class="line">    <span class="string">&quot;LEU&quot;</span>: <span class="number">10</span>, <span class="string">&quot;LYS&quot;</span>: <span class="number">11</span>, <span class="string">&quot;MET&quot;</span>: <span class="number">12</span>, <span class="string">&quot;PHE&quot;</span>: <span class="number">13</span>, <span class="string">&quot;PRO&quot;</span>: <span class="number">14</span>,</span><br><span class="line">    <span class="string">&quot;SER&quot;</span>: <span class="number">15</span>, <span class="string">&quot;THR&quot;</span>: <span class="number">16</span>, <span class="string">&quot;TRP&quot;</span>: <span class="number">17</span>, <span class="string">&quot;TYR&quot;</span>: <span class="number">18</span>, <span class="string">&quot;VAL&quot;</span>: <span class="number">19</span>,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_ca_table</span>(<span class="params">pdb_path: <span class="built_in">str</span> | Path, chain_id: <span class="built_in">str</span> = <span class="string">&quot;A&quot;</span>, model_id: <span class="built_in">int</span> = <span class="number">0</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;从一条链提取 Cα：坐标、氨基酸编号、B-factor（可作 pLDDT 代理）。&quot;&quot;&quot;</span></span><br><span class="line">    parser = PDBParser(QUIET=<span class="literal">True</span>)</span><br><span class="line">    structure = parser.get_structure(<span class="string">&quot;prot&quot;</span>, <span class="built_in">str</span>(pdb_path))</span><br><span class="line">    model = structure[model_id]</span><br><span class="line">    chain = model[chain_id]</span><br><span class="line"></span><br><span class="line">    coords, aa_idx, bfac, res_ids = [], [], [], []</span><br><span class="line">    <span class="keyword">for</span> res <span class="keyword">in</span> chain:</span><br><span class="line">        <span class="keyword">if</span> res.<span class="built_in">id</span>[<span class="number">0</span>] != <span class="string">&quot; &quot;</span>:  <span class="comment"># 跳过 HETATM、水</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;CA&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> res:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        ca = res[<span class="string">&quot;CA&quot;</span>]</span><br><span class="line">        coords.append(ca.coord)                      <span class="comment"># ndarray shape (3,)</span></span><br><span class="line">        aa_idx.append(AA3_TO_IDX.get(res.resname, <span class="number">20</span>))</span><br><span class="line">        bfac.append(ca.bfactor)</span><br><span class="line">        res_ids.append(res.<span class="built_in">id</span>[<span class="number">1</span>])                    <span class="comment"># 残基序号</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        <span class="string">&quot;pos&quot;</span>: np.asarray(coords, dtype=np.float32),   <span class="comment"># [L, 3]</span></span><br><span class="line">        <span class="string">&quot;aa&quot;</span>: np.asarray(aa_idx, dtype=np.int64),      <span class="comment"># [L]</span></span><br><span class="line">        <span class="string">&quot;bfactor&quot;</span>: np.asarray(bfac, dtype=np.float32),</span><br><span class="line">        <span class="string">&quot;res_id&quot;</span>: np.asarray(res_ids, dtype=np.int64),</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>此时得到的是<strong>序列对齐</strong>的残基表：节点数 $N &#x3D; L$（有 $C_\alpha$ 的残基数），尚未定义「边」。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>$C_\alpha$</strong> 为每个氨基酸骨架上的 $\alpha$ 碳，蛋白残基图的常用节点；全原子图以所有重原子为节点，$N$ 约为 $4\text{–}10 \times L$。</p>
+</blockquote>
+<hr>
+<h2 id="5-步骤-③：节点特征-x-怎么编"><a href="#5-步骤-③：节点特征-x-怎么编" class="headerlink" title="5. 步骤 ③：节点特征 x 怎么编"></a>5. 步骤 ③：节点特征 <code>x</code> 怎么编</h2><p>常见编码方式（可组合拼接）：</p>
+<table>
+<thead>
+<tr>
+<th>特征块</th>
+<th>维度</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>氨基酸类型</td>
+<td>20 或 21</td>
+<td><code>one_hot(aa)</code> 或嵌入表 <code>nn.Embedding</code></td>
+</tr>
+<tr>
+<td>序列位置</td>
+<td>1 或 $d_{pe}$</td>
+<td>归一化残基索引，或正弦位置编码</td>
+</tr>
+<tr>
+<td>置信度</td>
+<td>1</td>
+<td>B-factor &#x2F; pLDDT，归一化到 $[0,1]$</td>
+</tr>
+<tr>
+<td>二级结构</td>
+<td>3</td>
+<td>DSSP 类别 one-hot（需额外计算）</td>
+</tr>
+<tr>
+<td>MSA 统计</td>
+<td>变长</td>
+<td>保守性、共进化（需多序列比对）</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_node_features</span>(<span class="params">table: <span class="built_in">dict</span>, num_aa: <span class="built_in">int</span> = <span class="number">21</span></span>) -&gt; torch.Tensor:</span><br><span class="line">    aa = torch.from_numpy(table[<span class="string">&quot;aa&quot;</span>]).long()</span><br><span class="line">    x_onehot = F.one_hot(aa, num_classes=num_aa).<span class="built_in">float</span>()   <span class="comment"># [N, 21]</span></span><br><span class="line"></span><br><span class="line">    L = aa.numel()</span><br><span class="line">    seq_pos = torch.arange(L, dtype=torch.float32).unsqueeze(<span class="number">1</span>) / <span class="built_in">max</span>(L - <span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">    bfac = torch.from_numpy(table[<span class="string">&quot;bfactor&quot;</span>]).unsqueeze(<span class="number">1</span>) / <span class="number">100.0</span>  <span class="comment"># 仅作缩放示例</span></span><br><span class="line"></span><br><span class="line">    x = torch.cat([x_onehot, seq_pos, bfac], dim=<span class="number">1</span>)        <span class="comment"># [N, F]</span></span><br><span class="line">    <span class="keyword">return</span> x</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>pos</code></strong> 单独存放，不强行并入 <code>x</code>：几何 GNN &#x2F; <strong>SE(3)-等变</strong> 模型需要显式坐标做距离、方向消息（见续篇）。</p>
+<hr>
+<h2 id="6-步骤-④：从坐标到-edge-index"><a href="#6-步骤-④：从坐标到-edge-index" class="headerlink" title="6. 步骤 ④：从坐标到 edge_index"></a>6. 步骤 ④：从坐标到 <code>edge_index</code></h2><p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig03-graph-build.png" alt="序列边 + 半径&#x2F;contact 边：两种邻接来源"></p>
+<p><strong>图 3（科普示意）</strong>：蛋白残基图常<strong>同时使用</strong>序列邻接与空间邻接。</p>
+<h3 id="6-1-序列边（化学拓扑先验）"><a href="#6-1-序列边（化学拓扑先验）" class="headerlink" title="6.1 序列边（化学拓扑先验）"></a>6.1 序列边（化学拓扑先验）</h3><p>相邻残基 $i$ 与 $i{+}1$ 连无向边（实现上双向各一条）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">sequential_edges</span>(<span class="params">num_nodes: <span class="built_in">int</span></span>) -&gt; torch.Tensor:</span><br><span class="line">    <span class="keyword">if</span> num_nodes &lt; <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> torch.empty((<span class="number">2</span>, <span class="number">0</span>), dtype=torch.long)</span><br><span class="line">    src = torch.arange(<span class="number">0</span>, num_nodes - <span class="number">1</span>)</span><br><span class="line">    dst = src + <span class="number">1</span></span><br><span class="line">    edge_index = torch.stack([</span><br><span class="line">        torch.cat([src, dst]),</span><br><span class="line">        torch.cat([dst, src]),</span><br><span class="line">    ], dim=<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">return</span> edge_index  <span class="comment"># [2, 2*(N-1)]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-2-半径图（空间接触）"><a href="#6-2-半径图（空间接触）" class="headerlink" title="6.2 半径图（空间接触）"></a>6.2 半径图（空间接触）</h3><p>当 $r_{ij} &#x3D; |\mathbf{p}_i - \mathbf{p}_j|<em>2 &lt; r</em>{\mathrm{cut}}$ 时连边（Å 单位，常用 $8\text{–}12\ \mathrm{\AA}$ 残基级、全原子更短）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> torch_geometric.nn <span class="keyword">import</span> radius_graph</span><br><span class="line"></span><br><span class="line">pos = torch.from_numpy(table[<span class="string">&quot;pos&quot;</span>])  <span class="comment"># [N, 3]</span></span><br><span class="line">edge_radius = radius_graph(</span><br><span class="line">    pos, r=<span class="number">10.0</span>, batch=<span class="literal">None</span>, loop=<span class="literal">False</span>, max_num_neighbors=<span class="number">64</span></span><br><span class="line">)</span><br><span class="line"><span class="comment"># edge_radius: [2, E_r]</span></span><br></pre></td></tr></table></figure>
+
+<p>也可用 <code>torch_geometric.nn.knn_graph(pos, k=30)</code> 控制每节点邻居数上界。</p>
+<h3 id="6-3-合并边并去重"><a href="#6-3-合并边并去重" class="headerlink" title="6.3 合并边并去重"></a>6.3 合并边并去重</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">merge_edges</span>(<span class="params">*edge_indices: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">    edge_index = torch.cat(edge_indices, dim=<span class="number">1</span>)          <span class="comment"># [2, E_all]</span></span><br><span class="line">    <span class="comment"># 无向边去重：排序后 unique</span></span><br><span class="line">    edge_index = edge_index[:, edge_index[<span class="number">0</span>].sort()[<span class="number">1</span>]]</span><br><span class="line">    uniq = torch.unique(edge_index, dim=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">return</span> uniq</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-4-边特征-edge-attr（可选）"><a href="#6-4-边特征-edge-attr（可选）" class="headerlink" title="6.4 边特征 edge_attr（可选）"></a>6.4 边特征 <code>edge_attr</code>（可选）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">edge_length_attr</span>(<span class="params">pos: torch.Tensor, edge_index: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">    row, col = edge_index</span><br><span class="line">    diff = pos[row] - pos[col]</span><br><span class="line">    dist = torch.linalg.norm(diff, dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)   <span class="comment"># [E, 1]</span></span><br><span class="line">    <span class="keyword">return</span> dist</span><br></pre></td></tr></table></figure>
+
+<p>序列边可附加 <strong>$|i-j|$</strong>（序列距离）；空间边以 $r_{ij}$ 为主。带方向的模型还会用单位向量 $\hat{\mathbf{r}}_{ij}$（等变 GNN）。</p>
+<hr>
+<h2 id="7-步骤-⑤：组装-torch-geometric-data-Data"><a href="#7-步骤-⑤：组装-torch-geometric-data-Data" class="headerlink" title="7. 步骤 ⑤：组装 torch_geometric.data.Data"></a>7. 步骤 ⑤：组装 <code>torch_geometric.data.Data</code></h2><p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig04-pyg-data.png" alt="PyG Data 各字段与 GNN 的对应关系"></p>
+<p><strong>图 4（科普示意）</strong>：<code>Data</code> 是单张图的「容器」；<code>forward</code> 时由 <code>GNNConv</code> 读 <code>x</code> 与 <code>edge_index</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> torch_geometric.data <span class="keyword">import</span> Data</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">structure_to_pyg_data</span>(<span class="params">pdb_path: <span class="built_in">str</span>, chain_id: <span class="built_in">str</span> = <span class="string">&quot;A&quot;</span></span>) -&gt; Data:</span><br><span class="line">    table = extract_ca_table(pdb_path, chain_id=chain_id)</span><br><span class="line">    pos = torch.from_numpy(table[<span class="string">&quot;pos&quot;</span>]).<span class="built_in">float</span>()</span><br><span class="line">    x = build_node_features(table)</span><br><span class="line">    e_seq = sequential_edges(pos.size(<span class="number">0</span>))</span><br><span class="line">    e_rad = radius_graph(pos, r=<span class="number">10.0</span>, loop=<span class="literal">False</span>, max_num_neighbors=<span class="number">64</span>)</span><br><span class="line">    edge_index = merge_edges(e_seq, e_rad)</span><br><span class="line">    edge_attr = edge_length_attr(pos, edge_index)</span><br><span class="line"></span><br><span class="line">    data = Data(</span><br><span class="line">        x=x,                   <span class="comment"># [N, F] 节点特征</span></span><br><span class="line">        pos=pos,               <span class="comment"># [N, 3] 坐标（几何 GNN / 可视化）</span></span><br><span class="line">        edge_index=edge_index, <span class="comment"># [2, E]</span></span><br><span class="line">        edge_attr=edge_attr,   <span class="comment"># [E, 1]</span></span><br><span class="line">        num_nodes=pos.size(<span class="number">0</span>),</span><br><span class="line">    )</span><br><span class="line">    <span class="comment"># 图级标签示例：data.y = torch.tensor([1.0])  # 活性、稳定性等</span></span><br><span class="line">    <span class="keyword">return</span> data</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-1-Data-与数学对象对照"><a href="#7-1-Data-与数学对象对照" class="headerlink" title="7.1 Data 与数学对象对照"></a>7.1 <code>Data</code> 与数学对象对照</h3><table>
+<thead>
+<tr>
+<th>PyG 属性</th>
+<th>数学&#x2F;用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>data.x</code></td>
+<td>节点特征矩阵 $\mathbf{X}$，$\mathbf{h}_i^{(0)}&#x3D;\mathbf{x}_i$</td>
+</tr>
+<tr>
+<td><code>data.pos</code></td>
+<td>$\mathbf{p}_i \in \mathbb{R}^3$，不必然进入首层 MLP</td>
+</tr>
+<tr>
+<td><code>data.edge_index</code></td>
+<td>邻接的 COO 列表，定义 $\mathcal{N}(i)$</td>
+</tr>
+<tr>
+<td><code>data.edge_attr</code></td>
+<td>$\mathbf{e}_{ij}$，进入 $\phi_m$</td>
+</tr>
+<tr>
+<td><code>data.y</code></td>
+<td>图级标签 $y_G$</td>
+</tr>
+<tr>
+<td><code>data.batch</code></td>
+<td>批训练时标记节点属于哪张图</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-批训练：多蛋白如何拼成一批"><a href="#8-批训练：多蛋白如何拼成一批" class="headerlink" title="8. 批训练：多蛋白如何拼成一批"></a>8. 批训练：多蛋白如何拼成一批</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81-Python%E5%AE%9E%E8%B7%B5/gnn-protein-fig05-batch.png" alt="三张蛋白图拼成不相交并图，batch 向量区分图 ID"></p>
+<p><strong>图 5（科普示意）</strong>：PyG 的 <code>DataLoader</code> 会把多张图<strong>并成一个大图</strong>（节点不相连），用 <code>batch</code> 向量区分。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> torch_geometric.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">from</span> torch_geometric.nn <span class="keyword">import</span> global_mean_pool, GCNConv</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ProteinGCN</span>(torch.nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, in_dim: <span class="built_in">int</span>, hidden: <span class="built_in">int</span> = <span class="number">128</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.conv1 = GCNConv(in_dim, hidden)</span><br><span class="line">        <span class="variable language_">self</span>.conv2 = GCNConv(hidden, hidden)</span><br><span class="line">        <span class="variable language_">self</span>.lin = torch.nn.Linear(hidden, <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, data</span>):</span><br><span class="line">        h = data.x.relu()</span><br><span class="line">        h = <span class="variable language_">self</span>.conv1(h, data.edge_index).relu()</span><br><span class="line">        h = <span class="variable language_">self</span>.conv2(h, data.edge_index)</span><br><span class="line">        hg = global_mean_pool(h, data.batch)   <span class="comment"># [B, hidden]</span></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.lin(hg).squeeze(-<span class="number">1</span>)         <span class="comment"># 图级回归示例</span></span><br><span class="line"></span><br><span class="line">paths = [<span class="string">&quot;1abc.pdb&quot;</span>, <span class="string">&quot;2def.pdb&quot;</span>, <span class="string">&quot;3ghi.pdb&quot;</span>]</span><br><span class="line">dataset = [structure_to_pyg_data(p) <span class="keyword">for</span> p <span class="keyword">in</span> paths]</span><br><span class="line">loader = DataLoader(dataset, batch_size=<span class="number">8</span>, shuffle=<span class="literal">True</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> batch <span class="keyword">in</span> loader:</span><br><span class="line">    <span class="comment"># batch.x: [N_total, F]; batch.batch: [N_total], 取值 0..B-1</span></span><br><span class="line">    pred = model(batch)</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>Dataset</code> 模式</strong>：把 <code>structure_to_pyg_data</code> 放进 <code>torch_geometric.data.Dataset</code> 子类，在 <code>get(idx)</code> 里惰性解析 PDB，避免一次性载入万级结构。</p>
+<hr>
+<h2 id="9-数据结构总览（速查表）"><a href="#9-数据结构总览（速查表）" class="headerlink" title="9. 数据结构总览（速查表）"></a>9. 数据结构总览（速查表）</h2><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>你手里的东西</th>
+<th>关键索引语义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件</td>
+<td>PDB&#x2F;mmCIF 文本</td>
+<td>残基序号、链、原子名</td>
+</tr>
+<tr>
+<td>BioPython</td>
+<td><code>Residue</code> &#x2F; <code>Atom</code></td>
+<td><code>res[&quot;CA&quot;].coord</code></td>
+</tr>
+<tr>
+<td>NumPy</td>
+<td><code>pos[i]</code>, <code>aa[i]</code></td>
+<td>$i$ 与序列顺序一致</td>
+</tr>
+<tr>
+<td>图</td>
+<td><code>edge_index[:, e]</code></td>
+<td><code>edge_index[0,e] -&gt; edge_index[1,e]</code></td>
+</tr>
+<tr>
+<td>PyG</td>
+<td><code>Data</code></td>
+<td><code>data.num_nodes == data.x.size(0)</code></td>
+</tr>
+<tr>
+<td>Loader</td>
+<td><code>Batch</code></td>
+<td><code>data.batch[i]</code> &#x3D; 第 $i$ 个节点所属图的 batch 内编号</td>
+</tr>
+</tbody></table>
+<p><strong>索引一致性</strong>：<code>edge_index</code> 中的值必须在 $[0, N-1]$ 内；合并多源边后建议 <code>torch.unique</code>；过滤低 pLDDT 残基后要<strong>同步</strong>删 <code>pos</code>&#x2F;<code>x</code> 的行并重映射边。</p>
+<hr>
+<h2 id="10-蛋白结构编码的常见建模选择"><a href="#10-蛋白结构编码的常见建模选择" class="headerlink" title="10. 蛋白结构编码的常见建模选择"></a>10. 蛋白结构编码的常见建模选择</h2><table>
+<thead>
+<tr>
+<th>决策</th>
+<th>选项 A</th>
+<th>选项 B</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点</td>
+<td>$C_\alpha$ 残基</td>
+<td>全原子</td>
+<td>$N$ 规模、边定义</td>
+</tr>
+<tr>
+<td>边</td>
+<td>仅序列</td>
+<td>序列 + 半径图</td>
+<td>是否捕获远程接触</td>
+</tr>
+<tr>
+<td>坐标</td>
+<td>只作构图</td>
+<td><code>pos</code> 进等变层</td>
+<td>是否需 $\mathrm{SE}(3)$ 模型</td>
+</tr>
+<tr>
+<td>标签</td>
+<td>图级（稳定性）</td>
+<td>节点级（RSA）</td>
+<td><code>y</code> 形状与损失</td>
+</tr>
+<tr>
+<td>划分</td>
+<td>随机</td>
+<td>按 PDB ID &#x2F; 簇</td>
+<td>是否泄漏同源蛋白</td>
+</tr>
+</tbody></table>
+<p><strong>编码</strong>的最终产物是：<strong>在保留几何与序列先验的图上，每个残基有一个初始嵌入 $\mathbf{x}_i$</strong>；后续 GNN 层通过消息传递得到 $\mathbf{h}_i$、$\mathbf{h}_G$，用于活性预测、界面识别、突变效应等下游任务。</p>
+<hr>
+<h2 id="11-最小可运行依赖"><a href="#11-最小可运行依赖" class="headerlink" title="11. 最小可运行依赖"></a>11. 最小可运行依赖</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pip install biopython numpy torch torch-geometric</span><br><span class="line"><span class="comment"># PyG 安装若遇 CUDA 版本问题，见官方 wheel 说明</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">项目目录示例</span><br><span class="line">├── data/</span><br><span class="line">│   └── 1CRN.pdb</span><br><span class="line">├── graph/</span><br><span class="line">│   └── build_protein_graph.py   # 本文 extract / structure_to_pyg_data</span><br><span class="line">└── train/</span><br><span class="line">    └── train_gcn.py             # DataLoader + GCN</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="12-与系列文章的衔接"><a href="#12-与系列文章的衔接" class="headerlink" title="12. 与系列文章的衔接"></a>12. 与系列文章的衔接</h2><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>本文</th>
+<th>其它篇</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>图与 MPNN</td>
+<td><code>edge_index</code>、<code>x</code></td>
+<td><a href="./%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">GNN 入门</a></td>
+</tr>
+<tr>
+<td>旋转等变</td>
+<td><code>pos</code> 进网络</td>
+<td><a href="./SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">SE(3)-等变 GNN</a></td>
+</tr>
+<tr>
+<td>PDB 列含义</td>
+<td>ATOM、B-factor</td>
+<td><a href="../01.%E7%9F%A5%E8%AF%86-03.standard/fileformat-pdb.md">fileformat-pdb.md</a></td>
+</tr>
+<tr>
+<td>抗体域级结构</td>
+<td>选链、Fab&#x2F;Fc</td>
+<td><a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-01.%E7%BB%93%E6%9E%84-01.%E8%AE%A4%E8%AF%86%E6%8A%97%E4%BD%93%E7%BB%93%E6%9E%84.md">抗体结构</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="13-小结"><a href="#13-小结" class="headerlink" title="13. 小结"></a>13. 小结</h2><p>用 Python 做蛋白结构的 GNN 编码，本质是 <strong>「结构文件 → 残基表 → 图张量 → PyG <code>Data</code>」</strong>。BioPython（或 biotite）负责<strong>语义解析</strong>，NumPy&#x2F;PyTorch 负责<strong>数值表</strong>，<code>edge_index</code> 负责<strong>关系</strong>，PyG 负责<strong>与 GNN 层对接</strong>。记住三张图：<strong>对象树</strong>（便于筛链筛残基）、<strong>坐标表 <code>pos</code></strong>（几何与构图）、<strong>特征表 <code>x</code></strong>（化学与统计），再记住两种边：<strong>序列</strong>与<strong>空间</strong>，就能把文献里的蛋白 GNN 数据管线读懂、写通。</p>
+<hr>
+<h2 id="参考文献与延伸阅读"><a href="#参考文献与延伸阅读" class="headerlink" title="参考文献与延伸阅读"></a>参考文献与延伸阅读</h2><ol>
+<li>BioPython Tutorial — <a target="_blank" rel="noopener" href="https://biopython.org/docs/latest/Tutorial/chapter11.html">Structure section</a>  </li>
+<li>PyTorch Geometric — <a target="_blank" rel="noopener" href="https://pytorch-geometric.readthedocs.io/en/latest/tutorial/create_dataset.html">Creating Your Own Datasets</a>  </li>
+<li>Hamelryck &amp; Manderick, <em>PDB parser and structure class</em> (BioPython PDB).  </li>
+<li>本系列：<a href="./%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">图神经网络入门</a>、<a href="./SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8.md">SE(3)-等变 GNN</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E7%BB%93%E6%9E%84/" rel="tag"><i class="fa fa-tag"></i> 蛋白质结构</a>
+          
+            <a href="/tags/GNN/" rel="tag"><i class="fa fa-tag"></i> GNN</a>
+          
+            <a href="/tags/PyTorch-Geometric/" rel="tag"><i class="fa fa-tag"></i> PyTorch Geometric</a>
+          
+            <a href="/tags/BioPython/" rel="tag"><i class="fa fa-tag"></i> BioPython</a>
+          
+            <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/SE3-%E7%AD%89%E5%8F%98%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/" rel="next" title="SE(3)-等变图神经网络：原理、算法与应用场景">
+                <i class="fa fa-chevron-left"></i> SE(3)-等变图神经网络：原理、算法与应用场景
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-00.%E7%B3%BB%E5%88%97%E6%A6%82%E8%BF%B0/" rel="prev" title="RL-00.系列概述">
+                RL-00.系列概述 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%95%B0%E6%8D%AE%E6%B5%81%EF%BC%88%E5%85%88%E5%BB%BA%E7%AB%8B%E5%9C%B0%E5%9B%BE%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">1. 端到端数据流（先建立地图）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%BB%93%E6%9E%84%E6%96%87%E4%BB%B6%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88"><span class="nav-number">2.</span> <span class="nav-text">2. 结构文件里有什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Python-%E4%B8%AD%E7%9A%84%E7%BB%93%E6%9E%84%E8%A1%A8%E7%A4%BA%EF%BC%9A%E4%B8%89%E5%B1%82%E7%BB%93%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">3. Python 中的结构表示：三层结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%B1%82%E6%AC%A1%E5%AF%B9%E8%B1%A1%EF%BC%88BioPython%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 层次对象（BioPython）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E6%89%81%E5%B9%B3%E5%BC%A0%E9%87%8F%EF%BC%88NumPy-PyTorch%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 扁平张量（NumPy &#x2F; PyTorch）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%85%B6%E5%AE%83%E5%B8%B8%E7%94%A8%E5%BA%93%EF%BC%88%E9%80%89%E5%9E%8B%EF%BC%89"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 其它常用库（选型）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%AD%A5%E9%AA%A4-%E2%91%A0%E2%91%A1%EF%BC%9A%E8%A7%A3%E6%9E%90-PDB-%E5%B9%B6%E6%8F%90%E5%8F%96-C-alpha"><span class="nav-number">4.</span> <span class="nav-text">4. 步骤 ①②：解析 PDB 并提取 $C_\alpha$</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%AD%A5%E9%AA%A4-%E2%91%A2%EF%BC%9A%E8%8A%82%E7%82%B9%E7%89%B9%E5%BE%81-x-%E6%80%8E%E4%B9%88%E7%BC%96"><span class="nav-number">5.</span> <span class="nav-text">5. 步骤 ③：节点特征 x 怎么编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%AD%A5%E9%AA%A4-%E2%91%A3%EF%BC%9A%E4%BB%8E%E5%9D%90%E6%A0%87%E5%88%B0-edge-index"><span class="nav-number">6.</span> <span class="nav-text">6. 步骤 ④：从坐标到 edge_index</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%BA%8F%E5%88%97%E8%BE%B9%EF%BC%88%E5%8C%96%E5%AD%A6%E6%8B%93%E6%89%91%E5%85%88%E9%AA%8C%EF%BC%89"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 序列边（化学拓扑先验）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E5%8D%8A%E5%BE%84%E5%9B%BE%EF%BC%88%E7%A9%BA%E9%97%B4%E6%8E%A5%E8%A7%A6%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 半径图（空间接触）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E5%90%88%E5%B9%B6%E8%BE%B9%E5%B9%B6%E5%8E%BB%E9%87%8D"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 合并边并去重</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E8%BE%B9%E7%89%B9%E5%BE%81-edge-attr%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-number">6.4.</span> <span class="nav-text">6.4 边特征 edge_attr（可选）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%AD%A5%E9%AA%A4-%E2%91%A4%EF%BC%9A%E7%BB%84%E8%A3%85-torch-geometric-data-Data"><span class="nav-number">7.</span> <span class="nav-text">7. 步骤 ⑤：组装 torch_geometric.data.Data</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-Data-%E4%B8%8E%E6%95%B0%E5%AD%A6%E5%AF%B9%E8%B1%A1%E5%AF%B9%E7%85%A7"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 Data 与数学对象对照</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%89%B9%E8%AE%AD%E7%BB%83%EF%BC%9A%E5%A4%9A%E8%9B%8B%E7%99%BD%E5%A6%82%E4%BD%95%E6%8B%BC%E6%88%90%E4%B8%80%E6%89%B9"><span class="nav-number">8.</span> <span class="nav-text">8. 批训练：多蛋白如何拼成一批</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%80%BB%E8%A7%88%EF%BC%88%E9%80%9F%E6%9F%A5%E8%A1%A8%EF%BC%89"><span class="nav-number">9.</span> <span class="nav-text">9. 数据结构总览（速查表）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E8%9B%8B%E7%99%BD%E7%BB%93%E6%9E%84%E7%BC%96%E7%A0%81%E7%9A%84%E5%B8%B8%E8%A7%81%E5%BB%BA%E6%A8%A1%E9%80%89%E6%8B%A9"><span class="nav-number">10.</span> <span class="nav-text">10. 蛋白结构编码的常见建模选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E4%BE%9D%E8%B5%96"><span class="nav-number">11.</span> <span class="nav-text">11. 最小可运行依赖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-%E4%B8%8E%E7%B3%BB%E5%88%97%E6%96%87%E7%AB%A0%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-number">12.</span> <span class="nav-text">12. 与系列文章的衔接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-%E5%B0%8F%E7%BB%93"><span class="nav-number">13.</span> <span class="nav-text">13. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%E4%B8%8E%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">14.</span> <span class="nav-text">参考文献与延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

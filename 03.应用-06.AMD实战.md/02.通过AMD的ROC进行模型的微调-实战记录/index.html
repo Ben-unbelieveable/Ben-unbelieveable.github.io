@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LoRA,LLM,微调,SFT,ModelScope,ROCm," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="按 Notebook 真实执行顺序，记录 Gemma 4 E4B-it 在 AMD ROCm 单卡上用 LoRA 做情绪分类微调的全流程——每步的目标、方法与关键数据结构。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Gemma 4 情绪分类 LoRA 微调实战记录（AMD ROCm 单卡）">
+<meta property="og:url" content="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="按 Notebook 真实执行顺序，记录 Gemma 4 E4B-it 在 AMD ROCm 单卡上用 LoRA 做情绪分类微调的全流程——每步的目标、方法与关键数据结构。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/gemma4-emotion-lora-finetune-overview.png">
+<meta property="og:image" content="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/confusion_matrix_df_before.png">
+<meta property="og:image" content="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/confusion_matrix_df_after.png">
+<meta property="og:image" content="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/eavluated_after_finetuning.png">
+<meta property="article:published_time" content="2026-06-23T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:58.010Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="LoRA">
+<meta property="article:tag" content="ModelScope">
+<meta property="article:tag" content="ROCm">
+<meta property="article:tag" content="SFT">
+<meta property="article:tag" content="微调">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/gemma4-emotion-lora-finetune-overview.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/03.应用-06.AMD实战.md/02.通过AMD的ROC进行模型的微调-实战记录/"/>
+
+
+
+
+
+  <title>Gemma 4 情绪分类 LoRA 微调实战记录（AMD ROCm 单卡） | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Gemma 4 情绪分类 LoRA 微调实战记录（AMD ROCm 单卡）</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-23T14:00:00+08:00">
+                2026-06-23
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  按 Notebook 真实执行顺序，记录 Gemma 4 E4B-it 在 AMD ROCm 单卡上用 LoRA 做情绪分类微调的全流程——每步的目标、方法与关键数据结构。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本文是微调链路的<strong>逐步执行记录</strong>，与概念梳理文 <a href="./02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83.md">AMD ROCm 上基于 LoRA 微调 Gemma 4 情绪分类实操手记</a> 互补：这里只跟 Notebook 走，不写与部署&#x2F;推理的逐项对照。</p>
+<p><strong>前置条件</strong>：同一台 48 GB ROCm 机器，PyTorch 已能识别 GPU；基座权重 <code>google/gemma-4-E4B-it</code> 已通过魔搭下载至 <code>./models/</code>（若目录已存在，Step 4 可跳过）。实操 Notebook：<a href="./02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83/gemma4_emotion_lora_modelscope_single_gpu.ipynb"><code>gemma4_emotion_lora_modelscope_single_gpu.ipynb</code></a>。</p>
+<p><strong>任务</strong>：用 LoRA 在 <code>AI-ModelScope/emotion</code> 上微调 Gemma 4，使模型在 system 约束下稳定输出六类情绪标签，并完成微调前后量化对比。</p>
+<p><img src="/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/gemma4-emotion-lora-finetune-overview.png" alt="微调流程概览"></p>
+<p>每步结构：<strong>目标 → 方法 → 数据结构（若有）→ 结果里盯什么</strong>。</p>
+<hr>
+<h2 id="Step-1：安装依赖"><a href="#Step-1：安装依赖" class="headerlink" title="Step 1：安装依赖"></a>Step 1：安装依赖</h2><h3 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h3><p>补齐微调训练栈：<code>trl</code>（训练循环）、<code>peft</code>（LoRA）、<code>datasets</code>（数据管道）、<code>scikit-learn</code>（评估指标）。</p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">-U：升级到最新兼容版本</span></span><br><span class="line">uv pip install -U trl peft datasets scikit-learn pandas tqdm modelscope transformers accelerate \</span><br><span class="line">  -i https://mirrors.cloud.tencent.com/pypi/simple/   # 国内 PyPI 镜像，加速下载</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">trl：SFTTrainer 训练循环 | peft：LoRA | datasets：数据管道 | scikit-learn：评估指标</span></span><br></pre></td></tr></table></figure>
+
+<p>ROCm 环境若已装定制版 PyTorch，只补上述包即可，不必改动底层 torch 构建。</p>
+<h3 id="结果里盯什么"><a href="#结果里盯什么" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><ul>
+<li><code>import trl, peft, datasets</code> 无报错。</li>
+<li>若后续 <code>MsDataset</code> 桥接报错，本流程不依赖它（Step 5 用 parquet 直读）。</li>
+</ul>
+<hr>
+<h2 id="Step-2：导入依赖与全局配置"><a href="#Step-2：导入依赖与全局配置" class="headerlink" title="Step 2：导入依赖与全局配置"></a>Step 2：导入依赖与全局配置</h2><h3 id="目标-1"><a href="#目标-1" class="headerlink" title="目标"></a>目标</h3><p>集中定义模型 ID、数据集 ID、数据量上限、训练精度、任务 prompt 与输出目录，供后续各步引用。</p>
+<h3 id="方法-1"><a href="#方法-1" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">MODELSCOPE_MODEL_ID = <span class="string">&quot;google/gemma-4-E4B-it&quot;</span>          <span class="comment"># 魔搭基座模型 ID</span></span><br><span class="line">MODELSCOPE_DATASET_ID = <span class="string">&quot;AI-ModelScope/emotion&quot;</span>        <span class="comment"># 魔搭情绪分类数据集 ID</span></span><br><span class="line">OUTPUT_DIR = <span class="string">&quot;./gemma4-it-emotion-lora-ms-single-gpu&quot;</span>  <span class="comment"># adapter、checkpoint、CSV 输出目录</span></span><br><span class="line"></span><br><span class="line">TRAIN_LIMIT = <span class="number">4000</span>        <span class="comment"># 训练子集上限；None = 全量 16000 条</span></span><br><span class="line">VALIDATION_LIMIT = <span class="number">400</span>    <span class="comment"># 验证子集上限；供训练中 eval_loss 监控</span></span><br><span class="line">TEST_LIMIT = <span class="number">400</span>          <span class="comment"># 测试子集上限；供微调前/后评估</span></span><br><span class="line">EVAL_LIMIT = <span class="number">400</span>          <span class="comment"># 生成式评估条数上限（decode 慢，单独控制）</span></span><br><span class="line"></span><br><span class="line">SEED = <span class="number">42</span>                           <span class="comment"># 全局随机种子，与 Step 3 一致</span></span><br><span class="line">MODEL_DTYPE = torch.bfloat16        <span class="comment"># 模型加载精度</span></span><br><span class="line">BF16, FP16 = <span class="literal">True</span>, <span class="literal">False</span>            <span class="comment"># 训练精度开关；ROCm 下优先 BF16，不用 4bit QLoRA</span></span><br><span class="line"></span><br><span class="line">SYSTEM_PROMPT = <span class="string">&quot;&quot;&quot;You are an emotion classification assistant.</span></span><br><span class="line"><span class="string">Read the user&#x27;s text and answer with exactly one label.</span></span><br><span class="line"><span class="string">Only choose from: sadness, joy, love, anger, fear, surprise.</span></span><br><span class="line"><span class="string">Return only the label and nothing else.&quot;&quot;&quot;</span>              <span class="comment"># 任务规则；训练与评估必须同一份</span></span><br><span class="line"></span><br><span class="line">LABEL_PATTERN = re.<span class="built_in">compile</span>(                             <span class="comment"># 从模型生成文本中匹配合法情绪标签</span></span><br><span class="line">    <span class="string">r&quot;\b(sadness|joy|love|anger|fear|surprise)\b&quot;</span>, re.IGNORECASE</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-1"><a href="#结果里盯什么-1" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>启动时打印 <code>torch.cuda.is_available(): True</code> 与设备名；ROCm 下仍显示 <code>cuda</code> 属 PyTorch 统一接口，属正常现象。</p>
+<hr>
+<h2 id="Step-3：固定随机种子"><a href="#Step-3：固定随机种子" class="headerlink" title="Step 3：固定随机种子"></a>Step 3：固定随机种子</h2><h3 id="目标-2"><a href="#目标-2" class="headerlink" title="目标"></a>目标</h3><p>让数据 shuffle、LoRA 初始化、dropout 尽量可复现，便于对比不同超参实验。</p>
+<h3 id="方法-2"><a href="#方法-2" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">setup_seed</span>(<span class="params">seed=<span class="number">42</span></span>):</span><br><span class="line">    random.seed(seed)                  <span class="comment"># Python 内置随机（如数据 shuffle）</span></span><br><span class="line">    np.random.seed(seed)               <span class="comment"># NumPy 随机</span></span><br><span class="line">    torch.manual_seed(seed)            <span class="comment"># PyTorch CPU 随机</span></span><br><span class="line">    set_seed(seed)                     <span class="comment"># transformers 内部随机（含 dataloader）</span></span><br><span class="line">    <span class="keyword">if</span> torch.cuda.is_available():</span><br><span class="line">        torch.cuda.manual_seed_all(seed)  <span class="comment"># 所有 GPU 随机（含 LoRA 初始化、dropout）</span></span><br><span class="line"></span><br><span class="line">setup_seed(SEED)</span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-2"><a href="#结果里盯什么-2" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>同一配置重复跑，loss 曲线与评估指标应高度接近（算子非确定性可能带来微小漂移）。</p>
+<hr>
+<h2 id="Step-4：准备基座模型"><a href="#Step-4：准备基座模型" class="headerlink" title="Step 4：准备基座模型"></a>Step 4：准备基座模型</h2><h3 id="目标-3"><a href="#目标-3" class="headerlink" title="目标"></a>目标</h3><p>拿到本地 Gemma 4 E4B-it 权重路径，供 <code>transformers</code> 加载 tokenizer 与 <code>AutoModelForCausalLM</code>。</p>
+<h3 id="方法-3"><a href="#方法-3" class="headerlink" title="方法"></a>方法</h3><p>权重若已在 <code>./models/google/gemma-4-E4B-it</code>，直接设 <code>LOCAL_MODEL_DIR</code> 即可；否则：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_MODEL_DIR = snapshot_download(</span><br><span class="line">    MODELSCOPE_MODEL_ID,</span><br><span class="line">    cache_dir=<span class="string">&quot;./models&quot;</span>,              <span class="comment"># 下载到本地 models 目录，后续 offline 加载</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>仓库需含 <code>model.safetensors</code>、<code>tokenizer.json</code>、<code>chat_template.jinja</code> 等；Gemma 系列首次需在魔搭网页接受许可协议。</p>
+<h3 id="结果里盯什么-3"><a href="#结果里盯什么-3" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>LOCAL_MODEL_DIR</code> 指向含 <code>config.json</code> 与 <code>model.safetensors</code>（约 14.9 GB）的目录。</p>
+<hr>
+<h2 id="Step-5：加载情绪分类数据集"><a href="#Step-5：加载情绪分类数据集" class="headerlink" title="Step 5：加载情绪分类数据集"></a>Step 5：加载情绪分类数据集</h2><h3 id="目标-4"><a href="#目标-4" class="headerlink" title="目标"></a>目标</h3><p>得到带 train &#x2F; validation &#x2F; test 三个 split 的标注数据，且 <code>label</code> 能映射到六类情绪名称。</p>
+<h3 id="方法-4"><a href="#方法-4" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">dataset_dir = dataset_snapshot_download(</span><br><span class="line">    MODELSCOPE_DATASET_ID,</span><br><span class="line">    cache_dir=<span class="string">&quot;./datasets&quot;</span>,            <span class="comment"># 整仓拉取含 data/*.parquet 的数据集仓库</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">raw_dataset = load_dataset(</span><br><span class="line">    <span class="string">&quot;parquet&quot;</span>,                         <span class="comment"># 直接从本地 parquet 读，绕过 MsDataset 桥接</span></span><br><span class="line">    data_files=&#123;</span><br><span class="line">        <span class="string">&quot;train&quot;</span>: <span class="built_in">sorted</span>(glob.glob(<span class="string">f&quot;<span class="subst">&#123;dataset_dir&#125;</span>/data/train-*.parquet&quot;</span>)),</span><br><span class="line">        <span class="string">&quot;validation&quot;</span>: <span class="built_in">sorted</span>(glob.glob(<span class="string">f&quot;<span class="subst">&#123;dataset_dir&#125;</span>/data/validation-*.parquet&quot;</span>)),</span><br><span class="line">        <span class="string">&quot;test&quot;</span>: <span class="built_in">sorted</span>(glob.glob(<span class="string">f&quot;<span class="subst">&#123;dataset_dir&#125;</span>/data/test-*.parquet&quot;</span>)),</span><br><span class="line">    &#125;,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">EMOTION_LABEL_NAMES = [<span class="string">&quot;sadness&quot;</span>, <span class="string">&quot;joy&quot;</span>, <span class="string">&quot;love&quot;</span>, <span class="string">&quot;anger&quot;</span>, <span class="string">&quot;fear&quot;</span>, <span class="string">&quot;surprise&quot;</span>]</span><br><span class="line"><span class="keyword">for</span> split <span class="keyword">in</span> raw_dataset:</span><br><span class="line">    raw_dataset[split] = raw_dataset[split].cast_column(</span><br><span class="line">        <span class="string">&quot;label&quot;</span>, ClassLabel(names=EMOTION_LABEL_NAMES)  <span class="comment"># int → ClassLabel，便于 names[i] 取类名</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">maybe_limit</span>(<span class="params">split, limit</span>):</span><br><span class="line">    split = split.shuffle(seed=SEED)    <span class="comment"># 固定种子 shuffle，子集可复现</span></span><br><span class="line">    <span class="keyword">return</span> split <span class="keyword">if</span> limit <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">else</span> split.select(<span class="built_in">range</span>(<span class="built_in">min</span>(limit, <span class="built_in">len</span>(split))))</span><br><span class="line"></span><br><span class="line">dataset = DatasetDict(&#123;</span><br><span class="line">    <span class="string">&quot;train&quot;</span>: maybe_limit(raw_dataset[<span class="string">&quot;train&quot;</span>], TRAIN_LIMIT),</span><br><span class="line">    <span class="string">&quot;validation&quot;</span>: maybe_limit(raw_dataset[<span class="string">&quot;validation&quot;</span>], VALIDATION_LIMIT),</span><br><span class="line">    <span class="string">&quot;test&quot;</span>: maybe_limit(raw_dataset[<span class="string">&quot;test&quot;</span>], TEST_LIMIT),</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据结构：原始分类格式"><a href="#数据结构：原始分类格式" class="headerlink" title="数据结构：原始分类格式"></a>数据结构：原始分类格式</h3><p>每条样本是 Hugging Face <code>Dataset</code> 的一行 dict：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;text&quot;</span>: <span class="string">&quot;while cycling in the country&quot;</span>,   <span class="comment"># str，待分类英文文本</span></span><br><span class="line">    <span class="string">&quot;label&quot;</span>: <span class="number">4</span>,                              <span class="comment"># int，0–5 对应六类情绪</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>label id</th>
+<th>类别名</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>sadness</td>
+</tr>
+<tr>
+<td>1</td>
+<td>joy</td>
+</tr>
+<tr>
+<td>2</td>
+<td>love</td>
+</tr>
+<tr>
+<td>3</td>
+<td>anger</td>
+</tr>
+<tr>
+<td>4</td>
+<td>fear</td>
+</tr>
+<tr>
+<td>5</td>
+<td>surprise</td>
+</tr>
+</tbody></table>
+<p>全量规模：train 16000 &#x2F; validation 2000 &#x2F; test 2000。本子集：4000 &#x2F; 400 &#x2F; 400。</p>
+<p><strong>为何 <code>ClassLabel</code> cast？</strong> 从 parquet 直读时 <code>label</code> 仅为 <code>int64</code>；cast 后可通过 <code>features[&quot;label&quot;].names[i]</code> 取类别字符串，供 Step 6 拼 completion。</p>
+<p><strong>为何不用 <code>MsDataset.load()</code>？</strong> 规避 <code>modelscope</code> 与 <code>datasets</code> 版本错配时的 <code>verification_mode</code> 报错。</p>
+<h3 id="结果里盯什么-4"><a href="#结果里盯什么-4" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>print(dataset)</code> 三个 split 行数符合 limit；<code>dataset[&quot;train&quot;][0]</code> 能正确读出 <code>text</code> 与 <code>label</code>。</p>
+<hr>
+<h2 id="Step-6：构造-SFT-格式数据"><a href="#Step-6：构造-SFT-格式数据" class="headerlink" title="Step 6：构造 SFT 格式数据"></a>Step 6：构造 SFT 格式数据</h2><h3 id="目标-5"><a href="#目标-5" class="headerlink" title="目标"></a>目标</h3><p>把 <code>(text, label)</code> 分类样本转为 <code>SFTTrainer</code> 所需的 <strong>prompt-completion</strong> 对话结构，使训练目标与 chat 模型接口一致。</p>
+<h3 id="方法-5"><a href="#方法-5" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">to_prompt_completion</span>(<span class="params">example</span>):</span><br><span class="line">    label = label_names[example[<span class="string">&quot;label&quot;</span>]]   <span class="comment"># 整数 id → 字符串标签名</span></span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        <span class="string">&quot;prompt&quot;</span>: [</span><br><span class="line">            &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;system&quot;</span>, <span class="string">&quot;content&quot;</span>: SYSTEM_PROMPT&#125;,   <span class="comment"># 任务规则</span></span><br><span class="line">            &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">f&quot;Classify the emotion of this text:\n\n<span class="subst">&#123;example[<span class="string">&#x27;text&#x27;</span>]&#125;</span>&quot;</span>&#125;,</span><br><span class="line">        ],</span><br><span class="line">        <span class="string">&quot;completion&quot;</span>: [</span><br><span class="line">            &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;assistant&quot;</span>, <span class="string">&quot;content&quot;</span>: label&#125;,        <span class="comment"># 监督目标：模型应生成的标签</span></span><br><span class="line">        ],</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">sft_dataset = dataset.<span class="built_in">map</span>(</span><br><span class="line">    to_prompt_completion,</span><br><span class="line">    remove_columns=dataset[<span class="string">&quot;train&quot;</span>].column_names,  <span class="comment"># 去掉原始 text/label，只留 prompt+completion</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据结构：SFT-prompt-completion-格式"><a href="#数据结构：SFT-prompt-completion-格式" class="headerlink" title="数据结构：SFT prompt-completion 格式"></a>数据结构：SFT prompt-completion 格式</h3><p>每条训练样本变为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;prompt&quot;</span>: [</span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;system&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;&lt;SYSTEM_PROMPT 全文&gt;&quot;</span>&#125;,   <span class="comment"># 任务规则</span></span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>,   <span class="string">&quot;content&quot;</span>: <span class="string">&quot;Classify the emotion of this text:\n\n&lt;原文&gt;&quot;</span>&#125;,  <span class="comment"># 待分类文本</span></span><br><span class="line">    ],</span><br><span class="line">    <span class="string">&quot;completion&quot;</span>: [</span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;assistant&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;fear&quot;</span>&#125;,   <span class="comment"># 监督目标：标签名字符串，非整数 id</span></span><br><span class="line">    ],</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>prompt</code></td>
+<td><code>list[dict]</code></td>
+<td>模型条件输入：<code>role</code> + <code>content</code> 消息列表</td>
+</tr>
+<tr>
+<td><code>completion</code></td>
+<td><code>list[dict]</code></td>
+<td>监督目标：assistant 应生成的标准标签文本</td>
+</tr>
+</tbody></table>
+<p><code>SFTTrainer</code> 内部调用 <code>tokenizer.apply_chat_template</code> 将上述结构 tokenize；配合 <code>completion_only_loss=True</code>（Step 12），<strong>loss 只算 completion 段</strong>，不对 system&#x2F;user 前缀回传梯度。</p>
+<blockquote>
+<p>段末注释：<strong>SFT</strong>（Supervised Fine-Tuning，监督微调）在此指用「输入对话 + 标准回答」对继续训练 Causal LM；<strong>Causal LM</strong> 按序预测下一个 token。</p>
+</blockquote>
+<h3 id="结果里盯什么-5"><a href="#结果里盯什么-5" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>sft_dataset[&quot;train&quot;].column_names</code> 应为 <code>[&#39;prompt&#39;, &#39;completion&#39;]</code>；抽查一条，<code>completion[0][&quot;content&quot;]</code> 与 <code>label_names[原 label id]</code> 一致。</p>
+<hr>
+<h2 id="Step-7：加载-tokenizer-与基座模型"><a href="#Step-7：加载-tokenizer-与基座模型" class="headerlink" title="Step 7：加载 tokenizer 与基座模型"></a>Step 7：加载 tokenizer 与基座模型</h2><h3 id="目标-6"><a href="#目标-6" class="headerlink" title="目标"></a>目标</h3><p>以训练态加载 Gemma 4：tokenizer 可用官方 chat template；基座模型置于 GPU，并关闭 KV cache。</p>
+<h3 id="方法-6"><a href="#方法-6" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">tokenizer = AutoTokenizer.from_pretrained(</span><br><span class="line">    LOCAL_MODEL_DIR,</span><br><span class="line">    use_fast=<span class="literal">True</span>,              <span class="comment"># Rust 实现的分词器，速度更快</span></span><br><span class="line">    trust_remote_code=<span class="literal">True</span>,     <span class="comment"># 允许加载仓库内自定义代码（若存在）</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">if</span> tokenizer.pad_token <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">    tokenizer.pad_token = tokenizer.eos_token  <span class="comment"># Gemma 无独立 pad token，复用 eos</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># chat_template 缺失时从魔搭补拉 chat_template.jinja（it 版通常已自带）</span></span><br><span class="line"><span class="comment"># 探针：apply_chat_template([...], tokenize=False, add_generation_prompt=True)</span></span><br><span class="line"></span><br><span class="line">base_model = AutoModelForCausalLM.from_pretrained(</span><br><span class="line">    LOCAL_MODEL_DIR,</span><br><span class="line">    torch_dtype=MODEL_DTYPE,    <span class="comment"># BF16 加载，与训练精度一致</span></span><br><span class="line">    low_cpu_mem_usage=<span class="literal">True</span>,     <span class="comment"># 分片加载权重，降低 CPU 峰值内存</span></span><br><span class="line">    trust_remote_code=<span class="literal">True</span>,</span><br><span class="line">)</span><br><span class="line">base_model.to(<span class="string">&quot;cuda&quot;</span>)           <span class="comment"># 单卡显式上 GPU；ROCm 下设备名仍为 cuda</span></span><br><span class="line">base_model.config.use_cache = <span class="literal">False</span>  <span class="comment"># 训练态关闭 KV cache，否则与反向传播 / checkpointing 冲突</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-6"><a href="#结果里盯什么-6" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><ul>
+<li><code>chat_template probe</code> 输出含 <code>&lt;|turn&gt;system</code> 等 Gemma 4 标记。</li>
+<li><code>next(base_model.parameters()).device</code> 为 <code>cuda:0</code>。</li>
+<li>加载后显存占用明显上升，属正常。</li>
+</ul>
+<hr>
+<h2 id="Step-8：推理辅助函数"><a href="#Step-8：推理辅助函数" class="headerlink" title="Step 8：推理辅助函数"></a>Step 8：推理辅助函数</h2><h3 id="目标-7"><a href="#目标-7" class="headerlink" title="目标"></a>目标</h3><p>封装「文本 → 情绪标签」的生成式预测，供微调前&#x2F;后评估共用，保证对比公平。</p>
+<h3 id="方法-7"><a href="#方法-7" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">extract_label</span>(<span class="params">raw_text: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;从模型生成的自由文本中抽取合法标签。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">match</span> = LABEL_PATTERN.search(raw_text.strip().lower())  <span class="comment"># 优先正则匹配六类词</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">match</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">match</span>.group(<span class="number">1</span>)</span><br><span class="line">    tokens = raw_text.strip().lower().split()</span><br><span class="line">    <span class="comment"># 正则未命中时取首 token 并去标点；仍不在词表则后续记 INVALID</span></span><br><span class="line">    <span class="keyword">return</span> tokens[<span class="number">0</span>].strip(<span class="string">&quot;.,!?:;\&quot;&#x27;()[]&#123;&#125;&quot;</span>) <span class="keyword">if</span> tokens <span class="keyword">else</span> <span class="string">&quot;INVALID&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">generate_label</span>(<span class="params">model, tokenizer, user_text, system_prompt=SYSTEM_PROMPT, max_new_tokens=<span class="number">4</span></span>):</span><br><span class="line">    messages = [</span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;system&quot;</span>, <span class="string">&quot;content&quot;</span>: system_prompt&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">f&quot;Classify the emotion of this text:\n\n<span class="subst">&#123;user_text&#125;</span>&quot;</span>&#125;,</span><br><span class="line">    ]</span><br><span class="line">    inputs = tokenizer.apply_chat_template(</span><br><span class="line">        messages,</span><br><span class="line">        tokenize=<span class="literal">True</span>,              <span class="comment"># 直接返回 token id</span></span><br><span class="line">        add_generation_prompt=<span class="literal">True</span>, <span class="comment"># 追加 assistant 起始标记，模型从该处续写</span></span><br><span class="line">        return_dict=<span class="literal">True</span>,</span><br><span class="line">        return_tensors=<span class="string">&quot;pt&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    inputs = &#123;k: v.to(model.device) <span class="keyword">for</span> k, v <span class="keyword">in</span> inputs.items()&#125;</span><br><span class="line">    input_len = inputs[<span class="string">&quot;input_ids&quot;</span>].shape[-<span class="number">1</span>]  <span class="comment"># 记录 prompt 长度，decode 时只取新生成段</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> torch.no_grad():                       <span class="comment"># 评估/推理不需要梯度</span></span><br><span class="line">        outputs = model.generate(</span><br><span class="line">            **inputs,</span><br><span class="line">            max_new_tokens=max_new_tokens,      <span class="comment"># 标签极短，4 个 token 足够</span></span><br><span class="line">            do_sample=<span class="literal">False</span>,                    <span class="comment"># 贪心解码，结果确定、可复现</span></span><br><span class="line">            pad_token_id=tokenizer.pad_token_id,</span><br><span class="line">            eos_token_id=tokenizer.eos_token_id,</span><br><span class="line">        )</span><br><span class="line">    raw_pred = tokenizer.decode(outputs[<span class="number">0</span>][input_len:], skip_special_tokens=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">return</span> extract_label(raw_pred)</span><br></pre></td></tr></table></figure>
+
+<h3 id="为何需要-generate-label？"><a href="#为何需要-generate-label？" class="headerlink" title="为何需要 generate_label？"></a>为何需要 <code>generate_label</code>？</h3><p>Gemma-it 是 <strong>Causal LM</strong>，接口返回的是续写 token 解码后的<strong>字符串</strong>（可能是 <code>joy</code>、<code>Joy.</code>、<code>The emotion is joy</code> 等），不是固定的 6 维 logits 分类结果。<code>generate_label</code> 负责：<strong>chat 模板编码 → 短续写 → 正则抽取合法标签 → 非法则记 <code>INVALID</code></strong>。</p>
+<h3 id="结果里盯什么-7"><a href="#结果里盯什么-7" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>对 <code>&quot;I feel so happy and excited today!&quot;</code> 试跑，基座模型通常返回 <code>joy</code> 或接近标签。</p>
+<hr>
+<h2 id="Step-9：评估函数"><a href="#Step-9：评估函数" class="headerlink" title="Step 9：评估函数"></a>Step 9：评估函数</h2><h3 id="目标-8"><a href="#目标-8" class="headerlink" title="目标"></a>目标</h3><p>在指定 split 上批量调用 <code>generate_label</code>，汇总分类指标与逐条预测明细。</p>
+<h3 id="方法-8"><a href="#方法-8" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">evaluate_model</span>(<span class="params">model, tokenizer, split=<span class="string">&quot;test&quot;</span>, limit=EVAL_LIMIT</span>):</span><br><span class="line">    y_true, y_pred, rows = [], [], []</span><br><span class="line">    raw_source = dataset[split]              <span class="comment"># 用原始 text+label 集，非 sft_dataset</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> limit <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        raw_source = raw_source.select(<span class="built_in">range</span>(<span class="built_in">min</span>(limit, <span class="built_in">len</span>(raw_source))))  <span class="comment"># 限制评估条数</span></span><br><span class="line"></span><br><span class="line">    model.<span class="built_in">eval</span>()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ex <span class="keyword">in</span> tqdm(raw_source, desc=<span class="string">f&quot;Evaluating <span class="subst">&#123;split&#125;</span>&quot;</span>, leave=<span class="literal">False</span>):</span><br><span class="line">        true_label = label_names[ex[<span class="string">&quot;label&quot;</span>]]</span><br><span class="line">        raw_pred_label = generate_label(model, tokenizer, ex[<span class="string">&quot;text&quot;</span>], SYSTEM_PROMPT)</span><br><span class="line">        pred_label = raw_pred_label <span class="keyword">if</span> raw_pred_label <span class="keyword">in</span> VALID_LABELS <span class="keyword">else</span> <span class="string">&quot;INVALID&quot;</span></span><br><span class="line"></span><br><span class="line">        y_true.append(true_label)</span><br><span class="line">        y_pred.append(pred_label)</span><br><span class="line">        rows.append(&#123;</span><br><span class="line">            <span class="string">&quot;text&quot;</span>: ex[<span class="string">&quot;text&quot;</span>],</span><br><span class="line">            <span class="string">&quot;true_label&quot;</span>: true_label,</span><br><span class="line">            <span class="string">&quot;pred_label&quot;</span>: pred_label,</span><br><span class="line">            <span class="string">&quot;raw_pred_label&quot;</span>: raw_pred_label,</span><br><span class="line">            <span class="string">&quot;correct&quot;</span>: true_label == pred_label,</span><br><span class="line">        &#125;)</span><br><span class="line"></span><br><span class="line">    metrics = &#123;</span><br><span class="line">        <span class="string">&quot;accuracy&quot;</span>: accuracy_score(y_true, y_pred),           <span class="comment"># 完全匹配比例</span></span><br><span class="line">        <span class="string">&quot;macro_f1&quot;</span>: f1_score(                                <span class="comment"># 六类 F1 宏平均，兼顾少数类</span></span><br><span class="line">            y_true, y_pred, labels=label_names, average=<span class="string">&quot;macro&quot;</span>, zero_division=<span class="number">0</span></span><br><span class="line">        ),</span><br><span class="line">        <span class="string">&quot;invalid_predictions&quot;</span>: <span class="built_in">sum</span>(<span class="number">1</span> <span class="keyword">for</span> p <span class="keyword">in</span> y_pred <span class="keyword">if</span> p == <span class="string">&quot;INVALID&quot;</span>),  <span class="comment"># 越界输出计数</span></span><br><span class="line">        <span class="string">&quot;evaluated_examples&quot;</span>: <span class="built_in">len</span>(y_true),</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    report = classification_report(                         <span class="comment"># 每类 precision/recall/F1</span></span><br><span class="line">        y_true, y_pred, labels=label_names, output_dict=<span class="literal">True</span>, zero_division=<span class="number">0</span>,</span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">return</span> metrics, report, pd.DataFrame(rows)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">confusion_matrix_df</span>(<span class="params">pred_df</span>):</span><br><span class="line">    <span class="keyword">return</span> pd.DataFrame(</span><br><span class="line">        confusion_matrix(</span><br><span class="line">            pred_df[<span class="string">&quot;true_label&quot;</span>], pred_df[<span class="string">&quot;pred_label&quot;</span>], labels=ALL_EVAL_LABELS  <span class="comment"># 含 INVALID 列</span></span><br><span class="line">        ),</span><br><span class="line">        index=ALL_EVAL_LABELS,</span><br><span class="line">        columns=ALL_EVAL_LABELS,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据结构：评估输出"><a href="#数据结构：评估输出" class="headerlink" title="数据结构：评估输出"></a>数据结构：评估输出</h3><p><strong>metrics dict</strong>（一次评估的汇总）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;accuracy&quot;</span>: <span class="number">0.625</span>,              <span class="comment"># 预测标签与真实标签完全一致的比例</span></span><br><span class="line">    <span class="string">&quot;macro_f1&quot;</span>: <span class="number">0.482</span>,              <span class="comment"># 六类 F1 宏平均</span></span><br><span class="line">    <span class="string">&quot;invalid_predictions&quot;</span>: <span class="number">2</span>,       <span class="comment"># 生成结果不在六类词表内的条数</span></span><br><span class="line">    <span class="string">&quot;evaluated_examples&quot;</span>: <span class="number">400</span>,      <span class="comment"># 实际评估样本数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>pred_df</strong>（逐条明细，每行）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;text&quot;</span>: <span class="string">&quot;...&quot;</span>,                  <span class="comment"># 原始待分类文本</span></span><br><span class="line">    <span class="string">&quot;true_label&quot;</span>: <span class="string">&quot;fear&quot;</span>,           <span class="comment">#  gold 标签</span></span><br><span class="line">    <span class="string">&quot;pred_label&quot;</span>: <span class="string">&quot;fear&quot;</span>,           <span class="comment"># 规范化后预测（合法标签或 &quot;INVALID&quot;）</span></span><br><span class="line">    <span class="string">&quot;raw_pred_label&quot;</span>: <span class="string">&quot;fear&quot;</span>,       <span class="comment"># extract_label 原始输出，便于排查解析问题</span></span><br><span class="line">    <span class="string">&quot;correct&quot;</span>: <span class="literal">True</span>,                <span class="comment"># pred_label == true_label</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>accuracy</code></td>
+<td>预测与真实完全一致的比例</td>
+</tr>
+<tr>
+<td><code>macro_f1</code></td>
+<td>六类 F1 宏平均，对类别不平衡更敏感</td>
+</tr>
+<tr>
+<td><code>invalid_predictions</code></td>
+<td>预测不在六类词表内的条数</td>
+</tr>
+</tbody></table>
+<h3 id="结果里盯什么-8"><a href="#结果里盯什么-8" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>函数能跑完 <code>EVAL_LIMIT</code> 条而不 OOM；<code>pred_df</code> 行数等于评估条数。</p>
+<hr>
+<h2 id="Step-10：微调前评估（基线）"><a href="#Step-10：微调前评估（基线）" class="headerlink" title="Step 10：微调前评估（基线）"></a>Step 10：微调前评估（基线）</h2><h3 id="目标-9"><a href="#目标-9" class="headerlink" title="目标"></a>目标</h3><p>在<strong>未训练 LoRA</strong> 的基座模型上建立对照分数，后续才能量化微调收益。</p>
+<h3 id="方法-9"><a href="#方法-9" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pre_metrics, pre_report, pre_preds = evaluate_model(</span><br><span class="line">    base_model, tokenizer, split=<span class="string">&quot;test&quot;</span>, limit=EVAL_LIMIT  <span class="comment"># 未微调基座，建立对照基线</span></span><br><span class="line">)</span><br><span class="line">confusion_matrix_df(pre_preds)  <span class="comment"># 查看类间混淆（如 sadness ↔ joy）</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="实测结果（400-条-test）"><a href="#实测结果（400-条-test）" class="headerlink" title="实测结果（400 条 test）"></a>实测结果（400 条 test）</h3><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>accuracy</td>
+<td>0.625</td>
+</tr>
+<tr>
+<td>macro_f1</td>
+<td>0.482</td>
+</tr>
+<tr>
+<td>invalid_predictions</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p><img src="/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/confusion_matrix_df_before.png" alt="image"><br>基座 + <code>SYSTEM_PROMPT</code> 已有零样本能力，但 macro_f1 明显低于 accuracy，少数类 recall 偏弱；混淆矩阵上 <code>sadness</code> ↔ <code>joy</code> 互混较多。</p>
+<h3 id="结果里盯什么-9"><a href="#结果里盯什么-9" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>基线数字落盘或记录在案；<strong>此后勿改 <code>SYSTEM_PROMPT</code></strong>，否则前后不可比。</p>
+<hr>
+<h2 id="Step-11：配置-LoRA"><a href="#Step-11：配置-LoRA" class="headerlink" title="Step 11：配置 LoRA"></a>Step 11：配置 LoRA</h2><h3 id="目标-10"><a href="#目标-10" class="headerlink" title="目标"></a>目标</h3><p>指定低秩适配器挂载方式：冻结基座，只训练少量 LoRA 参数。</p>
+<h3 id="方法-10"><a href="#方法-10" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">lora_config = LoraConfig(</span><br><span class="line">    r=<span class="number">16</span>,                      <span class="comment"># 低秩矩阵的秩；越大可训练参数越多、表达能力越强，但显存与过拟合风险也上升</span></span><br><span class="line">    lora_alpha=<span class="number">32</span>,             <span class="comment"># LoRA 更新的缩放系数；实际生效倍率为 alpha/r（此处 32/16=2），影响 adapter 对原权重的修正幅度</span></span><br><span class="line">    lora_dropout=<span class="number">0.05</span>,         <span class="comment"># 训练时在 LoRA 分支上施加的 dropout；轻微正则，减轻过拟合</span></span><br><span class="line">    bias=<span class="string">&quot;none&quot;</span>,               <span class="comment"># 不训练偏置项；保持基座 bias 冻结，进一步减少可训练参数</span></span><br><span class="line">    task_type=<span class="string">&quot;CAUSAL_LM&quot;</span>,     <span class="comment"># 声明任务为因果语言建模；与 Gemma 自回归生成目标一致，peft 据此选择适配方式</span></span><br><span class="line">    target_modules=<span class="string">&quot;all-linear&quot;</span>,  <span class="comment"># 在哪些层挂 LoRA；all-linear 尽量覆盖全部线性层，参数量大但易跑通；可改为 q_proj/v_proj 等以省显存</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>对线性层权重 (W)，LoRA 增加 (\Delta W &#x3D; BA)（(B \in \mathbb{R}^{d \times r})，(A \in \mathbb{R}^{r \times k})，(r&#x3D;16)）。前向输出为 (Wx + \frac{\alpha}{r}BAx)；<code>lora_alpha</code> 与 <code>r</code> 共同决定 adapter 修正强度，而非单独由 <code>r</code> 决定。</p>
+<h3 id="结果里盯什么-10"><a href="#结果里盯什么-10" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>Step 13 创建 Trainer 后检查：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Trainable LoRA parameters: 50,499,584</span><br><span class="line">Total parameters: 7,991,600,416</span><br><span class="line">Trainable ratio: 0.6319%</span><br></pre></td></tr></table></figure>
+
+<p>若为 <strong>0</strong>，说明 <code>target_modules</code> 未命中，需调整后再训练。</p>
+<hr>
+<h2 id="Step-12：定义训练参数"><a href="#Step-12：定义训练参数" class="headerlink" title="Step 12：定义训练参数"></a>Step 12：定义训练参数</h2><h3 id="目标-11"><a href="#目标-11" class="headerlink" title="目标"></a>目标</h3><p>配置 <code>SFTConfig</code>：batch、学习率、精度、截断长度及 ROCm 兼容项。</p>
+<h3 id="方法-11"><a href="#方法-11" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">training_args = SFTConfig(</span><br><span class="line">    output_dir=OUTPUT_DIR,                    <span class="comment"># 训练日志、checkpoint、最终 adapter 的保存目录</span></span><br><span class="line">    per_device_train_batch_size=<span class="number">4</span>,            <span class="comment"># 每张 GPU 每步喂入的样本数；OOM 时优先调小</span></span><br><span class="line">    per_device_eval_batch_size=<span class="number">1</span>,             <span class="comment"># 验证时每步样本数；生成式 eval 占显存，通常设 1</span></span><br><span class="line">    gradient_accumulation_steps=<span class="number">4</span>,            <span class="comment"># 梯度累积步数；等效 batch = 4×4=16，小显存下模拟大 batch</span></span><br><span class="line">    learning_rate=<span class="number">1e-4</span>,                       <span class="comment"># LoRA 常用学习率；过大易发散，过小收敛慢</span></span><br><span class="line">    weight_decay=<span class="number">0.01</span>,                        <span class="comment"># L2 正则系数；抑制 LoRA 权重过大，减轻过拟合</span></span><br><span class="line">    lr_scheduler_type=<span class="string">&quot;linear&quot;</span>,               <span class="comment"># 学习率调度：warmup 后线性降至 0</span></span><br><span class="line">    warmup_steps=<span class="number">50</span>,                          <span class="comment"># 前 50 step 学习率从 0 线性升到峰值，避免初始梯度冲击</span></span><br><span class="line">    num_train_epochs=<span class="number">1</span>,                       <span class="comment"># 遍历训练集轮数；子集 4000 条 × 1 epoch ≈ 250 step</span></span><br><span class="line">    logging_steps=<span class="number">5</span>,                          <span class="comment"># 每 5 step 打印一次 train loss 等指标</span></span><br><span class="line">    eval_strategy=<span class="string">&quot;steps&quot;</span>,                    <span class="comment"># 按 step 触发验证（非按 epoch 末）</span></span><br><span class="line">    eval_steps=<span class="number">25</span>,                            <span class="comment"># 每 25 step 在 validation 集上算 eval_loss</span></span><br><span class="line">    save_strategy=<span class="string">&quot;steps&quot;</span>,                    <span class="comment"># 按 step 保存 checkpoint</span></span><br><span class="line">    save_steps=<span class="number">25</span>,                            <span class="comment"># 与 eval_steps 对齐，便于对照同一训练进度</span></span><br><span class="line">    save_total_limit=<span class="number">2</span>,                       <span class="comment"># 磁盘最多保留 2 个 checkpoint，自动删更早的</span></span><br><span class="line">    metric_for_best_model=<span class="string">&quot;eval_loss&quot;</span>,        <span class="comment"># 以验证集 loss 选最优 checkpoint</span></span><br><span class="line">    greater_is_better=<span class="literal">False</span>,                  <span class="comment"># eval_loss 越小越好</span></span><br><span class="line">    gradient_checkpointing=<span class="literal">True</span>,              <span class="comment"># 反向时重算激活而非全部缓存；显著省显存，略增计算</span></span><br><span class="line">    bf16=BF16,                                <span class="comment"># 训练用 bfloat16；与 Step 2 MODEL_DTYPE 一致</span></span><br><span class="line">    fp16=FP16,                                <span class="comment"># 本流程 BF16=True、FP16=False；硬件不支持 BF16 时改 FP16</span></span><br><span class="line">    max_length=<span class="number">256</span>,                           <span class="comment"># 单条样本 token 上限，超出截断；情绪句短，主要防异常长文本</span></span><br><span class="line">    packing=<span class="literal">False</span>,                            <span class="comment"># 不将多条短样本拼进同一序列；分类任务保持样本边界清晰</span></span><br><span class="line">    completion_only_loss=<span class="literal">True</span>,                <span class="comment"># loss 只算 completion（assistant 标签）段，不对 prompt 算梯度</span></span><br><span class="line">    optim=<span class="string">&quot;adamw_torch&quot;</span>,                      <span class="comment"># PyTorch 原生 AdamW；ROCm 下比 bitsandbytes 优化器更稳</span></span><br><span class="line">    seed=SEED,                                <span class="comment"># 训练随机种子；影响 dropout、数据 shuffle 等</span></span><br><span class="line">    data_seed=SEED,                           <span class="comment"># 数据加载与采样随机种子；与 seed 一致便于复现</span></span><br><span class="line">    report_to=<span class="string">&quot;none&quot;</span>,                         <span class="comment"># 不上报 wandb/tensorboard；本地 Notebook 够用</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-11"><a href="#结果里盯什么-11" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>output_dir</code> 目录已创建；配置与 Step 2 的 <code>BF16</code>&#x2F;<code>SEED</code> 一致。</p>
+<hr>
+<h2 id="Step-13：开始-LoRA-微调"><a href="#Step-13：开始-LoRA-微调" class="headerlink" title="Step 13：开始 LoRA 微调"></a>Step 13：开始 LoRA 微调</h2><h3 id="目标-12"><a href="#目标-12" class="headerlink" title="目标"></a>目标</h3><p>创建 <code>SFTTrainer</code>，完成 tokenize → 训练 → 验证 → checkpoint。</p>
+<h3 id="方法-12"><a href="#方法-12" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">trainer = SFTTrainer(</span><br><span class="line">    model=base_model,                      <span class="comment"># 基座 Causal LM；内部自动挂载 LoRA</span></span><br><span class="line">    train_dataset=sft_dataset[<span class="string">&quot;train&quot;</span>],    <span class="comment"># Step 6 的 prompt-completion 数据</span></span><br><span class="line">    eval_dataset=sft_dataset[<span class="string">&quot;validation&quot;</span>], <span class="comment"># 训练过程中周期性验证</span></span><br><span class="line">    peft_config=lora_config,               <span class="comment"># Step 11 的 LoRA 配置</span></span><br><span class="line">    args=training_args,                    <span class="comment"># Step 12 的训练超参</span></span><br><span class="line">    processing_class=tokenizer,            <span class="comment"># 负责 apply_chat_template 与 tokenize</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">train_result = trainer.train()             <span class="comment"># 开始训练；返回含 loss 等指标的 TrainOutput</span></span><br><span class="line">trainer.model.<span class="built_in">eval</span>()                       <span class="comment"># 切评估模式（关闭 dropout 等）</span></span><br><span class="line">trainer.model.config.use_cache = <span class="literal">True</span>      <span class="comment"># 训练结束，恢复 cache 供后续 generate 加速</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="训练日志（节选）"><a href="#训练日志（节选）" class="headerlink" title="训练日志（节选）"></a>训练日志（节选）</h3><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Training Loss</th>
+<th>Validation Loss</th>
+<th>Mean Token Accuracy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>25</td>
+<td>0.577</td>
+<td>0.405</td>
+<td>0.846</td>
+</tr>
+<tr>
+<td>50</td>
+<td>0.339</td>
+<td>0.302</td>
+<td>0.899</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.154</td>
+<td>0.182</td>
+<td>0.940</td>
+</tr>
+<tr>
+<td>150</td>
+<td>0.123</td>
+<td>0.152</td>
+<td>0.944</td>
+</tr>
+</tbody></table>
+<p>总 step 约 250（4000 条 ÷ 等效 batch 16 × 1 epoch）。train &#x2F; val loss 同步下降，mean token accuracy 升至 ~0.94。</p>
+<h3 id="结果里盯什么-12"><a href="#结果里盯什么-12" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><ul>
+<li>无 OOM；loss 曲线单调下降为主。</li>
+<li><code>Trainable LoRA parameters</code> &gt; 0。</li>
+<li>checkpoint 写入 <code>OUTPUT_DIR/checkpoint-*</code>。</li>
+</ul>
+<hr>
+<h2 id="Step-14：保存-LoRA-adapter"><a href="#Step-14：保存-LoRA-adapter" class="headerlink" title="Step 14：保存 LoRA adapter"></a>Step 14：保存 LoRA adapter</h2><h3 id="目标-13"><a href="#目标-13" class="headerlink" title="目标"></a>目标</h3><p>持久化 adapter 权重与 tokenizer，供后续评估、推理或合并部署。</p>
+<h3 id="方法-13"><a href="#方法-13" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">trainer.model.save_pretrained(OUTPUT_DIR)   <span class="comment"># 保存 LoRA adapter（adapter_model.safetensors 等）</span></span><br><span class="line">tokenizer.save_pretrained(OUTPUT_DIR)       <span class="comment"># 保存 tokenizer，便于独立分发与重载</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/train_metrics.json&quot;</span>, <span class="string">&quot;w&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    json.dump(train_result.metrics, f, ensure_ascii=<span class="literal">False</span>, indent=<span class="number">2</span>)  <span class="comment"># 留存最终 train loss 等</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="数据结构：输出目录"><a href="#数据结构：输出目录" class="headerlink" title="数据结构：输出目录"></a>数据结构：输出目录</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">gemma4-it-emotion-lora-ms-single-gpu/</span><br><span class="line">├── adapter_model.safetensors    # LoRA 权重（~百 MB 级）</span><br><span class="line">├── adapter_config.json          # r、alpha、target_modules 等</span><br><span class="line">├── tokenizer.json / tokenizer_config.json</span><br><span class="line">├── checkpoint-25/ checkpoint-50/ ...</span><br><span class="line">└── train_metrics.json</span><br></pre></td></tr></table></figure>
+
+<p>产物是 <strong>adapter</strong>，不是 15 GB 全量基座；推理时需基座 + adapter 组合加载。</p>
+<h3 id="结果里盯什么-13"><a href="#结果里盯什么-13" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>adapter_model.safetensors</code> 与 <code>adapter_config.json</code> 存在且非空。</p>
+<hr>
+<h2 id="Step-15：微调后评估"><a href="#Step-15：微调后评估" class="headerlink" title="Step 15：微调后评估"></a>Step 15：微调后评估</h2><h3 id="目标-14"><a href="#目标-14" class="headerlink" title="目标"></a>目标</h3><p>用与 Step 10 <strong>完全相同</strong>的 <code>evaluate_model()</code>，在 test 集上测量微调后指标。</p>
+<h3 id="方法-14"><a href="#方法-14" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ft_model = trainer.model   <span class="comment"># 直接使用内存中已训练模型，避免重载 OOM</span></span><br><span class="line">ft_model.<span class="built_in">eval</span>()</span><br><span class="line"></span><br><span class="line">post_metrics, post_report, post_preds = evaluate_model(</span><br><span class="line">    ft_model, tokenizer, split=<span class="string">&quot;test&quot;</span>, limit=EVAL_LIMIT  <span class="comment"># 与 Step 10 同脚本、同 limit</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">confusion_matrix_df(post_preds)  <span class="comment"># 查看类间混淆（如 sadness ↔ joy）</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>优先在内存中直接评估，避免训练后立即重载模型导致显存碎片 OOM。<br><img src="/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/confusion_matrix_df_after.png" alt="image"></p>
+<h3 id="结果里盯什么-14"><a href="#结果里盯什么-14" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>对比 Step 10：<code>accuracy</code>、<code>macro_f1</code> 应上升，<code>invalid_predictions</code> 应下降或归零；少数类 recall 改善可从 <code>post_report</code> 读出。</p>
+<hr>
+<h2 id="Step-16：对比微调前后效果"><a href="#Step-16：对比微调前后效果" class="headerlink" title="Step 16：对比微调前后效果"></a>Step 16：对比微调前后效果</h2><h3 id="目标-15"><a href="#目标-15" class="headerlink" title="目标"></a>目标</h3><p>将前后指标与逐条预测合并，便于写报告或排查退化样本。</p>
+<h3 id="方法-15"><a href="#方法-15" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">comparison_df = pd.DataFrame([</span><br><span class="line">    &#123;<span class="string">&quot;stage&quot;</span>: <span class="string">&quot;pre_finetuning&quot;</span>,  **pre_metrics&#125;,   <span class="comment"># Step 10 基线指标</span></span><br><span class="line">    &#123;<span class="string">&quot;stage&quot;</span>: <span class="string">&quot;post_finetuning&quot;</span>, **post_metrics&#125;,  <span class="comment"># Step 15 微调后指标</span></span><br><span class="line">])</span><br><span class="line"></span><br><span class="line">merged_examples = pre_preds.copy()</span><br><span class="line">merged_examples = merged_examples.rename(columns=&#123;</span><br><span class="line">    <span class="string">&quot;pred_label&quot;</span>: <span class="string">&quot;pre_pred&quot;</span>,</span><br><span class="line">    <span class="string">&quot;correct&quot;</span>: <span class="string">&quot;pre_correct&quot;</span>,</span><br><span class="line">    <span class="string">&quot;raw_pred_label&quot;</span>: <span class="string">&quot;pre_raw_pred_label&quot;</span>,</span><br><span class="line">&#125;)</span><br><span class="line">merged_examples[<span class="string">&quot;post_pred&quot;</span>] = post_preds[<span class="string">&quot;pred_label&quot;</span>]</span><br><span class="line">merged_examples[<span class="string">&quot;post_raw_pred_label&quot;</span>] = post_preds[<span class="string">&quot;raw_pred_label&quot;</span>]</span><br><span class="line">merged_examples[<span class="string">&quot;post_correct&quot;</span>] = post_preds[<span class="string">&quot;correct&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 仅保留微调前后预测标签发生变化的样本，便于分析纠错/退化</span></span><br><span class="line">changed_predictions = merged_examples[merged_examples[<span class="string">&quot;pre_pred&quot;</span>] != merged_examples[<span class="string">&quot;post_pred&quot;</span>]]</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据结构：对比表"><a href="#数据结构：对比表" class="headerlink" title="数据结构：对比表"></a>数据结构：对比表</h3><p><strong>comparison_df</strong>：</p>
+<p><img src="/03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/02.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%BE%AE%E8%B0%83-%E5%AE%9E%E6%88%98%E8%AE%B0%E5%BD%95/eavluated_after_finetuning.png" alt="image"><br><strong>changed_predictions</strong>：仅含微调前后预测标签发生变化的样本，用于分析「纠错」与「退化」案例。</p>
+<h3 id="结果里盯什么-15"><a href="#结果里盯什么-15" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>macro_f1 delta 比 accuracy delta 更有参考价值；关注是否出现「训练 loss 很低但 macro_f1 几乎不变」的假提升。</p>
+<hr>
+<h2 id="Step-17：手动测试"><a href="#Step-17：手动测试" class="headerlink" title="Step 17：手动测试"></a>Step 17：手动测试</h2><h3 id="目标-16"><a href="#目标-16" class="headerlink" title="目标"></a>目标</h3><p>用自定义句子快速冒烟，确认模型能稳定输出合法标签。</p>
+<h3 id="方法-16"><a href="#方法-16" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">test_texts = [</span><br><span class="line">    <span class="string">&quot;I feel completely heartbroken and alone.&quot;</span>,       <span class="comment"># 期望 sadness</span></span><br><span class="line">    <span class="string">&quot;This is the best day of my life!&quot;</span>,             <span class="comment"># 期望 joy</span></span><br><span class="line">    <span class="string">&quot;I am really scared about what might happen.&quot;</span>,  <span class="comment"># 期望 fear</span></span><br><span class="line">    <span class="string">&quot;I can&#x27;t believe they remembered my birthday!&quot;</span>, <span class="comment"># 期望 surprise</span></span><br><span class="line">    <span class="string">&quot;I am so angry that nobody listened to me.&quot;</span>,    <span class="comment"># 期望 anger</span></span><br><span class="line">    <span class="string">&quot;I really love spending time with my family.&quot;</span>,  <span class="comment"># 期望 love</span></span><br><span class="line">]</span><br><span class="line"><span class="keyword">for</span> text <span class="keyword">in</span> test_texts:</span><br><span class="line">    <span class="built_in">print</span>(text, <span class="string">&quot;=&gt;&quot;</span>, generate_label(ft_model, tokenizer, text))  <span class="comment"># 快速人工冒烟</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-16"><a href="#结果里盯什么-16" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>六条均应返回单一合法标签，无长句解释或越界输出。</p>
+<hr>
+<h2 id="Step-18：保存评估结果"><a href="#Step-18：保存评估结果" class="headerlink" title="Step 18：保存评估结果"></a>Step 18：保存评估结果</h2><h3 id="目标-17"><a href="#目标-17" class="headerlink" title="目标"></a>目标</h3><p>将全部评估明细导出 CSV，便于画图或写实验报告。</p>
+<h3 id="方法-17"><a href="#方法-17" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">comparison_df.to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/gemma4_emotion_before_after_metrics.csv&quot;</span>, index=<span class="literal">False</span>)       <span class="comment"># 前后指标汇总</span></span><br><span class="line">merged_examples.to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/gemma4_emotion_prediction_examples.csv&quot;</span>, index=<span class="literal">False</span>)    <span class="comment"># 逐条前后预测</span></span><br><span class="line">changed_predictions.to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/gemma4_emotion_changed_predictions.csv&quot;</span>, index=<span class="literal">False</span>)  <span class="comment"># 预测变化子集</span></span><br><span class="line">pre_preds.to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/pre_finetuning_predictions.csv&quot;</span>, index=<span class="literal">False</span>)</span><br><span class="line">post_preds.to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/post_finetuning_predictions.csv&quot;</span>, index=<span class="literal">False</span>)</span><br><span class="line">pd.DataFrame(pre_report).transpose().to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/pre_finetuning_classification_report.csv&quot;</span>)</span><br><span class="line">pd.DataFrame(post_report).transpose().to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/post_finetuning_classification_report.csv&quot;</span>)</span><br><span class="line">confusion_matrix_df(pre_preds).to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/pre_finetuning_confusion_matrix.csv&quot;</span>)</span><br><span class="line">confusion_matrix_df(post_preds).to_csv(<span class="string">f&quot;<span class="subst">&#123;OUTPUT_DIR&#125;</span>/post_finetuning_confusion_matrix.csv&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-17"><a href="#结果里盯什么-17" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>OUTPUT_DIR</code> 下 CSV 齐全，行数与 <code>EVAL_LIMIT</code> 一致。</p>
+<hr>
+<h2 id="Step-19（可选）：重新加载-adapter-推理"><a href="#Step-19（可选）：重新加载-adapter-推理" class="headerlink" title="Step 19（可选）：重新加载 adapter 推理"></a>Step 19（可选）：重新加载 adapter 推理</h2><h3 id="目标-18"><a href="#目标-18" class="headerlink" title="目标"></a>目标</h3><p>验证「重启 kernel 后仅凭磁盘文件」能否恢复微调模型推理能力。</p>
+<h3 id="方法-18"><a href="#方法-18" class="headerlink" title="方法"></a>方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">RUN_RELOAD_TEST = <span class="literal">False</span>  <span class="comment"># 开关：默认 False，避免与 Step 13～15 训练/评估同 kernel 抢显存</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> RUN_RELOAD_TEST:</span><br><span class="line">    <span class="comment"># ① 从 OUTPUT_DIR 加载 tokenizer（Step 14 已随 adapter 一并保存）</span></span><br><span class="line">    reload_tokenizer = AutoTokenizer.from_pretrained(</span><br><span class="line">        OUTPUT_DIR,</span><br><span class="line">        use_fast=<span class="literal">True</span>,              <span class="comment"># 使用 fast tokenizer 实现</span></span><br><span class="line">        trust_remote_code=<span class="literal">True</span>,     <span class="comment"># 允许加载仓库内自定义分词逻辑（若存在）</span></span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">if</span> reload_tokenizer.pad_token <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        reload_tokenizer.pad_token = reload_tokenizer.eos_token  <span class="comment"># 与 Step 7 一致，补 pad token</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># ② 从 LOCAL_MODEL_DIR 加载原始基座（15 GB 全量权重，不含 LoRA）</span></span><br><span class="line">    reload_base = AutoModelForCausalLM.from_pretrained(</span><br><span class="line">        LOCAL_MODEL_DIR,</span><br><span class="line">        torch_dtype=MODEL_DTYPE,    <span class="comment"># 与训练时相同精度（BF16）</span></span><br><span class="line">        low_cpu_mem_usage=<span class="literal">True</span>,     <span class="comment"># 分片加载，降低 CPU 峰值内存</span></span><br><span class="line">        trust_remote_code=<span class="literal">True</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># ③ 将 adapter 挂载到基座：基座冻结 + 叠加 Step 14 的 LoRA 权重</span></span><br><span class="line">    reload_model = PeftModel.from_pretrained(</span><br><span class="line">        reload_base,</span><br><span class="line">        OUTPUT_DIR,                 <span class="comment"># 读取 adapter_model.safetensors + adapter_config.json</span></span><br><span class="line">    )</span><br><span class="line">    reload_model.<span class="built_in">eval</span>()             <span class="comment"># 推理模式：关闭 dropout 等训练专用行为</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># ④ 复用 Step 8 的 generate_label，验证磁盘产物能否独立推理</span></span><br><span class="line">    <span class="built_in">print</span>(generate_label(</span><br><span class="line">        reload_model,</span><br><span class="line">        reload_tokenizer,</span><br><span class="line">        <span class="string">&quot;I feel completely heartbroken and alone.&quot;</span>,  <span class="comment"># 期望输出 sadness</span></span><br><span class="line">    ))</span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么-18"><a href="#结果里盯什么-18" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>输出与 Step 17 一致；若 OOM，先释放训练占用显存再跑。</p>
+<hr>
+<h2 id="Step-20：常见问题"><a href="#Step-20：常见问题" class="headerlink" title="Step 20：常见问题"></a>Step 20：常见问题</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>对策</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>parquet 路径匹配失败</td>
+<td>检查 <code>dataset_dir/data/{split}-*.parquet</code> 实际 layout</td>
+</tr>
+<tr>
+<td><code>MsDataset</code> &#x2F; <code>verification_mode</code> 报错</td>
+<td>沿用 Step 5 parquet 直读路径</td>
+</tr>
+<tr>
+<td>训练 OOM</td>
+<td>降 <code>batch_size</code>、<code>max_length</code>、<code>TRAIN_LIMIT</code></td>
+</tr>
+<tr>
+<td>Trainable params &#x3D; 0</td>
+<td>调整 <code>target_modules</code></td>
+</tr>
+<tr>
+<td>微调后指标没涨</td>
+<td>检查 <code>SYSTEM_PROMPT</code> 训练&#x2F;评估是否一致</td>
+</tr>
+<tr>
+<td>生成式评估太慢</td>
+<td>降低 <code>EVAL_LIMIT</code></td>
+</tr>
+<tr>
+<td>多卡需求</td>
+<td>改 <code>.py</code> + <code>accelerate launch</code>，勿在 Notebook 硬上</td>
+</tr>
+</tbody></table>
+<p>显存调参顺序：<code>per_device_train_batch_size</code> → <code>max_length</code> → <code>TRAIN_LIMIT</code> → 收窄 <code>target_modules</code>。</p>
+<hr>
+<h2 id="执行路径一览"><a href="#执行路径一览" class="headerlink" title="执行路径一览"></a>执行路径一览</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">安装依赖 → 全局配置 → 固定种子</span><br><span class="line">  → [基座已在 ./models 则跳过下载]</span><br><span class="line">  → 下载/加载 emotion 数据集 (text, label)</span><br><span class="line">  → 转 SFT prompt-completion</span><br><span class="line">  → 加载 tokenizer + 基座 (训练态)</span><br><span class="line">  → 实现 generate_label / evaluate_model</span><br><span class="line">  → 微调前基线评估</span><br><span class="line">  → 配置 LoRA + SFTConfig</span><br><span class="line">  → SFTTrainer.train()</span><br><span class="line">  → 保存 adapter</span><br><span class="line">  → 微调后评估 → 前后对比 → 手动冒烟 → CSV 落盘</span><br><span class="line">  → [可选] PeftModel 重载推理</span><br></pre></td></tr></table></figure>
+
+<p>建议首次实验保持 <code>TRAIN_LIMIT=4000</code>、1 epoch 跑通全链路，确认 macro_f1 相对基线有提升后，再放开数据量与 epoch 做正式训练。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LoRA/" rel="tag"><i class="fa fa-tag"></i> LoRA</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E5%BE%AE%E8%B0%83/" rel="tag"><i class="fa fa-tag"></i> 微调</a>
+          
+            <a href="/tags/SFT/" rel="tag"><i class="fa fa-tag"></i> SFT</a>
+          
+            <a href="/tags/ModelScope/" rel="tag"><i class="fa fa-tag"></i> ModelScope</a>
+          
+            <a href="/tags/ROCm/" rel="tag"><i class="fa fa-tag"></i> ROCm</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-06.%E7%9F%A9%E9%98%B5%E5%BE%AE%E7%A7%AF%E5%88%86-20.%E6%B3%A8%E6%84%8F%E5%8A%9B%E4%B8%8ELoRA%E6%A2%AF%E5%BA%A6/" rel="next" title="Math-06.矩阵微积分-20.注意力与LoRA梯度">
+                <i class="fa fa-chevron-left"></i> Math-06.矩阵微积分-20.注意力与LoRA梯度
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-03.%E4%BA%92%E4%BD%9C-02.%E5%BD%B1%E5%93%8D%E4%BA%B2%E5%92%8C%E5%8A%9B%E7%9A%84%E5%9B%A0%E7%B4%A0/" rel="prev" title="抗体-03.互作-02.影响亲和力的因素">
+                抗体-03.互作-02.影响亲和力的因素 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-1%EF%BC%9A%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="nav-number">1.</span> <span class="nav-text">Step 1：安装依赖</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87"><span class="nav-number">1.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-2%EF%BC%9A%E5%AF%BC%E5%85%A5%E4%BE%9D%E8%B5%96%E4%B8%8E%E5%85%A8%E5%B1%80%E9%85%8D%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">Step 2：导入依赖与全局配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-1"><span class="nav-number">2.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-1"><span class="nav-number">2.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-1"><span class="nav-number">2.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-3%EF%BC%9A%E5%9B%BA%E5%AE%9A%E9%9A%8F%E6%9C%BA%E7%A7%8D%E5%AD%90"><span class="nav-number">3.</span> <span class="nav-text">Step 3：固定随机种子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-2"><span class="nav-number">3.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-2"><span class="nav-number">3.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-2"><span class="nav-number">3.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-4%EF%BC%9A%E5%87%86%E5%A4%87%E5%9F%BA%E5%BA%A7%E6%A8%A1%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">Step 4：准备基座模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-3"><span class="nav-number">4.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-3"><span class="nav-number">4.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-3"><span class="nav-number">4.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-5%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%83%85%E7%BB%AA%E5%88%86%E7%B1%BB%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">5.</span> <span class="nav-text">Step 5：加载情绪分类数据集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-4"><span class="nav-number">5.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-4"><span class="nav-number">5.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%8E%9F%E5%A7%8B%E5%88%86%E7%B1%BB%E6%A0%BC%E5%BC%8F"><span class="nav-number">5.3.</span> <span class="nav-text">数据结构：原始分类格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-4"><span class="nav-number">5.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-6%EF%BC%9A%E6%9E%84%E9%80%A0-SFT-%E6%A0%BC%E5%BC%8F%E6%95%B0%E6%8D%AE"><span class="nav-number">6.</span> <span class="nav-text">Step 6：构造 SFT 格式数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-5"><span class="nav-number">6.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-5"><span class="nav-number">6.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9ASFT-prompt-completion-%E6%A0%BC%E5%BC%8F"><span class="nav-number">6.3.</span> <span class="nav-text">数据结构：SFT prompt-completion 格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-5"><span class="nav-number">6.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-7%EF%BC%9A%E5%8A%A0%E8%BD%BD-tokenizer-%E4%B8%8E%E5%9F%BA%E5%BA%A7%E6%A8%A1%E5%9E%8B"><span class="nav-number">7.</span> <span class="nav-text">Step 7：加载 tokenizer 与基座模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-6"><span class="nav-number">7.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-6"><span class="nav-number">7.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-6"><span class="nav-number">7.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-8%EF%BC%9A%E6%8E%A8%E7%90%86%E8%BE%85%E5%8A%A9%E5%87%BD%E6%95%B0"><span class="nav-number">8.</span> <span class="nav-text">Step 8：推理辅助函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-7"><span class="nav-number">8.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-7"><span class="nav-number">8.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BD%95%E9%9C%80%E8%A6%81-generate-label%EF%BC%9F"><span class="nav-number">8.3.</span> <span class="nav-text">为何需要 generate_label？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-7"><span class="nav-number">8.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-9%EF%BC%9A%E8%AF%84%E4%BC%B0%E5%87%BD%E6%95%B0"><span class="nav-number">9.</span> <span class="nav-text">Step 9：评估函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-8"><span class="nav-number">9.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-8"><span class="nav-number">9.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E8%AF%84%E4%BC%B0%E8%BE%93%E5%87%BA"><span class="nav-number">9.3.</span> <span class="nav-text">数据结构：评估输出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-8"><span class="nav-number">9.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-10%EF%BC%9A%E5%BE%AE%E8%B0%83%E5%89%8D%E8%AF%84%E4%BC%B0%EF%BC%88%E5%9F%BA%E7%BA%BF%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">Step 10：微调前评估（基线）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-9"><span class="nav-number">10.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-9"><span class="nav-number">10.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E6%B5%8B%E7%BB%93%E6%9E%9C%EF%BC%88400-%E6%9D%A1-test%EF%BC%89"><span class="nav-number">10.3.</span> <span class="nav-text">实测结果（400 条 test）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-9"><span class="nav-number">10.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-11%EF%BC%9A%E9%85%8D%E7%BD%AE-LoRA"><span class="nav-number">11.</span> <span class="nav-text">Step 11：配置 LoRA</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-10"><span class="nav-number">11.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-10"><span class="nav-number">11.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-10"><span class="nav-number">11.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-12%EF%BC%9A%E5%AE%9A%E4%B9%89%E8%AE%AD%E7%BB%83%E5%8F%82%E6%95%B0"><span class="nav-number">12.</span> <span class="nav-text">Step 12：定义训练参数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-11"><span class="nav-number">12.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-11"><span class="nav-number">12.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-11"><span class="nav-number">12.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-13%EF%BC%9A%E5%BC%80%E5%A7%8B-LoRA-%E5%BE%AE%E8%B0%83"><span class="nav-number">13.</span> <span class="nav-text">Step 13：开始 LoRA 微调</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-12"><span class="nav-number">13.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-12"><span class="nav-number">13.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E6%97%A5%E5%BF%97%EF%BC%88%E8%8A%82%E9%80%89%EF%BC%89"><span class="nav-number">13.3.</span> <span class="nav-text">训练日志（节选）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-12"><span class="nav-number">13.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-14%EF%BC%9A%E4%BF%9D%E5%AD%98-LoRA-adapter"><span class="nav-number">14.</span> <span class="nav-text">Step 14：保存 LoRA adapter</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-13"><span class="nav-number">14.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-13"><span class="nav-number">14.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E8%BE%93%E5%87%BA%E7%9B%AE%E5%BD%95"><span class="nav-number">14.3.</span> <span class="nav-text">数据结构：输出目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-13"><span class="nav-number">14.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-15%EF%BC%9A%E5%BE%AE%E8%B0%83%E5%90%8E%E8%AF%84%E4%BC%B0"><span class="nav-number">15.</span> <span class="nav-text">Step 15：微调后评估</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-14"><span class="nav-number">15.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-14"><span class="nav-number">15.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-14"><span class="nav-number">15.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-16%EF%BC%9A%E5%AF%B9%E6%AF%94%E5%BE%AE%E8%B0%83%E5%89%8D%E5%90%8E%E6%95%88%E6%9E%9C"><span class="nav-number">16.</span> <span class="nav-text">Step 16：对比微调前后效果</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-15"><span class="nav-number">16.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-15"><span class="nav-number">16.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%AF%B9%E6%AF%94%E8%A1%A8"><span class="nav-number">16.3.</span> <span class="nav-text">数据结构：对比表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-15"><span class="nav-number">16.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-17%EF%BC%9A%E6%89%8B%E5%8A%A8%E6%B5%8B%E8%AF%95"><span class="nav-number">17.</span> <span class="nav-text">Step 17：手动测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-16"><span class="nav-number">17.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-16"><span class="nav-number">17.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-16"><span class="nav-number">17.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-18%EF%BC%9A%E4%BF%9D%E5%AD%98%E8%AF%84%E4%BC%B0%E7%BB%93%E6%9E%9C"><span class="nav-number">18.</span> <span class="nav-text">Step 18：保存评估结果</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-17"><span class="nav-number">18.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-17"><span class="nav-number">18.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-17"><span class="nav-number">18.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-19%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89%EF%BC%9A%E9%87%8D%E6%96%B0%E5%8A%A0%E8%BD%BD-adapter-%E6%8E%A8%E7%90%86"><span class="nav-number">19.</span> <span class="nav-text">Step 19（可选）：重新加载 adapter 推理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-18"><span class="nav-number">19.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-18"><span class="nav-number">19.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-18"><span class="nav-number">19.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Step-20%EF%BC%9A%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-number">20.</span> <span class="nav-text">Step 20：常见问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E8%B7%AF%E5%BE%84%E4%B8%80%E8%A7%88"><span class="nav-number">21.</span> <span class="nav-text">执行路径一览</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

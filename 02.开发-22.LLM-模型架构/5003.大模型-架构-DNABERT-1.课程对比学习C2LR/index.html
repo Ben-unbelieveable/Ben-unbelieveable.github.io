@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="对比学习,LLM,DNABERT,基因组,课程学习," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="从对比学习与课程学习基础出发，系统讲解 Curriculum Contrastive Learning（C²LR）的两阶段训练机制、Weighted SimCLR 与 Manifold Instance Mixup（MI-Mix），并以 DNABERT-S 为例说明物种感知 DNA 嵌入的应用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-DNABERT-1.课程对比学习C2LR">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="从对比学习与课程学习基础出发，系统讲解 Curriculum Contrastive Learning（C²LR）的两阶段训练机制、Weighted SimCLR 与 Manifold Instance Mixup（MI-Mix），并以 DNABERT-S 为例说明物种感知 DNA 嵌入的应用。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-01-two-phases.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-02-weighted-simclr.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-03-mi-mix.png">
+<meta property="article:published_time" content="2026-05-27T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:09:20.783Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DNABERT">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="基因组">
+<meta property="article:tag" content="对比学习">
+<meta property="article:tag" content="课程学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-01-two-phases.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-DNABERT-1.课程对比学习C2LR/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-DNABERT-1.课程对比学习C2LR | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-DNABERT-1.课程对比学习C2LR</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-27T14:00:00+08:00">
+                2026-05-27
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  从对比学习与课程学习基础出发，系统讲解 Curriculum Contrastive Learning（C²LR）的两阶段训练机制、Weighted SimCLR 与 Manifold Instance Mixup（MI-Mix），并以 DNABERT-S 为例说明物种感知 DNA 嵌入的应用。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>课程对比学习（Curriculum Contrastive Learning，C²LR）</strong> 将「由易到难」的课程学习（Curriculum Learning）与对比学习（Contrastive Learning）结合：先在相对简单的对比锚点（anchor）上建立粗粒度判别能力，再逐步引入更困难的混合锚点，使嵌入空间对物种、类别或语义边界更加清晰。该策略在 <strong>DNABERT-S</strong>（Zhou et al., ICLR 2024）中用于从 DNABERT-2 出发学习 <strong>物种感知（species-aware）</strong> DNA 嵌入，在物种聚类、宏基因组分箱等任务上显著优于纯 MLM 预训练模型。</p>
+<blockquote>
+<p>段末注释：<strong>对比学习</strong> 通过拉近正样本对、推远负样本对来学习表示；<strong>课程学习</strong> 按难度递增组织训练样本；<strong>锚点</strong> 指计算对比损失时作为参考中心的样本（或其表示）。</p>
+</blockquote>
+<p>本文自基础概念讲起，给出 C²LR 的整体流程、两阶段损失、与相关方法（SimCLR、i-Mix）的差异，并附原理示意图。若需 DNABERT 全系列与数据选型背景，可参阅 <a href="5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-0.DNA-RNA%E9%A2%84%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B%E9%80%89%E5%9E%8B%E6%8C%87%E5%8D%97.md">DNABERT 预训练模型选型指南</a>。</p>
+<p><strong>插图约定</strong>：下文 PNG 位于与本文同名的 Hexo 资源目录；正文图链仅写文件名（如 <code>fig-c2lr-01-two-phases.png</code>），部署后以 <code>hexo server</code> 页面为准。</p>
+<hr>
+<h2 id="1-为什么需要-C²LR？"><a href="#1-为什么需要-C²LR？" class="headerlink" title="1. 为什么需要 C²LR？"></a>1. 为什么需要 C²LR？</h2><h3 id="1-1-从-MLM-到对比嵌入"><a href="#1-1-从-MLM-到对比嵌入" class="headerlink" title="1.1 从 MLM 到对比嵌入"></a>1.1 从 MLM 到对比嵌入</h3><p><strong>掩码语言建模（Masked Language Modeling，MLM）</strong> 预训练（如 DNABERT-2）擅长学习局部碱基上下文，但<strong>不直接优化</strong>「同物种序列靠近、异物种序列远离」这类全局几何结构。物种鉴定、宏基因组分箱等任务更依赖<strong>固定维度的序列嵌入</strong>及其在空间中的聚类结构。</p>
+<p>对比学习通过构造 <strong>正样本对</strong> $(x_i, x_i^+)$（语义相似）与 <strong>负样本</strong>（batch 内其余样本），显式塑造嵌入空间。难点在于：</p>
+<ol>
+<li><strong>困难负样本（hard negative）</strong>：与锚点相似但标签不同的样本信息量大，应赋予更高权重；</li>
+<li><strong>锚点难度</strong>：若一开始就使用高度模糊的混合样本，模型难以收敛；</li>
+<li><strong>DNA 离散性</strong>：在输入层直接 mixup 碱基序列缺乏生物学可解释性。</li>
+</ol>
+<p>C²LR 的回应是：<strong>Phase I</strong> 用 Weighted SimCLR 打基础；<strong>Phase II</strong> 在隐层做 Manifold Instance Mixup（MI-Mix），逐步提高锚点难度。</p>
+<h3 id="1-2-核心思想一览"><a href="#1-2-核心思想一览" class="headerlink" title="1.2 核心思想一览"></a>1.2 核心思想一览</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    subgraph P1[&quot;Phase I · 较易&quot;]</span><br><span class="line">        A1[真实序列锚点 x_i] --&gt; W[Weighted SimCLR]</span><br><span class="line">        W --&gt; E1[物种级聚类雏形]</span><br><span class="line">    end</span><br><span class="line">    subgraph P2[&quot;Phase II · 较难&quot;]</span><br><span class="line">        A2[隐层混合锚点 h_i^m] --&gt; M[MI-Mix + 对比损失]</span><br><span class="line">        M --&gt; E2[更鲁棒的物种边界]</span><br><span class="line">    end</span><br><span class="line">    P1 --&gt;|课程递进| P2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-01-two-phases.png" alt="C²LR 两阶段总览：Phase I Weighted SimCLR → Phase II MI-Mix"></p>
+<hr>
+<h2 id="2-背景知识"><a href="#2-背景知识" class="headerlink" title="2. 背景知识"></a>2. 背景知识</h2><h3 id="2-1-SimCLR-对比框架"><a href="#2-1-SimCLR-对比框架" class="headerlink" title="2.1 SimCLR 对比框架"></a>2.1 SimCLR 对比框架</h3><p><strong>SimCLR</strong>（Simple Framework for Contrastive Learning）在 batch 内对每个锚点 $x_i$：</p>
+<ul>
+<li><strong>正样本</strong>：增强视图 $x_i^+$；</li>
+<li><strong>负样本</strong>：同 batch 中其余 $2B-2$ 个样本（$B$ 为 batch 大小）；</li>
+<li><strong>目标</strong>：最大化 $\mathrm{sim}(f(x_i), f(x_i^+))$，最小化与负样本的相似度。</li>
+</ul>
+<p>相似度常用 <strong>余弦相似度</strong> $s(\mathbf{u},\mathbf{v}) &#x3D; \mathbf{u}^\top \mathbf{v} &#x2F; |\mathbf{u}||\mathbf{v}|$，并引入 <strong>温度系数（temperature）</strong> $\tau$ 缩放 logits：</p>
+<p>$$<br>\ell_{\mathrm{SimCLR}}(i) &#x3D; -\log \frac{\exp(s(f(x_i), f(x_i^+))&#x2F;\tau)}{\sum_{j \neq i} \exp(s(f(x_i), f(x_j))&#x2F;\tau)}<br>$$</p>
+<blockquote>
+<p>段末注释：<strong>温度 $\tau$</strong> 越小，模型越「挑剔」相似度细微差别；DNABERT-S 取 $\tau&#x3D;0.05$。</p>
+</blockquote>
+<h3 id="2-2-课程学习"><a href="#2-2-课程学习" class="headerlink" title="2.2 课程学习"></a>2.2 课程学习</h3><p><strong>课程学习</strong>（Bengio et al., 2009；Hacohen &amp; Weinshall, 2019）模仿人类学习：先学简单样本，再学复杂样本。在对比学习中，已有工作分别对 <strong>正样本对</strong>（Ye et al.）、<strong>负样本对</strong>（Chu et al., COCO）做课程调度。</p>
+<p><strong>C²LR 的创新点</strong>（DNABERT-S 论文强调）：课程化对象不是单独的正&#x2F;负 <strong>对</strong>，而是 <strong>对比锚点本身</strong>——从「真实序列表示」过渡到「隐层混合表示」，同时影响正负两类对比关系。</p>
+<h3 id="2-3-DNABERT-S-中的正样本对构造"><a href="#2-3-DNABERT-S-中的正样本对构造" class="headerlink" title="2.3 DNABERT-S 中的正样本对构造"></a>2.3 DNABERT-S 中的正样本对构造</h3><p>与 NLP 中 dropout 双视图不同，DNABERT-S 使用 <strong>同物种、非重叠</strong> 的基因组片段：</p>
+<p>$$<br>(x_i,, x_i^+) ;\leftarrow; \text{同一参考基因组上两条 10,000 bp 非重叠窗口}<br>$$</p>
+<p>数据来自 GenBank：病毒、真菌、细菌共约 <strong>204.8 万对</strong>，其中 <strong>200 万对</strong> 用于训练。这种正样本定义与物种标签 <strong>弱监督一致</strong>，比随机突变或互补链配对更贴近「物种感知」目标（论文 ablation 中 <strong>same_species</strong> 策略最优）。</p>
+<hr>
+<h2 id="3-Phase-I：Weighted-SimCLR"><a href="#3-Phase-I：Weighted-SimCLR" class="headerlink" title="3. Phase I：Weighted SimCLR"></a>3. Phase I：Weighted SimCLR</h2><h3 id="3-1-动机"><a href="#3-1-动机" class="headerlink" title="3.1 动机"></a>3.1 动机</h3><p>标准 SimCLR 对所有负样本 <strong>等权重</strong>。但嵌入空间中 <strong>靠近锚点的负样本</strong>（hard negatives）更能刻画决策边界，应获得更大梯度权重。</p>
+<h3 id="3-2-加权损失"><a href="#3-2-加权损失" class="headerlink" title="3.2 加权损失"></a>3.2 加权损失</h3><p>对 batch ${(x_i, x_i^+)}<em>{i&#x3D;1}^B$，定义虚拟标签向量 $v_i \in {0,1}^B$，其中 $v</em>{i,i}&#x3D;1$ 表示 $x_i^+$ 为正，其余为负。对锚点 $x_i$：</p>
+<p>$$<br>\ell(f(x_i), v_i) &#x3D; -\sum_{n&#x3D;1}^{B} v_{i,n} \log \frac{\exp(s(f(x_i), f(x_n^+))&#x2F;\tau)}{\sum_{j \neq i} \alpha_{ij} \exp(s(f(x_i), f(x_j))&#x2F;\tau)}<br>$$</p>
+<p>权重 $\alpha_{ij}$ 随与锚点的相似度 <strong>增大</strong> 而增大（hard negative 加权）：</p>
+<p>$$<br>\alpha_{ij} &#x3D; \frac{\exp(s(f(x_i), f(x_j))&#x2F;\tau)}{\frac{1}{2B-2}\sum_{k \neq i,i^+} \exp(s(f(x_i), f(x_k))&#x2F;\tau)}, \quad \alpha_{ii^+}&#x3D;1<br>$$</p>
+<p>对 $x_i^+$ 同样作为锚点计算 $\ell(f(x_i^+), v_i)$（交换 $x$ 与 $x^+$ 角色）。<strong>Phase I 总损失</strong>：</p>
+<p>$$<br>\mathcal{L}<em>{\mathrm{I}} &#x3D; \frac{1}{2B}\sum</em>{i&#x3D;1}^{B}\Big(\ell(f(x_i), v_i) + \ell(f(x_i^+), v_i)\Big) \tag{2}<br>$$</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-02-weighted-simclr.png" alt="Weighted SimCLR：hard negative 获得更大权重，正样本强吸引"></p>
+<h3 id="3-3-直观理解"><a href="#3-3-直观理解" class="headerlink" title="3.3 直观理解"></a>3.3 直观理解</h3><table>
+<thead>
+<tr>
+<th>元素</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>双锚点 $(x_i, x_i^+)$</td>
+<td>每个正样本对贡献两次损失，对称优化</td>
+</tr>
+<tr>
+<td>$\alpha_{ij}$</td>
+<td>相似负样本 → 更大惩罚，边界更清晰</td>
+</tr>
+<tr>
+<td>小 $\tau&#x3D;0.05$</td>
+<td>强化细微相似度差异，适合高维嵌入</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-Phase-II：Manifold-Instance-Mixup（MI-Mix）"><a href="#4-Phase-II：Manifold-Instance-Mixup（MI-Mix）" class="headerlink" title="4. Phase II：Manifold Instance Mixup（MI-Mix）"></a>4. Phase II：Manifold Instance Mixup（MI-Mix）</h2><h3 id="4-1-为何不用输入层-mixup？"><a href="#4-1-为何不用输入层-mixup？" class="headerlink" title="4.1 为何不用输入层 mixup？"></a>4.1 为何不用输入层 mixup？</h3><p><strong>Instance Mixup（i-Mix）</strong>（Lee et al., 2020）在 <strong>输入层</strong> 混合：</p>
+<p>$$<br>\tilde{x}_i &#x3D; \lambda_i x_i + (1-\lambda_i)\hat{x}_i, \quad \lambda_i \sim \mathrm{Beta}(\alpha,\alpha)<br>$$</p>
+<p>对 <strong>图像、语音</strong> 等连续数据有效，但 DNA 是 <strong>离散碱基</strong>；直接线性混合 $A&#x2F;T&#x2F;C&#x2F;G$ 会产生非生物学序列。若在 anchor 空间仅 mix $x_i$ 而对比 $x_i^+$，还会 <strong>近似翻倍</strong> 显存或训练时间（DNABERT-S 附录 A.10）。</p>
+<h3 id="4-2-MI-Mix：在隐层流形上混合"><a href="#4-2-MI-Mix：在隐层流形上混合" class="headerlink" title="4.2 MI-Mix：在隐层流形上混合"></a>4.2 MI-Mix：在隐层流形上混合</h3><p>将编码器分解为 $f(x) &#x3D; f_m(g_m(x))$：</p>
+<ul>
+<li>$g_m(\cdot)$：第 $1\ldots m$ 层，输出 <strong>第 $m$ 层隐状态</strong>；</li>
+<li>$f_m(\cdot)$：第 $m+1\ldots L$ 层 + 投影头，输出最终嵌入。</li>
+</ul>
+<p><strong>四步流程</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">flowchart TB</span><br><span class="line">    S1[&quot;1. 随机选层 m ∈ S&quot;] --&gt; S2[&quot;2. 前向至 g_m(x_i)，得隐状态&quot;]</span><br><span class="line">    S2 --&gt; S3[&quot;3. 打乱 batch，Mixup:\n h^m_i = λ g_m(x_i) + (1-λ) g_m(x̂_i)\n v^mix_i = λ v_i + (1-λ) v̂_i&quot;]</span><br><span class="line">    S3 --&gt; S4[&quot;4. 经 f_m 得 f_m(h^m_i)，计算加权对比损失&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>数学形式：</p>
+<p>$$<br>h_i^m &#x3D; \lambda_i g_m(x_i) + (1-\lambda_i) g_m(\hat{x}_i)<br>$$</p>
+<p>$$<br>v_i^{\mathrm{mix}} &#x3D; \lambda_i v_i + (1-\lambda_i) \hat{v}_i<br>$$</p>
+<p>对混合锚点的损失（与 Phase I 结构类似，锚点换为 $f_m(h_i^m)$，标签换为 $v_i^{\mathrm{mix}}$）：</p>
+<p>$$<br>\hat{\ell}(f_m(h_i^m), v_i^{\mathrm{mix}}) &#x3D; -\sum_{n&#x3D;1}^{B} v_{i,n}^{\mathrm{mix}} \log \frac{\exp(s(f_m(h_i^m), f(x_n^+))&#x2F;\tau)}{\sum_{j&#x3D;1}^{B} \alpha_{ij^+} \exp(s(f_m(h_i^m), f(x_j^+))&#x2F;\tau)} \tag{3}<br>$$</p>
+<p><strong>Phase II 总损失</strong> $\mathcal{L}_{\mathrm{II}} &#x3D; \frac{1}{B}\sum_i \hat{\ell}(\cdot)$。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DNABERT-1.%E8%AF%BE%E7%A8%8B%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0C2LR/fig-c2lr-03-mi-mix.png" alt="MI-Mix：在第 m 层隐空间混合，避免碱基级不可信混合"></p>
+<h3 id="4-3-MI-Mix-与-i-Mix、Manifold-Mixup-的关系"><a href="#4-3-MI-Mix-与-i-Mix、Manifold-Mixup-的关系" class="headerlink" title="4.3 MI-Mix 与 i-Mix、Manifold Mixup 的关系"></a>4.3 MI-Mix 与 i-Mix、Manifold Mixup 的关系</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>混合位置</th>
+<th>适用模态</th>
+<th>DNABERT-S 选用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>i-Mix</strong></td>
+<td>输入层</td>
+<td>连续信号</td>
+<td>否（DNA 离散 + 算力）</td>
+</tr>
+<tr>
+<td><strong>Manifold Mixup</strong>（Verma et al.）</td>
+<td>指定隐层</td>
+<td>图像等</td>
+<td>思想来源</td>
+</tr>
+<tr>
+<td><strong>MI-Mix</strong></td>
+<td>随机隐层 $m$ + 仅 mix anchor</td>
+<td>DNA 序列</td>
+<td><strong>是</strong></td>
+</tr>
+</tbody></table>
+<p>随机选 $m$ 相当于对 <strong>不同抽象层级</strong> 的特征做增强，迫使模型在 <strong>流形（manifold）</strong> 上识别「混合比例」对应的软标签 $v_i^{\mathrm{mix}}$，对 <strong>长读长、含测序错误</strong> 的序列更鲁棒。</p>
+<hr>
+<h2 id="5-C²LR-完整训练日程（DNABERT-S）"><a href="#5-C²LR-完整训练日程（DNABERT-S）" class="headerlink" title="5. C²LR 完整训练日程（DNABERT-S）"></a>5. C²LR 完整训练日程（DNABERT-S）</h2><h3 id="5-1-两阶段课程"><a href="#5-1-两阶段课程" class="headerlink" title="5.1 两阶段课程"></a>5.1 两阶段课程</h3><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>损失</th>
+<th>Epoch</th>
+<th>锚点特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Phase I</strong></td>
+<td>Eq. (2) Weighted SimCLR</td>
+<td><strong>1</strong></td>
+<td>真实 $f(x_i)$、$f(x_i^+)$</td>
+</tr>
+<tr>
+<td><strong>Phase II</strong></td>
+<td>Eq. (3) MI-Mix</td>
+<td><strong>2</strong></td>
+<td>混合 $f_m(h_i^m)$，难度更高</td>
+</tr>
+</tbody></table>
+<p><strong>总训练 3 epoch</strong>；$\tau&#x3D;0.05$，$\alpha&#x3D;1.0$（Beta 分布参数）；嵌入为 <strong>最后一层隐状态 mean pooling</strong> → 128 维（再经投影头）。</p>
+<h3 id="5-2-实现要点"><a href="#5-2-实现要点" class="headerlink" title="5.2 实现要点"></a>5.2 实现要点</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>典型设置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>初始化</td>
+<td><strong>DNABERT-2-117M</strong> 权重</td>
+</tr>
+<tr>
+<td>优化器</td>
+<td>Adam，lr $3\times 10^{-6}$</td>
+</tr>
+<tr>
+<td>Batch</td>
+<td>48（8×A100-80GB）</td>
+</tr>
+<tr>
+<td><code>max_length</code></td>
+<td>2000 token（对应 10 kb DNA 的 0.2× 长度设置）</td>
+</tr>
+<tr>
+<td>对比方法</td>
+<td><code>same_species</code> 正样本对</td>
+</tr>
+<tr>
+<td>开关</td>
+<td><code>--curriculum</code> + <code>--mix --mix_layer_num -1</code>（-1 表示 manifold &#x2F; 随机层 MI-Mix）</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-消融结论（论文-Table-2）"><a href="#5-3-消融结论（论文-Table-2）" class="headerlink" title="5.3 消融结论（论文 Table 2）"></a>5.3 消融结论（论文 Table 2）</h3><table>
+<thead>
+<tr>
+<th>变体</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>仅 Weighted SimCLR</td>
+<td>缺 Phase II，边界较弱</td>
+</tr>
+<tr>
+<td>仅 MI-Mix</td>
+<td>缺 Phase I 基础，不稳定</td>
+</tr>
+<tr>
+<td>Phase II 换 i-Mix</td>
+<td>弱于 MI-Mix</td>
+</tr>
+<tr>
+<td><strong>C²LR（I + II）</strong></td>
+<td><strong>ARI &#x2F; 分箱 &#x2F; few-shot 综合最优</strong></td>
+</tr>
+</tbody></table>
+<p><strong>课程顺序不可颠倒</strong>：先 SimCLR 建立物种簇，再 MI-Mix 细化边界。</p>
+<hr>
+<h2 id="6-嵌入空间几何：训练前后对比"><a href="#6-嵌入空间几何：训练前后对比" class="headerlink" title="6. 嵌入空间几何：训练前后对比"></a>6. 嵌入空间几何：训练前后对比</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    subgraph Before[&quot;MLM 预训练 DNABERT-2&quot;]</span><br><span class="line">        B1[物种 A 序列] </span><br><span class="line">        B2[物种 B 序列]</span><br><span class="line">        B1 -.重叠.- B2</span><br><span class="line">    end</span><br><span class="line">    subgraph After[&quot;C²LR 后 DNABERT-S&quot;]</span><br><span class="line">        A1[物种 A 簇]</span><br><span class="line">        A2[物种 B 簇]</span><br><span class="line">        A1 ==清晰间隔== A2</span><br><span class="line">    end</span><br><span class="line">    Before --&gt;|C²LR| After</span><br></pre></td></tr></table></figure>
+
+<p>训练目标可概括为：</p>
+<p>$$<br>\min_f ; \mathbb{E}<em>{(x,x^+)\sim \mathcal{D}^+}\Big[\underbrace{-s(f(x),f(x^+))}</em>{\text{Phase I&#x2F;II 共同：拉近同物种}} + \underbrace{\sum_{x^-} \alpha(x,x^-), s(f(x),f(x^-))}_{\text{Weighted：推远 hard 负样本}}\Big]<br>$$</p>
+<p>Phase II 额外在 $h^m$ 上构造 <strong>软标签</strong> $v^{\mathrm{mix}}$，相当于对决策边界做 <strong>数据依赖的正则化</strong>。</p>
+<hr>
+<h2 id="7-广义-C²LR-与相关文献"><a href="#7-广义-C²LR-与相关文献" class="headerlink" title="7. 广义 C²LR 与相关文献"></a>7. 广义 C²LR 与相关文献</h2><p>C²LR 并非 DNA 独有；同一思想可迁移到其他 <strong>需要几何嵌入</strong> 的场景：</p>
+<table>
+<thead>
+<tr>
+<th>工作</th>
+<th>课程对象</th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>COCO</strong>（Chu et al.）</td>
+<td>负样本难度</td>
+<td>图对比学习</td>
+</tr>
+<tr>
+<td><strong>Temporal CL + Curriculum</strong>（Roy &amp; Etemad）</td>
+<td>时间正样本对</td>
+<td>语音&#x2F;时序</td>
+</tr>
+<tr>
+<td><strong>Efficient CL + Curriculum</strong>（Ye et al.）</td>
+<td>数据增强强度</td>
+<td>句子嵌入</td>
+</tr>
+<tr>
+<td><strong>DNABERT-S C²LR</strong></td>
+<td><strong>对比锚点</strong>（真实 → 隐层混合）</td>
+<td>基因组物种嵌入</td>
+</tr>
+</tbody></table>
+<p>设计自己的 C²LR 时可问三个问题：</p>
+<ol>
+<li><strong>什么是「简单锚点」？</strong>（真实样本、弱增强、短序列）</li>
+<li><strong>什么是「困难锚点」？</strong>（混合表示、强增强、跨域样本）</li>
+<li><strong>困难锚点应在哪一层构造？</strong>（输入 vs 隐层 vs 输出）</li>
+</ol>
+<p>对 <strong>离散序列</strong>（DNA、密码子、SMILES），优先 <strong>隐层 mixup</strong> 而非 token 级插值。</p>
+<hr>
+<h2 id="8-实践建议与常见坑"><a href="#8-实践建议与常见坑" class="headerlink" title="8. 实践建议与常见坑"></a>8. 实践建议与常见坑</h2><h3 id="8-1-何时考虑-C²LR"><a href="#8-1-何时考虑-C²LR" class="headerlink" title="8.1 何时考虑 C²LR"></a>8.1 何时考虑 C²LR</h3><ul>
+<li>已有强 <strong>MLM&#x2F;自回归</strong> 预训练模型，但下游需要 <strong>聚类、检索、分箱</strong> 等几何任务；</li>
+<li>有 <strong>弱标签结构</strong>（如同物种配对、同病人配对、同文档段落）；</li>
+<li>数据含 <strong>噪声或长读长错误</strong>，需要 Phase II 式鲁棒边界。</li>
+</ul>
+<h3 id="8-2-常见坑"><a href="#8-2-常见坑" class="headerlink" title="8.2 常见坑"></a>8.2 常见坑</h3><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>跳过 Phase I 直接 MI-Mix</td>
+<td>保持两阶段；论文 ablation 证明课程必要</td>
+</tr>
+<tr>
+<td>正样本定义不当</td>
+<td>物种任务用 <strong>同基因组非重叠片段</strong>，慎用纯 dropout 视图</td>
+</tr>
+<tr>
+<td>$\tau$ 过大</td>
+<td>嵌入区分度不足；DNA 场景可试 $0.05$–$0.1$</td>
+</tr>
+<tr>
+<td>batch 过小</td>
+<td>负样本数 $2B-2$ 不足，对比信号弱；适当增大 batch 或 memory bank</td>
+</tr>
+<tr>
+<td>与 MLM 混训同一阶段</td>
+<td>DNABERT-S 是 <strong>第二阶段</strong> 对比微调，而非替换 MLM</td>
+</tr>
+</tbody></table>
+<h3 id="8-3-与-DNABERT-2-选型文档的衔接"><a href="#8-3-与-DNABERT-2-选型文档的衔接" class="headerlink" title="8.3 与 DNABERT-2 选型文档的衔接"></a>8.3 与 DNABERT-2 选型文档的衔接</h3><table>
+<thead>
+<tr>
+<th>任务</th>
+<th>推荐模型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>启动子&#x2F;增强子 MLM 微调</td>
+<td>DNABERT-2</td>
+</tr>
+<tr>
+<td>物种聚类 &#x2F; 宏基因组分箱</td>
+<td><strong>DNABERT-S</strong>（C²LR 嵌入）</td>
+</tr>
+<tr>
+<td>需自定义物种边界</td>
+<td>可在 DNABERT-2 上 <strong>复现 C²LR 流程</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>C²LR</strong></td>
+<td>对比学习 + 课程学习；<strong>锚点难度</strong> 分两阶段递增</td>
+</tr>
+<tr>
+<td><strong>Phase I</strong></td>
+<td>Weighted SimCLR：hard negative 加权 + 同物种正样本对</td>
+</tr>
+<tr>
+<td><strong>Phase II</strong></td>
+<td>MI-Mix：在随机 Transformer 层混合隐状态，软标签对比</td>
+</tr>
+<tr>
+<td><strong>DNABERT-S</strong></td>
+<td>DNABERT-2 + C²LR → 物种感知 128 维 DNA 嵌入</td>
+</tr>
+</tbody></table>
+<p>C²LR 的价值在于：它把「<strong>先易后难</strong>」从样本排序推广到 <strong>对比锚点的构造方式</strong>，并在 DNA 场景用 <strong>流形 mixup</strong> 避开离散碱基混合的陷阱。理解 Phase I&#x2F;II 的分工，是在项目中 <strong>复用、改造或替换</strong> 该策略的基础。</p>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Zhou Z. et al. <strong>DNABERT-S: Learning Species-Aware DNA Embedding with Genome Foundation Models.</strong> ICLR 2024. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2402.08777">arXiv:2402.08777</a></li>
+<li>Chen T. et al. <strong>A Simple Framework for Contrastive Learning of Visual Representations (SimCLR).</strong> ICML 2020.</li>
+<li>Zhang Y. et al. <strong>Weighted SimCLR.</strong> 2021.</li>
+<li>Lee H. et al. <strong>i-Mix: A Strategy for Regularizing Contrastive Representation Learning.</strong> ICLR 2021.</li>
+<li>Verma V. et al. <strong>Manifold Mixup.</strong> ICML 2019.</li>
+<li>Bengio Y. et al. <strong>Curriculum Learning.</strong> ICML 2009.</li>
+<li>Chu G. et al. <strong>COCO: Graph Representation with Curriculum Contrastive Learning.</strong> 2021.</li>
+<li>代码：<a target="_blank" rel="noopener" href="https://github.com/MAGICS-LAB/DNABERT_S">MAGICS-LAB&#x2F;DNABERT_S</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0/" rel="tag"><i class="fa fa-tag"></i> 对比学习</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/DNABERT/" rel="tag"><i class="fa fa-tag"></i> DNABERT</a>
+          
+            <a href="/tags/%E5%9F%BA%E5%9B%A0%E7%BB%84/" rel="tag"><i class="fa fa-tag"></i> 基因组</a>
+          
+            <a href="/tags/%E8%AF%BE%E7%A8%8B%E5%AD%A6%E4%B9%A0/" rel="tag"><i class="fa fa-tag"></i> 课程学习</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-02-03-%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8/" rel="next" title="RL-02-03-探索与利用">
+                <i class="fa fa-chevron-left"></i> RL-02-03-探索与利用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-04-01-%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF%E4%B8%8E%E6%8E%A5%E5%8F%A3%E7%BA%A6%E5%AE%9A/" rel="prev" title="RL-04-01-训练循环与接口约定">
+                RL-04-01-训练循环与接口约定 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-C%C2%B2LR%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">1. 为什么需要 C²LR？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%8E-MLM-%E5%88%B0%E5%AF%B9%E6%AF%94%E5%B5%8C%E5%85%A5"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 从 MLM 到对比嵌入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%E4%B8%80%E8%A7%88"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 核心思想一览</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%83%8C%E6%99%AF%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">2. 背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-SimCLR-%E5%AF%B9%E6%AF%94%E6%A1%86%E6%9E%B6"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 SimCLR 对比框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E8%AF%BE%E7%A8%8B%E5%AD%A6%E4%B9%A0"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 课程学习</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-DNABERT-S-%E4%B8%AD%E7%9A%84%E6%AD%A3%E6%A0%B7%E6%9C%AC%E5%AF%B9%E6%9E%84%E9%80%A0"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 DNABERT-S 中的正样本对构造</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Phase-I%EF%BC%9AWeighted-SimCLR"><span class="nav-number">3.</span> <span class="nav-text">3. Phase I：Weighted SimCLR</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%8A%A8%E6%9C%BA"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%8A%A0%E6%9D%83%E6%8D%9F%E5%A4%B1"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 加权损失</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E7%9B%B4%E8%A7%82%E7%90%86%E8%A7%A3"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 直观理解</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Phase-II%EF%BC%9AManifold-Instance-Mixup%EF%BC%88MI-Mix%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. Phase II：Manifold Instance Mixup（MI-Mix）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%B8%BA%E4%BD%95%E4%B8%8D%E7%94%A8%E8%BE%93%E5%85%A5%E5%B1%82-mixup%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 为何不用输入层 mixup？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-MI-Mix%EF%BC%9A%E5%9C%A8%E9%9A%90%E5%B1%82%E6%B5%81%E5%BD%A2%E4%B8%8A%E6%B7%B7%E5%90%88"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 MI-Mix：在隐层流形上混合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-MI-Mix-%E4%B8%8E-i-Mix%E3%80%81Manifold-Mixup-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 MI-Mix 与 i-Mix、Manifold Mixup 的关系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-C%C2%B2LR-%E5%AE%8C%E6%95%B4%E8%AE%AD%E7%BB%83%E6%97%A5%E7%A8%8B%EF%BC%88DNABERT-S%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. C²LR 完整训练日程（DNABERT-S）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E4%B8%A4%E9%98%B6%E6%AE%B5%E8%AF%BE%E7%A8%8B"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 两阶段课程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%AE%9E%E7%8E%B0%E8%A6%81%E7%82%B9"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 实现要点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E6%B6%88%E8%9E%8D%E7%BB%93%E8%AE%BA%EF%BC%88%E8%AE%BA%E6%96%87-Table-2%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 消融结论（论文 Table 2）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B5%8C%E5%85%A5%E7%A9%BA%E9%97%B4%E5%87%A0%E4%BD%95%EF%BC%9A%E8%AE%AD%E7%BB%83%E5%89%8D%E5%90%8E%E5%AF%B9%E6%AF%94"><span class="nav-number">6.</span> <span class="nav-text">6. 嵌入空间几何：训练前后对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B9%BF%E4%B9%89-C%C2%B2LR-%E4%B8%8E%E7%9B%B8%E5%85%B3%E6%96%87%E7%8C%AE"><span class="nav-number">7.</span> <span class="nav-text">7. 广义 C²LR 与相关文献</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%AE%9E%E8%B7%B5%E5%BB%BA%E8%AE%AE%E4%B8%8E%E5%B8%B8%E8%A7%81%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 实践建议与常见坑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#8-1-%E4%BD%95%E6%97%B6%E8%80%83%E8%99%91-C%C2%B2LR"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 何时考虑 C²LR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-2-%E5%B8%B8%E8%A7%81%E5%9D%91"><span class="nav-number">8.2.</span> <span class="nav-text">8.2 常见坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-3-%E4%B8%8E-DNABERT-2-%E9%80%89%E5%9E%8B%E6%96%87%E6%A1%A3%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-number">8.3.</span> <span class="nav-text">8.3 与 DNABERT-2 选型文档的衔接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">10.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="多目标优化,遗传算法,进化计算,超参搜索," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="遗传算法（GA）原理与实现：编码、选择、交叉、变异、精英保留；与梯度法对比；pymoo&#x2F;DEAP 示例；与 NSGA-II 等多目标扩展的衔接。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MOO-03.遗传算法">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="遗传算法（GA）原理与实现：编码、选择、交叉、变异、精英保留；与梯度法对比；pymoo&#x2F;DEAP 示例；与 NSGA-II 等多目标扩展的衔接。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig01-ga-loop.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig02-ga-encoding.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig03-ga-operators.png">
+<meta property="article:published_time" content="2026-07-02T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:57.903Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="多目标优化">
+<meta property="article:tag" content="超参搜索">
+<meta property="article:tag" content="进化计算">
+<meta property="article:tag" content="遗传算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig01-ga-loop.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-28.多目标优化/MOO-03.遗传算法/"/>
+
+
+
+
+
+  <title>MOO-03.遗传算法 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MOO-03.遗传算法</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-02T18:00:00+08:00">
+                2026-07-02
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  遗传算法（GA）原理与实现：编码、选择、交叉、变异、精英保留；与梯度法对比；pymoo/DEAP 示例；与 NSGA-II 等多目标扩展的衔接。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>遗传算法</strong>（Genetic Algorithm，<strong>GA</strong>）是一类受生物进化启发的<strong>随机搜索</strong>方法：维护一组候选解（<strong>种群</strong>），通过<strong>选择—交叉—变异</strong>迭代改进，在<strong>不可微、多峰、组合</strong>的黑盒优化中广泛使用。多目标系列里的 <strong>NSGA-II</strong>、<strong>SPEA2</strong> 本质上是 GA 的 Pareto 扩展——理解单目标 GA，是读懂 <a href="./MOO-02.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0.md">MOO-02</a> 的前提。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>GA</strong> 属于 <strong>进化计算</strong>（Evolutionary Computation，<strong>EC</strong>）大家族；与 <strong>进化策略</strong>（ES）、<strong>差分进化</strong>（DE）等同族，共享「种群 + 随机算子」范式。</p>
+</blockquote>
+<p><strong>系列</strong>： <a href="./MOO-01.%E5%B8%95%E7%B4%AF%E6%89%98%E6%9C%80%E4%BC%98.md">MOO-01 帕累托最优</a> → <a href="./MOO-02.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0.md">MOO-02 算法实现</a> → <strong>本文</strong><br><strong>前置</strong>：<a href="../01.%E7%9F%A5%E8%AF%86-02.Math/Math-04.%E4%BC%98%E5%8C%96-01.%E6%80%BB%E8%AE%BA.md">Math-04 单目标优化</a></p>
+<hr>
+<h2 id="一、核心思想：种群搜索而非单点下降"><a href="#一、核心思想：种群搜索而非单点下降" class="headerlink" title="一、核心思想：种群搜索而非单点下降"></a>一、核心思想：种群搜索而非单点下降</h2><p>梯度法从一点 $\mathbf{x}_t$ 沿 $-\nabla f$ 移动；GA 同时维护 $N$ 个个体 ${\mathbf{x}^{(1)},\ldots,\mathbf{x}^{(N)}}$，每代：</p>
+<ol>
+<li><strong>评估</strong>适应度（fitness）$F(\mathbf{x}^{(i)})$——最小化问题常取 $F &#x3D; -f$ 或 $1&#x2F;(1+f)$；</li>
+<li><strong>选择</strong>优秀个体作父代（偏<strong>利用</strong>，exploitation）；</li>
+<li><strong>交叉</strong>组合父代基因产生子代（<strong>探索</strong>新组合）；</li>
+<li><strong>变异</strong>随机扰动（维持多样性）；</li>
+<li><strong>环境选择</strong>（含精英保留）组成下一代。</li>
+</ol>
+<p><img src="/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig01-ga-loop.png" alt="图 1　遗传算法主循环"></p>
+<table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>梯度下降 &#x2F; Adam</th>
+<th>遗传算法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>梯度</td>
+<td>需要 $\nabla f$</td>
+<td><strong>不需要</strong></td>
+</tr>
+<tr>
+<td>目标</td>
+<td>连续可微为主</td>
+<td>black-box、离散、多峰均可</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>单点串行</td>
+<td><strong>种群天然并行</strong>评估</td>
+</tr>
+<tr>
+<td>收敛</td>
+<td>局部极小</td>
+<td>无全局最优保证，但可跳出局部极</td>
+</tr>
+<tr>
+<td>样本效率</td>
+<td>高（尤其凸问题）</td>
+<td>低，常需 $10^3$–$10^5$ 次评估</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>black-box</strong> 指只能调用 $f(\mathbf{x})$ 返回值、无法求导或内部不可见的优化场景。</p>
+</blockquote>
+<hr>
+<h2 id="二、编码：决策变量如何变成「染色体」"><a href="#二、编码：决策变量如何变成「染色体」" class="headerlink" title="二、编码：决策变量如何变成「染色体」"></a>二、编码：决策变量如何变成「染色体」</h2><p><img src="/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig02-ga-encoding.png" alt="图 2　三种常见编码"></p>
+<p><strong>编码</strong>（encoding）把 $\mathbf{x} \in \mathcal{X}$ 映射为 GA 操作的<strong>染色体</strong>（chromosome）。</p>
+<table>
+<thead>
+<tr>
+<th>编码</th>
+<th>染色体形式</th>
+<th>典型问题</th>
+<th>交叉&#x2F;变异</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>二进制</strong></td>
+<td>${0,1}^L$</td>
+<td>特征选择、背包</td>
+<td>单点&#x2F;均匀交叉；位翻转</td>
+</tr>
+<tr>
+<td><strong>实数</strong></td>
+<td>$\mathbf{x} \in [x_l, x_u]^d$</td>
+<td>超参、连续设计</td>
+<td><strong>SBX</strong> 交叉；<strong>多项式变异 PM</strong></td>
+</tr>
+<tr>
+<td><strong>排列</strong></td>
+<td>$(\pi_1,\ldots,\pi_n)$ 置换</td>
+<td>TSP、排程</td>
+<td><strong>OX&#x2F;PMX</strong>；交换&#x2F;倒位变异</td>
+</tr>
+<tr>
+<td><strong>整数</strong></td>
+<td>$\mathbb{Z}^d \cap [l,u]$</td>
+<td>层数、离散档位</td>
+<td>均匀交叉 + 整数变异</td>
+</tr>
+</tbody></table>
+<p><strong>原则</strong>：编码必须与问题结构一致——对 TSP 用实数向量会产生大量无效路径；对神经网络超参用二进制效率低。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 实数编码示例：3 维超参 [lr, batch, dropout]</span></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">random_individual</span>(<span class="params">rng</span>):</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">      <span class="string">&quot;lr&quot;</span>:       <span class="number">10</span> ** rng.uniform(-<span class="number">5</span>, -<span class="number">2</span>),   <span class="comment"># log-uniform</span></span><br><span class="line">      <span class="string">&quot;batch&quot;</span>:    <span class="built_in">int</span>(rng.choice([<span class="number">8</span>, <span class="number">16</span>, <span class="number">32</span>, <span class="number">64</span>])),</span><br><span class="line">      <span class="string">&quot;dropout&quot;</span>:  rng.uniform(<span class="number">0.0</span>, <span class="number">0.5</span>),</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decode</span>(<span class="params">ind</span>):</span><br><span class="line">  <span class="string">&quot;&quot;&quot;染色体 → 决策向量 / 训练配置。&quot;&quot;&quot;</span></span><br><span class="line">  <span class="keyword">return</span> ind  <span class="comment"># 实数编码时常为恒等映射</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="三、遗传算子"><a href="#三、遗传算子" class="headerlink" title="三、遗传算子"></a>三、遗传算子</h2><p><img src="/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/fig03-ga-operators.png" alt="图 3　选择、交叉、变异"></p>
+<h3 id="3-1-选择（Selection）"><a href="#3-1-选择（Selection）" class="headerlink" title="3.1 选择（Selection）"></a>3.1 选择（Selection）</h3><p>从种群中挑父代，常用：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>机制</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>锦标赛</strong>（Tournament）</td>
+<td>随机抽 $k$ 个，取最优</td>
+<td>实现简单；<strong>pymoo 默认</strong></td>
+</tr>
+<tr>
+<td><strong>轮盘赌</strong>（Roulette）</td>
+<td>按适应度比例抽样</td>
+<td>易过早收敛（super individual）</td>
+</tr>
+<tr>
+<td><strong>排序选择</strong>（Rank）</td>
+<td>按排名而非绝对适应度</td>
+<td>缓解尺度敏感</td>
+</tr>
+</tbody></table>
+<p>锦标赛大小 $k$：$k&#x3D;2$ 选择压力小、多样性好；$k$ 增大则更快收敛、易早熟。</p>
+<h3 id="3-2-交叉（Crossover）"><a href="#3-2-交叉（Crossover）" class="headerlink" title="3.2 交叉（Crossover）"></a>3.2 交叉（Crossover）</h3><table>
+<thead>
+<tr>
+<th>算子</th>
+<th>适用编码</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>单点&#x2F;两点</strong></td>
+<td>二进制</td>
+<td>交换片段</td>
+</tr>
+<tr>
+<td><strong>SBX</strong></td>
+<td>实数</td>
+<td>模拟二进制交叉，子代在父代附近；<code>prob=0.9, eta=15</code> 常见</td>
+</tr>
+<tr>
+<td><strong>OX &#x2F; PMX</strong></td>
+<td>排列</td>
+<td>保持排列合法性</td>
+</tr>
+<tr>
+<td><strong>均匀交叉</strong></td>
+<td>通用</td>
+<td>每位独立来自父代 A 或 B</td>
+</tr>
+</tbody></table>
+<p>交叉概率 $p_c$：通常 $0.8$–$0.95$；过低则搜索退化为纯变异。</p>
+<h3 id="3-3-变异（Mutation）"><a href="#3-3-变异（Mutation）" class="headerlink" title="3.3 变异（Mutation）"></a>3.3 变异（Mutation）</h3><table>
+<thead>
+<tr>
+<th>算子</th>
+<th>适用</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>位翻转</strong></td>
+<td>二进制</td>
+<td>$p_m \approx 1&#x2F;L$</td>
+</tr>
+<tr>
+<td><strong>PM</strong>（Polynomial Mutation）</td>
+<td>实数</td>
+<td>有界扰动；<code>eta=20</code></td>
+</tr>
+<tr>
+<td><strong>高斯扰动</strong></td>
+<td>实数</td>
+<td>$\mathbf{x} \leftarrow \mathbf{x} + \mathcal{N}(0,\sigma^2)$</td>
+</tr>
+<tr>
+<td><strong>交换&#x2F;倒位</strong></td>
+<td>排列</td>
+<td>局部重排</td>
+</tr>
+</tbody></table>
+<p>变异概率 $p_m$：不宜过大（随机游走）或过小（停滞）。</p>
+<h3 id="3-4-精英保留（Elitism）"><a href="#3-4-精英保留（Elitism）" class="headerlink" title="3.4 精英保留（Elitism）"></a>3.4 精英保留（Elitism）</h3><p><strong>最优个体直接进入下一代</strong>，防止最优解因交叉&#x2F;变异丢失。NSGA-II 的环境选择是精英策略的 Pareto 扩展。</p>
+<hr>
+<h2 id="四、标准-GA-伪代码"><a href="#四、标准-GA-伪代码" class="headerlink" title="四、标准 GA 伪代码"></a>四、标准 GA 伪代码</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">输入: 目标 f(x) 最小化, 种群规模 N, 最大代数 G, 交叉率 pc, 变异率 pm</span><br><span class="line">P ← 随机初始化 N 个合法个体</span><br><span class="line">评估 F(x) for all x in P</span><br><span class="line">for g = 1 .. G:</span><br><span class="line">    Q ← ∅</span><br><span class="line">    while |Q| &lt; N:</span><br><span class="line">        p1, p2 ← TournamentSelect(P, k=2)</span><br><span class="line">        c1, c2 ← Crossover(p1, p2) with probability pc</span><br><span class="line">        c1 ← Mutate(c1, pm);  c2 ← Mutate(c2, pm)</span><br><span class="line">        Q ← Q ∪ &#123;c1, c2&#125;</span><br><span class="line">    P ← EnvironmentalSelect(P ∪ Q, N)   # 含精英保留</span><br><span class="line">输出: P 中适应度最优个体</span><br></pre></td></tr></table></figure>
+
+<p><strong>终止条件</strong>：固定代数 $G$、适应度平台（连续 $K$ 代无改进）、或评估预算 $N_{\mathrm{eval}}$ 用尽。</p>
+<hr>
+<h2 id="五、Python-实现"><a href="#五、Python-实现" class="headerlink" title="五、Python 实现"></a>五、Python 实现</h2><h3 id="5-1-pymoo（推荐，与-MOO-统一）"><a href="#5-1-pymoo（推荐，与-MOO-统一）" class="headerlink" title="5.1 pymoo（推荐，与 MOO 统一）"></a>5.1 pymoo（推荐，与 MOO 统一）</h3><p>单目标实数优化可用 <strong>GA</strong> 或 <strong>DE</strong>（差分进化，常更稳）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># pip install pymoo</span></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> pymoo.core.problem <span class="keyword">import</span> Problem</span><br><span class="line"><span class="keyword">from</span> pymoo.algorithms.soo.nonconvex.ga <span class="keyword">import</span> GA</span><br><span class="line"><span class="keyword">from</span> pymoo.operators.crossover.sbx <span class="keyword">import</span> SBX</span><br><span class="line"><span class="keyword">from</span> pymoo.operators.mutation.pm <span class="keyword">import</span> PM</span><br><span class="line"><span class="keyword">from</span> pymoo.operators.sampling.rnd <span class="keyword">import</span> FloatRandomSampling</span><br><span class="line"><span class="keyword">from</span> pymoo.optimize <span class="keyword">import</span> minimize</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Sphere</span>(<span class="title class_ inherited__">Problem</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__(n_var=<span class="number">10</span>, n_obj=<span class="number">1</span>, xl=-<span class="number">5</span>, xu=<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_evaluate</span>(<span class="params">self, x, out, *args, **kwargs</span>):</span><br><span class="line">        out[<span class="string">&quot;F&quot;</span>] = np.<span class="built_in">sum</span>(x ** <span class="number">2</span>, axis=<span class="number">1</span>).reshape(-<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">problem = Sphere()</span><br><span class="line">algorithm = GA(</span><br><span class="line">    pop_size=<span class="number">50</span>,</span><br><span class="line">    sampling=FloatRandomSampling(),</span><br><span class="line">    crossover=SBX(prob=<span class="number">0.9</span>, eta=<span class="number">15</span>),</span><br><span class="line">    mutation=PM(eta=<span class="number">20</span>),</span><br><span class="line">    eliminate_duplicates=<span class="literal">True</span>,</span><br><span class="line">)</span><br><span class="line">res = minimize(problem, algorithm, (<span class="string">&quot;n_gen&quot;</span>, <span class="number">100</span>), seed=<span class="number">42</span>, verbose=<span class="literal">False</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;best f:&quot;</span>, res.F[<span class="number">0</span>, <span class="number">0</span>], <span class="string">&quot;x:&quot;</span>, res.X[<span class="number">0</span>])</span><br></pre></td></tr></table></figure>
+
+<p>多目标时把 <code>GA</code> 换成 <code>NSGA2</code> 即得帕累托前沿（见 <a href="./MOO-02.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0.md">MOO-02 §三</a>）。</p>
+<h3 id="5-2-最小手工-GA（教学用）"><a href="#5-2-最小手工-GA（教学用）" class="headerlink" title="5.2 最小手工 GA（教学用）"></a>5.2 最小手工 GA（教学用）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sphere</span>(<span class="params">x</span>):</span><br><span class="line">    <span class="keyword">return</span> np.<span class="built_in">sum</span>(x ** <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">tournament</span>(<span class="params">pop, fit, k=<span class="number">2</span></span>):</span><br><span class="line">    idx = np.random.choice(<span class="built_in">len</span>(pop), k, replace=<span class="literal">False</span>)</span><br><span class="line">    <span class="keyword">return</span> pop[idx[np.argmin(fit[idx])]]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sbx</span>(<span class="params">p1, p2, eta=<span class="number">15</span>, xl=-<span class="number">5</span>, xu=<span class="number">5</span></span>):</span><br><span class="line">    c = np.empty_like(p1)</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(p1)):</span><br><span class="line">        <span class="keyword">if</span> np.random.rand() &lt; <span class="number">0.5</span>:</span><br><span class="line">            u = np.random.rand()</span><br><span class="line">            beta = (<span class="number">2</span>*u)**(<span class="number">1</span>/(eta+<span class="number">1</span>)) <span class="keyword">if</span> u &lt;= <span class="number">0.5</span> <span class="keyword">else</span> (<span class="number">1</span>/(<span class="number">2</span>*(<span class="number">1</span>-u)))**(<span class="number">1</span>/(eta+<span class="number">1</span>))</span><br><span class="line">            c[j] = <span class="number">0.5</span> * ((<span class="number">1</span>+beta)*p1[j] + (<span class="number">1</span>-beta)*p2[j])</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            c[j] = p1[j] <span class="keyword">if</span> np.random.rand() &lt; <span class="number">0.5</span> <span class="keyword">else</span> p2[j]</span><br><span class="line">    <span class="keyword">return</span> np.clip(c, xl, xu)</span><br><span class="line"></span><br><span class="line">rng = np.random.default_rng(<span class="number">0</span>)</span><br><span class="line">N, G, d = <span class="number">40</span>, <span class="number">80</span>, <span class="number">5</span></span><br><span class="line">pop = rng.uniform(-<span class="number">5</span>, <span class="number">5</span>, (N, d))</span><br><span class="line">fit = np.array([sphere(x) <span class="keyword">for</span> x <span class="keyword">in</span> pop])</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(G):</span><br><span class="line">    offspring = []</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(N):</span><br><span class="line">        p1 = tournament(pop, fit)</span><br><span class="line">        p2 = tournament(pop, fit)</span><br><span class="line">        c = sbx(p1, p2) <span class="keyword">if</span> rng.random() &lt; <span class="number">0.9</span> <span class="keyword">else</span> p1.copy()</span><br><span class="line">        <span class="keyword">if</span> rng.random() &lt; <span class="number">1</span>/d:</span><br><span class="line">            c[rng.integers(d)] += rng.normal(<span class="number">0</span>, <span class="number">0.5</span>)</span><br><span class="line">            c = np.clip(c, -<span class="number">5</span>, <span class="number">5</span>)</span><br><span class="line">        offspring.append(c)</span><br><span class="line">    combined = np.vstack([pop, offspring])</span><br><span class="line">    combined_fit = np.array([sphere(x) <span class="keyword">for</span> x <span class="keyword">in</span> combined])</span><br><span class="line">    order = np.argsort(combined_fit)[:N]</span><br><span class="line">    pop, fit = combined[order], combined_fit[order]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;best:&quot;</span>, fit[<span class="number">0</span>])</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-带约束的处理"><a href="#5-3-带约束的处理" class="headerlink" title="5.3 带约束的处理"></a>5.3 带约束的处理</h3><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>惩罚函数</strong></td>
+<td>$\tilde{f} &#x3D; f + \lambda \cdot \mathrm{violation}$</td>
+</tr>
+<tr>
+<td><strong>修复</strong></td>
+<td>将非法 $\mathbf{x}$ 投影回可行域</td>
+</tr>
+<tr>
+<td><strong>约束支配</strong></td>
+<td>多目标时用 pymoo 的 <code>n_ieq_constr</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ConstrainedSphere</span>(<span class="title class_ inherited__">Problem</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__(n_var=<span class="number">2</span>, n_obj=<span class="number">1</span>, n_ieq_constr=<span class="number">1</span>, xl=-<span class="number">5</span>, xu=<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_evaluate</span>(<span class="params">self, x, out, *args, **kwargs</span>):</span><br><span class="line">        out[<span class="string">&quot;F&quot;</span>] = (x[:, <span class="number">0</span>]**<span class="number">2</span> + x[:, <span class="number">1</span>]**<span class="number">2</span>).reshape(-<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">        out[<span class="string">&quot;G&quot;</span>] = (x[:, <span class="number">0</span>] + x[:, <span class="number">1</span>] - <span class="number">1</span>).reshape(-<span class="number">1</span>, <span class="number">1</span>)  <span class="comment"># g &lt;= 0 可行</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="六、超参数与实践建议"><a href="#六、超参数与实践建议" class="headerlink" title="六、超参数与实践建议"></a>六、超参数与实践建议</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>建议</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>pop_size</code></td>
+<td>$30$–$200$</td>
+<td>维数 $d$ 大时适当增大</td>
+</tr>
+<tr>
+<td><code>n_gen</code></td>
+<td>直到预算或平台</td>
+<td>与 <code>pop_size</code> 乘积 ≈ 总评估次数</td>
+</tr>
+<tr>
+<td>$p_c$</td>
+<td>$0.9$</td>
+<td>SBX 交叉</td>
+</tr>
+<tr>
+<td>PM <code>eta</code></td>
+<td>$15$–$30$</td>
+<td>小 → 大步变异</td>
+</tr>
+<tr>
+<td>重复运行</td>
+<td>$\ge 5$ seeds</td>
+<td>GA 随机性强，报告最优&#x2F;均值</td>
+</tr>
+<tr>
+<td>评估缓存</td>
+<td>对确定性 $f$ 去重</td>
+<td>组合空间重复个体常见</td>
+</tr>
+</tbody></table>
+<p><strong>工程 Checklist</strong>：</p>
+<ol>
+<li>决策变量<strong>归一化</strong>到相近尺度（或 log 编码如学习率）；</li>
+<li>固定 <code>seed</code> 复现，多 seed 报分布；</li>
+<li>先在小种群&#x2F;少代数验证 pipeline，再放大预算；</li>
+<li>若单目标且连续，可对比 <strong>CMA-ES</strong>、<strong>Optuna TPE</strong> 作基线。</li>
+</ol>
+<hr>
+<h2 id="七、偏好场景与优劣势"><a href="#七、偏好场景与优劣势" class="headerlink" title="七、偏好场景与优劣势"></a>七、偏好场景与优劣势</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>适合</strong></td>
+<td>目标不可微；多峰&#x2F;非凸；混合离散-连续；组合优化；评估可并行；需要一批候选解而非单点</td>
+</tr>
+<tr>
+<td><strong>典型应用</strong></td>
+<td>超参搜索、特征选择、排程&#x2F;路径、蛋白质序列空间（配合适应度模型）、神经架构搜索（NAS）</td>
+</tr>
+<tr>
+<td><strong>优势</strong></td>
+<td>实现直观；不依赖梯度；易加约束与自定义编码；种群提供<strong>多样性</strong></td>
+</tr>
+<tr>
+<td><strong>局限</strong></td>
+<td>样本效率低；高维 $d \gtrsim 100$ 时收敛慢；无最优性保证；超参（$N,p_c,p_m$）需调</td>
+</tr>
+<tr>
+<td><strong>何时不用</strong></td>
+<td>目标可微、维数高、评估贵（$\lesssim 500$ 次）→ 用贝叶斯优化 <a href="./MOO-02.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0.md">MOO-02 §七</a> 或 CMA-ES</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="八、从-GA-到多目标：一行扩展"><a href="#八、从-GA-到多目标：一行扩展" class="headerlink" title="八、从 GA 到多目标：一行扩展"></a>八、从 GA 到多目标：一行扩展</h2><table>
+<thead>
+<tr>
+<th>单目标 GA</th>
+<th>多目标扩展</th>
+<th>变化点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>适应度标量排序</td>
+<td><strong>非支配排序</strong></td>
+<td>Rank 分层</td>
+</tr>
+<tr>
+<td>拥挤&#x2F;多样</td>
+<td><strong>拥挤距离</strong> &#x2F; 参考点</td>
+<td>NSGA-II &#x2F; NSGA-III</td>
+</tr>
+<tr>
+<td>环境选择</td>
+<td>精英 + Pareto + 多样性</td>
+<td><a href="./MOO-02.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0.md">MOO-02</a></td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 单目标 GA → 双目标 NSGA-II：仅改算法类与 Problem.n_obj</span></span><br><span class="line"><span class="keyword">from</span> pymoo.algorithms.moo.nsga2 <span class="keyword">import</span> NSGA2</span><br><span class="line">algorithm = NSGA2(pop_size=<span class="number">100</span>)  <span class="comment"># 交叉/变异算子与 GA 相同（SBX+PM）</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>差分进化 DE</strong> 可看作另一种进化算子（变异用向量差），pymoo 中 <code>DE</code> 在单目标黑盒上常与 GA 互作基线。</p>
+<hr>
+<h2 id="九、与本仓库主题的衔接"><a href="#九、与本仓库主题的衔接" class="headerlink" title="九、与本仓库主题的衔接"></a>九、与本仓库主题的衔接</h2><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="./MOO-01.%E5%B8%95%E7%B4%AF%E6%89%98%E6%9C%80%E4%BC%98.md">MOO-01&#x2F;02</a></td>
+<td>NSGA-II &#x3D; GA + Pareto 环境选择</td>
+</tr>
+<tr>
+<td><a href="../01.%E7%9F%A5%E8%AF%86-02.Math/Math-04.%E4%BC%98%E5%8C%96-01.%E6%80%BB%E8%AE%BA.md">Math-04 优化</a></td>
+<td>GA 是无梯度路线，与 SGD 互补</td>
+</tr>
+<tr>
+<td><a href="../01.%E7%9F%A5%E8%AF%86-02.Math/Math-07.%E8%B4%9D%E5%8F%B6%E6%96%AF%E6%8E%A8%E6%96%AD-20.%E8%B4%9D%E5%8F%B6%E6%96%AF%E4%BC%98%E5%8C%96.md">贝叶斯优化</a></td>
+<td>昂贵评估时 BO 样本效率更高</td>
+</tr>
+<tr>
+<td>酶&#x2F;抗体设计</td>
+<td>序列组合空间 + 实验适应度 → GA &#x2F; 主动学习循环</td>
+</tr>
+<tr>
+<td><a href="../02.%E5%BC%80%E5%8F%91-21.%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/RL-03-17-%E7%AE%97%E6%B3%95-%E8%BF%9B%E5%8C%96%E7%AD%96%E7%95%A5.md">RL-03-17 进化策略</a></td>
+<td>ES 与 GA 同属 EC，连续控制常用 ES</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="十、小结"><a href="#十、小结" class="headerlink" title="十、小结"></a>十、小结</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>种群</strong></td>
+<td>并行维护多个候选解</td>
+</tr>
+<tr>
+<td><strong>选择</strong></td>
+<td>优者更易繁殖（锦标赛最常用）</td>
+</tr>
+<tr>
+<td><strong>交叉</strong></td>
+<td>组合父代基因（实数用 SBX）</td>
+</tr>
+<tr>
+<td><strong>变异</strong></td>
+<td>随机扰动防早熟</td>
+</tr>
+<tr>
+<td><strong>精英保留</strong></td>
+<td>最优解不丢失</td>
+</tr>
+<tr>
+<td><strong>→ NSGA-II</strong></td>
+<td>把标量适应度换成 Pareto 排序</td>
+</tr>
+</tbody></table>
+<p>遗传算法不是「比梯度法更好」，而是在<strong>无法求导、组合爆炸、需要一批折衷候选</strong>时的实用默认。掌握 GA 后，阅读 NSGA-II、MOEA&#x2F;D 的伪代码会一目了然。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>早熟收敛</strong>（premature convergence）指种群过早聚集到局部最优，丧失多样性；增大变异、增大锦标赛随机性、或增大种群可缓解。</p>
+</blockquote>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/" rel="tag"><i class="fa fa-tag"></i> 多目标优化</a>
+          
+            <a href="/tags/%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/" rel="tag"><i class="fa fa-tag"></i> 遗传算法</a>
+          
+            <a href="/tags/%E8%BF%9B%E5%8C%96%E8%AE%A1%E7%AE%97/" rel="tag"><i class="fa fa-tag"></i> 进化计算</a>
+          
+            <a href="/tags/%E8%B6%85%E5%8F%82%E6%90%9C%E7%B4%A2/" rel="tag"><i class="fa fa-tag"></i> 超参搜索</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-05.Paper/DOI-s41592-026-03128-4-RNAbpFlow-RNA%E4%B8%89%E7%BB%B4%E7%BB%93%E6%9E%84%E6%9D%A1%E4%BB%B6%E6%B5%81%E5%8C%B9%E9%85%8D/" rel="next" title="RNAbpFlow：碱基对增强 SE(3) 流匹配条件 RNA 三维结构生成">
+                <i class="fa fa-chevron-left"></i> RNAbpFlow：碱基对增强 SE(3) 流匹配条件 RNA 三维结构生成
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8/" rel="prev" title="5003.大模型-架构-AbAffinity-0.框架架构与使用">
+                5003.大模型-架构-AbAffinity-0.框架架构与使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E7%A7%8D%E7%BE%A4%E6%90%9C%E7%B4%A2%E8%80%8C%E9%9D%9E%E5%8D%95%E7%82%B9%E4%B8%8B%E9%99%8D"><span class="nav-number">1.</span> <span class="nav-text">一、核心思想：种群搜索而非单点下降</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E7%BC%96%E7%A0%81%EF%BC%9A%E5%86%B3%E7%AD%96%E5%8F%98%E9%87%8F%E5%A6%82%E4%BD%95%E5%8F%98%E6%88%90%E3%80%8C%E6%9F%93%E8%89%B2%E4%BD%93%E3%80%8D"><span class="nav-number">2.</span> <span class="nav-text">二、编码：决策变量如何变成「染色体」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E9%81%97%E4%BC%A0%E7%AE%97%E5%AD%90"><span class="nav-number">3.</span> <span class="nav-text">三、遗传算子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E9%80%89%E6%8B%A9%EF%BC%88Selection%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 选择（Selection）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%BA%A4%E5%8F%89%EF%BC%88Crossover%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 交叉（Crossover）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%8F%98%E5%BC%82%EF%BC%88Mutation%EF%BC%89"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 变异（Mutation）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E7%B2%BE%E8%8B%B1%E4%BF%9D%E7%95%99%EF%BC%88Elitism%EF%BC%89"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 精英保留（Elitism）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%A0%87%E5%87%86-GA-%E4%BC%AA%E4%BB%A3%E7%A0%81"><span class="nav-number">4.</span> <span class="nav-text">四、标准 GA 伪代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81Python-%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">五、Python 实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-pymoo%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%8C%E4%B8%8E-MOO-%E7%BB%9F%E4%B8%80%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 pymoo（推荐，与 MOO 统一）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%9C%80%E5%B0%8F%E6%89%8B%E5%B7%A5-GA%EF%BC%88%E6%95%99%E5%AD%A6%E7%94%A8%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 最小手工 GA（教学用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%B8%A6%E7%BA%A6%E6%9D%9F%E7%9A%84%E5%A4%84%E7%90%86"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 带约束的处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E8%B6%85%E5%8F%82%E6%95%B0%E4%B8%8E%E5%AE%9E%E8%B7%B5%E5%BB%BA%E8%AE%AE"><span class="nav-number">6.</span> <span class="nav-text">六、超参数与实践建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%81%8F%E5%A5%BD%E5%9C%BA%E6%99%AF%E4%B8%8E%E4%BC%98%E5%8A%A3%E5%8A%BF"><span class="nav-number">7.</span> <span class="nav-text">七、偏好场景与优劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E4%BB%8E-GA-%E5%88%B0%E5%A4%9A%E7%9B%AE%E6%A0%87%EF%BC%9A%E4%B8%80%E8%A1%8C%E6%89%A9%E5%B1%95"><span class="nav-number">8.</span> <span class="nav-text">八、从 GA 到多目标：一行扩展</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E4%B8%8E%E6%9C%AC%E4%BB%93%E5%BA%93%E4%B8%BB%E9%A2%98%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">九、与本仓库主题的衔接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">十、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

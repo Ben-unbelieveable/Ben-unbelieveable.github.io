@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="蛋白质设计,聚合酶,Rosetta,计算酶工程," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="从能量函数、侧链 rotamer 库与 Packer 搜索，到固定骨架设计、耦合运动与多状态协议，系统说明 Rosetta 进行蛋白质序列设计的物理建模与典型工作流；含四幅原理示意图（SVG）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="酶改造-Rosetta 蛋白序列设计的原理与方法">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="从能量函数、侧链 rotamer 库与 Packer 搜索，到固定骨架设计、耦合运动与多状态协议，系统说明 Rosetta 进行蛋白质序列设计的物理建模与典型工作流；含四幅原理示意图（SVG）。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig01-pipeline.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig02-energy-decomposition.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig03-rotamer-packer.svg">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig04-protocols-multistate.svg">
+<meta property="article:published_time" content="2026-05-14T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.542Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Rosetta">
+<meta property="article:tag" content="聚合酶">
+<meta property="article:tag" content="蛋白质设计">
+<meta property="article:tag" content="计算酶工程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig01-pipeline.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-41.酶/酶改造-Rosetta蛋白序列设计原理与方法/"/>
+
+
+
+
+
+  <title>酶改造-Rosetta 蛋白序列设计的原理与方法 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">酶改造-Rosetta 蛋白序列设计的原理与方法</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-05-14T12:00:00+08:00">
+                2026-05-14
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  从能量函数、侧链 rotamer 库与 Packer 搜索，到固定骨架设计、耦合运动与多状态协议，系统说明 Rosetta 进行蛋白质序列设计的物理建模与典型工作流；含四幅原理示意图（SVG）。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>在<strong>蛋白质语言模型</strong>（Protein Language Model，PLM）与<strong>逆向折叠</strong>（inverse folding）网络普及之前，大量可验证的<strong>从头蛋白质设计</strong>（de novo protein design）依赖 <strong>Rosetta</strong> 等基于物理能量与离散侧链搜索的框架。即便在今天，Rosetta 仍在<strong>能量精修</strong>、<strong>约束驱动的界面设计</strong>、<strong>小分子&#x2F;核酸共设计</strong>以及与实验数据（<strong>交联质谱</strong>（cross-linking mass spectrometry，XL-MS）、<strong>小角 X 射线散射</strong>（small-angle X-ray scattering，SAXS）等）联用的场景中占据重要位置。本文面向酶与聚合酶相关改造读者，归纳 Rosetta 做<strong>蛋白序列设计</strong>（protein sequence design）时的核心原理与常用方法边界。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PLM</strong> 从序列统计学习表示；<strong>逆向折叠</strong>指由骨架反推序列；<strong>Rosetta</strong> 为华盛顿大学等社区维护的大分子建模软件套件；<strong>XL-MS &#x2F; SAXS</strong> 为可提供距离或低分辨形状约束的实验手段。</p>
+</blockquote>
+<hr>
+<h2 id="1-Rosetta-在序列设计中的定位"><a href="#1-Rosetta-在序列设计中的定位" class="headerlink" title="1. Rosetta 在序列设计中的定位"></a>1. Rosetta 在序列设计中的定位</h2><p>Rosetta 将「序列 + 三维构象」映射为一个可微或至少可比较的<strong>标量能量</strong>（score），并在离散&#x2F;连续自由度上搜索低能解。与深度网络把问题写成端到端条件生成不同，Rosetta 更强调：</p>
+<ul>
+<li><strong>显式物理与统计项</strong>组合的能量函数（可解释、可调权重）；</li>
+<li><strong>侧链离散 rotamer</strong>（rotamer，侧链构象异构体）上的组合优化（Packer）；</li>
+<li><strong>蒙特卡洛</strong>（Monte Carlo，MC）与<strong>模拟退火</strong>（simulated annealing，SA）等随机搜索，在序列–构象联合空间中探索。</li>
+</ul>
+<p>因此，Rosetta 的序列设计通常表述为：在给定<strong>骨架</strong>（backbone）与任务约束下，寻找使总能量（及惩罚项）较低的<strong>氨基酸身份</strong>（identity）与配套<strong>侧链构象</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>骨架</strong>指主链原子排布；<strong>氨基酸身份</strong>即残基类型；<strong>rotamer</strong> 为侧链在 χ 角离散采样下的代表性构象。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig01-pipeline.svg" alt="Rosetta 序列设计总流程：从 Pose 到评分再到 Packer 搜索与输出候选"></p>
+<p><strong>图 1（示意）</strong>：左侧为输入 <strong>Pose</strong>（主链几何）；中间将体系编码为<strong>可比较的标量能量</strong>并叠加<strong>约束项</strong>；右侧由 <strong>Packer</strong> 在离散 rotamer 与氨基酸身份上配合 <strong>MC&#x2F;SA</strong> 搜索，输出多组低能「序列 + 侧链」候选。图中英文标注与软件界面常用符号一致，便于对照官方教程。</p>
+<hr>
+<h2 id="2-能量函数：把「化学合理性」写成可优化的目标"><a href="#2-能量函数：把「化学合理性」写成可优化的目标" class="headerlink" title="2. 能量函数：把「化学合理性」写成可优化的目标"></a>2. 能量函数：把「化学合理性」写成可优化的目标</h2><p>Rosetta 使用<strong>全原子</strong>（full-atom）或** centroid 粗粒**（低分辨率）等多档表示；序列设计几乎总是在全原子档完成侧链打包。以常用的 <strong>ref2015</strong>（以及其前后代如 <strong>talaris2014</strong> 等）为代表，总能量为若干项的加权和，典型包括：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>代表项（直觉）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>范德华</td>
+<td><strong>Lennard-Jones</strong>（Lennard-Jones，LJ）吸引&#x2F;排斥，防止原子重叠并鼓励紧密堆积</td>
+</tr>
+<tr>
+<td>溶剂化</td>
+<td><strong>Lazaridis–Karplus 隐式溶剂化</strong>（EEF1&#x2F;LK 等变体）描述疏水埋藏与极性暴露</td>
+</tr>
+<tr>
+<td>氢键</td>
+<td>几何取向敏感的氢键项，奖励几何合理的 donor&#x2F;acceptor 配对</td>
+</tr>
+<tr>
+<td>静电</td>
+<td>简化的库仑或去屏蔽模型（具体实现随版本与 flag 变化）</td>
+</tr>
+<tr>
+<td>构象偏好</td>
+<td><strong>Ramachandran</strong>（φ&#x2F;ψ）偏好、主链二面惩罚等</td>
+</tr>
+<tr>
+<td>侧链先验</td>
+<td><strong>rotamer 概率</strong>（来自 Dunbrack 等库）与<strong>参考能量</strong>（氨基酸类型依赖的偏移）</td>
+</tr>
+</tbody></table>
+<p><strong>参考能量</strong>（reference energy）对每种氨基酸给出一个基准，用于部分抵消「大侧链更容易形成更多接触因而能量更负」的偏差，使序列搜索不至于无条件偏向芳香族&#x2F;大疏水残基。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ref2015</strong> 为 Rosetta 一套广泛使用的全原子权重与参考参数集合名；<strong>Ramachandran</strong> 图描述主链二面允许的构象区域；<strong>Dunbrack</strong> 库为 backbone 依赖的 rotamer 统计库。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig02-energy-decomposition.svg" alt="全原子评分函数分项与总能量关系（定性示意，条长不表示真实数值比例）"></p>
+<p><strong>图 2（示意）</strong>：总能量为多项加权之和；常见分项包括范德华吸引&#x2F;排斥、隐式溶剂化、氢键、主链二面偏好、rotamer 概率与参考能量等。<strong>E_total</strong> 用于对不同微结构进行<strong>相对排序</strong>；与实验 ΔG 之间一般需校准，不宜直接等同。具体项名与默认权重以所用 <code>scorefunction</code> 与版本为准。</p>
+<p>能量函数并非「第一性原理」；它是<strong>力场项 + 统计势 + 经验权重</strong>的折中，用于<strong>排序候选构象</strong>而非给出绝对自由能。实践中常配合<strong>约束能量</strong>（coordinate、atom pair、ambiguous 等）把先验知识写成惩罚项。</p>
+<hr>
+<h2 id="3-Rotamer-与-Packer：序列设计的离散核心"><a href="#3-Rotamer-与-Packer：序列设计的离散核心" class="headerlink" title="3. Rotamer 与 Packer：序列设计的离散核心"></a>3. Rotamer 与 Packer：序列设计的离散核心</h2><h3 id="3-1-为什么用-rotamer"><a href="#3-1-为什么用-rotamer" class="headerlink" title="3.1 为什么用 rotamer"></a>3.1 为什么用 rotamer</h3><p>侧链自由度（多个 χ 二面角）若连续采样，组合空间极大。Rosetta 采用 <strong>Dunbrack</strong> 等 backbone 依赖 rotamer 库，把每个残基的侧链近似为有限个高概率离散态。序列设计因此可视为：在每个位点从 20 种氨基酸 × 若干 rotamer 的<strong>乘积空间</strong>中选一组互容的分配。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>χ 角</strong>为侧链二面角；rotamer 离散化是 Rosetta 速度与可控性的关键工程选择。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig03-rotamer-packer.svg" alt="侧链 χ 连续角 → Dunbrack rotamer 离散库 → Packer 一步 Metropolis 提议（示意）"></p>
+<p><strong>图 3（示意）</strong>：左栏强调若 χ 连续取值则组合爆炸；中栏用统计库将侧链落到少数高概率 <strong>rotamer</strong>；右栏表示 <strong>Packer</strong> 在联合状态（氨基酸类型 + rotamer）上作随机提议，用能量差驱动接受率，并在退火 schedule 下逐步压低总能量。</p>
+<h3 id="3-2-Packer-在做什么"><a href="#3-2-Packer-在做什么" class="headerlink" title="3.2 Packer 在做什么"></a>3.2 Packer 在做什么</h3><p><strong>Packer</strong>（side-chain packing）在固定或可微调骨架上，对一组可设计位点执行<strong>能量驱动的离散搜索</strong>：反复提出「某位点换氨基酸 &#x2F; 换 rotamer」的扰动，用 MC + SA 接受或拒绝，使系统总能量下降并避免浅阱。可配合 <strong>rotamer 子集</strong>（exclusion、limit 等）控制计算量。</p>
+<p>当开启<strong>序列设计模式</strong>时，Packer 的「状态」同时包含<strong>身份</strong>与 <strong>rotamer</strong>，因此一次成功的打包即给出<strong>序列 + 侧链几何</strong>的联合解。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MC</strong> 为以能量差决定接受率的随机搜索；<strong>SA</strong> 通过逐步降温提高跳出局部最优的能力。</p>
+</blockquote>
+<hr>
+<h2 id="4-典型协议：从固定骨架到联合优化"><a href="#4-典型协议：从固定骨架到联合优化" class="headerlink" title="4. 典型协议：从固定骨架到联合优化"></a>4. 典型协议：从固定骨架到联合优化</h2><p>下图对照三类常见设定：<strong>固定骨架</strong>（计算快、依赖输入模型质量）、<strong>柔性&#x2F;耦合骨架</strong>（主链与序列协同搜索）、<strong>多状态</strong>（单序列对多个结构同时优化）。后两类更贴近酶口袋重排与变构场景，但代价是轨迹更长、参数更敏感。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E9%85%B6%E6%94%B9%E9%80%A0-Rosetta%E8%9B%8B%E7%99%BD%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E4%B8%8E%E6%96%B9%E6%B3%95/rosetta-fig04-protocols-multistate.svg" alt="固定骨架、柔性骨架与多状态设计的目标与适用边界（示意）"></p>
+<p><strong>图 4（示意）</strong>：左——主链基本不动，由 Packer 主导序列与侧链；中——在 <strong>backrub &#x2F; coupled moves &#x2F; FastRelax</strong> 等循环中允许局部主链变化以改善几何；右——多个 <strong>pose</strong> 同时进入加权和（或变体目标），迫使同一序列在开放&#x2F;闭合等构象间折中。英文子图标题与 Rosetta 文档常用术语一致。</p>
+<h3 id="4-1-固定骨架序列设计（fixed-backbone-design）"><a href="#4-1-固定骨架序列设计（fixed-backbone-design）" class="headerlink" title="4.1 固定骨架序列设计（fixed-backbone design）"></a>4.1 固定骨架序列设计（fixed-backbone design）</h3><p>骨架来自晶体结构、同源模型或<strong>结构预测</strong>（如 AlphaFold）输出。流程大意：</p>
+<ol>
+<li>定义<strong>可设计位点</strong>（整条链或界面补丁）与<strong>氨基酸允许集</strong>（自然 20 种、或排除半胱氨酸&#x2F;金属敏感残基等）；</li>
+<li>设定能量权重、<strong>无子结构能量</strong>（sub-score 监控界面&#x2F;核心）与约束；</li>
+<li>运行 <strong>fixbb</strong> 或 <strong>FastDesign</strong> 类协议：外层循环中交替&#x2F;联合进行侧链重打包与可选的<strong>最小化</strong>（minimization，连续微调）；</li>
+<li>生成多随机种子轨迹，聚类后取低能簇代表序列供实验。</li>
+</ol>
+<p>该范式假设骨架误差足够小；对<strong>低置信度环区</strong>或<strong>大 backbone 偏差</strong>，固定骨架设计可能给出「序列–结构自洽性差」的解。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>fixbb</strong> 为 fixed backbone 相关应用&#x2F;演示协议族；<strong>FastDesign</strong> 为较自动化的设计–最小化循环封装之一（具体 XML&#x2F;py 脚本随版本略有差异）。</p>
+</blockquote>
+<h3 id="4-2-耦合运动与柔性设计（coupled-moves-backbone-flexibility）"><a href="#4-2-耦合运动与柔性设计（coupled-moves-backbone-flexibility）" class="headerlink" title="4.2 耦合运动与柔性设计（coupled moves &#x2F; backbone flexibility）"></a>4.2 耦合运动与柔性设计（coupled moves &#x2F; backbone flexibility）</h3><p>为缓解「错骨架配好序列」问题，Rosetta 提供在 MC 中同时扰动<strong>序列–侧链–局部 backbone</strong> 的协议，例如 <strong>coupled moves</strong>、<strong>backrub</strong>、<strong>FastRelax</strong> 与设计循环组合。思想是：允许小幅主链调整以释放 clashes 或改善氢键网络，再由 Packer 重写序列&#x2F;rotamer。</p>
+<p>代价是搜索空间扩大，需要更多步数与调参经验，但<strong>界面设计</strong>与<strong>酶活性口袋</strong>附近常更受益。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>backrub</strong> 为一种保留肽段几何关系的局部主链微扰动算子；<strong>FastRelax</strong> 为重复最小化–侧链重排的快速弛豫流程。</p>
+</blockquote>
+<h3 id="4-3-多状态设计（multistate-design）"><a href="#4-3-多状态设计（multistate-design）" class="headerlink" title="4.3 多状态设计（multistate design）"></a>4.3 多状态设计（multistate design）</h3><p>酶与开关蛋白常需在<strong>多种构象</strong>或<strong>多种结合态</strong>下折中。Rosetta 可将多个 <strong>pose</strong>（结构实例）放入同一目标函数：能量为各态加权之和（或 max、软最大等变体），迫使单一序列在多个输入结构上同时合理。该思路对<strong>催化多步反应</strong>、<strong>变构调节</strong>或「结合开放&#x2F;闭合两种构象」的设计尤为相关。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>pose</strong> 为 Rosetta 内存中单条结构对象（可含多条链、配体等）。</p>
+</blockquote>
+<hr>
+<h2 id="5-约束、对称与评分监控"><a href="#5-约束、对称与评分监控" class="headerlink" title="5. 约束、对称与评分监控"></a>5. 约束、对称与评分监控</h2><ul>
+<li><strong>约束</strong>：距离、二面、接触数目、<strong>金属配位</strong>几何等，把生物学知识弱化为软惩罚，避免纯能量项走偏。</li>
+<li><strong>对称设计</strong>：同源寡聚体可用对称定义减少自由度，同时避免界面出现不对称堆积缺陷。</li>
+<li><strong>分解能量</strong>：per-residue、interface、dG_separated 等监控量用于解释「为何该位点倾向某氨基酸」，便于与酶学假设对照。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：对称与约束属于「把任务从纯优化变成有先验的优化」，对聚合酶寡聚形式尤其常见。</p>
+</blockquote>
+<hr>
+<h2 id="6-实践入口：命令行与-PyRosetta"><a href="#6-实践入口：命令行与-PyRosetta" class="headerlink" title="6. 实践入口：命令行与 PyRosetta"></a>6. 实践入口：命令行与 PyRosetta</h2><ul>
+<li><strong>命令行 + RosettaScripts（XML）</strong>：工业界与高通量流水线常用，利于批处理与集群。</li>
+<li><strong>PyRosetta</strong>：在 Python 中构建 pose、设置 <strong>Movemap</strong>（允许动的自由度）、调用 <strong>PackTaskFactory</strong> 定义可设计位点与氨基酸库，再运行 <strong>PackRotamersMover</strong> &#x2F; <strong>FastRelax</strong> 等；适合与机器学习打分器、文库生成脚本互操作。</li>
+</ul>
+<p>典型注意点：能量单位是 Rosetta 内部单位（<strong>REU</strong>，Rosetta Energy Unit），跨协议比较相对排名比绝对值更有意义；随机种子影响轨迹，应记录 <strong>seed</strong> 与完整 <strong>command line</strong> 以保证可复现。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Movemap</strong> 标记哪些主链&#x2F;侧链自由度可动；<strong>REU</strong> 为 Rosetta 自定义能量单位，用于相对比较。</p>
+</blockquote>
+<hr>
+<h2 id="7-与数据驱动方法的关系（为何仍要学-Rosetta）"><a href="#7-与数据驱动方法的关系（为何仍要学-Rosetta）" class="headerlink" title="7. 与数据驱动方法的关系（为何仍要学 Rosetta）"></a>7. 与数据驱动方法的关系（为何仍要学 Rosetta）</h2><p>深度逆向折叠模型（如 <strong>ProteinMPNN</strong>）在速度与骨架噪声鲁棒性上优势明显；Rosetta 的优势在于<strong>显式约束</strong>、<strong>物理精修</strong>、<strong>小分子&#x2F;核酸&#x2F;共价修饰</strong>支持与长期工程积累。常见组合范式是：神经网络生成候选序列 → Rosetta <strong>FastRelax</strong> &#x2F; 界面优化 → 实验。对聚合酶改造，若问题核心是<strong>溶剂可及表面电荷</strong>、<strong>二硫键模式</strong>、<strong>底物对接几何</strong>与<strong>稳定性–活性权衡</strong>，Rosetta 仍是可落地的工具链一环。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ProteinMPNN</strong> 为基于图消息传递的逆向折叠序列设计网络（见本仓库 <strong>ProteinMPNN</strong> 综述篇）。</p>
+</blockquote>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><p>Rosetta 的蛋白序列设计可概括为：<strong>在显式能量函数下，对离散 rotamer–连续微调混合空间做随机优化</strong>，并通过约束与多状态目标把生物学任务编码进目标函数。理解 <strong>Packer</strong>、能量项分工与「固定骨架 vs 柔性骨架」的适用边界，是阅读 RosettaScripts &#x2F; PyRosetta 教程与调参的起点。</p>
+<hr>
+<h2 id="9-延伸阅读（入门到系统）"><a href="#9-延伸阅读（入门到系统）" class="headerlink" title="9. 延伸阅读（入门到系统）"></a>9. 延伸阅读（入门到系统）</h2><ul>
+<li>Leaver-Fay A 等，<em>Methods Enzymol.</em> 2011；Rosetta3 模块化与基本算法综述。  </li>
+<li>Kuhlman B, Bradley P，<em>Nat Rev Mol Cell Biol</em> 2009；蛋白质设计的原理与挑战（含物理能量视角）。  </li>
+<li>Alford RF 等，<em>J Chem Theory Comput</em> 2017；Rosetta 能量函数 REF2015 的系统描述。  </li>
+<li>Rosetta Commons 官方文档与 workshop 材料（随版本更新，命令与默认权重以当前版本为准）。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%B4%A8%E8%AE%BE%E8%AE%A1/" rel="tag"><i class="fa fa-tag"></i> 蛋白质设计</a>
+          
+            <a href="/tags/%E8%81%9A%E5%90%88%E9%85%B6/" rel="tag"><i class="fa fa-tag"></i> 聚合酶</a>
+          
+            <a href="/tags/Rosetta/" rel="tag"><i class="fa fa-tag"></i> Rosetta</a>
+          
+            <a href="/tags/%E8%AE%A1%E7%AE%97%E9%85%B6%E5%B7%A5%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 计算酶工程</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent/Agent-%E7%BC%96%E6%8E%92-%E4%B8%BB%E6%B5%81%E6%A1%86%E6%9E%B6%E7%BB%BC%E8%BF%B0%E4%B8%8E%E9%80%89%E5%9E%8B/" rel="next" title="Agent-编排-主流框架综述与选型">
+                <i class="fa fa-chevron-left"></i> Agent-编排-主流框架综述与选型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-41.%E9%85%B6/%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%8E%9F%E7%90%86%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8/" rel="prev" title="图神经网络：原理、算法与分子建模入门">
+                图神经网络：原理、算法与分子建模入门 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Rosetta-%E5%9C%A8%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E4%B8%AD%E7%9A%84%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. Rosetta 在序列设计中的定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%83%BD%E9%87%8F%E5%87%BD%E6%95%B0%EF%BC%9A%E6%8A%8A%E3%80%8C%E5%8C%96%E5%AD%A6%E5%90%88%E7%90%86%E6%80%A7%E3%80%8D%E5%86%99%E6%88%90%E5%8F%AF%E4%BC%98%E5%8C%96%E7%9A%84%E7%9B%AE%E6%A0%87"><span class="nav-number">2.</span> <span class="nav-text">2. 能量函数：把「化学合理性」写成可优化的目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Rotamer-%E4%B8%8E-Packer%EF%BC%9A%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%E7%9A%84%E7%A6%BB%E6%95%A3%E6%A0%B8%E5%BF%83"><span class="nav-number">3.</span> <span class="nav-text">3. Rotamer 与 Packer：序列设计的离散核心</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8-rotamer"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 为什么用 rotamer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Packer-%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Packer 在做什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%85%B8%E5%9E%8B%E5%8D%8F%E8%AE%AE%EF%BC%9A%E4%BB%8E%E5%9B%BA%E5%AE%9A%E9%AA%A8%E6%9E%B6%E5%88%B0%E8%81%94%E5%90%88%E4%BC%98%E5%8C%96"><span class="nav-number">4.</span> <span class="nav-text">4. 典型协议：从固定骨架到联合优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%9B%BA%E5%AE%9A%E9%AA%A8%E6%9E%B6%E5%BA%8F%E5%88%97%E8%AE%BE%E8%AE%A1%EF%BC%88fixed-backbone-design%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 固定骨架序列设计（fixed-backbone design）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E8%80%A6%E5%90%88%E8%BF%90%E5%8A%A8%E4%B8%8E%E6%9F%94%E6%80%A7%E8%AE%BE%E8%AE%A1%EF%BC%88coupled-moves-backbone-flexibility%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 耦合运动与柔性设计（coupled moves &#x2F; backbone flexibility）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%A4%9A%E7%8A%B6%E6%80%81%E8%AE%BE%E8%AE%A1%EF%BC%88multistate-design%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 多状态设计（multistate design）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E7%BA%A6%E6%9D%9F%E3%80%81%E5%AF%B9%E7%A7%B0%E4%B8%8E%E8%AF%84%E5%88%86%E7%9B%91%E6%8E%A7"><span class="nav-number">5.</span> <span class="nav-text">5. 约束、对称与评分监控</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%AE%9E%E8%B7%B5%E5%85%A5%E5%8F%A3%EF%BC%9A%E5%91%BD%E4%BB%A4%E8%A1%8C%E4%B8%8E-PyRosetta"><span class="nav-number">6.</span> <span class="nav-text">6. 实践入口：命令行与 PyRosetta</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A9%B1%E5%8A%A8%E6%96%B9%E6%B3%95%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%88%E4%B8%BA%E4%BD%95%E4%BB%8D%E8%A6%81%E5%AD%A6-Rosetta%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 与数据驱动方法的关系（为何仍要学 Rosetta）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB%EF%BC%88%E5%85%A5%E9%97%A8%E5%88%B0%E7%B3%BB%E7%BB%9F%EF%BC%89"><span class="nav-number">9.</span> <span class="nav-text">9. 延伸阅读（入门到系统）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

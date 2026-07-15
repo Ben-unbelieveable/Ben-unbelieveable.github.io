@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Neo4j,Cypher,性能调优," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Cypher 进阶：变长路径、列表与 map、子查询、全文与向量索引、EXPLAIN&#x2F;PROFILE 执行计划解读及生产调优清单。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Neo4j-05.查询进阶与性能调优">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-26.%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/02.Neo4j-05.%E6%9F%A5%E8%AF%A2%E8%BF%9B%E9%98%B6%E4%B8%8E%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Cypher 进阶：变长路径、列表与 map、子查询、全文与向量索引、EXPLAIN&#x2F;PROFILE 执行计划解读及生产调优清单。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-10T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:57.828Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Cypher">
+<meta property="article:tag" content="Neo4j">
+<meta property="article:tag" content="性能调优">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-26.图数据库/02.Neo4j-05.查询进阶与性能调优/"/>
+
+
+
+
+
+  <title>Neo4j-05.查询进阶与性能调优 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-26.%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/02.Neo4j-05.%E6%9F%A5%E8%AF%A2%E8%BF%9B%E9%98%B6%E4%B8%8E%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Neo4j-05.查询进阶与性能调优</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-10T14:00:00+08:00">
+                2026-06-10
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index">
+                    <span itemprop="name">图数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Cypher 进阶：变长路径、列表与 map、子查询、全文与向量索引、EXPLAIN/PROFILE 执行计划解读及生产调优清单。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>当数据量上来、查询变复杂，「能跑」不够，还要「跑得快」。本文覆盖 <strong>Cypher</strong> 进阶语法与 Neo4j <strong>查询规划</strong>（query planning）、索引策略、常见慢查询治理——面向已有 CRUD 基础的读者。</p>
+<blockquote>
+<p>段末注释：<strong>OLTP</strong>（online transaction processing，在线事务处理）指以短查询、高并发读写为主的工作负载；图遍历型 OLTP 是 Neo4j 的主场。</p>
+</blockquote>
+<p><strong>前置</strong>：<a href="02.Neo4j-03.Cypher%E5%A2%9E%E5%88%A0%E6%94%B9%E6%9F%A5.md">Neo4j-03.Cypher增删改查</a></p>
+<hr>
+<h2 id="一、路径查询进阶"><a href="#一、路径查询进阶" class="headerlink" title="一、路径查询进阶"></a>一、路径查询进阶</h2><h3 id="1-1-变长路径语法"><a href="#1-1-变长路径语法" class="headerlink" title="1.1 变长路径语法"></a>1.1 变长路径语法</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">// * 固定跳数；*min..max 范围</span><br><span class="line">MATCH (a:Person &#123;name: &#x27;Alice&#x27;&#125;)-[:KNOWS*1..3]-&gt;(d)</span><br><span class="line">RETURN DISTINCT d.name;</span><br><span class="line"></span><br><span class="line">// 最短路径（无权）</span><br><span class="line">MATCH (a:Person &#123;name: &#x27;Alice&#x27;&#125;), (b:Person &#123;name: &#x27;Dave&#x27;&#125;)</span><br><span class="line">MATCH p = shortestPath((a)-[:KNOWS*]-(b))</span><br><span class="line">RETURN p, length(p) AS hops;</span><br><span class="line"></span><br><span class="line">// 所有最短路径</span><br><span class="line">MATCH (a:Person &#123;name: &#x27;Alice&#x27;&#125;), (b:Person &#123;name: &#x27;Dave&#x27;&#125;)</span><br><span class="line">MATCH p = allShortestPaths((a)-[:KNOWS*]-(b))</span><br><span class="line">RETURN p;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-2-路径过滤与展开"><a href="#1-2-路径过滤与展开" class="headerlink" title="1.2 路径过滤与展开"></a>1.2 路径过滤与展开</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">MATCH p = (a:Person)-[:KNOWS*2..4]-&gt;(b)</span><br><span class="line">WHERE all(r IN relationships(p) WHERE r.since &gt;= 2018)</span><br><span class="line">RETURN p LIMIT 50;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-3-避免「爆炸式」遍历"><a href="#1-3-避免「爆炸式」遍历" class="headerlink" title="1.3 避免「爆炸式」遍历"></a>1.3 避免「爆炸式」遍历</h3><table>
+<thead>
+<tr>
+<th align="left">风险</th>
+<th align="left">缓解</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>*..</code> 无上界</td>
+<td align="left">始终设 <code>*1..N</code>，N 按业务定</td>
+</tr>
+<tr>
+<td align="left">超级节点</td>
+<td align="left">建模拆分、中间节点（见 Neo4j-08）</td>
+</tr>
+<tr>
+<td align="left">双向全图</td>
+<td align="left">指定关系类型与方向</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="二、列表、Map-与高级-RETURN"><a href="#二、列表、Map-与高级-RETURN" class="headerlink" title="二、列表、Map 与高级 RETURN"></a>二、列表、Map 与高级 RETURN</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">// 收集邻居列表</span><br><span class="line">MATCH (p:Person &#123;name: &#x27;Alice&#x27;&#125;)-[:KNOWS]-&gt;(f)</span><br><span class="line">RETURN p.name, collect(f.name) AS friends;</span><br><span class="line"></span><br><span class="line">// 条件聚合</span><br><span class="line">MATCH (p:Person)-[:KNOWS]-&gt;(f)</span><br><span class="line">RETURN p.name, count(f) AS cnt</span><br><span class="line">ORDER BY cnt DESC LIMIT 10;</span><br><span class="line"></span><br><span class="line">// Map 投影（Neo4j 5）</span><br><span class="line">MATCH (p:Person)</span><br><span class="line">RETURN p &#123; .name, .age, label: labels(p)[0] &#125; AS person_view;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-1-UNWIND-展开"><a href="#2-1-UNWIND-展开" class="headerlink" title="2.1 UNWIND 展开"></a>2.1 UNWIND 展开</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">WITH [&#x27;Alice&#x27;, &#x27;Bob&#x27;, &#x27;Carol&#x27;] AS names</span><br><span class="line">UNWIND names AS name</span><br><span class="line">MERGE (p:Person &#123;name: name&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-子查询-CALL"><a href="#2-2-子查询-CALL" class="headerlink" title="2.2 子查询 CALL {}"></a>2.2 子查询 CALL {}</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">MATCH (p:Person)</span><br><span class="line">CALL &#123;</span><br><span class="line">  WITH p</span><br><span class="line">  MATCH (p)-[:KNOWS]-&gt;(f)</span><br><span class="line">  RETURN count(f) AS friend_count</span><br><span class="line">&#125;</span><br><span class="line">RETURN p.name, friend_count;</span><br></pre></td></tr></table></figure>
+
+<p>Neo4j 5 支持 ** correlated subquery**，便于分步聚合而不写复杂 <code>WITH</code>。</p>
+<hr>
+<h2 id="三、索引体系（Neo4j-5）"><a href="#三、索引体系（Neo4j-5）" class="headerlink" title="三、索引体系（Neo4j 5）"></a>三、索引体系（Neo4j 5）</h2><table>
+<thead>
+<tr>
+<th align="left">索引类型</th>
+<th align="left">用途</th>
+<th align="left">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>RANGE</strong>（B-tree）</td>
+<td align="left">等值、范围</td>
+<td align="left"><code>WHERE p.age &gt; 30</code></td>
+</tr>
+<tr>
+<td align="left"><strong>TEXT</strong></td>
+<td align="left">字符串 contains &#x2F; ends with</td>
+<td align="left"><code>WHERE p.name CONTAINS &#39;Li&#39;</code></td>
+</tr>
+<tr>
+<td align="left"><strong>POINT</strong></td>
+<td align="left">地理空间</td>
+<td align="left">距离查询</td>
+</tr>
+<tr>
+<td align="left"><strong>VECTOR</strong>（5.11+）</td>
+<td align="left">embedding 相似度</td>
+<td align="left">RAG、语义检索</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// 全文索引（Lucene）</span><br><span class="line">CREATE FULLTEXT INDEX paper_fulltext IF NOT EXISTS</span><br><span class="line">FOR (p:Paper) ON EACH [p.title, p.abstract];</span><br><span class="line"></span><br><span class="line">CALL db.index.fulltext.queryNodes(&#x27;paper_fulltext&#x27;, &#x27;CRISPR AND enzyme&#x27;)</span><br><span class="line">YIELD node, score</span><br><span class="line">RETURN node.title, score LIMIT 20;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 向量索引（需 Neo4j 5.11+ 与 GDS/向量插件）</span><br><span class="line">CREATE VECTOR INDEX paper_embedding IF NOT EXISTS</span><br><span class="line">FOR (p:Paper) ON (p.embedding)</span><br><span class="line">OPTIONS &#123; indexConfig: &#123; `vector.dimensions`: 1536, `vector.similarity_function`: &#x27;cosine&#x27; &#125;&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>原则</strong>：<code>MATCH</code> &#x2F; <code>WHERE</code> 中高频过滤的属性应建索引；MERGE 的锚点属性应 <strong>UNIQUE 约束</strong>。</p>
+<hr>
+<h2 id="四、执行计划：EXPLAIN-与-PROFILE"><a href="#四、执行计划：EXPLAIN-与-PROFILE" class="headerlink" title="四、执行计划：EXPLAIN 与 PROFILE"></a>四、执行计划：EXPLAIN 与 PROFILE</h2><h3 id="4-1-用法"><a href="#4-1-用法" class="headerlink" title="4.1 用法"></a>4.1 用法</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN</span><br><span class="line">MATCH (p:Person &#123;email: &#x27;a@b.com&#x27;&#125;)-[:KNOWS*1..3]-&gt;(d)</span><br><span class="line">RETURN d;</span><br><span class="line"></span><br><span class="line">PROFILE</span><br><span class="line">MATCH (p:Person &#123;email: &#x27;a@b.com&#x27;&#125;)-[:KNOWS*1..3]-&gt;(d)</span><br><span class="line">RETURN d;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>EXPLAIN</strong></td>
+<td align="left">只看计划，不执行</td>
+</tr>
+<tr>
+<td align="left"><strong>PROFILE</strong></td>
+<td align="left">执行并统计 <strong>db hits</strong>、行数、耗时</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-常见算子"><a href="#4-2-常见算子" class="headerlink" title="4.2 常见算子"></a>4.2 常见算子</h3><table>
+<thead>
+<tr>
+<th align="left">算子</th>
+<th align="left">含义</th>
+<th align="left">期望</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>NodeIndexSeek</strong></td>
+<td align="left">索引找起点</td>
+<td align="left">好</td>
+</tr>
+<tr>
+<td align="left"><strong>Expand(All)</strong></td>
+<td align="left">扩展所有关系</td>
+<td align="left">数据量大时警惕</td>
+</tr>
+<tr>
+<td align="left"><strong>VarLengthExpand</strong></td>
+<td align="left">变长扩展</td>
+<td align="left">注意上界</td>
+</tr>
+<tr>
+<td align="left"><strong>Eager</strong></td>
+<td align="left">缓冲全部结果</td>
+<td align="left">大结果集时内存压力</td>
+</tr>
+<tr>
+<td align="left"><strong>CartesianProduct</strong></td>
+<td align="left">笛卡尔积</td>
+<td align="left">通常需优化</td>
+</tr>
+</tbody></table>
+<h3 id="4-3-优化示例"><a href="#4-3-优化示例" class="headerlink" title="4.3 优化示例"></a>4.3 优化示例</h3><p><strong>慢</strong>：无索引全扫描</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">MATCH (p:Person)</span><br><span class="line">WHERE p.email = &#x27;alice@example.com&#x27;   // 无索引 → AllNodesScan</span><br><span class="line">RETURN p;</span><br></pre></td></tr></table></figure>
+
+<p><strong>快</strong>：加唯一约束后</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CREATE CONSTRAINT person_email IF NOT EXISTS</span><br><span class="line">FOR (p:Person) REQUIRE p.email IS UNIQUE;</span><br><span class="line">// 计划变为 NodeUniqueIndexSeek</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="五、Cypher-性能习惯"><a href="#五、Cypher-性能习惯" class="headerlink" title="五、Cypher 性能习惯"></a>五、Cypher 性能习惯</h2><h3 id="5-1-先过滤，再扩展"><a href="#5-1-先过滤，再扩展" class="headerlink" title="5.1 先过滤，再扩展"></a>5.1 先过滤，再扩展</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">// 好：先定位小集合</span><br><span class="line">MATCH (p:Person &#123;email: $email&#125;)</span><br><span class="line">MATCH (p)-[:KNOWS*1..2]-&gt;(f)</span><br><span class="line">RETURN f;</span><br><span class="line"></span><br><span class="line">// 差：先扩展再过滤</span><br><span class="line">MATCH (p)-[:KNOWS*1..2]-&gt;(f)</span><br><span class="line">WHERE p.email = $email</span><br><span class="line">RETURN f;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-关系类型与方向写死"><a href="#5-2-关系类型与方向写死" class="headerlink" title="5.2 关系类型与方向写死"></a>5.2 关系类型与方向写死</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 好</span><br><span class="line">(a)-[:KNOWS]-&gt;(b)</span><br><span class="line"></span><br><span class="line">// 差（除非必要）</span><br><span class="line">(a)-[]-&gt;(b)</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-LIMIT-早用"><a href="#5-3-LIMIT-早用" class="headerlink" title="5.3 LIMIT 早用"></a>5.3 LIMIT 早用</h3><p>探索性查询始终加 <code>LIMIT</code>；聚合前用 <code>WITH</code> 缩小中间结果。</p>
+<h3 id="5-4-避免重复-MATCH-大子图"><a href="#5-4-避免重复-MATCH-大子图" class="headerlink" title="5.4 避免重复 MATCH 大子图"></a>5.4 避免重复 MATCH 大子图</h3><p>用 <code>WITH</code> 传递已匹配变量，而非再次 <code>MATCH</code> 全图。</p>
+<hr>
+<h2 id="六、内存与配置调优"><a href="#六、内存与配置调优" class="headerlink" title="六、内存与配置调优"></a>六、内存与配置调优</h2><table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>server.memory.pagecache.size</code></td>
+<td align="left">≈ 图数据热集大小（留足 OS 内存）</td>
+</tr>
+<tr>
+<td align="left"><code>server.memory.heap.max_size</code></td>
+<td align="left">大查询、APOC 多时适当增大</td>
+</tr>
+<tr>
+<td align="left"><code>db.transaction.timeout</code></td>
+<td align="left">防止长事务占资源</td>
+</tr>
+<tr>
+<td align="left"><code>db.lock.acquisition.timeout</code></td>
+<td align="left">写冲突超时</td>
+</tr>
+</tbody></table>
+<p>查看运行时信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CALL dbms.queryJmx(&#x27;org.neo4j:instance=kernel#0,name=Page cache&#x27;) YIELD attributes;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="七、查询反模式与修复"><a href="#七、查询反模式与修复" class="headerlink" title="七、查询反模式与修复"></a>七、查询反模式与修复</h2><table>
+<thead>
+<tr>
+<th align="left">反模式</th>
+<th align="left">现象</th>
+<th align="left">修复</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">无界 <code>-[*]-</code></td>
+<td align="left">超时 &#x2F; OOM</td>
+<td align="left">设 <code>*1..N</code></td>
+</tr>
+<tr>
+<td align="left">超级节点 Expand</td>
+<td align="left">db hits 爆炸</td>
+<td align="left">重构边、分页、预聚合</td>
+</tr>
+<tr>
+<td align="left">大结果集 RETURN 全图</td>
+<td align="left">Browser 卡死</td>
+<td align="left">只 RETURN 必要属性</td>
+</tr>
+<tr>
+<td align="left">字符串拼接 Cypher</td>
+<td align="left">慢 + 注入</td>
+<td align="left">参数化</td>
+</tr>
+<tr>
+<td align="left">频繁 small MERGE</td>
+<td align="left">写放大</td>
+<td align="left">UNWIND 批写</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="八、与-Graph-Data-Science-的边界"><a href="#八、与-Graph-Data-Science-的边界" class="headerlink" title="八、与 Graph Data Science 的边界"></a>八、与 Graph Data Science 的边界</h2><ul>
+<li><strong>Cypher</strong>：在线点查、模式匹配、短路径  </li>
+<li><strong>GDS</strong>：离线&#x2F;近线全图算法（PageRank、Louvain、Node Similarity）</li>
+</ul>
+<p>大图算法不要硬写 Cypher 递归；应 <strong>project 子图 → 跑 GDS → 写回属性</strong>（见 Neo4j-07）。</p>
+<hr>
+<h2 id="九、调试工具箱"><a href="#九、调试工具箱" class="headerlink" title="九、调试工具箱"></a>九、调试工具箱</h2><table>
+<thead>
+<tr>
+<th align="left">工具</th>
+<th align="left">用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>PROFILE</code></td>
+<td align="left">单查询性能</td>
+</tr>
+<tr>
+<td align="left">Neo4j Browser 图视图</td>
+<td align="left">小结果可视化</td>
+</tr>
+<tr>
+<td align="left"><strong>Query Log</strong></td>
+<td align="left">慢查询审计</td>
+</tr>
+<tr>
+<td align="left"><strong>Prometheus metrics</strong></td>
+<td align="left">集群监控（企业版&#x2F;Aura）</td>
+</tr>
+<tr>
+<td align="left"><code>db.stats.retrieve(&#39;QUERIES&#39;)</code></td>
+<td align="left">查询统计</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="十、小结"><a href="#十、小结" class="headerlink" title="十、小结"></a>十、小结</h2><ul>
+<li>变长路径必须<strong>有上界</strong>；最短路径用 <code>shortestPath</code> &#x2F; <code>allShortestPaths</code>。  </li>
+<li><strong>索引 + 唯一约束</strong>是 OLTP 查询性能基础；全文&#x2F;向量索引支撑检索类场景。  </li>
+<li>用 <strong>PROFILE</strong> 看 <code>db hits</code>，优先消除全图扫描与笛卡尔积。  </li>
+<li>超大图算法交给 <strong>GDS</strong>，不要强行 Cypher 遍历全图。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="left">下一篇</th>
+<th align="left">内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><a href="02.Neo4j-06.%E8%BF%90%E7%BB%B4%E8%BF%81%E7%A7%BB%E4%B8%8E%E5%A4%87%E4%BB%BD.md">Neo4j-06.运维迁移与备份</a></td>
+<td align="left">dump、restore、升级</td>
+</tr>
+<tr>
+<td align="left"><a href="02.Neo4j-07.%E8%BF%9B%E9%98%B6%E8%83%BD%E5%8A%9B%E4%B8%8EGraph-Data-Science.md">Neo4j-07.进阶能力与Graph-Data-Science</a></td>
+<td align="left">APOC、GDS</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Neo4j/" rel="tag"><i class="fa fa-tag"></i> Neo4j</a>
+          
+            <a href="/tags/Cypher/" rel="tag"><i class="fa fa-tag"></i> Cypher</a>
+          
+            <a href="/tags/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" rel="tag"><i class="fa fa-tag"></i> 性能调优</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-26.%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/02.Neo4j-04.%E6%95%B0%E6%8D%AE%E5%AF%BC%E5%85%A5%E4%B8%8E%E5%AF%B9%E6%8E%A5%E5%B7%A5%E5%85%B7/" rel="next" title="Neo4j-04.数据导入与对接工具">
+                <i class="fa fa-chevron-left"></i> Neo4j-04.数据导入与对接工具
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-26.%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/02.Neo4j-06.%E8%BF%90%E7%BB%B4%E8%BF%81%E7%A7%BB%E4%B8%8E%E5%A4%87%E4%BB%BD/" rel="prev" title="Neo4j-06.运维迁移与备份">
+                Neo4j-06.运维迁移与备份 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%B7%AF%E5%BE%84%E6%9F%A5%E8%AF%A2%E8%BF%9B%E9%98%B6"><span class="nav-number">1.</span> <span class="nav-text">一、路径查询进阶</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%8F%98%E9%95%BF%E8%B7%AF%E5%BE%84%E8%AF%AD%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 变长路径语法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E8%B7%AF%E5%BE%84%E8%BF%87%E6%BB%A4%E4%B8%8E%E5%B1%95%E5%BC%80"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 路径过滤与展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E9%81%BF%E5%85%8D%E3%80%8C%E7%88%86%E7%82%B8%E5%BC%8F%E3%80%8D%E9%81%8D%E5%8E%86"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 避免「爆炸式」遍历</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%88%97%E8%A1%A8%E3%80%81Map-%E4%B8%8E%E9%AB%98%E7%BA%A7-RETURN"><span class="nav-number">2.</span> <span class="nav-text">二、列表、Map 与高级 RETURN</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-UNWIND-%E5%B1%95%E5%BC%80"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 UNWIND 展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E5%AD%90%E6%9F%A5%E8%AF%A2-CALL"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 子查询 CALL {}</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E7%B4%A2%E5%BC%95%E4%BD%93%E7%B3%BB%EF%BC%88Neo4j-5%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">三、索引体系（Neo4j 5）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%EF%BC%9AEXPLAIN-%E4%B8%8E-PROFILE"><span class="nav-number">4.</span> <span class="nav-text">四、执行计划：EXPLAIN 与 PROFILE</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E7%94%A8%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 用法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%B8%B8%E8%A7%81%E7%AE%97%E5%AD%90"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 常见算子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E4%BC%98%E5%8C%96%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 优化示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81Cypher-%E6%80%A7%E8%83%BD%E4%B9%A0%E6%83%AF"><span class="nav-number">5.</span> <span class="nav-text">五、Cypher 性能习惯</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%85%88%E8%BF%87%E6%BB%A4%EF%BC%8C%E5%86%8D%E6%89%A9%E5%B1%95"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 先过滤，再扩展</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%85%B3%E7%B3%BB%E7%B1%BB%E5%9E%8B%E4%B8%8E%E6%96%B9%E5%90%91%E5%86%99%E6%AD%BB"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 关系类型与方向写死</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-LIMIT-%E6%97%A9%E7%94%A8"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 LIMIT 早用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E9%81%BF%E5%85%8D%E9%87%8D%E5%A4%8D-MATCH-%E5%A4%A7%E5%AD%90%E5%9B%BE"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 避免重复 MATCH 大子图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%86%85%E5%AD%98%E4%B8%8E%E9%85%8D%E7%BD%AE%E8%B0%83%E4%BC%98"><span class="nav-number">6.</span> <span class="nav-text">六、内存与配置调优</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%9F%A5%E8%AF%A2%E5%8F%8D%E6%A8%A1%E5%BC%8F%E4%B8%8E%E4%BF%AE%E5%A4%8D"><span class="nav-number">7.</span> <span class="nav-text">七、查询反模式与修复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E4%B8%8E-Graph-Data-Science-%E7%9A%84%E8%BE%B9%E7%95%8C"><span class="nav-number">8.</span> <span class="nav-text">八、与 Graph Data Science 的边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7%E7%AE%B1"><span class="nav-number">9.</span> <span class="nav-text">九、调试工具箱</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">十、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,微调,Axolotl,DeepSpeed," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Axolotl 的 YAML 配置结构、数据集字段、LoRA&#x2F;QLoRA 与 DeepSpeed 多卡训练及社区配方使用要点。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Axolotl 详解：YAML 配方与多卡微调">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/03-%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-04-Axolotl%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Axolotl 的 YAML 配置结构、数据集字段、LoRA&#x2F;QLoRA 与 DeepSpeed 多卡训练及社区配方使用要点。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-30T07:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:57.015Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Axolotl">
+<meta property="article:tag" content="DeepSpeed">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="微调">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-19.模型训练微调/03-微调工具-04-Axolotl详解/"/>
+
+
+
+
+
+  <title>Axolotl 详解：YAML 配方与多卡微调 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/03-%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-04-Axolotl%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Axolotl 详解：YAML 配方与多卡微调</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-30T15:30:00+08:00">
+                2026-06-30
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Axolotl 的 YAML 配置结构、数据集字段、LoRA/QLoRA 与 DeepSpeed 多卡训练及社区配方使用要点。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>Axolotl</strong> 是 YAML 驱动的 LLM 微调框架，在 <strong>多卡、DeepSpeed、社区训练配方</strong> 方面积累深厚，适合「拿一份成熟 config 改数据就上」的场景。与 LLaMA-Factory、ms-swift 同属<strong>配置化工厂</strong>；对比见 <a href="./03-%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-00-%E5%BE%AE%E8%B0%83%E6%A1%86%E6%9E%B6%E6%A8%AA%E5%90%91%E5%AF%B9%E6%AF%94.md">03-00</a>。</p>
+<blockquote>
+<p>段末注释：<strong>DeepSpeed</strong> 是微软开源的深度学习优化库，提供 ZeRO 分片等能力；Axolotl 常通过 DeepSpeed 配置实现大模型多卡微调。</p>
+</blockquote>
+<p>系列索引：<a href="./00.%E5%BE%AE%E8%B0%83%E6%8A%80%E6%9C%AF%E8%B7%AF%E7%BA%BF%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB.md">微调技术路线导读</a></p>
+<hr>
+<h2 id="一、定位"><a href="#一、定位" class="headerlink" title="一、定位"></a>一、定位</h2><table>
+<thead>
+<tr>
+<th>适合</th>
+<th>不太适合</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>多 GPU + DeepSpeed ZeRO</td>
+<td>需要 WebUI 的非技术用户</td>
+</tr>
+<tr>
+<td>复用 GitHub 上大量示例 yaml</td>
+<td>轻度单次实验（Factory&#x2F;swift 更轻）</td>
+</tr>
+<tr>
+<td>细调 flash attention、sample packing</td>
+<td>快速 GRPO 实验（优先 TRL）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="二、安装"><a href="#二、安装" class="headerlink" title="二、安装"></a>二、安装</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/axolotl-ai-cloud/axolotl</span><br><span class="line"><span class="built_in">cd</span> axolotl</span><br><span class="line">pip install -e <span class="string">&#x27;.[flash-attn,deepspeed]&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>对 CUDA、PyTorch 版本敏感，建议用官方 Docker 或 <code>environment.yaml</code>。</p>
+<hr>
+<h2 id="三、配置结构概览"><a href="#三、配置结构概览" class="headerlink" title="三、配置结构概览"></a>三、配置结构概览</h2><p>单文件 <code>config.yml</code> 驱动全流程：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">base_model:</span> <span class="string">meta-llama/Llama-3.1-8B-Instruct</span></span><br><span class="line"><span class="attr">model_type:</span> <span class="string">LlamaForCausalLM</span></span><br><span class="line"><span class="attr">tokenizer_type:</span> <span class="string">AutoTokenizer</span></span><br><span class="line"></span><br><span class="line"><span class="attr">load_in_8bit:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">load_in_4bit:</span> <span class="literal">true</span>          <span class="comment"># QLoRA 场景</span></span><br><span class="line"></span><br><span class="line"><span class="attr">datasets:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">data/emotion.json</span></span><br><span class="line">    <span class="attr">type:</span> <span class="string">chat_template</span>      <span class="comment"># 或 alpaca, sharegpt 等</span></span><br><span class="line">    <span class="attr">field_messages:</span> <span class="string">messages</span></span><br><span class="line"></span><br><span class="line"><span class="attr">dataset_prepared_path:</span> <span class="string">last_run_prepared</span></span><br><span class="line"><span class="attr">val_set_size:</span> <span class="number">0.05</span></span><br><span class="line"><span class="attr">output_dir:</span> <span class="string">./outputs/llama-emotion</span></span><br><span class="line"></span><br><span class="line"><span class="attr">adapter:</span> <span class="string">lora</span></span><br><span class="line"><span class="attr">lora_r:</span> <span class="number">16</span></span><br><span class="line"><span class="attr">lora_alpha:</span> <span class="number">32</span></span><br><span class="line"><span class="attr">lora_target_modules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">q_proj</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">v_proj</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">k_proj</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">o_proj</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">gate_proj</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">up_proj</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">down_proj</span></span><br><span class="line"></span><br><span class="line"><span class="attr">sequence_len:</span> <span class="number">2048</span></span><br><span class="line"><span class="attr">sample_packing:</span> <span class="literal">true</span>         <span class="comment"># 提升吞吐</span></span><br><span class="line"></span><br><span class="line"><span class="attr">micro_batch_size:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">gradient_accumulation_steps:</span> <span class="number">4</span></span><br><span class="line"><span class="attr">num_epochs:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">learning_rate:</span> <span class="number">0.0002</span></span><br><span class="line"><span class="attr">optimizer:</span> <span class="string">adamw_bnb_8bit</span></span><br><span class="line"><span class="attr">lr_scheduler:</span> <span class="string">cosine</span></span><br><span class="line"><span class="attr">warmup_steps:</span> <span class="number">100</span></span><br><span class="line"></span><br><span class="line"><span class="attr">bf16:</span> <span class="string">auto</span></span><br><span class="line"><span class="attr">gradient_checkpointing:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deepspeed:</span> <span class="string">deepspeed_configs/zero2.json</span></span><br></pre></td></tr></table></figure>
+
+<p>启动：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">accelerate launch -m axolotl.cli.train config.yml</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四、数据集类型"><a href="#四、数据集类型" class="headerlink" title="四、数据集类型"></a>四、数据集类型</h2><table>
+<thead>
+<tr>
+<th><code>type</code></th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>alpaca</code></td>
+<td>instruction&#x2F;input&#x2F;output</td>
+</tr>
+<tr>
+<td><code>sharegpt</code></td>
+<td>conversations</td>
+</tr>
+<tr>
+<td><code>chat_template</code></td>
+<td>messages 列表，贴近 <a href="./01-%E6%95%B0%E6%8D%AE%E5%B7%A5%E7%A8%8B-01-%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F%E4%B8%8EChat-Template.md">01-01</a></td>
+</tr>
+<tr>
+<td><code>completion</code></td>
+<td>prompt + completion</td>
+</tr>
+</tbody></table>
+<p>预处理结果可缓存到 <code>dataset_prepared_path</code>，重复实验更快。</p>
+<hr>
+<h2 id="五、LoRA-QLoRA"><a href="#五、LoRA-QLoRA" class="headerlink" title="五、LoRA &#x2F; QLoRA"></a>五、LoRA &#x2F; QLoRA</h2><ul>
+<li><code>adapter: lora</code> + <code>lora_r</code> &#x2F; <code>lora_alpha</code> — 见 <a href="./02-PEFT-01-LoRA%E5%8E%9F%E7%90%86%E4%B8%8E%E5%B7%A5%E7%A8%8B%E9%85%8D%E7%BD%AE.md">02-01</a>。  </li>
+<li><code>load_in_4bit: true</code> — QLoRA，见 <a href="./02-PEFT-02-QLoRA%E4%B8%8E%E9%87%8F%E5%8C%96%E5%BE%AE%E8%B0%83.md">02-02</a>。  </li>
+<li><code>merge_lora</code> 选项 — 训练结束合并权重便于部署 <a href="./02-PEFT-04-Adapter%E5%90%88%E5%B9%B6%E5%A4%9ALoRA%E4%B8%8E%E7%BB%AD%E8%AE%AD.md">02-04</a>。</li>
+</ul>
+<hr>
+<h2 id="六、多卡与-DeepSpeed"><a href="#六、多卡与-DeepSpeed" class="headerlink" title="六、多卡与 DeepSpeed"></a>六、多卡与 DeepSpeed</h2><p><code>deepspeed: deepspeed_configs/zero2.json</code> 或 <code>zero3.json</code>：</p>
+<table>
+<thead>
+<tr>
+<th>ZeRO</th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>zero2</td>
+<td>7B–13B 全参&#x2F;QLoRA 常见</td>
+</tr>
+<tr>
+<td>zero3</td>
+<td>更大模型参数分片</td>
+</tr>
+</tbody></table>
+<p>详见 <a href="./07-%E8%AE%AD%E7%BB%83%E5%B7%A5%E7%A8%8B-02-%E5%88%86%E5%B8%83%E5%BC%8F%E5%BE%AE%E8%B0%83.md">07-02 分布式</a>。LoRA 多卡也可用 DDP 配方（社区 yaml 有标注）。</p>
+<hr>
+<h2 id="七、sample-packing"><a href="#七、sample-packing" class="headerlink" title="七、sample packing"></a>七、sample packing</h2><p><code>sample_packing: true</code> 将短样本拼进同一序列，提高 GPU 利用率——与 TRL <code>SFTConfig(packing=True)</code> 同类思路（<a href="./03.%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-SFTTrainer%E8%AF%A6%E8%A7%A3.md#%E5%8D%81%E4%B8%80%E8%BF%9B%E9%98%B6%E8%83%BD%E5%8A%9B%E6%8C%89%E9%9C%80%E5%90%AF%E7%94%A8">03-01 §十一</a>）。</p>
+<hr>
+<h2 id="八、与-SFTTrainer-Factory-对照"><a href="#八、与-SFTTrainer-Factory-对照" class="headerlink" title="八、与 SFTTrainer &#x2F; Factory 对照"></a>八、与 SFTTrainer &#x2F; Factory 对照</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>Axolotl</th>
+<th>LLaMA-Factory</th>
+<th>SFTTrainer</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>配置</td>
+<td>单 yaml，偏极客</td>
+<td>yaml + WebUI</td>
+<td>Python</td>
+</tr>
+<tr>
+<td>DeepSpeed 配方</td>
+<td><strong>丰富</strong></td>
+<td>有</td>
+<td>需自配</td>
+</tr>
+<tr>
+<td>上手</td>
+<td>需读示例 yaml</td>
+<td>WebUI 最易</td>
+<td>需写代码</td>
+</tr>
+<tr>
+<td>对齐 DPO</td>
+<td>社区示例</td>
+<td>内置 stage</td>
+<td>TRL 最全</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="九、常见踩坑"><a href="#九、常见踩坑" class="headerlink" title="九、常见踩坑"></a>九、常见踩坑</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>对策</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>model_type</code> 与权重不符</td>
+<td>对照官方支持列表</td>
+</tr>
+<tr>
+<td>packing + mask 错</td>
+<td>检查 <code>type</code> 与字段映射</td>
+</tr>
+<tr>
+<td>DeepSpeed 报错</td>
+<td>GPU 数与 json 配置一致</td>
+</tr>
+<tr>
+<td>预处理极慢</td>
+<td>设 <code>dataset_prepared_path</code> 缓存</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="十、小结"><a href="#十、小结" class="headerlink" title="十、小结"></a>十、小结</h2><p>Axolotl &#x3D; <strong>YAML + DeepSpeed + packing</strong> 的多卡微调利器。快速演示选 Factory&#x2F;swift；复杂多卡配方或复用社区 config 选 Axolotl。</p>
+<p>横向对比：<a href="./03-%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-00-%E5%BE%AE%E8%B0%83%E6%A1%86%E6%9E%B6%E6%A8%AA%E5%90%91%E5%AF%B9%E6%AF%94.md">03-00</a> | 编程栈：<a href="./03.%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-SFTTrainer%E8%AF%A6%E8%A7%A3.md">03-01 SFTTrainer</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E5%BE%AE%E8%B0%83/" rel="tag"><i class="fa fa-tag"></i> 微调</a>
+          
+            <a href="/tags/Axolotl/" rel="tag"><i class="fa fa-tag"></i> Axolotl</a>
+          
+            <a href="/tags/DeepSpeed/" rel="tag"><i class="fa fa-tag"></i> DeepSpeed</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/03-%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-03-ms-swift%E8%AF%A6%E8%A7%A3/" rel="next" title="ms-swift 详解：魔搭 SWIFT 微调与部署">
+                <i class="fa fa-chevron-left"></i> ms-swift 详解：魔搭 SWIFT 微调与部署
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/03-%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-05-Unsloth%E5%BE%AE%E8%B0%83%E8%AF%A6%E8%A7%A3/" rel="prev" title="Unsloth 详解：LoRA/QLoRA 训练加速">
+                Unsloth 详解：LoRA/QLoRA 训练加速 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">一、定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%AE%89%E8%A3%85"><span class="nav-number">2.</span> <span class="nav-text">二、安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E9%85%8D%E7%BD%AE%E7%BB%93%E6%9E%84%E6%A6%82%E8%A7%88"><span class="nav-number">3.</span> <span class="nav-text">三、配置结构概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%95%B0%E6%8D%AE%E9%9B%86%E7%B1%BB%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">四、数据集类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81LoRA-QLoRA"><span class="nav-number">5.</span> <span class="nav-text">五、LoRA &#x2F; QLoRA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%A4%9A%E5%8D%A1%E4%B8%8E-DeepSpeed"><span class="nav-number">6.</span> <span class="nav-text">六、多卡与 DeepSpeed</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81sample-packing"><span class="nav-number">7.</span> <span class="nav-text">七、sample packing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E4%B8%8E-SFTTrainer-Factory-%E5%AF%B9%E7%85%A7"><span class="nav-number">8.</span> <span class="nav-text">八、与 SFTTrainer &#x2F; Factory 对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%B8%B8%E8%A7%81%E8%B8%A9%E5%9D%91"><span class="nav-number">9.</span> <span class="nav-text">九、常见踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">十、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

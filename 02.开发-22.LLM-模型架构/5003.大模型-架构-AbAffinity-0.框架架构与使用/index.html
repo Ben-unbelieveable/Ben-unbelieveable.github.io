@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="ESM-2,抗体,LLM,AbAffinity,亲和力预测,交叉注意力," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="AbAffinity 链感知三流架构：冻结 ESM-2 表征、重链 CDR 池化、轻重融合门与门控抗体–抗原交叉注意力，仅序列预测 pKd；含工作原理、应用场景与安装使用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5003.大模型-架构-AbAffinity-0.框架架构与使用">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="AbAffinity 链感知三流架构：冻结 ESM-2 表征、重链 CDR 池化、轻重融合门与门控抗体–抗原交叉注意力，仅序列预测 pKd；含工作原理、应用场景与安装使用。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8/AbAffinityarchitecture.png">
+<meta property="article:published_time" content="2026-07-06T07:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:57.478Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="AbAffinity">
+<meta property="article:tag" content="ESM-2">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="交叉注意力">
+<meta property="article:tag" content="亲和力预测">
+<meta property="article:tag" content="抗体">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8/AbAffinityarchitecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-AbAffinity-0.框架架构与使用/"/>
+
+
+
+
+
+  <title>5003.大模型-架构-AbAffinity-0.框架架构与使用 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">5003.大模型-架构-AbAffinity-0.框架架构与使用</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-06T15:00:00+08:00">
+                2026-07-06
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  AbAffinity 链感知三流架构：冻结 ESM-2 表征、重链 CDR 池化、轻重融合门与门控抗体–抗原交叉注意力，仅序列预测 pKd；含工作原理、应用场景与安装使用。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>AbAffinity</strong>（<a target="_blank" rel="noopener" href="https://github.com/harshitsinghsnu/AbAffinity">harshitsinghsnu&#x2F;AbAffinity</a>）是面向<strong>抗体–抗原结合亲和力</strong>的<strong>仅序列（sequence-only）<strong>预测框架：以</strong>重链、轻链、抗原</strong>为三条独立但可互作的流，冻结 <strong>ESM-2（650M）</strong> 表征后，用**重链互补决定区（Complementarity-Determining Region，CDR）<strong>聚焦池化、轻重链自注意力、可学习融合门与</strong>门控交叉注意力（gated cross-attention）**估计 (\mathrm{p}K_{\mathrm{d}})。模型参数几乎只落在窄小的互作模块上，适合在缺少可靠复合物结构时做库规模筛选、零样本打分与少样本亲和力成熟微调。</p>
+<blockquote>
+<p><strong>段末注释</strong>：(\mathrm{p}K_{\mathrm{d}} &#x3D; -\log_{10} K_{\mathrm{D}})，(K_{\mathrm{D}}) 越大则 (\mathrm{p}K_{\mathrm{d}}) 越小；<strong>CDR</strong> 为抗体可变区形成抗原接触的超变环；<strong>ESM-2</strong> 是 Meta 的蛋白质语言模型，输出每位氨基酸隐向量。</p>
+</blockquote>
+<p><strong>关联笔记</strong>：<a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-04.%E5%B7%A5%E5%85%B7-01.%E6%8A%97%E4%BD%93%E4%BA%B2%E5%92%8C%E5%8A%9B%E9%A2%84%E6%B5%8B%E5%B7%A5%E5%85%B7%E8%B0%83%E7%A0%94%E7%BB%BC%E8%BF%B0.md">抗体亲和力预测工具调研</a> · <a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-02.%E6%8C%87%E6%A0%87-01.%E4%BA%B2%E5%92%8C%E5%8A%9B%E6%8C%87%E6%A0%87%E6%80%BB%E8%A7%88.md">亲和力指标总览</a> · <a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-02.%E6%8C%87%E6%A0%87-03.SPR%E4%B8%8EBLI%E4%BA%B2%E5%92%8C%E5%8A%9B%E6%A3%80%E6%B5%8B%E5%8E%9F%E7%90%86.md">SPR&#x2F;BLI 原理</a></p>
+<p><strong>官方资源</strong>：代码与权重 <a target="_blank" rel="noopener" href="https://github.com/harshitsinghsnu/AbAffinity">GitHub</a> · MIT · Colab notebook 见仓库 README</p>
+<hr>
+<h2 id="1-要解决什么问题"><a href="#1-要解决什么问题" class="headerlink" title="1. 要解决什么问题"></a>1. 要解决什么问题</h2><p>治疗性抗体发现、B 细胞受体（B-cell Receptor，BCR）组库分析与亲和力成熟都依赖对<strong>结合强弱</strong>的快速估计，然而：</p>
+<ol>
+<li><strong>结构模型</strong>（对接、复合物精修）信息密度高，但依赖可靠三维复合物；库规模筛选时结构往往不可得或不可靠。</li>
+<li><strong>序列模型</strong>吞吐高，却常把轻重链拼接成一条，或在早期就用简单融合把抗体与抗原混在一起，弱化了「哪条链怎么配对」「抗体与抗原是否兼容」的结构化建模。</li>
+<li>工业场景需要<strong>相对排序</strong>（谁更强）与部分定量 (\mathrm{p}K_{\mathrm{d}})，且顶点突变、单域纳米抗体（nanobody）与常规 IgG 配对抗体要<strong>同一套接口</strong>。</li>
+</ol>
+<p>AbAffinity 的定位：<strong>不吃结构，只吃三条序列</strong>；把重链侧重到 CDR 环，用门控通路控制抗体–抗原信息交换，再用有界余弦头读出亲和力——ESM-2 <strong>冻结</strong>，只训互作头，训练成本低、迁移通道清晰。</p>
+<hr>
+<h2 id="2-框架架构"><a href="#2-框架架构" class="headerlink" title="2. 框架架构"></a>2. 框架架构</h2><p>官方终版模型类名为 <strong><code>MutualTriStreamStrong</code></strong>（<code>AbAffinity/models/mutual_strong.py</code>）。整体数据流如下图。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8/AbAffinityarchitecture.png" alt="AbAffinity 官方架构：三流 ESM 表征 → 池化 → 投影 → 轻重自注意力与融合门 → 门控 Ab↔Ag 交叉注意力 → 双头余弦读出"></p>
+<p>可按四段理解。</p>
+<h3 id="2-1-三流输入与冻结语言表征"><a href="#2-1-三流输入与冻结语言表征" class="headerlink" title="2.1 三流输入与冻结语言表征"></a>2.1 三流输入与冻结语言表征</h3><p>输入为 <strong>light、heavy、antigen</strong> 三条氨基酸序列。上游用冻结 <strong>ESM-2（650M）</strong>（隐维 (d_{\mathrm{esm}}&#x3D;1280)）为每条链生成残基级嵌入，再池化为向量：</p>
+<table>
+<thead>
+<tr>
+<th>流</th>
+<th>池化方式</th>
+<th>生物学意图</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>重链</strong></td>
+<td><strong>All-CDR</strong>：在 <strong>CDR-H1 &#x2F; H2 &#x2F; H3</strong> 上聚焦池化</td>
+<td>接触位点主要落在重链 CDR，尤其 CDR-H3</td>
+</tr>
+<tr>
+<td><strong>轻链</strong></td>
+<td>全链 <strong>mean pool</strong></td>
+<td>参与配对与部分副位（paratope），贡献更弥散</td>
+</tr>
+<tr>
+<td><strong>抗原</strong></td>
+<td>全链 <strong>mean pool</strong></td>
+<td>表位（epitope）位置先验弱于抗体 CDR，整链平均作为抗原指纹</td>
+</tr>
+</tbody></table>
+<p>编号优先 <strong>IMGT</strong>（经 ANARCI）；编号失败时改用基序（motif）回退。仓库自带的 <code>data/*.pkl</code> 缓存即在该配置下预计算，加载即可复现论文报告数字，无需再跑 ESM-2。</p>
+<p>纳米抗体无重链：无有效轻链时，把<strong>重链嵌入复用到 light 槽位</strong>，同一架构覆盖常规配对抗体与单域抗体。</p>
+<h3 id="2-2-三路投影与轻重融合"><a href="#2-2-三路投影与轻重融合" class="headerlink" title="2.2 三路投影与轻重融合"></a>2.2 三路投影与轻重融合</h3><p>三条池化向量先做独立 LayerNorm，再经各自的线性层投影到统一维度 (d&#x3D;256)：</p>
+<p>[<br>\mathbf{h} &#x3D; f_H(\mathbf{e}_H),;<br>\mathbf{l} &#x3D; f_L(\mathbf{e}_L),;<br>\mathbf{a} &#x3D; f_A(\mathbf{e}_A)<br>]</p>
+<p>随后只在抗体内部做一次双向交流：把 ([\mathbf{h},\mathbf{l}]) 堆成长度 2 的序列，过 <strong>多头自注意力（Multi-Head Self-Attention）</strong>，得到更新后的 (\mathbf{h}’,\mathbf{l}’)。可学习 <strong>fusion_gate</strong> 以 (\mathrm{softmax}) 权重混合两条链：</p>
+<p>[<br>\mathbf{w} &#x3D; \mathrm{softmax}(W[\mathbf{h}’;\mathbf{l}’]),\quad<br>\mathbf{ab} &#x3D; w_H\mathbf{h}’ + w_L\mathbf{l}’<br>]</p>
+<p>消融实验表明：CDR 聚焦池化、轻重分解、真实抗原输入与门控互作各自贡献性能——早融合「一条拼接序列过全连接」的基线明显更弱。</p>
+<h3 id="2-3-门控双向交叉注意力"><a href="#2-3-门控双向交叉注意力" class="headerlink" title="2.3 门控双向交叉注意力"></a>2.3 门控双向交叉注意力</h3><p>互作核心是可堆叠（默认 <code>n_layers=2</code>）的 <strong><code>GatedCrossAttention</code></strong>：抗体与抗原<strong>并行双向</strong>更新。</p>
+<p>标准交叉注意力里 query 来自一方、key&#x2F;value 来自另一方；AbAffinity 额外引入由 query 自身预测的 <strong>sigmoid 门</strong>：</p>
+<p>[<br>\begin{aligned}<br>\mathbf{q},\mathbf{k},\mathbf{v} &amp;&#x3D; W_q\mathbf{x}<em>q,; W_k\mathbf{x}</em>{kv},; W_v\mathbf{x}_{kv}, \<br>\mathbf{u} &amp;&#x3D; \tanh(\mathbf{q}\odot\mathbf{k})\odot\mathbf{v}, \<br>\mathbf{g} &amp;&#x3D; \sigma(W_g\mathbf{x}_q), \<br>\mathbf{y} &amp;&#x3D; \mathrm{LN}\bigl(\mathbf{x}_q + W_o(\mathbf{u}\odot\mathbf{g})\bigr)<br>\end{aligned}<br>]</p>
+<p>每一层并行两条通路：</p>
+<ul>
+<li><strong>Ab → Ag</strong>：以融合抗体 (\mathbf{ab}) 为 query，当前抗原上下文为 key&#x2F;value；</li>
+<li><strong>Ag → Ab</strong>：以抗原为 query，融合抗体为 key&#x2F;value。</li>
+</ul>
+<p>门控使信息交换可「关小」——当某侧对当前亲和力预测贡献不大时不强制全量混入，这是相对朴素双塔或无门交叉注意力的关键差异。</p>
+<h3 id="2-4-双头余弦读出与-mathrm-p-K-mathrm-d-标定"><a href="#2-4-双头余弦读出与-mathrm-p-K-mathrm-d-标定" class="headerlink" title="2.4 双头余弦读出与 (\mathrm{p}K_{\mathrm{d}}) 标定"></a>2.4 双头余弦读出与 (\mathrm{p}K_{\mathrm{d}}) 标定</h3><p>更新后的抗体 &#x2F; 抗原向量分别进入 <strong>antibody_head</strong> &#x2F; <strong>antigen_head</strong>（Linear → LN → GELU → Dropout），再 L2 归一化，输出<strong>余弦相似度</strong> (s\in[-1,1])：</p>
+<p>[<br>s &#x3D; \cos(\hat{\mathbf{ab}},; \hat{\mathbf{ag}})<br>]</p>
+<p>训练时把训练集 (\mathrm{p}K_{\mathrm{d}}) 线性缩放到 ([-1,1])：</p>
+<p>[<br>t &#x3D; 2\cdot\frac{y - y_{\min}}{y_{\max}-y_{\min}} - 1<br>]</p>
+<p>以 (\mathrm{MSE}(s,t)) 优化；推理时用同一 (y_{\min},y_{\max}) <strong>反变换</strong>得到预测 (\mathrm{p}K_{\mathrm{d}})。有界余弦头抑制表示坍缩（anti-collapse），使「相似度 → 亲和力」映射稳定、可解释为几何对齐强度。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>paratope &#x2F; epitope</strong> 分别为抗体接触面与抗原被接触面；<strong>Integrated Gradients（IG）</strong> 用积分梯度归因，仓库 <code>explain/</code> 用于把重要残基投回序列与三维结构。</p>
+</blockquote>
+<hr>
+<h2 id="3-工作原理：端到端推演"><a href="#3-工作原理：端到端推演" class="headerlink" title="3. 工作原理：端到端推演"></a>3. 工作原理：端到端推演</h2><p>以一对常规 VH–VL 抗体与抗原为例，推理路径可写成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">light / heavy / antigen 序列</span><br><span class="line">        │ ESM-2（冻结）残基嵌入</span><br><span class="line">        ▼</span><br><span class="line">  轻/抗：mean pool　重：CDR-H1/H2/H3 pool</span><br><span class="line">        │ 三路投影 → d=256</span><br><span class="line">        ▼</span><br><span class="line">  轻重自注意力 → fusion_gate → 抗体向量 ab</span><br><span class="line">        │ 与抗原并行门控交叉注意力（可多层）</span><br><span class="line">        ▼</span><br><span class="line">  antibody_head / antigen_head → cos(ab, ag) ∈ [-1,1]</span><br><span class="line">        │ 用训练 fold 的 (pKd_min, pKd_max) 反变换</span><br><span class="line">        ▼</span><br><span class="line">  预测 pKd（越大结合越强）</span><br></pre></td></tr></table></figure>
+
+<p><strong>训练只更新</strong>投影、自注意力、融合门、门控交叉注意力与双头；ESM-2 <strong>不反传</strong>。因此：</p>
+<ul>
+<li>预训练语义保留在三条流里；</li>
+<li>「谁对谁重要、轻重占比、Ab–Ag 是否兼容」由窄小互作头学习；</li>
+<li><strong>零样本</strong>：权重固定，直接对 CSV 打分；</li>
+<li><strong>少样本</strong>：用少量带标本复合物微调互作头（验证集早停，独立测试集评估）。</li>
+</ul>
+<p>可解释性侧，<strong>Integrated Gradients</strong> 对最终 (s)（或 (\mathrm{p}K_{\mathrm{d}})）做残基级归因， README 报告能高保真回收已知副位 &#x2F; 表位残基；notebook 还可把高归因位点映射到三维结构（py3Dmol）上高亮。</p>
+<hr>
+<h2 id="4-数据、评测与报告性能"><a href="#4-数据、评测与报告性能" class="headerlink" title="4. 数据、评测与报告性能"></a>4. 数据、评测与报告性能</h2><h3 id="4-1-输入格式"><a href="#4-1-输入格式" class="headerlink" title="4.1 输入格式"></a>4.1 输入格式</h3><p>所有配对表与自定义 CSV 统一四列：</p>
+<table>
+<thead>
+<tr>
+<th>列</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>light</code></td>
+<td>轻链氨基酸序列（纳米抗体可空，运行时回退复用重链）</td>
+</tr>
+<tr>
+<td><code>heavy</code></td>
+<td>重链氨基酸序列</td>
+</tr>
+<tr>
+<td><code>antigen</code></td>
+<td>抗原氨基酸序列</td>
+</tr>
+<tr>
+<td><code>Y</code></td>
+<td>亲和力标签，单位 (\mathrm{p}K_{\mathrm{d}})</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-基准与划分"><a href="#4-2-基准与划分" class="headerlink" title="4.2 基准与划分"></a>4.2 基准与划分</h3><table>
+<thead>
+<tr>
+<th>数据场景</th>
+<th>用途</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>SAaIntDB</strong></td>
+<td>主训 &#x2F; 主报</td>
+<td>10-fold CV；<code>random</code>（行级）与 <code>cold</code>（按 PDB_ID，禁同复合物泄漏）</td>
+</tr>
+<tr>
+<td><strong>SAbDab &#x2F; AB-Bind &#x2F; SKEMPI</strong></td>
+<td>MVSF-AB 外部基准</td>
+<td><code>configs/benchmark/</code>；可 SAbDab 全量训练、外推到 held-out 集合</td>
+</tr>
+<tr>
+<td>预构建缓存</td>
+<td>复现</td>
+<td><code>data/allcdr_natural_650M.pkl</code>、<code>allcdr_mutation_650M.pkl</code>、<code>esm2_embeddings_saaintdb_650M.pkl</code> 等</td>
+</tr>
+</tbody></table>
+<p>终版权重：<code>model_weights/saaintdb_allcdr_random_bestfold.pt</code>（SAaIntDB All-CDR，random 划分最佳 fold）。</p>
+<h3 id="4-3-SAaIntDB-上报告数字"><a href="#4-3-SAaIntDB-上报告数字" class="headerlink" title="4.3 SAaIntDB 上报告数字"></a>4.3 SAaIntDB 上报告数字</h3><p>十折交叉验证（仓库 README）：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>均值 ± 标准差</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pearson (r)</td>
+<td><strong>0.858 ± 0.006</strong></td>
+</tr>
+<tr>
+<td>Spearman (\rho)</td>
+<td><strong>0.844 ± 0.009</strong></td>
+</tr>
+<tr>
+<td>RMSE</td>
+<td><strong>0.694 ± 0.014</strong></td>
+</tr>
+</tbody></table>
+<p>消融表明 CDR 池化、轻重分解、真实抗原与门控通路均不可省。外部变异图谱与基准上迁移有效，支撑结构不全时的零 &#x2F; 少样本亲和力成熟筛查。绝对 (\mathrm{p}K_{\mathrm{d}}) 仍受同源复合物泄漏与批次标签噪声影响，<strong>cold 划分结果</strong>更接近配对面泛化能力。</p>
+<hr>
+<h2 id="5-应用场景"><a href="#5-应用场景" class="headerlink" title="5. 应用场景"></a>5. 应用场景</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>怎么用 AbAffinity</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>序列库规模初筛</strong></td>
+<td>无结构、仅序列，批量零样本 (\mathrm{p}K_{\mathrm{d}}) &#x2F; 排序</td>
+<td>优先看相对排序，绝对值需 SPR&#x2F;BLI 校准</td>
+</tr>
+<tr>
+<td><strong>亲和力成熟突变扫描</strong></td>
+<td>固定抗原，突变库走 few-shot 微调后打分</td>
+<td>标签尽量同平台（都是 (\mathrm{p}K_{\mathrm{d}})），勿混 ELISA (EC_{50})</td>
+</tr>
+<tr>
+<td><strong>纳米抗体工程</strong></td>
+<td>无 light 时自动复用 heavy 槽</td>
+<td>与常规 VH–VL 同一模型</td>
+</tr>
+<tr>
+<td><strong>副位 &#x2F; 表位线索</strong></td>
+<td>IG 归因 + 可选结构映射</td>
+<td>归因 ≠ 实验表位，需实验验证</td>
+</tr>
+<tr>
+<td><strong>BCR &#x2F; 组库分析</strong></td>
+<td>对配对序列批量估结合倾向</td>
+<td>缺乏真实抗原序列时不可硬套</td>
+</tr>
+</tbody></table>
+<p>在工具谱系中，AbAffinity 属于<strong>序列 + PLM + 结构感知互作头</strong>一类：不做 ΔΔG 物理能量（FoldX）、也不依赖全原子复合物图网络；更接近「可解释的三塔互作回归器」。选型时可与 <a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-04.%E5%B7%A5%E5%85%B7-01.%E6%8A%97%E4%BD%93%E4%BA%B2%E5%92%8C%E5%8A%9B%E9%A2%84%E6%B5%8B%E5%B7%A5%E5%85%B7%E8%B0%83%E7%A0%94%E7%BB%BC%E8%BF%B0.md">抗体工具综述</a> 中的排序任务、结构 ML 方法对照。</p>
+<hr>
+<h2 id="6-安装与使用"><a href="#6-安装与使用" class="headerlink" title="6. 安装与使用"></a>6. 安装与使用</h2><h3 id="6-1-环境"><a href="#6-1-环境" class="headerlink" title="6.1 环境"></a>6.1 环境</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/harshitsinghsnu/AbAffinity.git</span><br><span class="line"><span class="built_in">cd</span> AbAffinity</span><br><span class="line">conda <span class="built_in">env</span> create -f environment.yml   <span class="comment"># 与报告数字一致的 pin</span></span><br><span class="line">conda activate AbAffinity</span><br><span class="line"><span class="comment"># CUDA 12.1 示例：</span></span><br><span class="line"><span class="comment"># pip install torch==2.2.1 --index-url https://download.pytorch.org/whl/cu121</span></span><br><span class="line">pip install -e .</span><br></pre></td></tr></table></figure>
+
+<p>核心依赖：Python 3.10、PyTorch 2.2、<code>transformers</code>（ESM-2）、<code>captum</code>（IG）、<code>biopython</code>、<code>ANARCI</code>（IMGT 编号）、<code>py3Dmol</code>（notebook 三维展示）。</p>
+<h3 id="6-2-最快路径：自定义数据-notebook"><a href="#6-2-最快路径：自定义数据-notebook" class="headerlink" title="6.2 最快路径：自定义数据 notebook"></a>6.2 最快路径：自定义数据 notebook</h3><p>仓库推荐入口：<code>notebooks/AgAbGated_Custom_ZeroShot_FewShot_IG.ipynb</code>（README 中的 <a target="_blank" rel="noopener" href="https://colab.research.google.com/github/harshitsinghsnu/AgAbAffinity/blob/main/notebooks/AgAbGated_Custom_ZeroShot_FewShot_IG.ipynb">Open in Colab</a>）。</p>
+<p>流程一键覆盖：</p>
+<ol>
+<li><strong>Zero-shot</strong>：加载 <code>saaintdb_allcdr_random_bestfold.pt</code>，对 CSV 预测并报告 Pearson &#x2F; Spearman &#x2F; RMSE；</li>
+<li><strong>Few-shot</strong>：用部分标签微调互作头，验证集早停，留出测试集；</li>
+<li><strong>IG 热图</strong>：残基级归因；</li>
+<li><strong>结构映射</strong>：高归因残基叠到三维结构内联显示。</li>
+</ol>
+<p>内置 60 个 SAaIntDB 样本可直接跑；换 <code>DATA_CSV</code> 或 Colab 上传即可换自家序列。ESM-2 嵌入步建议 GPU，纯 CPU 也能完成。</p>
+<h3 id="6-3-命令行复现训练-基准"><a href="#6-3-命令行复现训练-基准" class="headerlink" title="6.3 命令行复现训练 &#x2F; 基准"></a>6.3 命令行复现训练 &#x2F; 基准</h3><p><strong>SAaIntDB（多 seed）</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">python -m AbAffinity.training.run_saaintdb_multiseed \</span><br><span class="line">  --config configs/saaintdb/sa_ours_allcdr_random.yaml</span><br><span class="line"></span><br><span class="line">python -m AbAffinity.training.run_saaintdb_multiseed \</span><br><span class="line">  --config configs/saaintdb/sa_ours_allcdr_cold.yaml</span><br></pre></td></tr></table></figure>
+
+<p>默认 seed <code>42 114 144</code>，结果写到 <code>results/results_saaintdb/&lt;name&gt;/aggregated_summary.csv</code>。</p>
+<p><strong>外部 MVSF-AB 数据集</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SAbDab / AB-Bind / SKEMPI 十折 CV</span></span><br><span class="line">python -m AbAffinity.training.run_multiseed \</span><br><span class="line">  --config configs/benchmark/exp02_ours_allcdr_cv.yaml</span><br><span class="line"></span><br><span class="line"><span class="comment"># SAbDab 全量训练 → held-out 外推</span></span><br><span class="line">python -m AbAffinity.training.run_multiseed \</span><br><span class="line">  --config configs/benchmark/exp04_ours_allcdr_benchmark.yaml</span><br><span class="line"></span><br><span class="line"><span class="comment"># 跑全部 benchmark 配置</span></span><br><span class="line">python -m AbAffinity.training.run_multiseed --all</span><br></pre></td></tr></table></figure>
+
+<p><strong>仅当改动原始序列、需重建缓存时</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">python -m AbAffinity.data_prep.precompute_embeddings_saaintdb</span><br><span class="line">python -m AbAffinity.data_prep.precompute_allcdr_cache</span><br></pre></td></tr></table></figure>
+
+<p>官方默认可直接用 <code>data/</code> 下已发布的 pickle，无需重算。</p>
+<h3 id="6-4-仓库布局（inker-入口）"><a href="#6-4-仓库布局（inker-入口）" class="headerlink" title="6.4 仓库布局（inker 入口）"></a>6.4 仓库布局（inker 入口）</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">AbAffinity/</span><br><span class="line">├── AbAffinity/</span><br><span class="line">│   ├── models/          # MutualTriStreamStrong 及变体</span><br><span class="line">│   ├── utils/           # 数据、指标、训练循环</span><br><span class="line">│   ├── training/        # CV / 多 seed / 消融 runner</span><br><span class="line">│   ├── explain/         # IG 归因、门重要性</span><br><span class="line">│   └── data_prep/       # ESM-2 / All-CDR 缓存预计算</span><br><span class="line">├── configs/             # saaintdb / benchmark YAML</span><br><span class="line">├── data/                # 表与预计算嵌入</span><br><span class="line">├── model_weights/       # 终版权重</span><br><span class="line">└── notebooks/           # 自定义 / 画图 / 可解释性</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="7-局限与实践建议"><a href="#7-局限与实践建议" class="headerlink" title="7. 局限与实践建议"></a>7. 局限与实践建议</h2><ol>
+<li><strong>强依赖 (\mathrm{p}K_{\mathrm{d}}) 尺度一致性</strong>：与 ELISA (EC_{50})、混批次标签勿直接回归同一目标。</li>
+<li><strong>随机划分可Optimistic</strong>：评估泛化请同时看 <strong>cold（按 PDB）</strong> 结果。</li>
+<li><strong>抗原序列必须是真实抗原</strong>：消融表明真实抗原输入关键；用错误 IDs 当抗原会系统性偏置。</li>
+<li><strong>默认立体化学之外的：没有三维几何</strong>——顺反立体、糖基化、多聚状态等不在模型内；结构侧信息应用 IG 做后验检查而非替代。</li>
+<li><strong>长抗原 mean-pool 会稀释表位信号</strong>：超长抗原可考虑裁切已知结构域再输入。</li>
+</ol>
+<p>实践上：<strong>零样本先排序 → 少量本靶点标点做 few-shot → IG 圈副位突变亮点 → SPR&#x2F;BLI 验证</strong> 是一条可持续的闭环。</p>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>输入</strong></td>
+<td>light + heavy + antigen 序列；标签 (\mathrm{p}K_{\mathrm{d}})</td>
+</tr>
+<tr>
+<td><strong>表征</strong></td>
+<td>冻结 ESM-2（650M）；重链 All-CDR，轻 &#x2F; 抗 mean pool</td>
+</tr>
+<tr>
+<td><strong>核心</strong></td>
+<td>三流投影 + 轻重自注意力与融合门 + 门控双向 Ab↔Ag 交叉注意力</td>
+</tr>
+<tr>
+<td><strong>读出</strong></td>
+<td>双头 L2 归一向量之间的余弦相似度，映射到 (\mathrm{p}K_{\mathrm{d}})</td>
+</tr>
+<tr>
+<td><strong>优势</strong></td>
+<td>无结构、可解释（IG）、纳秒抗体兼容、零 &#x2F; 少样本迁移</td>
+</tr>
+<tr>
+<td><strong>适用</strong></td>
+<td>库筛、亲和力成熟初排、结构缺失时的序列友好流程</td>
+</tr>
+</tbody></table>
+<p>AbAffinity 把抗体亲和力问题收成「<strong>三流 PLM 指纹 + 窄小门控互作模块</strong>」：语义由 ESM-2 承担，配对与兼容性由可学习的两跳互作（轻重融合 → Ab–Ag 门控）承担。需要结构级物理直觉时仍应回 <a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-03.%E4%BA%92%E4%BD%9C-01.%E6%8A%97%E4%BD%93%E6%8A%97%E5%8E%9F%E4%BA%92%E4%BD%9C%E5%8E%9F%E7%90%86%E4%BB%8B%E7%BB%8D.md">互作原理</a> 与湿实验平台；需要算库规模序列分数时，本文给出的架构与命令即可作为落地起点。</p>
+<hr>
+<h2 id="参考文献与链接"><a href="#参考文献与链接" class="headerlink" title="参考文献与链接"></a>参考文献与链接</h2><ol>
+<li>AbAffinity 代码与文档：<a target="_blank" rel="noopener" href="https://github.com/harshitsinghsnu/AbAffinity">https://github.com/harshitsinghsnu/AbAffinity</a></li>
+<li>ESM-2：Lin et al., <em>Science</em> (2023) — Language models of protein sequences at the scale of evolution</li>
+<li>Captum（Integrated Gradients）：<a target="_blank" rel="noopener" href="https://captum.ai/">https://captum.ai/</a></li>
+<li>ANARCI &#x2F; IMGT 编号：Dunbar &amp; Deane, <em>Bioinformatics</em> (2016)</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ESM-2/" rel="tag"><i class="fa fa-tag"></i> ESM-2</a>
+          
+            <a href="/tags/%E6%8A%97%E4%BD%93/" rel="tag"><i class="fa fa-tag"></i> 抗体</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/AbAffinity/" rel="tag"><i class="fa fa-tag"></i> AbAffinity</a>
+          
+            <a href="/tags/%E4%BA%B2%E5%92%8C%E5%8A%9B%E9%A2%84%E6%B5%8B/" rel="tag"><i class="fa fa-tag"></i> 亲和力预测</a>
+          
+            <a href="/tags/%E4%BA%A4%E5%8F%89%E6%B3%A8%E6%84%8F%E5%8A%9B/" rel="tag"><i class="fa fa-tag"></i> 交叉注意力</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-28.%E5%A4%9A%E7%9B%AE%E6%A0%87%E4%BC%98%E5%8C%96/MOO-03.%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95/" rel="next" title="MOO-03.遗传算法">
+                <i class="fa fa-chevron-left"></i> MOO-03.遗传算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-04.%E5%B7%A5%E5%85%B7-04.ANARCI-%E6%8A%97%E4%BD%93%E7%BB%93%E6%9E%84%E6%B3%A8%E9%87%8A%E5%B7%A5%E5%85%B7%E7%A7%91%E6%99%AE/" rel="prev" title="只有氨基酸序列？ANARCI 入门：本地编号、CDR 边界与 Python 用法">
+                只有氨基酸序列？ANARCI 入门：本地编号、CDR 边界与 Python 用法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%A6%81%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">1. 要解决什么问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">2. 框架架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%B8%89%E6%B5%81%E8%BE%93%E5%85%A5%E4%B8%8E%E5%86%BB%E7%BB%93%E8%AF%AD%E8%A8%80%E8%A1%A8%E5%BE%81"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 三流输入与冻结语言表征</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E4%B8%89%E8%B7%AF%E6%8A%95%E5%BD%B1%E4%B8%8E%E8%BD%BB%E9%87%8D%E8%9E%8D%E5%90%88"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 三路投影与轻重融合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E9%97%A8%E6%8E%A7%E5%8F%8C%E5%90%91%E4%BA%A4%E5%8F%89%E6%B3%A8%E6%84%8F%E5%8A%9B"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 门控双向交叉注意力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E5%8F%8C%E5%A4%B4%E4%BD%99%E5%BC%A6%E8%AF%BB%E5%87%BA%E4%B8%8E-mathrm-p-K-mathrm-d-%E6%A0%87%E5%AE%9A"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 双头余弦读出与 (\mathrm{p}K_{\mathrm{d}}) 标定</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%EF%BC%9A%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%8E%A8%E6%BC%94"><span class="nav-number">3.</span> <span class="nav-text">3. 工作原理：端到端推演</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E3%80%81%E8%AF%84%E6%B5%8B%E4%B8%8E%E6%8A%A5%E5%91%8A%E6%80%A7%E8%83%BD"><span class="nav-number">4.</span> <span class="nav-text">4. 数据、评测与报告性能</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E8%BE%93%E5%85%A5%E6%A0%BC%E5%BC%8F"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 输入格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%9F%BA%E5%87%86%E4%B8%8E%E5%88%92%E5%88%86"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 基准与划分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-SAaIntDB-%E4%B8%8A%E6%8A%A5%E5%91%8A%E6%95%B0%E5%AD%97"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 SAaIntDB 上报告数字</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">5.</span> <span class="nav-text">5. 应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%AE%89%E8%A3%85%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="nav-number">6.</span> <span class="nav-text">6. 安装与使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E7%8E%AF%E5%A2%83"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E6%9C%80%E5%BF%AB%E8%B7%AF%E5%BE%84%EF%BC%9A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%95%B0%E6%8D%AE-notebook"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 最快路径：自定义数据 notebook</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%A4%8D%E7%8E%B0%E8%AE%AD%E7%BB%83-%E5%9F%BA%E5%87%86"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 命令行复现训练 &#x2F; 基准</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E4%BB%93%E5%BA%93%E5%B8%83%E5%B1%80%EF%BC%88inker-%E5%85%A5%E5%8F%A3%EF%BC%89"><span class="nav-number">6.4.</span> <span class="nav-text">6.4 仓库布局（inker 入口）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B1%80%E9%99%90%E4%B8%8E%E5%AE%9E%E8%B7%B5%E5%BB%BA%E8%AE%AE"><span class="nav-number">7.</span> <span class="nav-text">7. 局限与实践建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">8. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%E4%B8%8E%E9%93%BE%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">参考文献与链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

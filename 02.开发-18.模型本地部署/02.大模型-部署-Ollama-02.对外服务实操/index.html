@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,本地部署,Ollama,API," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="从安装、拉取模型、启动服务到 REST&#x2F;OpenAI 兼容 API 调用，说明如何用 Ollama 把本地大模型部署成可供局域网或公网访问的推理服务，并覆盖安全与常见接入方式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大模型部署：用 Ollama 对外提供 API 服务实操">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-18.%E6%A8%A1%E5%9E%8B%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2/02.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E9%83%A8%E7%BD%B2-Ollama-02.%E5%AF%B9%E5%A4%96%E6%9C%8D%E5%8A%A1%E5%AE%9E%E6%93%8D/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="从安装、拉取模型、启动服务到 REST&#x2F;OpenAI 兼容 API 调用，说明如何用 Ollama 把本地大模型部署成可供局域网或公网访问的推理服务，并覆盖安全与常见接入方式。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-24T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.988Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="API">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="Ollama">
+<meta property="article:tag" content="本地部署">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-18.模型本地部署/02.大模型-部署-Ollama-02.对外服务实操/"/>
+
+
+
+
+
+  <title>大模型部署：用 Ollama 对外提供 API 服务实操 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-18.%E6%A8%A1%E5%9E%8B%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2/02.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E9%83%A8%E7%BD%B2-Ollama-02.%E5%AF%B9%E5%A4%96%E6%9C%8D%E5%8A%A1%E5%AE%9E%E6%93%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">大模型部署：用 Ollama 对外提供 API 服务实操</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-24T10:00:00+08:00">
+                2026-06-24
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  从安装、拉取模型、启动服务到 REST/OpenAI 兼容 API 调用，说明如何用 Ollama 把本地大模型部署成可供局域网或公网访问的推理服务，并覆盖安全与常见接入方式。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><a href="./5011.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E9%83%A8%E7%BD%B2-%E9%83%A8%E7%BD%B2%E5%B7%A5%E5%85%B7-Ollama.md">5011.大模型-部署-部署工具-Ollama</a> 侧重 Ollama 是什么、常用命令与 Modelfile 定制。本文接续同一条链路，聚焦一件事：<strong>装好之后，如何让其他程序、其他机器通过 HTTP API 调用你本地的模型</strong>。</p>
+<blockquote>
+<p>段末注释：<strong>Ollama</strong> 是基于 llama.cpp 等引擎的本地大模型运行时，内置模型拉取、量化标签管理与 HTTP 服务；默认监听 <code>11434</code> 端口。</p>
+</blockquote>
+<p>整体路径：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">安装 Ollama → pull 模型 → serve（自动或手动）→ 本机 API 冒烟</span><br><span class="line">  → 配置 OLLAMA_HOST 开放局域网 → 反向代理 + 鉴权（公网可选）</span><br><span class="line">  → 业务侧用 curl / OpenAI SDK / Open WebUI 接入</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="一、安装与确认服务已启动"><a href="#一、安装与确认服务已启动" class="headerlink" title="一、安装与确认服务已启动"></a>一、安装与确认服务已启动</h2><h3 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h3><p>在本机安装 Ollama，并确认后台 HTTP 服务可用。</p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p><strong>macOS &#x2F; Windows</strong>：从 <a target="_blank" rel="noopener" href="https://ollama.com/download">Ollama 官网</a> 下载安装包，安装后菜单栏或系统服务会自动拉起 <code>ollama serve</code>。</p>
+<p><strong>Linux</strong>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -fsSL https://ollama.com/install.sh | sh   # 官方一键安装脚本</span><br><span class="line">sudo systemctl enable ollama                  # 开机自启（多数发行版）</span><br><span class="line">sudo systemctl start ollama</span><br></pre></td></tr></table></figure>
+
+<p>验证服务：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/api/version</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">期望返回 JSON，含 ollama 版本号</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="结果里盯什么"><a href="#结果里盯什么" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><ul>
+<li>能访问 <code>http://127.0.0.1:11434</code> 说明 <strong>API 服务已起来</strong>（与是否在终端里 <code>ollama run</code> 无关）。</li>
+<li>Linux 上若 <code>curl</code> 失败，查 <code>systemctl status ollama</code> 或手动 <code>ollama serve</code>。</li>
+</ul>
+<hr>
+<h2 id="二、拉取并加载模型"><a href="#二、拉取并加载模型" class="headerlink" title="二、拉取并加载模型"></a>二、拉取并加载模型</h2><h3 id="目标-1"><a href="#目标-1" class="headerlink" title="目标"></a>目标</h3><p>把要对外提供的模型权重下载到本机，并确认能正常推理。</p>
+<h3 id="方法-1"><a href="#方法-1" class="headerlink" title="方法"></a>方法</h3><p>Ollama 用 <strong><code>模型名:标签</code></strong> 标识版本（类似 Docker 镜像）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ollama pull qwen2.5:7b          # 拉取 Qwen2.5 7B 量化版（标签省略时多为 latest）</span><br><span class="line">ollama pull llama3.2:3b         # 更小模型，适合资源紧张机器</span><br><span class="line">ollama list                     # 查看本机已有模型</span><br><span class="line">ollama show qwen2.5:7b          # 查看模型详情（参数量、量化、模板等）</span><br></pre></td></tr></table></figure>
+
+<p>首次对话测试（CLI，非必须）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama run qwen2.5:7b &quot;用一句话介绍你自己&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="模型标签怎么选"><a href="#模型标签怎么选" class="headerlink" title="模型标签怎么选"></a>模型标签怎么选</h3><table>
+<thead>
+<tr>
+<th>标签示例</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>qwen2.5:7b</code></td>
+<td>7B 参数量默认量化</td>
+</tr>
+<tr>
+<td><code>llama3.2:3b</code></td>
+<td>3B 小模型</td>
+</tr>
+<tr>
+<td><code>qwen2.5:14b</code></td>
+<td>更大参数量，显存&#x2F;内存需求更高</td>
+</tr>
+</tbody></table>
+<p>显存不足时优先换更小标签或更小模型，而不是强行拉 <code>:70b</code> 类大标签。</p>
+<h3 id="结果里盯什么-1"><a href="#结果里盯什么-1" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>ollama list</code> 中出现目标模型且 <code>ollama run</code> 能正常吐字，再进行 API 层测试。</p>
+<hr>
+<h2 id="三、本机-API-冒烟（Ollama-原生接口）"><a href="#三、本机-API-冒烟（Ollama-原生接口）" class="headerlink" title="三、本机 API 冒烟（Ollama 原生接口）"></a>三、本机 API 冒烟（Ollama 原生接口）</h2><h3 id="目标-2"><a href="#目标-2" class="headerlink" title="目标"></a>目标</h3><p>不依赖 CLI 对话，直接用 HTTP 验证「服务 + 模型」可用。</p>
+<h3 id="方法-2"><a href="#方法-2" class="headerlink" title="方法"></a>方法</h3><p><strong>列出模型</strong>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/api/tags</span><br></pre></td></tr></table></figure>
+
+<p><strong>对话补全</strong>（Ollama 原生 <code>/api/chat</code>）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/api/chat -d &#x27;&#123;</span><br><span class="line">  &quot;model&quot;: &quot;qwen2.5:7b&quot;,</span><br><span class="line">  &quot;messages&quot;: [</span><br><span class="line">    &#123;&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;天空为什么是蓝色的？用一句话回答。&quot;&#125;</span><br><span class="line">  ],</span><br><span class="line">  &quot;stream&quot;: false</span><br><span class="line">&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><strong>流式输出</strong>（<code>stream: true</code> 时返回 NDJSON，逐 chunk 推送）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/api/chat -d &#x27;&#123;</span><br><span class="line">  &quot;model&quot;: &quot;qwen2.5:7b&quot;,</span><br><span class="line">  &quot;messages&quot;: [&#123;&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;数到 5&quot;&#125;],</span><br><span class="line">  &quot;stream&quot;: true</span><br><span class="line">&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><strong>文本补全</strong>（<code>/api/generate</code>，单轮 prompt，无 messages 结构）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/api/generate -d &#x27;&#123;</span><br><span class="line">  &quot;model&quot;: &quot;qwen2.5:7b&quot;,</span><br><span class="line">  &quot;prompt&quot;: &quot;写一首关于春天的五言绝句：&quot;,</span><br><span class="line">  &quot;stream&quot;: false</span><br><span class="line">&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<h3 id="常用-API-端点"><a href="#常用-API-端点" class="headerlink" title="常用 API 端点"></a>常用 API 端点</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路径</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/tags</code></td>
+<td>列出本地模型</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/chat</code></td>
+<td>多轮对话（推荐）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/generate</code></td>
+<td>单轮文本生成</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/embeddings</code></td>
+<td>文本向量（用于 RAG）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/version</code></td>
+<td>服务版本</td>
+</tr>
+</tbody></table>
+<p>完整说明见 <a target="_blank" rel="noopener" href="https://docs.ollama.com/api">Ollama API 文档</a>。</p>
+<h3 id="结果里盯什么-2"><a href="#结果里盯什么-2" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p>响应 JSON 中 <code>message.content</code>（chat）或 <code>response</code>（generate）有合理文本；<code>stream: false</code> 时一次返回完整结果。</p>
+<hr>
+<h2 id="四、OpenAI-兼容-API（业务接入首选）"><a href="#四、OpenAI-兼容-API（业务接入首选）" class="headerlink" title="四、OpenAI 兼容 API（业务接入首选）"></a>四、OpenAI 兼容 API（业务接入首选）</h2><h3 id="目标-3"><a href="#目标-3" class="headerlink" title="目标"></a>目标</h3><p>让现有基于 <strong>OpenAI SDK</strong> 的代码只改 <code>base_url</code> 即可调用本地 Ollama。</p>
+<h3 id="方法-3"><a href="#方法-3" class="headerlink" title="方法"></a>方法</h3><p>Ollama 在 <strong><code>/v1</code></strong> 路径提供 OpenAI 兼容接口，默认地址：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://127.0.0.1:11434/v1</span><br></pre></td></tr></table></figure>
+
+<p><strong>curl 示例</strong>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/v1/chat/completions \</span><br><span class="line">  -H &quot;Content-Type: application/json&quot; \</span><br><span class="line">  -d &#x27;&#123;</span><br><span class="line">    &quot;model&quot;: &quot;qwen2.5:7b&quot;,</span><br><span class="line">    &quot;messages&quot;: [&#123;&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello&quot;&#125;],</span><br><span class="line">    &quot;stream&quot;: false</span><br><span class="line">  &#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Python（openai 库）</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> openai <span class="keyword">import</span> OpenAI</span><br><span class="line"></span><br><span class="line">client = OpenAI(</span><br><span class="line">    base_url=<span class="string">&quot;http://127.0.0.1:11434/v1&quot;</span>,</span><br><span class="line">    api_key=<span class="string">&quot;ollama&quot;</span>,   <span class="comment"># Ollama 不校验 key，但 SDK 要求非空，任意字符串即可</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">resp = client.chat.completions.create(</span><br><span class="line">    model=<span class="string">&quot;qwen2.5:7b&quot;</span>,</span><br><span class="line">    messages=[&#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;用中文说你好&quot;</span>&#125;],</span><br><span class="line">)</span><br><span class="line"><span class="built_in">print</span>(resp.choices[<span class="number">0</span>].message.content)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Node.js</strong>：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="title class_">OpenAI</span> <span class="keyword">from</span> <span class="string">&quot;openai&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> client = <span class="keyword">new</span> <span class="title class_">OpenAI</span>(&#123;</span><br><span class="line">  <span class="attr">baseURL</span>: <span class="string">&quot;http://127.0.0.1:11434/v1&quot;</span>,</span><br><span class="line">  <span class="attr">apiKey</span>: <span class="string">&quot;ollama&quot;</span>,</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> completion = <span class="keyword">await</span> client.<span class="property">chat</span>.<span class="property">completions</span>.<span class="title function_">create</span>(&#123;</span><br><span class="line">  <span class="attr">model</span>: <span class="string">&quot;qwen2.5:7b&quot;</span>,</span><br><span class="line">  <span class="attr">messages</span>: [&#123; <span class="attr">role</span>: <span class="string">&quot;user&quot;</span>, <span class="attr">content</span>: <span class="string">&quot;Hello&quot;</span> &#125;],</span><br><span class="line">&#125;);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(completion.<span class="property">choices</span>[<span class="number">0</span>].<span class="property">message</span>.<span class="property">content</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="与原生-API-的对应关系"><a href="#与原生-API-的对应关系" class="headerlink" title="与原生 API 的对应关系"></a>与原生 API 的对应关系</h3><table>
+<thead>
+<tr>
+<th>OpenAI 端点</th>
+<th>Ollama 支持</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST /v1/chat/completions</code></td>
+<td>是</td>
+<td>最常用</td>
+</tr>
+<tr>
+<td><code>POST /v1/embeddings</code></td>
+<td>是</td>
+<td>RAG 向量化</td>
+</tr>
+<tr>
+<td><code>POST /v1/completions</code></td>
+<td>部分</td>
+<td>视版本而定，优先用 chat</td>
+</tr>
+</tbody></table>
+<h3 id="结果里盯什么-3"><a href="#结果里盯什么-3" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>choices[0].message.content</code> 有内容；业务代码只需把云端 <code>base_url</code> 换成本机 <code>11434/v1</code> 即可做本地联调。</p>
+<hr>
+<h2 id="五、对局域网-其他容器开放服务"><a href="#五、对局域网-其他容器开放服务" class="headerlink" title="五、对局域网 &#x2F; 其他容器开放服务"></a>五、对局域网 &#x2F; 其他容器开放服务</h2><h3 id="目标-4"><a href="#目标-4" class="headerlink" title="目标"></a>目标</h3><p>让同一局域网内的其他机器、或 Docker 里的应用（如 Open WebUI、n8n）能访问本机 Ollama。</p>
+<h3 id="方法-4"><a href="#方法-4" class="headerlink" title="方法"></a>方法</h3><p>默认 Ollama <strong>只监听 <code>127.0.0.1</code></strong>。要对外监听需设置环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export OLLAMA_HOST=0.0.0.0:11434   # 监听所有网卡，端口 11434</span><br><span class="line">ollama serve</span><br></pre></td></tr></table></figure>
+
+<p><strong>Linux systemd 持久化</strong>：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># /etc/systemd/system/ollama.service.d/override.conf</span></span><br><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;OLLAMA_HOST=0.0.0.0:11434&quot;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo systemctl daemon-reload</span><br><span class="line">sudo systemctl restart ollama</span><br></pre></td></tr></table></figure>
+
+<p>局域网内其他机器测试（将 <code>192.168.1.100</code> 换成宿主机 IP）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl http://192.168.1.100:11434/api/tags</span><br></pre></td></tr></table></figure>
+
+<p><strong>Docker 中的 Open WebUI 连接宿主机 Ollama</strong>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name open-webui \</span><br><span class="line">  -p 3000:8080 \</span><br><span class="line">  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \</span><br><span class="line">  --add-host=host.docker.internal:host-gateway \</span><br><span class="line">  -v open-webui:/app/backend/data \</span><br><span class="line">  ghcr.io/open-webui/open-webui:main</span><br></pre></td></tr></table></figure>
+
+<p>浏览器访问 <code>http://localhost:3000</code>，即可通过 Web UI 使用本机 Ollama 模型。</p>
+<h3 id="安全注意"><a href="#安全注意" class="headerlink" title="安全注意"></a>安全注意</h3><p><code>OLLAMA_HOST=0.0.0.0</code> 后，<strong>同一网段内任何设备均可无鉴权调用你的 GPU</strong>。仅限受信局域网使用；上公网必须加防火墙或反向代理鉴权（下一节）。</p>
+<h3 id="结果里盯什么-4"><a href="#结果里盯什么-4" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><ul>
+<li>局域网他机 <code>curl http://&lt;宿主机IP&gt;:11434/api/tags</code> 成功。</li>
+<li>Open WebUI 能列出并对话本机模型。</li>
+</ul>
+<hr>
+<h2 id="六、公网暴露与安全（可选）"><a href="#六、公网暴露与安全（可选）" class="headerlink" title="六、公网暴露与安全（可选）"></a>六、公网暴露与安全（可选）</h2><h3 id="目标-5"><a href="#目标-5" class="headerlink" title="目标"></a>目标</h3><p>若需从公网访问（VPS、内网穿透），在开放端口的同时避免裸奔 GPU。</p>
+<h3 id="原则"><a href="#原则" class="headerlink" title="原则"></a>原则</h3><p>Ollama <strong>没有内置 API Key 鉴权</strong>。公网方案三选一（可组合）：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>做法</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>防火墙白名单</td>
+<td>仅允许固定 IP 访问 11434</td>
+<td>固定办公 IP 远程调试用</td>
+</tr>
+<tr>
+<td>反向代理 + 鉴权</td>
+<td>Nginx&#x2F;Caddy + TLS + Basic Auth 或 Bearer</td>
+<td>小团队共享</td>
+</tr>
+<tr>
+<td>VPN</td>
+<td>WireGuard &#x2F; Tailscale，Ollama 仍只监听内网</td>
+<td>最安全，推荐生产</td>
+</tr>
+</tbody></table>
+<p><strong>Nginx 反向代理示意</strong>（Ollama 仍只绑 <code>127.0.0.1:11434</code>）：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">443</span> ssl;</span><br><span class="line">    <span class="attribute">server_name</span> llm.example.com;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">ssl_certificate</span>     /path/to/fullchain.pem;</span><br><span class="line">    <span class="attribute">ssl_certificate_key</span> /path/to/privkey.pem;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">auth_basic</span> <span class="string">&quot;Ollama&quot;</span>;</span><br><span class="line">    <span class="attribute">auth_basic_user_file</span> /etc/nginx/.htpasswd;</span><br><span class="line"></span><br><span class="line">    <span class="section">location</span> / &#123;</span><br><span class="line">        <span class="attribute">proxy_pass</span> http://127.0.0.1:11434;</span><br><span class="line">        <span class="attribute">proxy_http_version</span> <span class="number">1</span>.<span class="number">1</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Host <span class="variable">$host</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Real-IP <span class="variable">$remote_addr</span>;</span><br><span class="line">        <span class="attribute">proxy_buffering</span> <span class="literal">off</span>;          <span class="comment"># 流式响应必须关闭缓冲</span></span><br><span class="line">        <span class="attribute">proxy_read_timeout</span> <span class="number">300s</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>生成 Basic Auth 密码文件：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install apache2-utils</span><br><span class="line">sudo htpasswd -c /etc/nginx/.htpasswd your_username</span><br></pre></td></tr></table></figure>
+
+<p>客户端经 HTTPS 访问 <code>https://llm.example.com/v1/chat/completions</code>，并在请求头或代理层带上认证信息。</p>
+<h3 id="结果里盯什么-5"><a href="#结果里盯什么-5" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><ul>
+<li>公网未授权 IP 无法直接打到 Ollama。</li>
+<li>流式对话在代理后仍正常逐字输出（<code>proxy_buffering off</code>）。</li>
+</ul>
+<hr>
+<h2 id="七、自定义模型与-LoRA-adapter-对外服务"><a href="#七、自定义模型与-LoRA-adapter-对外服务" class="headerlink" title="七、自定义模型与 LoRA adapter 对外服务"></a>七、自定义模型与 LoRA adapter 对外服务</h2><h3 id="目标-6"><a href="#目标-6" class="headerlink" title="目标"></a>目标</h3><p>不仅使用官方库模型，还把自有 GGUF 或 LoRA 打成 Ollama 模型名，API 层统一用 <code>model</code> 字段调用。</p>
+<h3 id="方法-5"><a href="#方法-5" class="headerlink" title="方法"></a>方法</h3><p>编写 <strong>Modelfile</strong>（类似 Dockerfile）：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从官方模型衍生，改 system prompt</span></span><br><span class="line"><span class="keyword">FROM</span> qwen2.<span class="number">5</span>:<span class="number">7</span>b</span><br><span class="line">SYSTEM <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">你是一个简洁的技术助手，回答用中文，不超过 200 字。</span></span><br><span class="line"><span class="string">&quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">PARAMETER temperature <span class="number">0.3</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ollama create my-qwen-assistant -f ./Modelfile</span><br><span class="line">ollama run my-qwen-assistant &quot;什么是 LoRA？&quot;</span><br></pre></td></tr></table></figure>
+
+<p>API 调用时把 <code>model</code> 换成自定义名即可：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:11434/api/chat -d &#x27;&#123;</span><br><span class="line">  &quot;model&quot;: &quot;my-qwen-assistant&quot;,</span><br><span class="line">  &quot;messages&quot;: [&#123;&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;你好&quot;&#125;],</span><br><span class="line">  &quot;stream&quot;: false</span><br><span class="line">&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><strong>从本地 GGUF 导入</strong>：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> ./models/my-model.Q4_K_M.gguf</span><br></pre></td></tr></table></figure>
+
+<p><strong>挂载 LoRA adapter</strong>（需 Ollama 版本支持 <code>ADAPTER</code> 指令）：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> qwen2.<span class="number">5</span>:<span class="number">7</span>b</span><br><span class="line">ADAPTER ./adapters/my-lora.bin</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama create my-finetuned -f ./Modelfile</span><br></pre></td></tr></table></figure>
+
+<p>Modelfile 全量参数见 <a target="_blank" rel="noopener" href="https://github.com/ollama/ollama/blob/main/docs/modelfile.md">官方文档</a>。</p>
+<h3 id="结果里盯什么-6"><a href="#结果里盯什么-6" class="headerlink" title="结果里盯什么"></a>结果里盯什么</h3><p><code>ollama list</code> 出现自定义模型名；<code>/api/chat</code> 与 <code>/v1/chat/completions</code> 均能用该名称调用。</p>
+<hr>
+<h2 id="八、与选型文档的关系"><a href="#八、与选型文档的关系" class="headerlink" title="八、与选型文档的关系"></a>八、与选型文档的关系</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>更合适的工具</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>本机 &#x2F; 小团队快速起 API、改 <code>base_url</code> 联调</td>
+<td><strong>Ollama</strong>（本文）</td>
+</tr>
+<tr>
+<td>高并发、多卡、生产级吞吐</td>
+<td><a href="../03.%E5%BA%94%E7%94%A8-06.AMD%E5%AE%9E%E6%88%98.md/01.%E9%80%9A%E8%BF%87AMD%E7%9A%84ROC%E8%BF%9B%E8%A1%8C%E6%A8%A1%E5%9E%8B%E9%83%A8%E7%BD%B2%E7%9A%84%E5%B0%9D%E8%AF%95.md">vLLM</a> 等</td>
+</tr>
+<tr>
+<td>仅命令行聊天、不需 HTTP</td>
+<td><code>ollama run</code> 即可（见 5011）</td>
+</tr>
+</tbody></table>
+<p>横向对比见 <a href="./00.%E6%9C%AC%E5%9C%B0LLM%E9%83%A8%E7%BD%B2%E6%A1%86%E6%9E%B6%E9%80%89%E5%9E%8B%E4%B8%8E%E6%A8%AA%E5%90%91%E5%AF%B9%E6%AF%94.md">本地 LLM 部署框架选型与横向对比</a>。</p>
+<hr>
+<h2 id="九、常见问题"><a href="#九、常见问题" class="headerlink" title="九、常见问题"></a>九、常见问题</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>对策</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>connection refused</code></td>
+<td>服务未启动</td>
+<td><code>ollama serve</code> 或检查 systemd</td>
+</tr>
+<tr>
+<td>他机访问不了</td>
+<td>默认只监听 127.0.0.1</td>
+<td>设置 <code>OLLAMA_HOST=0.0.0.0:11434</code> 并放行防火墙</td>
+</tr>
+<tr>
+<td>Open WebUI 连不上 Ollama</td>
+<td>容器网络隔离</td>
+<td><code>OLLAMA_BASE_URL=http://host.docker.internal:11434</code> + <code>host-gateway</code></td>
+</tr>
+<tr>
+<td><code>model not found</code></td>
+<td>未 pull 或名称写错</td>
+<td><code>ollama list</code> 核对，注意大小写与标签</td>
+</tr>
+<tr>
+<td>流式响应被代理截断</td>
+<td>反向代理开启缓冲</td>
+<td><code>proxy_buffering off</code></td>
+</tr>
+<tr>
+<td>OpenAI SDK 报错 api_key</td>
+<td>SDK 强制要求 key</td>
+<td>填任意非空字符串，如 <code>&quot;ollama&quot;</code></td>
+</tr>
+<tr>
+<td>显存 OOM</td>
+<td>模型过大</td>
+<td>换更小标签或更小模型</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="十、小结"><a href="#十、小结" class="headerlink" title="十、小结"></a>十、小结</h2><p>用 Ollama 对外提供服务的最小闭环：</p>
+<ol>
+<li><strong>安装</strong> → 确认 <code>11434</code> 端口 API 可用。  </li>
+<li><strong><code>ollama pull</code></strong> → 模型落盘。  </li>
+<li><strong>本机冒烟</strong> → <code>/api/chat</code> 或 <code>/v1/chat/completions</code>。  </li>
+<li><strong>业务接入</strong> → OpenAI SDK 改 <code>base_url</code> 为 <code>http://&lt;host&gt;:11434/v1</code>。  </li>
+<li><strong>扩大访问面</strong> → <code>OLLAMA_HOST=0.0.0.0</code>（局域网）；公网必须加 TLS + 鉴权或 VPN。  </li>
+<li><strong>定制</strong> → Modelfile <code>create</code> 自定义模型名，API 无感切换。</li>
+</ol>
+<p>与 <code>ollama run</code> 的 CLI 对话相比，<strong>Serving 的本质是多了一个长期运行的 HTTP 层</strong>；掌握 API 与网络暴露方式后，才能把本地模型接进 RAG、Agent、Open WebUI 和现有 OpenAI 业务代码。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2/" rel="tag"><i class="fa fa-tag"></i> 本地部署</a>
+          
+            <a href="/tags/Ollama/" rel="tag"><i class="fa fa-tag"></i> Ollama</a>
+          
+            <a href="/tags/API/" rel="tag"><i class="fa fa-tag"></i> API</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-19.%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%BE%AE%E8%B0%83/03.%E5%BE%AE%E8%B0%83%E5%B7%A5%E5%85%B7-SFTTrainer%E8%AF%A6%E8%A7%A3/" rel="next" title="SFTTrainer 详解：TRL 监督微调训练器">
+                <i class="fa fa-chevron-left"></i> SFTTrainer 详解：TRL 监督微调训练器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-02.Math/Math-08.%E6%B3%9B%E5%8C%96%E4%B8%8E%E6%AD%A3%E5%88%99-01.%E6%80%BB%E8%AE%BA/" rel="prev" title="Math-08.泛化与正则-01.总论">
+                Math-08.泛化与正则-01.总论 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%AE%89%E8%A3%85%E4%B8%8E%E7%A1%AE%E8%AE%A4%E6%9C%8D%E5%8A%A1%E5%B7%B2%E5%90%AF%E5%8A%A8"><span class="nav-number">1.</span> <span class="nav-text">一、安装与确认服务已启动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87"><span class="nav-number">1.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%8B%89%E5%8F%96%E5%B9%B6%E5%8A%A0%E8%BD%BD%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">二、拉取并加载模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-1"><span class="nav-number">2.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-1"><span class="nav-number">2.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E6%A0%87%E7%AD%BE%E6%80%8E%E4%B9%88%E9%80%89"><span class="nav-number">2.3.</span> <span class="nav-text">模型标签怎么选</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-1"><span class="nav-number">2.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%9C%AC%E6%9C%BA-API-%E5%86%92%E7%83%9F%EF%BC%88Ollama-%E5%8E%9F%E7%94%9F%E6%8E%A5%E5%8F%A3%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">三、本机 API 冒烟（Ollama 原生接口）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-2"><span class="nav-number">3.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-2"><span class="nav-number">3.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8-API-%E7%AB%AF%E7%82%B9"><span class="nav-number">3.3.</span> <span class="nav-text">常用 API 端点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-2"><span class="nav-number">3.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81OpenAI-%E5%85%BC%E5%AE%B9-API%EF%BC%88%E4%B8%9A%E5%8A%A1%E6%8E%A5%E5%85%A5%E9%A6%96%E9%80%89%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">四、OpenAI 兼容 API（业务接入首选）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-3"><span class="nav-number">4.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-3"><span class="nav-number">4.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8E%E5%8E%9F%E7%94%9F-API-%E7%9A%84%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="nav-number">4.3.</span> <span class="nav-text">与原生 API 的对应关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-3"><span class="nav-number">4.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%AF%B9%E5%B1%80%E5%9F%9F%E7%BD%91-%E5%85%B6%E4%BB%96%E5%AE%B9%E5%99%A8%E5%BC%80%E6%94%BE%E6%9C%8D%E5%8A%A1"><span class="nav-number">5.</span> <span class="nav-text">五、对局域网 &#x2F; 其他容器开放服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-4"><span class="nav-number">5.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-4"><span class="nav-number">5.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E6%B3%A8%E6%84%8F"><span class="nav-number">5.3.</span> <span class="nav-text">安全注意</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-4"><span class="nav-number">5.4.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%85%AC%E7%BD%91%E6%9A%B4%E9%9C%B2%E4%B8%8E%E5%AE%89%E5%85%A8%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">六、公网暴露与安全（可选）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-5"><span class="nav-number">6.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E5%88%99"><span class="nav-number">6.2.</span> <span class="nav-text">原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-5"><span class="nav-number">6.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A8%A1%E5%9E%8B%E4%B8%8E-LoRA-adapter-%E5%AF%B9%E5%A4%96%E6%9C%8D%E5%8A%A1"><span class="nav-number">7.</span> <span class="nav-text">七、自定义模型与 LoRA adapter 对外服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87-6"><span class="nav-number">7.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-5"><span class="nav-number">7.2.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E9%87%8C%E7%9B%AF%E4%BB%80%E4%B9%88-6"><span class="nav-number">7.3.</span> <span class="nav-text">结果里盯什么</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E4%B8%8E%E9%80%89%E5%9E%8B%E6%96%87%E6%A1%A3%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">8.</span> <span class="nav-text">八、与选型文档的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-number">9.</span> <span class="nav-text">九、常见问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">十、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

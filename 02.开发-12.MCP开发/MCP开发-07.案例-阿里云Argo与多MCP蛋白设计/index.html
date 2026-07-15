@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="阿里云,MCP,Argo,蛋白设计," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="在阿里云 ACK 上，以 Argo Workflows 跑 ESM2&#x2F;ESMFold&#x2F;MPNN 重计算，三个专用 MCP Server 负责调度；存储用 OSS 与 NAS，并给出 Tool 接口、WorkflowTemplate 与部署要点。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MCP开发-07.案例-阿里云Argo与多MCP蛋白设计">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-07.%E6%A1%88%E4%BE%8B-%E9%98%BF%E9%87%8C%E4%BA%91Argo%E4%B8%8E%E5%A4%9AMCP%E8%9B%8B%E7%99%BD%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="在阿里云 ACK 上，以 Argo Workflows 跑 ESM2&#x2F;ESMFold&#x2F;MPNN 重计算，三个专用 MCP Server 负责调度；存储用 OSS 与 NAS，并给出 Tool 接口、WorkflowTemplate 与部署要点。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-05T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-15T08:08:56.865Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Argo">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="蛋白设计">
+<meta property="article:tag" content="阿里云">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-12.MCP开发/MCP开发-07.案例-阿里云Argo与多MCP蛋白设计/"/>
+
+
+
+
+
+  <title>MCP开发-07.案例-阿里云Argo与多MCP蛋白设计 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-07.%E6%A1%88%E4%BE%8B-%E9%98%BF%E9%87%8C%E4%BA%91Argo%E4%B8%8E%E5%A4%9AMCP%E8%9B%8B%E7%99%BD%E8%AE%BE%E8%AE%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MCP开发-07.案例-阿里云Argo与多MCP蛋白设计</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-05T14:00:00+08:00">
+                2026-06-05
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  在阿里云 ACK 上，以 Argo Workflows 跑 ESM2/ESMFold/MPNN 重计算，三个专用 MCP Server 负责调度；存储用 OSS 与 NAS，并给出 Tool 接口、WorkflowTemplate 与部署要点。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本系列：<strong><a href="./MCP%E5%BC%80%E5%8F%91-00.%E4%BB%80%E4%B9%88%E6%98%AFMCP.md">00 什么是 MCP</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-01.%E5%8D%8F%E8%AE%AE%E6%A0%87%E5%87%86%E4%B8%8E%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md">01 协议与心智模型</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-02.Python%E6%A1%86%E6%9E%B6%E9%80%89%E5%9E%8B.md">02 Python 框架选型</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03 部署与调用</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-04.%E9%87%8D%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%95%BF%E4%BB%BB%E5%8A%A1%E5%BC%80%E5%8F%91.md">04 重任务与优化</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-05.%E4%BB%8E0%E5%BC%80%E5%8F%91%E4%B8%80%E4%B8%AAMCP.md">05 从 0 开发</a></strong> · <strong><a href="./MCP%E5%BC%80%E5%8F%91-06.%E8%BF%9B%E9%98%B6%E7%A4%BA%E4%BE%8B-Resources%E4%B8%8ETasks.md">06 进阶示例</a></strong> · <strong>07 阿里云案例（本文）</strong></p>
+<hr>
+<h2 id="1-场景与目标"><a href="#1-场景与目标" class="headerlink" title="1. 场景与目标"></a>1. 场景与目标</h2><p>在 <strong>MCP Host</strong>（如 Cursor、内部 Agent 平台）中，用户希望用自然语言驱动酶&#x2F;蛋白相关分析：</p>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>模型</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>序列嵌入</td>
+<td><strong>ESM2</strong></td>
+<td>氨基酸序列 &#x2F; FASTA</td>
+<td>嵌入向量（<code>.npz</code>）</td>
+</tr>
+<tr>
+<td>结构预测</td>
+<td><strong>ESMFold</strong></td>
+<td>氨基酸序列 &#x2F; FASTA</td>
+<td>3D 结构（<code>.pdb</code> &#x2F; <code>.cif</code>）+ pLDDT</td>
+</tr>
+<tr>
+<td>序列设计</td>
+<td><strong>ProteinMPNN</strong> 等</td>
+<td>3D 结构</td>
+<td>新酶序列（<code>.fasta</code>）</td>
+</tr>
+</tbody></table>
+<p>单次任务 <strong>GPU 占用高、耗时长</strong>，不适合在 MCP 进程内同步推理。本文给出在 <strong>阿里云</strong> 上的落地方式：</p>
+<ul>
+<li><strong>计算编排</strong>：ACK 集群内的 <strong>Argo Workflows</strong></li>
+<li><strong>对象存储</strong>：<strong>OSS</strong>（输入&#x2F;输出、跨步骤 URI 传递）</li>
+<li><strong>共享文件</strong>：<strong>NAS</strong>（模型权重、缓存、大体积中间文件）</li>
+<li><strong>协议层</strong>：三个独立 <strong>MCP Server</strong>（+ 可选 pipeline MCP），模式见 <a href="./MCP%E5%BC%80%E5%8F%91-04.%E9%87%8D%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%95%BF%E4%BB%BB%E5%8A%A1%E5%BC%80%E5%8F%91.md">04 重服务与长任务</a></li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ACK</strong>（Alibaba Cloud Container Service for Kubernetes，阿里云容器服务 Kubernetes 版）是托管 K8s；<strong>OSS</strong>（Object Storage Service，对象存储服务）用于存放大对象；<strong>NAS</strong>（Network Attached Storage，文件存储 NAS）提供 POSIX 共享挂载。</p>
+</blockquote>
+<hr>
+<h2 id="2-总体架构（阿里云）"><a href="#2-总体架构（阿里云）" class="headerlink" title="2. 总体架构（阿里云）"></a>2. 总体架构（阿里云）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">flowchart TB</span><br><span class="line">  subgraph host [MCP Host]</span><br><span class="line">    Agent[&quot;LLM Agent&quot;]</span><br><span class="line">  end</span><br><span class="line"></span><br><span class="line">  subgraph ack [ACK 集群]</span><br><span class="line">    subgraph mcp_ns [命名空间 mcp-gateway]</span><br><span class="line">      E2[&quot;esm2-mcp\nStreamable HTTP&quot;]</span><br><span class="line">      EF[&quot;esmfold-mcp&quot;]</span><br><span class="line">      MP[&quot;mpnn-mcp&quot;]</span><br><span class="line">    end</span><br><span class="line">    subgraph argo_ns [命名空间 argo]</span><br><span class="line">      AW[&quot;Argo Workflows&quot;]</span><br><span class="line">    end</span><br><span class="line">    subgraph gpu [GPU 节点池]</span><br><span class="line">      W1[&quot;esm2-worker Pod&quot;]</span><br><span class="line">      W2[&quot;esmfold-worker Pod&quot;]</span><br><span class="line">      W3[&quot;mpnn-worker Pod&quot;]</span><br><span class="line">    end</span><br><span class="line">  end</span><br><span class="line"></span><br><span class="line">  OSS[&quot;阿里云 OSS\noss://protein-runs/&quot;]</span><br><span class="line">  NAS[&quot;文件存储 NAS\n/mnt/nas/models&quot;]</span><br><span class="line">  RDS[&quot;RDS / Redis\nrun 元数据&quot;]</span><br><span class="line"></span><br><span class="line">  Agent --&gt; E2 &amp; EF &amp; MP</span><br><span class="line">  E2 &amp; EF &amp; MP --&gt; AW</span><br><span class="line">  E2 &amp; EF &amp; MP --&gt; RDS</span><br><span class="line">  AW --&gt; W1 &amp; W2 &amp; W3</span><br><span class="line">  W1 &amp; W2 &amp; W3 --&gt; OSS</span><br><span class="line">  W1 &amp; W2 &amp; W3 --&gt; NAS</span><br><span class="line">  E2 &amp; EF &amp; MP --&gt; OSS</span><br></pre></td></tr></table></figure>
+
+<p><strong>分工原则</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>MCP Server</strong></td>
+<td>参数校验、写 OSS 输入、提交 Argo Workflow、查状态、返回摘要与 URI；<strong>不加载模型</strong></td>
+</tr>
+<tr>
+<td><strong>Argo Workflow</strong></td>
+<td>GPU Pod 生命周期、重试、超时、DAG（可选全链路）</td>
+</tr>
+<tr>
+<td><strong>OSS</strong></td>
+<td>每个 <code>run_id</code> 目录存 input&#x2F;output；MCP 与 Worker 只传 <strong>URI 字符串</strong></td>
+</tr>
+<tr>
+<td><strong>NAS</strong></td>
+<td>各 Worker 镜像挂载同一 <strong>模型目录</strong>（ESM2&#x2F;ESMFold&#x2F;MPNN 权重），避免打进镜像</td>
+</tr>
+<tr>
+<td><strong>RDS &#x2F; Redis</strong></td>
+<td><code>run_id → status, workflow_name, output_uris</code>（MCP 快速查询）</td>
+</tr>
+</tbody></table>
+<p>MCP 部署建议：<strong>Streamable HTTP + 无状态</strong>（<a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03 部署与调用</a>），Ingress 或 <strong>ALB</strong>（Application Load Balancer，应用型负载均衡）暴露 HTTPS。</p>
+<hr>
+<h2 id="3-存储布局与-URI-约定"><a href="#3-存储布局与-URI-约定" class="headerlink" title="3. 存储布局与 URI 约定"></a>3. 存储布局与 URI 约定</h2><h3 id="3-1-OSS-目录（跨-MCP-串联）"><a href="#3-1-OSS-目录（跨-MCP-串联）" class="headerlink" title="3.1 OSS 目录（跨 MCP 串联）"></a>3.1 OSS 目录（跨 MCP 串联）</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">oss://&#123;bucket&#125;/protein-runs/&#123;run_id&#125;/</span><br><span class="line">  input.fasta                 # 或 input.pdb（MPNN 上游）</span><br><span class="line">  meta.json                   # 参数、服务名、创建时间</span><br><span class="line">  outputs/</span><br><span class="line">    embedding.npz             # esm2-mcp</span><br><span class="line">    structure.pdb             # esmfold-mcp</span><br><span class="line">    metrics.json              # pLDDT 等</span><br><span class="line">    designed.fasta            # mpnn-mcp</span><br><span class="line">  logs/</span><br></pre></td></tr></table></figure>
+
+<p><strong>跨服务传递</strong>：只传 <code>oss://&#123;bucket&#125;/protein-runs/&#123;run_id&#125;/outputs/structure.pdb</code>，禁止把 PDB 全文塞进 Tool 返回或 LLM context。</p>
+<h3 id="3-2-NAS-挂载（Worker-Pod）"><a href="#3-2-NAS-挂载（Worker-Pod）" class="headerlink" title="3.2 NAS 挂载（Worker Pod）"></a>3.2 NAS 挂载（Worker Pod）</h3><table>
+<thead>
+<tr>
+<th>挂载路径</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/mnt/nas/models/esm2/</code></td>
+<td>ESM2 权重</td>
+</tr>
+<tr>
+<td><code>/mnt/nas/models/esmfold/</code></td>
+<td>ESMFold 权重</td>
+</tr>
+<tr>
+<td><code>/mnt/nas/models/mpnn/</code></td>
+<td>MPNN  checkpoint</td>
+</tr>
+<tr>
+<td><code>/mnt/nas/cache/</code></td>
+<td>可选，HF &#x2F; 临时缓存</td>
+</tr>
+</tbody></table>
+<p>NAS 选型：<strong>容量型 NAS</strong> 存模型；若多可用区 Worker，使用 <strong>NAS 挂载点</strong> 与 ACK <strong>PersistentVolume</strong> 绑定（存储类 <code>alicloud-nas</code>）。</p>
+<h3 id="3-3-鉴权"><a href="#3-3-鉴权" class="headerlink" title="3.3 鉴权"></a>3.3 鉴权</h3><ul>
+<li><strong>MCP Pod &#x2F; Worker Pod</strong>：通过 ACK <strong>RRSA</strong>（RAM Roles for Service Accounts）或 <strong>Worker RAM 角色</strong>，授予 OSS <code>PutObject/GetObject</code>、NAS 读权限；<strong>勿</strong>在 Tool 参数或镜像中写 AccessKey。</li>
+<li>MCP 返回结果时，大文件可提供 <strong>OSS 签名 URL</strong>（短期有效），供用户浏览器或下游下载。</li>
+</ul>
+<hr>
+<h2 id="4-三个-MCP-服务定义"><a href="#4-三个-MCP-服务定义" class="headerlink" title="4. 三个 MCP 服务定义"></a>4. 三个 MCP 服务定义</h2><p>三个服务 <strong>Tool 形态统一</strong>，便于 Agent 记忆；实现可共用 <code>argo_client.py</code>、<code>oss_client.py</code>（<code>oss2</code> SDK）。</p>
+<h3 id="4-1-通用-Tool-集（每个-MCP-相同模式）"><a href="#4-1-通用-Tool-集（每个-MCP-相同模式）" class="headerlink" title="4.1 通用 Tool 集（每个 MCP 相同模式）"></a>4.1 通用 Tool 集（每个 MCP 相同模式）</h3><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>submit_*</code></td>
+<td>创建 run、上传输入到 OSS、提交 Argo Workflow；返回 <code>run_id</code>（支持 Task 时立即 <code>working</code>）</td>
+</tr>
+<tr>
+<td><code>get_run_status(run_id)</code></td>
+<td><code>pending / running / succeeded / failed</code></td>
+</tr>
+<tr>
+<td><code>fetch_run_summary(run_id)</code></td>
+<td>摘要 + <code>output_uris</code>；小 JSON 可 inline</td>
+</tr>
+<tr>
+<td><code>cancel_run(run_id)</code></td>
+<td>终止 Argo Workflow</td>
+</tr>
+</tbody></table>
+<p>Resource 示例：<code>resource://runs/&#123;run_id&#125;/summary</code>（只读 meta + OSS 路径列表）。</p>
+<hr>
+<h3 id="4-2-esm2-mcp（序列-→-嵌入）"><a href="#4-2-esm2-mcp（序列-→-嵌入）" class="headerlink" title="4.2 esm2-mcp（序列 → 嵌入）"></a>4.2 <code>esm2-mcp</code>（序列 → 嵌入）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">submit_esm2_embed(</span><br><span class="line">    sequence: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span><br><span class="line">    fasta_oss_uri: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>,   <span class="comment"># oss://bucket/.../input.fasta</span></span><br><span class="line">    model: <span class="built_in">str</span> = <span class="string">&quot;esm2_t33_650M_UR50D&quot;</span>,</span><br><span class="line">    pooling: <span class="built_in">str</span> = <span class="string">&quot;mean&quot;</span>,              <span class="comment"># mean | per_residue</span></span><br><span class="line">) -&gt; <span class="built_in">str</span>  <span class="comment"># run_id</span></span><br><span class="line"></span><br><span class="line">fetch_run_summary(run_id: <span class="built_in">str</span>) -&gt; <span class="built_in">dict</span></span><br><span class="line"><span class="comment"># 例: &#123; &quot;embedding_uri&quot;: &quot;oss://.../embedding.npz&quot;, &quot;shape&quot;: [L, 1280], ... &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Argo WorkflowTemplate 名</strong>：<code>esm2-embed</code>（见 §6）。</p>
+<hr>
+<h3 id="4-3-esmfold-mcp（序列-→-3D-结构）"><a href="#4-3-esmfold-mcp（序列-→-3D-结构）" class="headerlink" title="4.3 esmfold-mcp（序列 → 3D 结构）"></a>4.3 <code>esmfold-mcp</code>（序列 → 3D 结构）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">submit_esmfold_predict(</span><br><span class="line">    sequence: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span><br><span class="line">    fasta_oss_uri: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span><br><span class="line">    num_recycles: <span class="built_in">int</span> = <span class="number">3</span>,</span><br><span class="line">) -&gt; <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line">fetch_run_summary(run_id: <span class="built_in">str</span>) -&gt; <span class="built_in">dict</span></span><br><span class="line"><span class="comment"># 例: &#123; &quot;pdb_uri&quot;, &quot;mean_plddt&quot;, &quot;n_residues&quot;, &quot;preview_lines&quot;: &quot;HEADER...&quot; &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>GPU 建议：独占 <strong>A10 &#x2F; V100 &#x2F; GU30</strong> 等 ACK <strong>GPU 共享池</strong> 中较大显存规格；与 ESM2 分 <strong>WorkflowTemplate</strong> 与节点池。</p>
+<hr>
+<h3 id="4-4-mpnn-mcp（结构-→-新序列）"><a href="#4-4-mpnn-mcp（结构-→-新序列）" class="headerlink" title="4.4 mpnn-mcp（结构 → 新序列）"></a>4.4 <code>mpnn-mcp</code>（结构 → 新序列）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">submit_mpnn_design(</span><br><span class="line">    structure_oss_uri: <span class="built_in">str</span>,             <span class="comment"># 必填，来自 esmfold 的 pdb_uri</span></span><br><span class="line">    num_sequences: <span class="built_in">int</span> = <span class="number">8</span>,</span><br><span class="line">    method: <span class="built_in">str</span> = <span class="string">&quot;protein_mpnn&quot;</span>,       <span class="comment"># 可扩展 diffusion 等</span></span><br><span class="line">    fixed_positions: <span class="built_in">list</span>[<span class="built_in">int</span>] | <span class="literal">None</span> = <span class="literal">None</span>,</span><br><span class="line">    temperature: <span class="built_in">float</span> = <span class="number">0.1</span>,</span><br><span class="line">) -&gt; <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line">fetch_run_summary(run_id: <span class="built_in">str</span>) -&gt; <span class="built_in">dict</span></span><br><span class="line"><span class="comment"># 例: &#123; &quot;fasta_uri&quot;, &quot;top_sequences_preview&quot;: [&quot;MKFL...&quot;, ...], &quot;scores&quot;: [...] &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>典型 Agent 调用链</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">esmfold.submit → poll → fetch → pdb_uri</span><br><span class="line">mpnn.submit(structure_oss_uri=pdb_uri) → poll → fetch → fasta_uri</span><br><span class="line">（可选）esm2.submit(fasta_oss_uri=fasta_uri)  # 对比设计前后嵌入</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="5-可选：pipeline-mcp（Argo-DAG-一键）"><a href="#5-可选：pipeline-mcp（Argo-DAG-一键）" class="headerlink" title="5. 可选：pipeline-mcp（Argo DAG 一键）"></a>5. 可选：<code>pipeline-mcp</code>（Argo DAG 一键）</h2><p>若 Host 常跑固定流程，可增加第四个 MCP，内部提交 <strong>一条 Argo DAG</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">  IN[&quot;input.fasta\nOSS&quot;] --&gt; FOLD[&quot;esmfold&quot;]</span><br><span class="line">  FOLD --&gt; PDB[&quot;structure.pdb\nOSS&quot;]</span><br><span class="line">  PDB --&gt; DESIGN[&quot;mpnn&quot;]</span><br><span class="line">  DESIGN --&gt; OUT[&quot;designed.fasta\nOSS&quot;]</span><br><span class="line">  OUT --&gt; EMB[&quot;esm2 可选&quot;]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">submit_enzyme_design_pipeline(</span><br><span class="line">    sequence: <span class="built_in">str</span>,</span><br><span class="line">    mpnn_num_sequences: <span class="built_in">int</span> = <span class="number">8</span>,</span><br><span class="line">    also_embed_designs: <span class="built_in">bool</span> = <span class="literal">False</span>,</span><br><span class="line">) -&gt; <span class="built_in">str</span>  <span class="comment"># pipeline_run_id</span></span><br></pre></td></tr></table></figure>
+
+<p>单步调试仍用三个专用 MCP；产品化「一键酶设计」用 pipeline。</p>
+<hr>
+<h2 id="6-Argo-WorkflowTemplate（阿里云适配骨架）"><a href="#6-Argo-WorkflowTemplate（阿里云适配骨架）" class="headerlink" title="6. Argo WorkflowTemplate（阿里云适配骨架）"></a>6. Argo WorkflowTemplate（阿里云适配骨架）</h2><p>以下 YAML 为 <strong>骨架</strong>，镜像需推送到 <strong>ACR</strong>（Alibaba Cloud Container Registry，容器镜像服务）；参数由 MCP 在 <code>submit_*</code> 时注入。</p>
+<h3 id="6-1-ESM2-嵌入"><a href="#6-1-ESM2-嵌入" class="headerlink" title="6.1 ESM2 嵌入"></a>6.1 ESM2 嵌入</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">argoproj.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">WorkflowTemplate</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">esm2-embed</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">argo</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">entrypoint:</span> <span class="string">embed</span></span><br><span class="line">  <span class="attr">arguments:</span></span><br><span class="line">    <span class="attr">parameters:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">run-id</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">input-oss-uri</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">output-oss-uri</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">model-name</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">pooling</span></span><br><span class="line">  <span class="attr">templates:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">embed</span></span><br><span class="line">      <span class="attr">container:</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">registry.cn-hangzhou.aliyuncs.com/your-ns/esm2-worker:latest</span></span><br><span class="line">        <span class="attr">command:</span> [<span class="string">python</span>, <span class="string">-m</span>, <span class="string">esm2_worker</span>]</span><br><span class="line">        <span class="attr">args:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--run-id=&#123;&#123;workflow.parameters.run-id&#125;&#125;</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--input-uri=&#123;&#123;workflow.parameters.input-oss-uri&#125;&#125;</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--output-uri=&#123;&#123;workflow.parameters.output-oss-uri&#125;&#125;</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--model=&#123;&#123;workflow.parameters.model-name&#125;&#125;</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--pooling=&#123;&#123;workflow.parameters.pooling&#125;&#125;</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--model-dir=/mnt/nas/models/esm2</span></span><br><span class="line">        <span class="attr">env:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">OSS_ENDPOINT</span></span><br><span class="line">            <span class="attr">value:</span> <span class="string">oss-cn-hangzhou-internal.aliyuncs.com</span>   <span class="comment"># 同地域用内网 endpoint</span></span><br><span class="line">        <span class="attr">volumeMounts:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nas-models</span></span><br><span class="line">            <span class="attr">mountPath:</span> <span class="string">/mnt/nas/models</span></span><br><span class="line">        <span class="attr">resources:</span></span><br><span class="line">          <span class="attr">limits:</span></span><br><span class="line">            <span class="attr">nvidia.com/gpu:</span> <span class="string">&quot;1&quot;</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">16Gi</span></span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nas-models</span></span><br><span class="line">          <span class="attr">persistentVolumeClaim:</span></span><br><span class="line">            <span class="attr">claimName:</span> <span class="string">nas-models-pvc</span></span><br><span class="line">      <span class="attr">retryStrategy:</span></span><br><span class="line">        <span class="attr">limit:</span> <span class="number">2</span></span><br><span class="line">      <span class="attr">activeDeadlineSeconds:</span> <span class="number">3600</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-2-ESMFold-MPNN"><a href="#6-2-ESMFold-MPNN" class="headerlink" title="6.2 ESMFold &#x2F; MPNN"></a>6.2 ESMFold &#x2F; MPNN</h3><p>结构类似，替换：</p>
+<ul>
+<li><strong>镜像</strong>：<code>esmfold-worker</code>、<code>mpnn-worker</code></li>
+<li><strong>NAS 子路径</strong>：<code>/mnt/nas/models/esmfold</code>、<code>/mnt/nas/models/mpnn</code></li>
+<li><strong>GPU &#x2F; memory</strong>：ESMFold 显存需求更高，可设 <code>activeDeadlineSeconds: 7200</code></li>
+<li><strong>MPNN 输入参数</strong>：<code>--structure-uri=&#123;&#123;workflow.parameters.structure-oss-uri&#125;&#125;</code></li>
+</ul>
+<h3 id="6-3-MCP-提交-Workflow（Python-概念代码）"><a href="#6-3-MCP-提交-Workflow（Python-概念代码）" class="headerlink" title="6.3 MCP 提交 Workflow（Python 概念代码）"></a>6.3 MCP 提交 Workflow（Python 概念代码）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> argo_workflows.api <span class="keyword">import</span> workflow_service_api</span><br><span class="line"><span class="keyword">import</span> oss2</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">submit_workflow</span>(<span class="params">template: <span class="built_in">str</span>, run_id: <span class="built_in">str</span>, params: <span class="built_in">dict</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    body = &#123;</span><br><span class="line">        <span class="string">&quot;namespace&quot;</span>: <span class="string">&quot;argo&quot;</span>,</span><br><span class="line">        <span class="string">&quot;resourceKind&quot;</span>: <span class="string">&quot;WorkflowTemplate&quot;</span>,</span><br><span class="line">        <span class="string">&quot;resourceName&quot;</span>: template,</span><br><span class="line">        <span class="string">&quot;submitOptions&quot;</span>: &#123;</span><br><span class="line">            <span class="string">&quot;name&quot;</span>: <span class="string">f&quot;<span class="subst">&#123;template&#125;</span>-<span class="subst">&#123;run_id[:<span class="number">8</span>]&#125;</span>&quot;</span>,</span><br><span class="line">            <span class="string">&quot;parameters&quot;</span>: [<span class="string">f&quot;<span class="subst">&#123;k&#125;</span>=<span class="subst">&#123;v&#125;</span>&quot;</span> <span class="keyword">for</span> k, v <span class="keyword">in</span> params.items()],</span><br><span class="line">        &#125;,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment"># 调用 Argo Server API（集群内 Service 或 Ingress）</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> body[<span class="string">&quot;submitOptions&quot;</span>][<span class="string">&quot;name&quot;</span>]</span><br></pre></td></tr></table></figure>
+
+<p>Worker 内读写 OSS 使用 <strong>oss2</strong>，Endpoint 与 Bucket <strong>同地域</strong>，优先 <strong>内网 endpoint</strong> 免流量费、降延迟。</p>
+<hr>
+<h2 id="7-ACK-部署清单"><a href="#7-ACK-部署清单" class="headerlink" title="7. ACK 部署清单"></a>7. ACK 部署清单</h2><h3 id="7-1-集群与组件"><a href="#7-1-集群与组件" class="headerlink" title="7.1 集群与组件"></a>7.1 集群与组件</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ACK 集群</td>
+<td>至少 1 个 <strong>GPU 节点池</strong>（可按 ESMFold &#x2F; MPNN 分池）</td>
+</tr>
+<tr>
+<td>Argo Workflows</td>
+<td><code>argo</code> 命名空间安装；MCP 通过 K8s RBAC <code>create workflows</code></td>
+</tr>
+<tr>
+<td>MCP Deployment</td>
+<td><code>mcp-gateway</code> 命名空间，2+ 副本，<strong>无状态</strong> HTTP</td>
+</tr>
+<tr>
+<td>Ingress &#x2F; ALB</td>
+<td>HTTPS，WAF 可选；校验 MCP <a href="./MCP%E5%BC%80%E5%8F%91-01.%E5%8D%8F%E8%AE%AE%E6%A0%87%E5%87%86%E4%B8%8E%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md">Origin 头</a></td>
+</tr>
+<tr>
+<td>ACR</td>
+<td>私有镜像；与 ACK 同地域</td>
+</tr>
+</tbody></table>
+<h3 id="7-2-MCP-Pod-环境变量（示例）"><a href="#7-2-MCP-Pod-环境变量（示例）" class="headerlink" title="7.2 MCP Pod 环境变量（示例）"></a>7.2 MCP Pod 环境变量（示例）</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ARGO_SERVER_URL=https://argo.internal/api/v1</span><br><span class="line">OSS_BUCKET=protein-runs</span><br><span class="line">OSS_ENDPOINT=oss-cn-hangzhou-internal.aliyuncs.com</span><br><span class="line">REDIS_URL=redis://:****@r-xxx.redis.rds.aliyuncs.com:6379/0</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-3-Host-侧注册（多-MCP）"><a href="#7-3-Host-侧注册（多-MCP）" class="headerlink" title="7.3 Host 侧注册（多 MCP）"></a>7.3 Host 侧注册（多 MCP）</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;esm2&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://mcp.example.com/esm2/mcp&quot;</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;esmfold&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://mcp.example.com/esmfold/mcp&quot;</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;mpnn&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://mcp.example.com/mpnn/mcp&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>建议在某一 MCP 上提供 <strong><code>@mcp.prompt()</code></strong> <code>enzyme_design_workflow</code>，写明：<strong>先 esmfold → 再 mpnn → 可选 esm2</strong>；禁止粘贴完整 PDB。</p>
+<hr>
+<h2 id="8-异步、Task-与取消"><a href="#8-异步、Task-与取消" class="headerlink" title="8. 异步、Task 与取消"></a>8. 异步、Task 与取消</h2><p>与 <a href="./MCP%E5%BC%80%E5%8F%91-04.%E9%87%8D%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%95%BF%E4%BB%BB%E5%8A%A1%E5%BC%80%E5%8F%91.md">04</a> 一致：</p>
+<ul>
+<li><strong>Host 支持 Tasks</strong>：<code>@mcp.tool(task=True)</code>，内部 watch Argo Workflow 状态并 <code>report_progress</code>（如「Argo phase: Running」）。</li>
+<li><strong>不支持 Tasks</strong>：暴露 <code>submit_*</code> + <code>get_run_status</code> + <code>fetch_run_summary</code> 三 Tool。</li>
+<li><strong>取消</strong>：<code>cancel_run</code> → Argo <code>terminate</code> Workflow；Worker 应监听 SIGTERM 释放 GPU。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>典型耗时</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ESM2</td>
+<td>秒～分钟</td>
+<td>序列长度线性影响</td>
+</tr>
+<tr>
+<td>ESMFold</td>
+<td>分钟级</td>
+<td>长序列需大显存</td>
+</tr>
+<tr>
+<td>MPNN</td>
+<td>分钟级</td>
+<td><code>num_sequences</code> 可 Argo 内 parallel steps</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-安全与成本"><a href="#9-安全与成本" class="headerlink" title="9. 安全与成本"></a>9. 安全与成本</h2><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>鉴权</td>
+<td>RAM 角色 + RRSA；OSS Bucket 私有；MCP 网关 OAuth &#x2F; mTLS</td>
+</tr>
+<tr>
+<td>网络</td>
+<td>Worker 与 OSS&#x2F;NAS <strong>同 VPC</strong>；MCP 仅内网 Ingress</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>GPU 节点池 <strong>弹性伸缩</strong>（缩容至 0 需注意冷启动）；OSS 生命周期转低频存储</td>
+</tr>
+<tr>
+<td>合规</td>
+<td>序列&#x2F;结构数据按租户前缀隔离：<code>oss://bucket/&#123;tenant_id&#125;/protein-runs/</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-落地顺序建议"><a href="#10-落地顺序建议" class="headerlink" title="10. 落地顺序建议"></a>10. 落地顺序建议</h2><ol>
+<li><strong>ACK + NAS 模型目录 + OSS Bucket + ACR 镜像</strong>（先 ESMFold Worker 跑通）。</li>
+<li><strong>esmfold-mcp</strong> + WorkflowTemplate + <code>submit / status / summary</code>。</li>
+<li><strong>mpnn-mcp</strong>，输入改为 <code>structure_oss_uri</code>。</li>
+<li><strong>esm2-mcp</strong>（可选特征&#x2F;对比）。</li>
+<li><strong>pipeline-mcp</strong> 或 Argo DAG 串联；接入 <strong>ARMS</strong>（应用实时监控服务）做 Workflow 与 MCP 链路追踪。</li>
+</ol>
+<hr>
+<h2 id="11-与本系列其他篇章的关系"><a href="#11-与本系列其他篇章的关系" class="headerlink" title="11. 与本系列其他篇章的关系"></a>11. 与本系列其他篇章的关系</h2><table>
+<thead>
+<tr>
+<th>篇章</th>
+<th>关联</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="./MCP%E5%BC%80%E5%8F%91-04.%E9%87%8D%E6%9C%8D%E5%8A%A1%E4%B8%8E%E9%95%BF%E4%BB%BB%E5%8A%A1%E5%BC%80%E5%8F%91.md">04 重服务与长任务</a></td>
+<td>MCP 薄、Worker 厚；Tasks；Resource 卸载</td>
+</tr>
+<tr>
+<td><a href="../02.%E5%BC%80%E5%8F%91-04.pipeline/pipeline-frameworks-argo-04.Argo%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%B0%81%E8%A3%85MCP%E6%8E%A5%E5%8F%A3.md">pipeline Argo 04</a></td>
+<td>从 Argo 文档到 MCP 的方法论与调用链</td>
+</tr>
+<tr>
+<td><a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03 部署与调用</a></td>
+<td>HTTP 无状态、Ingress、生产清单</td>
+</tr>
+<tr>
+<td><a href="./MCP%E5%BC%80%E5%8F%91-06.%E8%BF%9B%E9%98%B6%E7%A4%BA%E4%BE%8B-Resources%E4%B8%8ETasks.md">06 进阶示例</a></td>
+<td>Tool &#x2F; Resource &#x2F; Task 代码形态</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="12-小结"><a href="#12-小结" class="headerlink" title="12. 小结"></a>12. 小结</h2><table>
+<thead>
+<tr>
+<th>MCP</th>
+<th>Argo Template</th>
+<th>OSS 输出</th>
+<th>NAS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>esm2-mcp</td>
+<td><code>esm2-embed</code></td>
+<td><code>embedding.npz</code></td>
+<td>ESM2 权重</td>
+</tr>
+<tr>
+<td>esmfold-mcp</td>
+<td><code>esmfold-predict</code></td>
+<td><code>structure.pdb</code></td>
+<td>ESMFold 权重</td>
+</tr>
+<tr>
+<td>mpnn-mcp</td>
+<td><code>mpnn-design</code></td>
+<td><code>designed.fasta</code></td>
+<td>MPNN 权重</td>
+</tr>
+</tbody></table>
+<p>在阿里云上，<strong>OSS 管对象、NAS 管模型、Argo 管算力、MCP 管协议与调度</strong>；三个（或四个）MCP 服务并列注册，由 Agent 按 URI 串联，即可在 Host 内完成「嵌入 → 折叠 → 设计」酶工程工作流。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E9%98%BF%E9%87%8C%E4%BA%91/" rel="tag"><i class="fa fa-tag"></i> 阿里云</a>
+          
+            <a href="/tags/MCP/" rel="tag"><i class="fa fa-tag"></i> MCP</a>
+          
+            <a href="/tags/Argo/" rel="tag"><i class="fa fa-tag"></i> Argo</a>
+          
+            <a href="/tags/%E8%9B%8B%E7%99%BD%E8%AE%BE%E8%AE%A1/" rel="tag"><i class="fa fa-tag"></i> 蛋白设计</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-06.%E8%BF%9B%E9%98%B6%E7%A4%BA%E4%BE%8B-Resources%E4%B8%8ETasks/" rel="next" title="MCP开发-06.进阶示例-Resources与Tasks">
+                <i class="fa fa-chevron-left"></i> MCP开发-06.进阶示例-Resources与Tasks
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-40.%E8%9B%8B%E7%99%BD%E7%BB%84%E5%AD%A6/%E4%BA%8C%E7%BA%A7%E7%BB%93%E6%9E%84-mkdssp%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/" rel="prev" title="二级结构-mkdssp：蛋白二级结构注释工具介绍与使用指南">
+                二级结构-mkdssp：蛋白二级结构注释工具介绍与使用指南 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">872</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">106</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">719</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%9C%BA%E6%99%AF%E4%B8%8E%E7%9B%AE%E6%A0%87"><span class="nav-number">1.</span> <span class="nav-text">1. 场景与目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84%EF%BC%88%E9%98%BF%E9%87%8C%E4%BA%91%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. 总体架构（阿里云）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AD%98%E5%82%A8%E5%B8%83%E5%B1%80%E4%B8%8E-URI-%E7%BA%A6%E5%AE%9A"><span class="nav-number">3.</span> <span class="nav-text">3. 存储布局与 URI 约定</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-OSS-%E7%9B%AE%E5%BD%95%EF%BC%88%E8%B7%A8-MCP-%E4%B8%B2%E8%81%94%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 OSS 目录（跨 MCP 串联）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-NAS-%E6%8C%82%E8%BD%BD%EF%BC%88Worker-Pod%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 NAS 挂载（Worker Pod）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E9%89%B4%E6%9D%83"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 鉴权</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%B8%89%E4%B8%AA-MCP-%E6%9C%8D%E5%8A%A1%E5%AE%9A%E4%B9%89"><span class="nav-number">4.</span> <span class="nav-text">4. 三个 MCP 服务定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E9%80%9A%E7%94%A8-Tool-%E9%9B%86%EF%BC%88%E6%AF%8F%E4%B8%AA-MCP-%E7%9B%B8%E5%90%8C%E6%A8%A1%E5%BC%8F%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 通用 Tool 集（每个 MCP 相同模式）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-esm2-mcp%EF%BC%88%E5%BA%8F%E5%88%97-%E2%86%92-%E5%B5%8C%E5%85%A5%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 esm2-mcp（序列 → 嵌入）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-esmfold-mcp%EF%BC%88%E5%BA%8F%E5%88%97-%E2%86%92-3D-%E7%BB%93%E6%9E%84%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 esmfold-mcp（序列 → 3D 结构）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-mpnn-mcp%EF%BC%88%E7%BB%93%E6%9E%84-%E2%86%92-%E6%96%B0%E5%BA%8F%E5%88%97%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 mpnn-mcp（结构 → 新序列）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%8F%AF%E9%80%89%EF%BC%9Apipeline-mcp%EF%BC%88Argo-DAG-%E4%B8%80%E9%94%AE%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 可选：pipeline-mcp（Argo DAG 一键）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Argo-WorkflowTemplate%EF%BC%88%E9%98%BF%E9%87%8C%E4%BA%91%E9%80%82%E9%85%8D%E9%AA%A8%E6%9E%B6%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. Argo WorkflowTemplate（阿里云适配骨架）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-ESM2-%E5%B5%8C%E5%85%A5"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 ESM2 嵌入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-ESMFold-MPNN"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 ESMFold &#x2F; MPNN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-MCP-%E6%8F%90%E4%BA%A4-Workflow%EF%BC%88Python-%E6%A6%82%E5%BF%B5%E4%BB%A3%E7%A0%81%EF%BC%89"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 MCP 提交 Workflow（Python 概念代码）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-ACK-%E9%83%A8%E7%BD%B2%E6%B8%85%E5%8D%95"><span class="nav-number">7.</span> <span class="nav-text">7. ACK 部署清单</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E9%9B%86%E7%BE%A4%E4%B8%8E%E7%BB%84%E4%BB%B6"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 集群与组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-MCP-Pod-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%EF%BC%88%E7%A4%BA%E4%BE%8B%EF%BC%89"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 MCP Pod 环境变量（示例）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-Host-%E4%BE%A7%E6%B3%A8%E5%86%8C%EF%BC%88%E5%A4%9A-MCP%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 Host 侧注册（多 MCP）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%BC%82%E6%AD%A5%E3%80%81Task-%E4%B8%8E%E5%8F%96%E6%B6%88"><span class="nav-number">8.</span> <span class="nav-text">8. 异步、Task 与取消</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%AE%89%E5%85%A8%E4%B8%8E%E6%88%90%E6%9C%AC"><span class="nav-number">9.</span> <span class="nav-text">9. 安全与成本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E8%90%BD%E5%9C%B0%E9%A1%BA%E5%BA%8F%E5%BB%BA%E8%AE%AE"><span class="nav-number">10.</span> <span class="nav-text">10. 落地顺序建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E4%B8%8E%E6%9C%AC%E7%B3%BB%E5%88%97%E5%85%B6%E4%BB%96%E7%AF%87%E7%AB%A0%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">11.</span> <span class="nav-text">11. 与本系列其他篇章的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-%E5%B0%8F%E7%BB%93"><span class="nav-number">12.</span> <span class="nav-text">12. 小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
