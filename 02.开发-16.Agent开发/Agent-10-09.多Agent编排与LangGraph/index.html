@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LangGraph,MultiAgent,Orchestration," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="多 Agent 协作、显式状态图、LangGraph checkpoint 与本仓库 orchestrator 实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Agent-10-09.多Agent编排与LangGraph">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent%E5%BC%80%E5%8F%91/Agent-10-09.%E5%A4%9AAgent%E7%BC%96%E6%8E%92%E4%B8%8ELangGraph/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="多 Agent 协作、显式状态图、LangGraph checkpoint 与本仓库 orchestrator 实现。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-07-31T06:45:00.000Z">
+<meta property="article:modified_time" content="2026-08-06T05:38:56.946Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="LangGraph">
+<meta property="article:tag" content="MultiAgent">
+<meta property="article:tag" content="Orchestration">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent开发/Agent-10-09.多Agent编排与LangGraph/"/>
+
+
+
+
+
+  <title>Agent-10-09.多Agent编排与LangGraph | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent%E5%BC%80%E5%8F%91/Agent-10-09.%E5%A4%9AAgent%E7%BC%96%E6%8E%92%E4%B8%8ELangGraph/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Agent-10-09.多Agent编排与LangGraph</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-31T14:45:00+08:00">
+                2026-07-31
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  多 Agent 协作、显式状态图、LangGraph checkpoint 与本仓库 orchestrator 实现。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>系列：<a href="./Agent-10-00.%E7%9F%A5%E8%AF%86%E7%82%B9%E7%B3%BB%E5%88%97%E7%B4%A2%E5%BC%95.md">00 索引</a> · 上一篇：<a href="./Agent-10-08.%E4%BA%BA%E5%9C%A8%E5%9B%9E%E8%B7%AFHITL.md">08 HITL</a> · 下一篇：<a href="./Agent-10-10.%E9%95%BF%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%A4%96%E9%83%A8%E8%AE%A1%E7%AE%97%E8%B0%83%E5%BA%A6.md">10 长任务</a></p>
+<hr>
+<h2 id="1-行业常见问题"><a href="#1-行业常见问题" class="headerlink" title="1. 行业常见问题"></a>1. 行业常见问题</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>痛点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单 Agent 提示词过长</td>
+<td>角色混乱、工具误用</td>
+</tr>
+<tr>
+<td>if&#x2F;else 散落业务代码</td>
+<td>不可测试、不可视化</td>
+</tr>
+<tr>
+<td>进程崩溃丢进度</td>
+<td>长流程需恢复</td>
+</tr>
+<tr>
+<td>无法「回到文献阶段改方向」</td>
+<td>缺显式回退</td>
+</tr>
+</tbody></table>
+<p>多角色产品（调研+执行+审核）需要 <strong>分工 + 显式控制流</strong>。</p>
+<hr>
+<h2 id="2-该技术如何解决"><a href="#2-该技术如何解决" class="headerlink" title="2. 该技术如何解决"></a>2. 该技术如何解决</h2><p><strong>多 Agent</strong>：每角色独立 <code>agent.yaml</code> + MCP（sequence &#x2F; literature &#x2F; method_kb &#x2F; planner &#x2F; analyst &#x2F; reporter）。<br><strong>编排器</strong>：<code>agent/orchestrator/graph.py</code> 用 LangGraph 串联 Specialist 节点，<strong>不内嵌 RAG&#x2F;Argo 细节</strong>。<br><strong>Checkpoint</strong>：<code>workspace/checkpoints.db</code> 持久化 <code>PipelineState</code>，配合 HITL resume（见 08）。</p>
+<hr>
+<h2 id="3-核心原理"><a href="#3-核心原理" class="headerlink" title="3. 核心原理"></a>3. 核心原理</h2><h3 id="3-1-PipelineState-存什么"><a href="#3-1-PipelineState-存什么" class="headerlink" title="3.1 PipelineState 存什么"></a>3.1 PipelineState 存什么</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/state.py</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PipelineState</span>(TypedDict, total=<span class="literal">False</span>):</span><br><span class="line">    run_id: <span class="built_in">str</span>                      <span class="comment"># LangGraph configurable.thread_id；RunStore 主键</span></span><br><span class="line">    gene_symbol: <span class="built_in">str</span>                 <span class="comment"># 传入各 Specialist 的基因 symbol</span></span><br><span class="line">    stage: <span class="built_in">str</span>                       <span class="comment"># 当前阶段名；CLI/SSE 展示进度</span></span><br><span class="line">    sequence_summary: <span class="built_in">str</span>            <span class="comment"># node_sequence 写入；report / llm_report 输入</span></span><br><span class="line">    sequence_artifact_path: <span class="built_in">str</span>      <span class="comment"># transcripts.json 等路径；审计链接</span></span><br><span class="line">    literature_summary: <span class="built_in">str</span>          <span class="comment"># node_literature 摘要</span></span><br><span class="line">    literature_artifact_path: <span class="built_in">str</span>    <span class="comment"># literature_manifest.json 路径</span></span><br><span class="line">    method_kb_summary: <span class="built_in">str</span>           <span class="comment"># node_method_kb 摘要</span></span><br><span class="line">    method_kb_artifact_path: <span class="built_in">str</span>     <span class="comment"># method_manifest.json 路径</span></span><br><span class="line">    planner_summary: <span class="built_in">str</span>             <span class="comment"># node_planner 摘要；HITL 待办展示</span></span><br><span class="line">    plan_artifact_path: <span class="built_in">str</span>          <span class="comment"># research_plan.json；HITL payload_path</span></span><br><span class="line">    analyst_summary: <span class="built_in">str</span>             <span class="comment"># node_analyst 执行摘要</span></span><br><span class="line">    execution_artifact_path: <span class="built_in">str</span>     <span class="comment"># execution_manifest.json 路径</span></span><br><span class="line">    report: <span class="built_in">str</span>                      <span class="comment"># 最终 Markdown 正文（内存）</span></span><br><span class="line">    report_artifact_path: <span class="built_in">str</span>        <span class="comment"># final_report.md 落盘路径</span></span><br><span class="line">    approved: <span class="built_in">bool</span>                   <span class="comment"># HITL：True 才允许 analyst submit（见 08）</span></span><br><span class="line">    iteration: <span class="built_in">int</span>                  <span class="comment"># 循环轮次（build_pipeline_loop）</span></span><br><span class="line">    max_iterations: <span class="built_in">int</span>             <span class="comment"># 最大循环次数，超限 → END</span></span><br><span class="line">    revise_feedback: <span class="built_in">str</span>            <span class="comment"># 人工调整方向，literature 重检索时消费</span></span><br><span class="line">    review_approved: <span class="built_in">bool</span>           <span class="comment"># analyst 后审核通过 → reporter</span></span><br></pre></td></tr></table></figure>
+
+<p>只存 <strong>摘要 + artifact 路径</strong>，不存 FASTA&#x2F;PDF 全文。</p>
+<h3 id="3-2-GraphConfig-编译开关"><a href="#3-2-GraphConfig-编译开关" class="headerlink" title="3.2 GraphConfig 编译开关"></a>3.2 GraphConfig 编译开关</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/graph.py</span></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">GraphConfig</span>:</span><br><span class="line">    workspace_root: Path = Path(<span class="string">&quot;workspace&quot;</span>)  <span class="comment"># RunStore / artifact / checkpoint 根目录</span></span><br><span class="line">    use_llm_agents: <span class="built_in">bool</span> = <span class="literal">False</span>   <span class="comment"># True：Specialist 走 AgentRuntime.chat + tool loop</span></span><br><span class="line">    use_llm_planner: <span class="built_in">bool</span> = <span class="literal">False</span>  <span class="comment"># True：planner 节点用 LangChain structured output</span></span><br><span class="line">    force_mock_llm: <span class="built_in">bool</span> = <span class="literal">False</span>   <span class="comment"># True：无 API Key 时用 mock 回复</span></span><br><span class="line">    collection: <span class="built_in">str</span> = <span class="string">&quot;brca1_gene&quot;</span>   <span class="comment"># literature 节点 query_hybrid 的 collection</span></span><br><span class="line">    method_domain: <span class="built_in">str</span> = <span class="string">&quot;sirna_methods&quot;</span>  <span class="comment"># method_kb 节点 query_graph 的 domain</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-节点粒度"><a href="#3-3-节点粒度" class="headerlink" title="3.3 节点粒度"></a>3.3 节点粒度</h3><p>一个 LangGraph 节点 &#x3D; 一次 <strong>Specialist 入口</strong>（或 HITL 闸门），不是一个 MCP tool：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">node_literature → run_literature_agent() / run_literature_direct()</span><br><span class="line">node_planner    → run_planner_agent() / run_planner_direct()</span><br><span class="line">node_analyst    → run_analyst_direct(hitl_approved=state[&quot;approved&quot;])</span><br></pre></td></tr></table></figure>
+
+<p><code>--llm-agents</code> 时走 <code>AgentRuntime.chat</code> + tool loop；默认 direct 模式调 MCP&#x2F;函数，便于 CI 与无密钥验收。</p>
+<h3 id="3-4-两种流水线形态"><a href="#3-4-两种流水线形态" class="headerlink" title="3.4 两种流水线形态"></a>3.4 两种流水线形态</h3><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>构建函数</th>
+<th>边</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>短流水线</td>
+<td><code>build_pipeline(full=False)</code></td>
+<td>method_kb → report</td>
+<td>三阶段调研 + 合成报告</td>
+</tr>
+<tr>
+<td>线性 full</td>
+<td><code>build_pipeline(full=True)</code></td>
+<td>… → planner → hitl_plan → analyst → reporter</td>
+<td>含方案与 Argo，<strong>无回环</strong></td>
+</tr>
+<tr>
+<td><strong>审核循环 full</strong></td>
+<td><code>build_pipeline_loop()</code></td>
+<td>analyst → hitl_review → literature（revise）或 reporter（approve）</td>
+<td>执行结果不满意时人工给方向，从 literature 重跑</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-典型实现与代码示例"><a href="#4-典型实现与代码示例" class="headerlink" title="4. 典型实现与代码示例"></a>4. 典型实现与代码示例</h2><p>基于 <strong><code>agent/orchestrator/graph.py</code></strong>，理解框架如何 <strong>构图 + 编译 + 调用</strong>。</p>
+<h3 id="4-1-线性构建图（build-pipeline）"><a href="#4-1-线性构建图（build-pipeline）" class="headerlink" title="4.1 线性构建图（build_pipeline）"></a>4.1 线性构建图（<code>build_pipeline</code>）</h3><p>默认 <strong>无环 DAG</strong>，适合一次性跑通、CI 验收。与循环版 <strong>并存</strong>，不互相替代。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/graph.py（节选）</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_pipeline</span>(<span class="params">cfg, *, full: <span class="built_in">bool</span> = <span class="literal">False</span>, with_hitl: <span class="built_in">bool</span> = <span class="literal">False</span>, use_interrupt: <span class="built_in">bool</span> = <span class="literal">False</span></span>):</span><br><span class="line">    nodes = make_nodes(cfg)</span><br><span class="line">    graph = StateGraph(PipelineState)</span><br><span class="line"></span><br><span class="line">    graph.add_node(<span class="string">&quot;sequence&quot;</span>, nodes[<span class="string">&quot;sequence&quot;</span>])</span><br><span class="line">    graph.add_node(<span class="string">&quot;literature&quot;</span>, nodes[<span class="string">&quot;literature&quot;</span>])</span><br><span class="line">    graph.add_node(<span class="string">&quot;method_kb&quot;</span>, nodes[<span class="string">&quot;method_kb&quot;</span>])</span><br><span class="line">    graph.add_edge(START, <span class="string">&quot;sequence&quot;</span>)</span><br><span class="line">    graph.add_edge(<span class="string">&quot;sequence&quot;</span>, <span class="string">&quot;literature&quot;</span>)</span><br><span class="line">    graph.add_edge(<span class="string">&quot;literature&quot;</span>, <span class="string">&quot;method_kb&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> full:</span><br><span class="line">        graph.add_node(<span class="string">&quot;planner&quot;</span>, nodes[<span class="string">&quot;planner&quot;</span>])</span><br><span class="line">        graph.add_node(<span class="string">&quot;analyst&quot;</span>, nodes[<span class="string">&quot;analyst&quot;</span>])</span><br><span class="line">        graph.add_node(<span class="string">&quot;reporter&quot;</span>, nodes[<span class="string">&quot;reporter&quot;</span>])</span><br><span class="line">        graph.add_edge(<span class="string">&quot;method_kb&quot;</span>, <span class="string">&quot;planner&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> with_hitl:</span><br><span class="line">            graph.add_node(<span class="string">&quot;hitl_plan&quot;</span>, nodes[<span class="string">&quot;hitl_plan&quot;</span>])</span><br><span class="line">            graph.add_edge(<span class="string">&quot;planner&quot;</span>, <span class="string">&quot;hitl_plan&quot;</span>)</span><br><span class="line">            graph.add_edge(<span class="string">&quot;hitl_plan&quot;</span>, <span class="string">&quot;analyst&quot;</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            graph.add_edge(<span class="string">&quot;planner&quot;</span>, <span class="string">&quot;analyst&quot;</span>)</span><br><span class="line">        graph.add_edge(<span class="string">&quot;analyst&quot;</span>, <span class="string">&quot;reporter&quot;</span>)   <span class="comment"># 线性：analyst 后只能进 reporter</span></span><br><span class="line">        graph.add_edge(<span class="string">&quot;reporter&quot;</span>, END)</span><br><span class="line">        <span class="keyword">return</span> graph.<span class="built_in">compile</span>(</span><br><span class="line">            checkpointer=get_checkpointer(),</span><br><span class="line">            interrupt_before=[<span class="string">&quot;analyst&quot;</span>] <span class="keyword">if</span> use_interrupt <span class="keyword">and</span> with_hitl <span class="keyword">else</span> <span class="literal">None</span>,</span><br><span class="line">        )</span><br><span class="line">    <span class="comment"># ... 短流水线 report 分支</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-Specialist-节点：编排-vs-业务分离"><a href="#4-2-Specialist-节点：编排-vs-业务分离" class="headerlink" title="4.2 Specialist 节点：编排 vs 业务分离"></a>4.2 Specialist 节点：编排 vs 业务分离</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/specialists.py</span></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SpecialistResult</span>:</span><br><span class="line">    summary: <span class="built_in">str</span>        <span class="comment"># 写入 PipelineState 的 *_summary 字段</span></span><br><span class="line">    artifact_path: Path <span class="comment"># 写入 PipelineState 的 *_artifact_path 字段</span></span><br><span class="line">    stage: <span class="built_in">str</span>          <span class="comment"># 写入 PipelineState.stage（如 literature_done）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_literature_agent</span>(<span class="params">symbol, *, run_id, workspace_root, collection, force_mock_llm</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;加载 agent/literature/agent.yaml → AgentRuntime.chat → 写 literature_manifest artifact。&quot;&quot;&quot;</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_literature_direct</span>(<span class="params">symbol, *, run_id, workspace_root, collection</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;无 LLM：ingest + query_hybrid + 写 manifest，供编排 CI 使用。&quot;&quot;&quot;</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>编排层 <strong>只选</strong> agent 还是 direct；RAG 细节留在 <code>literature</code> &#x2F; <code>mcp_rag_gene</code>。</p>
+<h3 id="4-3-调用与-checkpoint"><a href="#4-3-调用与-checkpoint" class="headerlink" title="4.3 调用与 checkpoint"></a>4.3 调用与 checkpoint</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/cli.py run 命令（节选）</span></span><br><span class="line">app = build_pipeline(cfg, full=full, with_hitl=hitl, use_interrupt=<span class="literal">False</span>)</span><br><span class="line">config = &#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: run_id&#125;&#125;</span><br><span class="line">initial: PipelineState = &#123;</span><br><span class="line">    <span class="string">&quot;run_id&quot;</span>: run_id,</span><br><span class="line">    <span class="string">&quot;gene_symbol&quot;</span>: symbol,</span><br><span class="line">    <span class="string">&quot;stage&quot;</span>: <span class="string">&quot;started&quot;</span>,</span><br><span class="line">    <span class="string">&quot;approved&quot;</span>: approve <span class="keyword">if</span> hitl <span class="keyword">else</span> <span class="literal">True</span>,</span><br><span class="line">&#125;</span><br><span class="line">final = app.invoke(initial, config=config)</span><br><span class="line">snapshot = app.get_state(config)  <span class="comment"># 从 checkpoints.db 读回</span></span><br></pre></td></tr></table></figure>
+
+<p>流式场景用 <code>app.stream(..., stream_mode=&quot;updates&quot;)</code>，见 <code>agent/orchestrator/streaming.py</code>。</p>
+<h3 id="4-4-循环构建图（build-pipeline-loop）"><a href="#4-4-循环构建图（build-pipeline-loop）" class="headerlink" title="4.4 循环构建图（build_pipeline_loop）"></a>4.4 循环构建图（<code>build_pipeline_loop</code>）</h3><p>在 <strong>保留线性 <code>build_pipeline</code> 不变</strong> 的前提下，单独提供带 <strong>回环</strong> 的 full 流水线：analyst 执行完后进入 <strong><code>hitl_review</code></strong>，人工审核 execution 结果；不满意则填写 <strong><code>revise_feedback</code></strong>，图从 <strong>literature</strong> 重新执行（跳过 sequence，保留已选转录本 artifact）。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sequence → literature → method_kb → planner → hitl_plan → analyst</span><br><span class="line">                                                              ↓</span><br><span class="line">                                                         hitl_review</span><br><span class="line">                           ┌──────── revise_feedback ────────┘</span><br><span class="line">                           ↓</span><br><span class="line">                      literature → method_kb → planner → hitl_plan → analyst → …</span><br><span class="line">                           │</span><br><span class="line">              review_approved</span><br><span class="line">                           ↓</span><br><span class="line">                       reporter → END</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-4-1-循环专用-state-字段"><a href="#4-4-1-循环专用-state-字段" class="headerlink" title="4.4.1 循环专用 state 字段"></a>4.4.1 循环专用 state 字段</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/state.py（循环字段）</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PipelineState</span>(TypedDict, total=<span class="literal">False</span>):</span><br><span class="line">    iteration: <span class="built_in">int</span>           <span class="comment"># 当前循环轮次，每次 revise +1</span></span><br><span class="line">    max_iterations: <span class="built_in">int</span>      <span class="comment"># 硬上限（初始 state 建议 3），超限 route → END</span></span><br><span class="line">    revise_feedback: <span class="built_in">str</span>     <span class="comment"># 人工调整方向；literature 节点拼入 query 后清空</span></span><br><span class="line">    review_approved: <span class="built_in">bool</span>    <span class="comment"># True → hitl_review 后进入 reporter</span></span><br><span class="line">    approved: <span class="built_in">bool</span>           <span class="comment"># 计划 HITL；revise 回 literature 时重置为 False，需重新批 plan</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="4-4-2-构图与条件路由"><a href="#4-4-2-构图与条件路由" class="headerlink" title="4.4.2 构图与条件路由"></a>4.4.2 构图与条件路由</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># agent/orchestrator/graph.py</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_pipeline_loop</span>(<span class="params">cfg, *, with_hitl=<span class="literal">True</span>, use_interrupt=<span class="literal">False</span></span>):</span><br><span class="line">    nodes = make_nodes(cfg)</span><br><span class="line">    graph = StateGraph(PipelineState)</span><br><span class="line">    <span class="comment"># … 注册 sequence / literature / method_kb / planner / analyst / reporter / hitl_review</span></span><br><span class="line">    graph.add_edge(<span class="string">&quot;analyst&quot;</span>, <span class="string">&quot;hitl_review&quot;</span>)</span><br><span class="line">    graph.add_conditional_edges(</span><br><span class="line">        <span class="string">&quot;hitl_review&quot;</span>,</span><br><span class="line">        route_after_review,</span><br><span class="line">        &#123;<span class="string">&quot;reporter&quot;</span>: <span class="string">&quot;reporter&quot;</span>, <span class="string">&quot;literature&quot;</span>: <span class="string">&quot;literature&quot;</span>, <span class="string">&quot;end&quot;</span>: END&#125;,</span><br><span class="line">    )</span><br><span class="line">    <span class="comment"># literature → method_kb → planner → [hitl_plan] → analyst 形成环</span></span><br><span class="line">    <span class="keyword">return</span> graph.<span class="built_in">compile</span>(</span><br><span class="line">        checkpointer=get_checkpointer(),</span><br><span class="line">        interrupt_before=[<span class="string">&quot;analyst&quot;</span>, <span class="string">&quot;hitl_review&quot;</span>] <span class="keyword">if</span> use_interrupt <span class="keyword">else</span> <span class="literal">None</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">route_after_review</span>(<span class="params">state</span>) -&gt; <span class="type">Literal</span>[<span class="string">&quot;reporter&quot;</span>, <span class="string">&quot;literature&quot;</span>, <span class="string">&quot;end&quot;</span>]:</span><br><span class="line">    <span class="keyword">if</span> state.get(<span class="string">&quot;review_approved&quot;</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;reporter&quot;</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">int</span>(state.get(<span class="string">&quot;iteration&quot;</span>) <span class="keyword">or</span> <span class="number">0</span>) &gt;= <span class="built_in">int</span>(state.get(<span class="string">&quot;max_iterations&quot;</span>) <span class="keyword">or</span> <span class="number">3</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;end&quot;</span></span><br><span class="line">    <span class="keyword">if</span> (state.get(<span class="string">&quot;revise_feedback&quot;</span>) <span class="keyword">or</span> <span class="string">&quot;&quot;</span>).strip():</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;literature&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;end&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>node_literature</code> 读取 <code>revise_feedback</code> 拼入检索问题；消费后清空并设 <code>approved=False</code>，下一轮 planner 后需再次走 <strong>hitl_plan</strong>（见 Agent-10-08）。</p>
+<p><code>node_hitl_review</code> 使用 <strong><code>HITLGate.S5_EXECUTE</code></strong>，待办摘要为 <code>analyst_summary</code>，payload 为 <code>execution_artifact_path</code>。</p>
+<h4 id="4-4-3-interrupt-resume（两档人工闸门）"><a href="#4-4-3-interrupt-resume（两档人工闸门）" class="headerlink" title="4.4.3 interrupt + resume（两档人工闸门）"></a>4.4.3 interrupt + resume（两档人工闸门）</h4><table>
+<thead>
+<tr>
+<th>闸门</th>
+<th>interrupt 点</th>
+<th>人工操作</th>
+<th>state 写入</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>计划审批</td>
+<td><code>analyst</code> 前</td>
+<td>approve plan</td>
+<td><code>approved=True</code></td>
+</tr>
+<tr>
+<td>执行审核</td>
+<td><code>hitl_review</code> 前</td>
+<td>结果 OK &#x2F; 需 revise</td>
+<td><code>review_approved=True</code> 或 <code>revise_feedback=&quot;…&quot;</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动循环流水线（伪代码，同 Agent-10-08 streaming 模式）</span></span><br><span class="line">app = build_pipeline_loop(cfg, with_hitl=<span class="literal">True</span>, use_interrupt=<span class="literal">True</span>)</span><br><span class="line">initial: PipelineState = &#123;</span><br><span class="line">    <span class="string">&quot;run_id&quot;</span>: run_id,</span><br><span class="line">    <span class="string">&quot;gene_symbol&quot;</span>: <span class="string">&quot;BRCA1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;approved&quot;</span>: <span class="literal">False</span>,</span><br><span class="line">    <span class="string">&quot;iteration&quot;</span>: <span class="number">0</span>,</span><br><span class="line">    <span class="string">&quot;max_iterations&quot;</span>: <span class="number">3</span>,</span><br><span class="line">    <span class="string">&quot;revise_feedback&quot;</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">    <span class="string">&quot;review_approved&quot;</span>: <span class="literal">False</span>,</span><br><span class="line">&#125;</span><br><span class="line">app.stream(initial, config)  <span class="comment"># 可在 analyst 前、hitl_review 前各 interrupt 一次</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 计划批准后 resume → analyst 跑完 → 再次 interrupt 在 hitl_review 前</span></span><br><span class="line">app.update_state(config, &#123;<span class="string">&quot;review_approved&quot;</span>: <span class="literal">False</span>, <span class="string">&quot;revise_feedback&quot;</span>: <span class="string">&quot;扩大检索 BRCA1 其它 isoform 文献&quot;</span>&#125;)</span><br><span class="line">app.stream(Command(resume=<span class="literal">True</span>), config)  <span class="comment"># → literature 重跑 → … → analyst</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="4-4-4-与线性版的选型"><a href="#4-4-4-与线性版的选型" class="headerlink" title="4.4.4 与线性版的选型"></a>4.4.4 与线性版的选型</h4><table>
+<thead>
+<tr>
+<th></th>
+<th><code>build_pipeline(full=True)</code></th>
+<th><code>build_pipeline_loop()</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>analyst 后</td>
+<td>固定 → reporter</td>
+<td>条件 → reporter &#x2F; literature</td>
+</tr>
+<tr>
+<td>适用</td>
+<td>一次性交付、自动化 CI</td>
+<td>科研试错、人工质控后改检索方向</td>
+</tr>
+<tr>
+<td>sequence</td>
+<td>每 run 一次</td>
+<td>仅首轮；revise 从 literature 重入</td>
+</tr>
+</tbody></table>
+<h3 id="4-5-工程验收"><a href="#4-5-工程验收" class="headerlink" title="4.5 工程验收"></a>4.5 工程验收</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 线性 mermaid（原有）</span></span><br><span class="line">uv run python -m agent.orchestrator.cli graph --full --hitl</span><br><span class="line"></span><br><span class="line"><span class="comment"># 循环 mermaid（新增）</span></span><br><span class="line">uv run python -m agent.orchestrator.cli graph --loop</span><br><span class="line"></span><br><span class="line"><span class="comment"># 线性 full 跑通</span></span><br><span class="line">uv run python -m agent.orchestrator.cli run --symbol BRCA1 --full</span><br><span class="line"></span><br><span class="line"><span class="comment"># HITL interrupt + resume（线性 / 循环均适用，循环需 build_pipeline_loop + 上述 state）</span></span><br><span class="line">uv run python -m agent.orchestrator.cli start-hitl --symbol BRCA1</span><br><span class="line">uv run python -m agent.orchestrator.cli resume &lt;run_id&gt; --approve</span><br></pre></td></tr></table></figure>
+
+<p>产物路径：<code>workspace/runs/&lt;run_id&gt;/</code> 下各 Specialist 的 manifest &#x2F; plan &#x2F; report。</p>
+<hr>
+<h2 id="5-替代方案与优缺点"><a href="#5-替代方案与优缺点" class="headerlink" title="5. 替代方案与优缺点"></a>5. 替代方案与优缺点</h2><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LangGraph + 本仓库 orchestrator</strong></td>
+<td>checkpoint、HITL、Specialist 解耦</td>
+<td>与 LangChain 生态绑定</td>
+</tr>
+<tr>
+<td>OpenAI Agents handoff</td>
+<td>轻量多 Agent</td>
+<td>复杂回退、长流程弱</td>
+</tr>
+<tr>
+<td>CrewAI</td>
+<td>角色声明快</td>
+<td>自定义 MCP 集成成本高</td>
+</tr>
+<tr>
+<td>单 Agent 强 prompt</td>
+<td>原型最快</td>
+<td>规模上限低</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-自检题"><a href="#6-自检题" class="headerlink" title="6. 自检题"></a>6. 自检题</h2><ol>
+<li>为什么 <code>node_literature</code> 不应直接写 BM25 逻辑？  </li>
+<li><code>build_pipeline</code> 与 <code>build_pipeline_loop</code> 各适合什么场景？  </li>
+<li>revise 回 literature 时为什么要重置 <code>approved=False</code>？</li>
+</ol>
+<hr>
+<h2 id="7-延伸阅读"><a href="#7-延伸阅读" class="headerlink" title="7. 延伸阅读"></a>7. 延伸阅读</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://langchain-ai.github.io/langgraph/">LangGraph 文档</a>  </li>
+<li>本仓库：<code>agent/orchestrator/</code>、<code>agent/demo_multiagent.py</code>  </li>
+<li>上一篇：<a href="./Agent-10-08.%E4%BA%BA%E5%9C%A8%E5%9B%9E%E8%B7%AFHITL.md">Agent-10-08 人在回路 HITL</a>  </li>
+<li>下一篇：<a href="./Agent-10-10.%E9%95%BF%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%A4%96%E9%83%A8%E8%AE%A1%E7%AE%97%E8%B0%83%E5%BA%A6.md">Agent-10-10 长任务与外部计算调度</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LangGraph/" rel="tag"><i class="fa fa-tag"></i> LangGraph</a>
+          
+            <a href="/tags/MultiAgent/" rel="tag"><i class="fa fa-tag"></i> MultiAgent</a>
+          
+            <a href="/tags/Orchestration/" rel="tag"><i class="fa fa-tag"></i> Orchestration</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent%E5%BC%80%E5%8F%91/Agent-10-08.%E4%BA%BA%E5%9C%A8%E5%9B%9E%E8%B7%AFHITL/" rel="next" title="Agent-10-08.人在回路HITL">
+                <i class="fa fa-chevron-left"></i> Agent-10-08.人在回路HITL
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent%E5%BC%80%E5%8F%91/Agent-10-10.%E9%95%BF%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%A4%96%E9%83%A8%E8%AE%A1%E7%AE%97%E8%B0%83%E5%BA%A6/" rel="prev" title="Agent-10-10.长任务与外部计算调度">
+                Agent-10-10.长任务与外部计算调度 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">939</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">794</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%A1%8C%E4%B8%9A%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">1. 行业常见问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%AF%A5%E6%8A%80%E6%9C%AF%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3"><span class="nav-number">2.</span> <span class="nav-text">2. 该技术如何解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">3. 核心原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-PipelineState-%E5%AD%98%E4%BB%80%E4%B9%88"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 PipelineState 存什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-GraphConfig-%E7%BC%96%E8%AF%91%E5%BC%80%E5%85%B3"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 GraphConfig 编译开关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%8A%82%E7%82%B9%E7%B2%92%E5%BA%A6"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 节点粒度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E4%B8%A4%E7%A7%8D%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%BD%A2%E6%80%81"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 两种流水线形态</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%85%B8%E5%9E%8B%E5%AE%9E%E7%8E%B0%E4%B8%8E%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 典型实现与代码示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E7%BA%BF%E6%80%A7%E6%9E%84%E5%BB%BA%E5%9B%BE%EF%BC%88build-pipeline%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 线性构建图（build_pipeline）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-Specialist-%E8%8A%82%E7%82%B9%EF%BC%9A%E7%BC%96%E6%8E%92-vs-%E4%B8%9A%E5%8A%A1%E5%88%86%E7%A6%BB"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 Specialist 节点：编排 vs 业务分离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E8%B0%83%E7%94%A8%E4%B8%8E-checkpoint"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 调用与 checkpoint</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E5%BE%AA%E7%8E%AF%E6%9E%84%E5%BB%BA%E5%9B%BE%EF%BC%88build-pipeline-loop%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 循环构建图（build_pipeline_loop）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-1-%E5%BE%AA%E7%8E%AF%E4%B8%93%E7%94%A8-state-%E5%AD%97%E6%AE%B5"><span class="nav-number">4.4.1.</span> <span class="nav-text">4.4.1 循环专用 state 字段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-2-%E6%9E%84%E5%9B%BE%E4%B8%8E%E6%9D%A1%E4%BB%B6%E8%B7%AF%E7%94%B1"><span class="nav-number">4.4.2.</span> <span class="nav-text">4.4.2 构图与条件路由</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-3-interrupt-resume%EF%BC%88%E4%B8%A4%E6%A1%A3%E4%BA%BA%E5%B7%A5%E9%97%B8%E9%97%A8%EF%BC%89"><span class="nav-number">4.4.3.</span> <span class="nav-text">4.4.3 interrupt + resume（两档人工闸门）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-4-%E4%B8%8E%E7%BA%BF%E6%80%A7%E7%89%88%E7%9A%84%E9%80%89%E5%9E%8B"><span class="nav-number">4.4.4.</span> <span class="nav-text">4.4.4 与线性版的选型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-5-%E5%B7%A5%E7%A8%8B%E9%AA%8C%E6%94%B6"><span class="nav-number">4.5.</span> <span class="nav-text">4.5 工程验收</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9B%BF%E4%BB%A3%E6%96%B9%E6%A1%88%E4%B8%8E%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">5.</span> <span class="nav-text">5. 替代方案与优缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%87%AA%E6%A3%80%E9%A2%98"><span class="nav-number">6.</span> <span class="nav-text">6. 自检题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">7.</span> <span class="nav-text">7. 延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

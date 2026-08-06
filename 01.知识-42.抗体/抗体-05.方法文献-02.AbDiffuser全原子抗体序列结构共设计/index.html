@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="抗体,方法文献,扩散模型,AbDiffuser,APMixer,全原子," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="深读 Martinkus et al.（NeurIPS）：等变物理约束扩散、Aligned Protein Mixer、AHo 对齐与去噪先验；pOAS 分布匹配与 HER2 体外结合验证。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AbDiffuser 文献解读：APMixer 驱动的全原子抗体序列–结构共设计">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="深读 Martinkus et al.（NeurIPS）：等变物理约束扩散、Aligned Protein Mixer、AHo 对齐与去噪先验；pOAS 分布匹配与 HER2 体外结合验证。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/fig01-abdiffuser-overview.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/fig02-abdiffuser-priors.png">
+<meta property="article:published_time" content="2026-07-22T01:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-06T05:38:56.300Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="APMixer">
+<meta property="article:tag" content="AbDiffuser">
+<meta property="article:tag" content="全原子">
+<meta property="article:tag" content="扩散模型">
+<meta property="article:tag" content="抗体">
+<meta property="article:tag" content="方法文献">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/fig01-abdiffuser-overview.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-42.抗体/抗体-05.方法文献-02.AbDiffuser全原子抗体序列结构共设计/"/>
+
+
+
+
+
+  <title>AbDiffuser 文献解读：APMixer 驱动的全原子抗体序列–结构共设计 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">AbDiffuser 文献解读：APMixer 驱动的全原子抗体序列–结构共设计</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-22T09:20:00+08:00">
+                2026-07-22
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  深读 Martinkus et al.（NeurIPS）：等变物理约束扩散、Aligned Protein Mixer、AHo 对齐与去噪先验；pOAS 分布匹配与 HER2 体外结合验证。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>系列</strong>：<a href="./%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-00.%E7%B3%BB%E5%88%97%E8%AF%B4%E6%98%8E.md">抗体-05.方法文献系列说明</a> · 第 02 篇<br><strong>范式对照</strong>：<a href="./%E6%8A%97%E4%BD%93-00.%E6%8A%97%E4%BD%93%E4%BA%B2%E5%92%8C%E5%8A%9B%E6%94%B9%E9%80%A0%E5%8F%91%E5%B1%95%E8%8C%83%E5%BC%8F.md">亲和力改造范式 · 方向 4b 生成</a>（全原子序列–结构联合生成；有体外验证）<br><strong>上篇对照</strong>：<a href="./%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1.md">AntiBARTy Diffusion</a>（潜空间性质引导，无 3D &#x2F; 无湿实验）</p>
+<hr>
+<h2 id="0-文献卡片"><a href="#0-文献卡片" class="headerlink" title="0. 文献卡片"></a>0. 文献卡片</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>题名</strong></td>
+<td>AbDiffuser: full-atom generation of in-vitro functioning antibodies</td>
+</tr>
+<tr>
+<td><strong>作者 &#x2F; 机构</strong></td>
+<td>Martinkus, Ludwiczak, Liang, Lafrance-Vanasse, Hotzel, Rajpal, Wu, Cho, Bonneau, Gligorijevic, Loukas 等；Prescient Design &#x2F; Antibody Engineering，Genentech–Roche（及 ETH Zurich、NYU）</td>
+</tr>
+<tr>
+<td><strong>载体</strong></td>
+<td>NeurIPS 2023 spotlight；<em>Adv Neural Inf Process Syst</em> <strong>37</strong>:40729–59（书目常标 2024）</td>
+</tr>
+<tr>
+<td><strong>链接</strong></td>
+<td><a target="_blank" rel="noopener" href="https://openreview.net/forum?id=7GyYpomkEa">OpenReview</a> · <a target="_blank" rel="noopener" href="https://proceedings.neurips.cc/paper_files/paper/2023/file/801ec05b0aae9fcd2ef35c168bd538e0-Paper-Conference.pdf">PDF</a> · <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2308.05027">arXiv:2308.05027</a></td>
+</tr>
+<tr>
+<td><strong>一句话贡献</strong></td>
+<td>用 <strong>APMixer</strong> + 物理投影 + 抗体特异去噪先验，在坐标空间做 <strong>SE(3) 等变</strong> 扩散，<strong>联合生成</strong> 配对抗体全原子结构与序列；HER2 上有表达与结合湿实验</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SE(3)</strong> 为三维刚体变换群（旋转+平移）；等变指输入刚体变换后，输出结构同步变换。<strong>全原子</strong>此处含骨架与侧链坐标，而非仅 (C_\alpha) &#x2F; 骨架。</p>
+</blockquote>
+<hr>
+<h2 id="1-问题与动机"><a href="#1-问题与动机" class="headerlink" title="1. 问题与动机"></a>1. 问题与动机</h2><p>多数蛋白扩散走两条路之一：</p>
+<ol>
+<li><strong>先骨架后序列</strong>（如 RFdiffusion → ProteinMPNN）：步骤解耦，早期决策难回退；  </li>
+<li><strong>只重做 CDR</strong>：设计空间小，难改框架&#x2F; vernier，也难同时探表达、稳定性等。</li>
+</ol>
+<p>同时，常用等变 Transformer &#x2F; 图网络（EGNN）在残基数上内存近似 <strong>二次</strong>，全原子（含侧链）很难单卡放大。角度空间表示虽易嵌物理约束，但与高斯扩散匹配不佳。</p>
+<p>AbDiffuser 的切入点：抗体可变区可用 <strong>全局对齐编号</strong> 压成固定长度，从而：</p>
+<ul>
+<li>用类似 <strong>MLP-Mixer</strong> 的行列混合网络隐式建模残基关系（线性内存）；  </li>
+<li>在<strong>笛卡尔坐标</strong>上做高斯扩散，再用<strong>投影层</strong>强制键长&#x2F;键角；  </li>
+<li>把家族先验写进扩散噪声过程本身。</li>
+</ul>
+<hr>
+<h2 id="2-方法总览"><a href="#2-方法总览" class="headerlink" title="2. 方法总览"></a>2. 方法总览</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/fig01-abdiffuser-overview.png" alt="图 1　AbDiffuser：噪声 → APMixer 等变去噪（AHo 对齐）→ 物理投影 → 全原子抗体（科普示意）"></p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>联合扩散状态</td>
+<td>原子坐标 (X^{\mathrm{pos}})（高斯噪声）+ 残基类型 (X^{\mathrm{res}})（含 gap 的分类噪声）</td>
+</tr>
+<tr>
+<td><strong>APMixer</strong></td>
+<td>对齐蛋白上的等变去噪网络（核心架构）</td>
+</tr>
+<tr>
+<td>Frame averaging</td>
+<td>用 PCA 构造 4 个 SE(3) 帧，块级平均，保手性（非含反射的 E(3)）</td>
+</tr>
+<tr>
+<td>投影层</td>
+<td>Kabsch 对齐理想骨架；通用侧链伪原子 → 按氨基酸模板还原全原子</td>
+</tr>
+<tr>
+<td>扩散先验</td>
+<td>(a) AHo 位点特异残基频率；(b) 学习的原子位置条件依赖（GMRF）</td>
+</tr>
+</tbody></table>
+<p>生成时网络联合预测：</p>
+<p>[<br>(\hat X_0^{\mathrm{pos}},\hat X_0^{\mathrm{res}})&#x3D;\phi(X_t^{\mathrm{pos}},X_t^{\mathrm{res}},t)<br>]</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>MLP-Mixer</strong> 用按行&#x2F;按列的 MLP 交替混合 token，替代显式自注意力；<strong>APMixer</strong>（Aligned Protein Mixer，对齐蛋白质混合器）将其改造成面向对齐蛋白族、并配合 SE(3) 帧平均的版本。</p>
+</blockquote>
+<hr>
+<h2 id="3-实现细节（一）：表示与-APMixer"><a href="#3-实现细节（一）：表示与-APMixer" class="headerlink" title="3. 实现细节（一）：表示与 APMixer"></a>3. 实现细节（一）：表示与 APMixer</h2><h3 id="3-1-AHo-对齐：变长-→-固定槽位"><a href="#3-1-AHo-对齐：变长-→-固定槽位" class="headerlink" title="3.1 AHo 对齐：变长 → 固定槽位"></a>3.1 AHo 对齐：变长 → 固定槽位</h3><p>采用 <strong>AHo</strong>（Honegger &amp; Plückthun）编号：每条链映射到 ([1,149]) 结构角色位点。配对抗体表示为 <strong>(2\times 149)</strong>（重链 149 + 轻链 149）。</p>
+<ul>
+<li><strong>Gap</strong> 用「幽灵残基」占位，坐标由邻近真实残基原子<strong>线性插值</strong>得到；  </li>
+<li>模型通过是否填氨基酸 &#x2F; 留 gap <strong>内生选择长度</strong>，无需事先给定残基数；  </li>
+<li>位点本身携带结构角色（框架 vs 某 CDR），利于学位置特异规则。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>AHo</strong> 是基于结构信息的免疫球蛋白可变域编号方案，几乎覆盖已知抗体长度变异。</p>
+</blockquote>
+<p>输入矩阵规模（骨干示例）：(r&#x3D;2\times 149) 行；每行含残基 one-hot（20 AA + gap）与骨干原子坐标等，列维约 (c&#x3D;21+4\times 3)。</p>
+<h3 id="3-2-APMixer-块"><a href="#3-2-APMixer-块" class="headerlink" title="3.2 APMixer 块"></a>3.2 APMixer 块</h3><p>每个块对输入矩阵 (X\in\mathbb{R}^{r\times c})：</p>
+<ol>
+<li><strong>列混合</strong>：对各列做 MLP（跨残基混合特征通道）；  </li>
+<li><strong>行混合</strong>：对各行做 MLP（残基内特征更新）。</li>
+</ol>
+<p>残基–残基关系<strong>隐式</strong>经由行列交替产生，内存随残基数近似 <strong>线性</strong>（对比 GNN&#x2F;注意力的二次）。作者证明底座模型具有 <strong>SE(3) 普适性</strong>（可逼近任意 SE(3) 等变函数）。</p>
+<p>等变实现：在每个块上做 <strong>frame averaging</strong>（优于仅对整网做一次）；嵌入向量拆成三维子向量算帧。输出拆半：一半对坐标<strong>等变</strong>，一半对残基类型<strong>不变</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>模型（作者 Table 2）</th>
+<th>参数量</th>
+<th>训练显存（bs&#x3D;4）</th>
+<th>生成 10 条</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>EGNN</td>
+<td>39.3M</td>
+<td>78 GB</td>
+<td>较慢</td>
+</tr>
+<tr>
+<td>FA-GNN</td>
+<td>9.4M</td>
+<td>75 GB</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>AbDiffuser (APMixer)</strong></td>
+<td><strong>169M</strong></td>
+<td><strong>12 GB</strong></td>
+<td><strong>2.3 min &#x2F; 3 GB</strong></td>
+</tr>
+</tbody></table>
+<p>同卡可堆到<strong>数亿参数</strong>，比对应 (E)GNN 高约一个数量级参数、同时更省显存。</p>
+<h3 id="3-3-物理投影（坐标空间约束）"><a href="#3-3-物理投影（坐标空间约束）" class="headerlink" title="3.3 物理投影（坐标空间约束）"></a>3.3 物理投影（坐标空间约束）</h3><p>扩散与网络可在坐标上自由移动原子；<strong>输入与输出</strong>都过非参数投影，保证约束：</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>骨架</strong></td>
+<td>理想 (C,C_\alpha,N,C_\beta) 模板 + Kabsch 最优刚体对齐；(C)–(O) 距约束约 (1.231) Å</td>
+</tr>
+<tr>
+<td><strong>侧链</strong></td>
+<td>生成时序列未知 → 用最多 4 个伪碳原子的<strong>通用侧链</strong>编码二面角自由度；键长约 (1.54) Å；再按氨基酸理想模板还原全原子</td>
+</tr>
+</tbody></table>
+<p>相对「纯角度参数化」：更贴合高斯坐标扩散；相对「无投影」：作者消融显示无投影时训练不稳、结构 RMSD 崩坏。</p>
+<hr>
+<h2 id="4-实现细节（二）：去噪扩散先验"><a href="#4-实现细节（二）：去噪扩散先验" class="headerlink" title="4. 实现细节（二）：去噪扩散先验"></a>4. 实现细节（二）：去噪扩散先验</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/fig02-abdiffuser-priors.png" alt="图 2　两类先验：AHo 位点残基频率；原子坐标的稀疏条件依赖（GMRF）（科普示意）"></p>
+<p>理论动机（附录）：先验与数据分布的 Wasserstein 距离越小，达到同等去噪质量所需的可学习模型越「简单」。</p>
+<h3 id="4-1-位点特异残基频率"><a href="#4-1-位点特异残基频率" class="headerlink" title="4.1 位点特异残基频率"></a>4.1 位点特异残基频率</h3><p>由训练集估计每位 (i) 的分类分布 (Q^i)，离散扩散噪声依赖位点：</p>
+<p>[<br>q(X_t^{\mathrm{res}}\mid X_0^{\mathrm{res}})&#x3D;\mathrm{Cat}\bigl(X_0^{\mathrm{res}}(\beta_t I+(1-\beta_t)Q^{i})\bigr)<br>]</p>
+<p>框架保守位熵低、CDR 位熵高；<strong>gap 频率</strong>一并进入 (Q^i)。</p>
+<h3 id="4-2-原子位置条件依赖（GMRF）"><a href="#4-2-原子位置条件依赖（GMRF）" class="headerlink" title="4.2 原子位置条件依赖（GMRF）"></a>4.2 原子位置条件依赖（GMRF）</h3><p>用 <strong>高斯马尔可夫随机场（Gaussian Markov Random Field，GMRF）</strong> 刻画坐标相关：精度矩阵为移位图拉普拉斯 (L+aI)，邻接 (A) <strong>从数据学习</strong>（稀疏条件独立结构），而非仅手写主链相邻相关。去噪时把这些相关编码进前向过程，减轻网络负担。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>GMRF</strong> 用稀疏图表示「无边则条件独立」；此处节点特征为三维原子坐标。</p>
+</blockquote>
+<hr>
+<h2 id="5-数据与任务设定"><a href="#5-数据与任务设定" class="headerlink" title="5. 数据与任务设定"></a>5. 数据与任务设定</h2><table>
+<thead>
+<tr>
+<th>任务</th>
+<th>数据</th>
+<th>结构来源</th>
+<th>目标</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>pOAS 分布匹配</strong></td>
+<td>paired OAS 约 <strong>10.5 万</strong> 对</td>
+<td>IgFold 折叠 + Rosetta 优化</td>
+<td>生成「像天然配对抗体」的序列+结构</td>
+</tr>
+<tr>
+<td><strong>HER2 binder 扩展</strong></td>
+<td>Mason et al. 2021：Trastuzumab CDR-H3 约 10 位点突变库；约 <strong>9k binders</strong> &#x2F; 25k non-binders</td>
+<td>生成模型<strong>只训 binder</strong></td>
+<td>探索已知抗原 binder 邻域；可降温 (\tau) 偏模态</td>
+</tr>
+</tbody></table>
+<p>说明：综述写「在 OAS 上训练」对应主任务 pOAS；<strong>抗原结合能力</strong>来自 Mason 突变库微调式训练，不是无条件 OAS 就能出 HER2 binder。</p>
+<p>另训 APMixer 分类器区分 binder&#x2F;non-binder（测试准确率约 <strong>87.8%</strong>），作 in silico (p_{\mathrm{bind}})。</p>
+<hr>
+<h2 id="6-结果与口径"><a href="#6-结果与口径" class="headerlink" title="6. 结果与口径"></a>6. 结果与口径</h2><h3 id="6-1-In-silico（pOAS）"><a href="#6-1-In-silico（pOAS）" class="headerlink" title="6.1 In silico（pOAS）"></a>6.1 In silico（pOAS）</h3><p>相对 Transformer &#x2F; EGNN &#x2F; FA-GNN &#x2F; IgLM（IgLM 数据量更大且含测试相关序列，对比不公平）：</p>
+<ul>
+<li>AbDiffuser（含侧链）在自然度、近邻距离、稳定性等 Wasserstein 指标上整体更优；  </li>
+<li>相对 IgFold 集成的骨架 RMSD 约 <strong>0.50</strong>（单模型 IgFold 基线约 0.42），结构接近参考分布；  </li>
+<li>侧链 Rosetta packing 均分约 <strong>0.62</strong>（参考优化结构约 0.67；&gt;0.6 通常视为可接受）；  </li>
+<li>消融：<strong>AHo 频率先验、协方差先验、投影层、侧链联合建模</strong> 均有贡献。</li>
+</ul>
+<h3 id="6-2-In-silico（HER2-Trastuzumab-突变）"><a href="#6-2-In-silico（HER2-Trastuzumab-突变）" class="headerlink" title="6.2 In silico（HER2 &#x2F; Trastuzumab 突变）"></a>6.2 In silico（HER2 &#x2F; Trastuzumab 突变）</h3><ul>
+<li>相对只改 CDR-H3 的 RefineGNN &#x2F; MEAN，AbDiffuser <strong>生成整分子</strong> 仍可更好贴合 binder 分布；  </li>
+<li>降低采样温度 (\tau) 可抬高预测结合概率，但多样性下降；  </li>
+<li>含侧链版本往往序列相似度与 (p_{\mathrm{bind}}) 更好。</li>
+</ul>
+<h3 id="6-3-In-vitro（作者核心卖点）"><a href="#6-3-In-vitro（作者核心卖点）" class="headerlink" title="6.3 In vitro（作者核心卖点）"></a>6.3 In vitro（作者核心卖点）</h3><p>送测 <strong>16</strong> 个设计：</p>
+<table>
+<thead>
+<tr>
+<th>口径</th>
+<th>数值（作者）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>表达 &#x2F; 纯化</td>
+<td><strong>100%</strong>；平均浓度约 <strong>1.25 mg&#x2F;mL</strong></td>
+</tr>
+<tr>
+<td>全体结合率</td>
+<td><strong>37.5%</strong>；结合者 (\mathrm{p}K_D\in[8.32,9.50])，均值约 <strong>8.70</strong></td>
+</tr>
+<tr>
+<td>再经 in silico 过滤后</td>
+<td>结合率 <strong>22.2% → 57.1%</strong>；均值约 <strong>8.78</strong></td>
+</tr>
+<tr>
+<td>最强 binder</td>
+<td>(\mathrm{p}K_D&#x3D;9.50)（略高于同期测得的 Trastuzumab ~9.21）；CDR-H3 差 <strong>4</strong> 位</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：(\mathrm{p}K_D&#x3D;-\log_{10}(K_D))，数值越大亲和力越强（与 (K_D) 方向相反）。</p>
+</blockquote>
+<p>作者强调：相对大规模先筛再 SPR 的路径，用更少精确亲和力测定即可找到强 binder——但任务是 <strong>已知药物邻域的突变扩展</strong>，不是无亲本、无库的表位从头设计。</p>
+<hr>
+<h2 id="7-局限与风险"><a href="#7-局限与风险" class="headerlink" title="7. 局限与风险"></a>7. 局限与风险</h2><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>任务边界</strong></td>
+<td>HER2 结果依赖 Mason binder 集；非抗原结构条件的 de novo binder</td>
+</tr>
+<tr>
+<td><strong>结构监督</strong></td>
+<td>pOAS 结构来自 IgFold+Rosetta，非晶体；生成质量相对该代理分布</td>
+</tr>
+<tr>
+<td><strong>对齐依赖</strong></td>
+<td>APMixer 吃固定对齐；换蛋白家族需可靠全局对齐</td>
+</tr>
+<tr>
+<td><strong>配对假设</strong></td>
+<td>建模 VH–VL 配对 Fv；恒定区 &#x2F; 糖基化等未在方法核心</td>
+</tr>
+<tr>
+<td><strong>过滤增益</strong></td>
+<td>57.1% 含人工 in silico 筛选，不可等同「无筛选采样命中率」</td>
+</tr>
+<tr>
+<td><strong>开源与复现</strong></td>
+<td>Genentech 工业工作；以论文方法节为准，权重&#x2F;代码可得性需自行核实</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-与相近方法对照"><a href="#8-与相近方法对照" class="headerlink" title="8. 与相近方法对照"></a>8. 与相近方法对照</h2><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>生成对象</th>
+<th>条件</th>
+<th>湿实验</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>AbDiffuser</strong></td>
+<td>全原子 Fv 序列+结构</td>
+<td>家族先验；binder 集（HER2）</td>
+<td>✅ HER2</td>
+</tr>
+<tr>
+<td>AntiBARTy Diffusion</td>
+<td>序列（潜空间）</td>
+<td>性质类（溶解度）</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>DiffAb &#x2F; MEAN</td>
+<td>多为 CDR</td>
+<td>抗原结构</td>
+<td>方法文各异</td>
+</tr>
+<tr>
+<td>RFantibody</td>
+<td>骨架→序列管线</td>
+<td>表位指定</td>
+<td>✅（后续 Nature）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-工程取用建议"><a href="#9-工程取用建议" class="headerlink" title="9. 工程取用建议"></a>9. 工程取用建议</h2><ol>
+<li><strong>适用</strong>：已有中等规模靶点 binder&#x2F;突变库，要<strong>扩展序列–结构邻域</strong>并兼顾表达；或要学配对抗体全原子分布。  </li>
+<li><strong>不适用（单独）</strong>：仅有抗原 PDB、无阳性序列时的零样本表位设计——需 DiffAb &#x2F; RFantibody 等结构条件路线。  </li>
+<li><strong>实现要点对齐</strong>：AHo (2\times149) + gap 幽灵残基；块级 frame averaging；投影层；(Q^i) 与 GMRF 先验；可选侧链头。  </li>
+<li><strong>本仓库衔接</strong>：范式文 4b 成果表已收录 HER2 57.1% 口径；编号工具见 <a href="./%E6%8A%97%E4%BD%93-04.%E5%B7%A5%E5%85%B7-04.ANARCI-%E6%8A%97%E4%BD%93%E7%BB%93%E6%9E%84%E6%B3%A8%E9%87%8A%E5%B7%A5%E5%85%B7%E7%A7%91%E6%99%AE.md">ANARCI</a>（可出 AHo）。</li>
+</ol>
+<hr>
+<h2 id="10-可核对原文要点清单"><a href="#10-可核对原文要点清单" class="headerlink" title="10. 可核对原文要点清单"></a>10. 可核对原文要点清单</h2><ul>
+<li><input disabled type="checkbox"> APMixer：行列 MLP；线性内存；~169M &#x2F; 单卡可训  </li>
+<li><input disabled type="checkbox"> AHo (2\times149)；gap 插值；SE(3) 帧平均（保手性）  </li>
+<li><input disabled type="checkbox"> 坐标扩散 + 骨架&#x2F;侧链投影；非纯角度扩散  </li>
+<li><input disabled type="checkbox"> 先验：位点 (Q^i) + 学习 GMRF 协方差  </li>
+<li><input disabled type="checkbox"> 数据：pOAS ~105k；HER2 Mason ~9k binders  </li>
+<li><input disabled type="checkbox"> 体外：16 设计全表达；过滤后 57.1% 紧结合；最佳 (\mathrm{p}K_D&#x3D;9.50)</li>
+</ul>
+<hr>
+<h2 id="参考文献（本篇）"><a href="#参考文献（本篇）" class="headerlink" title="参考文献（本篇）"></a>参考文献（本篇）</h2><ol>
+<li>Martinkus K, et al. <em>AbDiffuser: full-atom generation of in-vitro functioning antibodies</em>. <em>Adv Neural Inf Process Syst</em> 2024;37:40729–59. (NeurIPS 2023 spotlight; arXiv:2308.05027)  </li>
+<li>Tolstikhin et al. MLP-Mixer. NeurIPS 2021.  </li>
+<li>Honegger &amp; Plückthun. AHo numbering. <em>J Mol Biol</em> 2001.  </li>
+<li>Puny et al. Frame averaging for invariant&#x2F;equivariant networks. 2022.  </li>
+<li>Olsen et al. Observed Antibody Space. <em>Protein Science</em> 2022.  </li>
+<li>Mason et al. Optimization of therapeutic antibodies by predicting antigen specificity from antibody sequence. <em>Nat Biomed Eng</em> 2021.</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%8A%97%E4%BD%93/" rel="tag"><i class="fa fa-tag"></i> 抗体</a>
+          
+            <a href="/tags/%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE/" rel="tag"><i class="fa fa-tag"></i> 方法文献</a>
+          
+            <a href="/tags/%E6%89%A9%E6%95%A3%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 扩散模型</a>
+          
+            <a href="/tags/AbDiffuser/" rel="tag"><i class="fa fa-tag"></i> AbDiffuser</a>
+          
+            <a href="/tags/APMixer/" rel="tag"><i class="fa fa-tag"></i> APMixer</a>
+          
+            <a href="/tags/%E5%85%A8%E5%8E%9F%E5%AD%90/" rel="tag"><i class="fa fa-tag"></i> 全原子</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/" rel="next" title="AntiBARTy Diffusion 文献解读：BART 潜空间上的性质引导抗体生成">
+                <i class="fa fa-chevron-left"></i> AntiBARTy Diffusion 文献解读：BART 潜空间上的性质引导抗体生成
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-05%E8%A1%A5.%E5%BC%82%E6%AD%A5%E5%8E%9F%E7%90%86%E5%AE%9E%E7%8E%B0%E4%B8%8E%E8%B8%A9%E5%9D%91%E6%89%8B%E5%86%8C/" rel="prev" title="FastAPI-05补.异步原理实现与踩坑手册">
+                FastAPI-05补.异步原理实现与踩坑手册 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">939</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">794</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E6%96%87%E7%8C%AE%E5%8D%A1%E7%89%87"><span class="nav-number">1.</span> <span class="nav-text">0. 文献卡片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E4%B8%8E%E5%8A%A8%E6%9C%BA"><span class="nav-number">2.</span> <span class="nav-text">1. 问题与动机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%96%B9%E6%B3%95%E6%80%BB%E8%A7%88"><span class="nav-number">3.</span> <span class="nav-text">2. 方法总览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9A%E8%A1%A8%E7%A4%BA%E4%B8%8E-APMixer"><span class="nav-number">4.</span> <span class="nav-text">3. 实现细节（一）：表示与 APMixer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-AHo-%E5%AF%B9%E9%BD%90%EF%BC%9A%E5%8F%98%E9%95%BF-%E2%86%92-%E5%9B%BA%E5%AE%9A%E6%A7%BD%E4%BD%8D"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 AHo 对齐：变长 → 固定槽位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-APMixer-%E5%9D%97"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 APMixer 块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E7%89%A9%E7%90%86%E6%8A%95%E5%BD%B1%EF%BC%88%E5%9D%90%E6%A0%87%E7%A9%BA%E9%97%B4%E7%BA%A6%E6%9D%9F%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 物理投影（坐标空间约束）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%EF%BC%88%E4%BA%8C%EF%BC%89%EF%BC%9A%E5%8E%BB%E5%99%AA%E6%89%A9%E6%95%A3%E5%85%88%E9%AA%8C"><span class="nav-number">5.</span> <span class="nav-text">4. 实现细节（二）：去噪扩散先验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%BD%8D%E7%82%B9%E7%89%B9%E5%BC%82%E6%AE%8B%E5%9F%BA%E9%A2%91%E7%8E%87"><span class="nav-number">5.1.</span> <span class="nav-text">4.1 位点特异残基频率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%8E%9F%E5%AD%90%E4%BD%8D%E7%BD%AE%E6%9D%A1%E4%BB%B6%E4%BE%9D%E8%B5%96%EF%BC%88GMRF%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">4.2 原子位置条件依赖（GMRF）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%95%B0%E6%8D%AE%E4%B8%8E%E4%BB%BB%E5%8A%A1%E8%AE%BE%E5%AE%9A"><span class="nav-number">6.</span> <span class="nav-text">5. 数据与任务设定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E7%BB%93%E6%9E%9C%E4%B8%8E%E5%8F%A3%E5%BE%84"><span class="nav-number">7.</span> <span class="nav-text">6. 结果与口径</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-In-silico%EF%BC%88pOAS%EF%BC%89"><span class="nav-number">7.1.</span> <span class="nav-text">6.1 In silico（pOAS）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-In-silico%EF%BC%88HER2-Trastuzumab-%E7%AA%81%E5%8F%98%EF%BC%89"><span class="nav-number">7.2.</span> <span class="nav-text">6.2 In silico（HER2 &#x2F; Trastuzumab 突变）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-In-vitro%EF%BC%88%E4%BD%9C%E8%80%85%E6%A0%B8%E5%BF%83%E5%8D%96%E7%82%B9%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">6.3 In vitro（作者核心卖点）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B1%80%E9%99%90%E4%B8%8E%E9%A3%8E%E9%99%A9"><span class="nav-number">8.</span> <span class="nav-text">7. 局限与风险</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E7%9B%B8%E8%BF%91%E6%96%B9%E6%B3%95%E5%AF%B9%E7%85%A7"><span class="nav-number">9.</span> <span class="nav-text">8. 与相近方法对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B7%A5%E7%A8%8B%E5%8F%96%E7%94%A8%E5%BB%BA%E8%AE%AE"><span class="nav-number">10.</span> <span class="nav-text">9. 工程取用建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E5%8F%AF%E6%A0%B8%E5%AF%B9%E5%8E%9F%E6%96%87%E8%A6%81%E7%82%B9%E6%B8%85%E5%8D%95"><span class="nav-number">11.</span> <span class="nav-text">10. 可核对原文要点清单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%EF%BC%88%E6%9C%AC%E7%AF%87%EF%BC%89"><span class="nav-number">12.</span> <span class="nav-text">参考文献（本篇）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

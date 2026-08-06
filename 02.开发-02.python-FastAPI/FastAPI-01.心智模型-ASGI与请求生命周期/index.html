@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,FastAPI,ASGI," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="T1 原理篇：用第一性原理拆开 ASGI（服务器、应用可调用对象、scope&#x2F;receive&#x2F;send），费曼白话重建请求生命周期，并给出最小可运行代码与自测。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastAPI-01.心智模型-ASGI与请求生命周期">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="T1 原理篇：用第一性原理拆开 ASGI（服务器、应用可调用对象、scope&#x2F;receive&#x2F;send），费曼白话重建请求生命周期，并给出最小可运行代码与自测。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/image.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/fig-full-request-lifecycle-comic.png">
+<meta property="article:published_time" content="2026-07-16T06:10:00.000Z">
+<meta property="article:modified_time" content="2026-08-06T05:38:56.353Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="ASGI">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/image.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-02.python-FastAPI/FastAPI-01.心智模型-ASGI与请求生命周期/"/>
+
+
+
+
+
+  <title>FastAPI-01.心智模型-ASGI与请求生命周期 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">FastAPI-01.心智模型-ASGI与请求生命周期</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-16T14:10:00+08:00">
+                2026-07-16
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/Python/" itemprop="url" rel="index">
+                    <span itemprop="name">Python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  T1 原理篇：用第一性原理拆开 ASGI（服务器、应用可调用对象、scope/receive/send），费曼白话重建请求生命周期，并给出最小可运行代码与自测。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>行文：T1 原理篇</strong>　｜　<strong>本篇方法</strong>：第一性原理 + 费曼　｜　<strong>辅助</strong>：双重编码</p>
+<p><strong>前置补充</strong>（host&#x2F;port、TCP、HTTP 与 WebSocket、流式对比）：<a href="./FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket.md">01补 网络基础</a></p>
+<hr>
+<h2 id="1-问题：没有这层心智模型会坏在哪"><a href="#1-问题：没有这层心智模型会坏在哪" class="headerlink" title="1. 问题：没有这层心智模型会坏在哪"></a>1. 问题：没有这层心智模型会坏在哪</h2><p>只背 <code>@app.get</code> 也能写出 Hello World，但下面几类问题会反复踩坑：</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>根因往往在</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>「异步写了却不异步」：接口变慢、事件循环卡死</td>
+<td>不知道请求跑在 <strong>ASGI 服务器的事件循环</strong>里，阻塞调用会占住循环</td>
+</tr>
+<tr>
+<td>启动时连库失败、多 worker 下连接池错乱</td>
+<td>把「进程启动」和「单次请求」混为一谈，没用对 <strong>lifespan</strong></td>
+</tr>
+<tr>
+<td>想把 MCP &#x2F; 别的 ASGI 应用挂进同一进程却挂不上</td>
+<td>不清楚 FastAPI 本身就是一个 <strong>ASGI 应用</strong>，可被 mount &#x2F; 组合</td>
+</tr>
+<tr>
+<td>分不清 Flask 与 FastAPI「慢在哪、快在哪」</td>
+<td>没建立 <strong>WSGI vs ASGI</strong> 的协议层差异</td>
+</tr>
+</tbody></table>
+<p>本篇只建立心智模型：<strong>一次请求从字节流变成你的函数返回值，再变回字节流</strong>；路由细节留给 02。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ASGI</strong>（Asynchronous Server Gateway Interface，异步服务器网关接口）是 Python 异步 Web 服务器与应用之间的标准接口；<strong>WSGI</strong>（Web Server Gateway Interface）是传统同步接口。后文沿用缩写。</p>
+</blockquote>
+<hr>
+<h2 id="2-拆到底：最少必要组件"><a href="#2-拆到底：最少必要组件" class="headerlink" title="2. 拆到底：最少必要组件"></a>2. 拆到底：最少必要组件</h2><p>把「Web 框架」剥到不能再剥，只剩三样东西在协作：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[客户端] --TCP/HTTP字节--&gt; [ASGI 服务器] &lt;--约定--&gt; [ASGI 应用]</span><br><span class="line">                              uvicorn 等              FastAPI / Starlette / 手写 callable</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-1-ASGI-服务器（谁听端口）"><a href="#2-1-ASGI-服务器（谁听端口）" class="headerlink" title="2.1 ASGI 服务器（谁听端口）"></a>2.1 ASGI 服务器（谁听端口）</h3><ul>
+<li>职责：收 TCP、解析 HTTP（或 WebSocket）、按 ASGI 规范调用应用、把应用发出的事件写回套接字。</li>
+<li>常见实现：<strong>uvicorn</strong>、hypercorn、daphne。</li>
+<li>你本地敲的 <code>uvicorn main:app</code>，本质是：<strong>用服务器加载名为 <code>app</code> 的 ASGI 应用</strong>。</li>
+<li><code>host:port</code> &#x2F; TCP &#x2F; HTTP 会话边界的通俗说明见 <a href="./FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket.md">01补</a>。</li>
+</ul>
+<h3 id="2-2-ASGI-应用（一个可等待的调用约定）"><a href="#2-2-ASGI-应用（一个可等待的调用约定）" class="headerlink" title="2.2 ASGI 应用（一个可等待的调用约定）"></a>2.2 ASGI 应用（一个可等待的调用约定）</h3><p>规范上，应用是一个 <strong>async callable</strong>，签名形如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">app</span>(<span class="params">scope, receive, send</span>):</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>三个参数就是「协议合同」的全部：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>是什么</th>
+<th>类比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>scope</code></td>
+<td>描述<strong>这次连接</strong>的字典（类型、路径、头、方法等）</td>
+<td>快递单上的地址与类型</td>
+</tr>
+<tr>
+<td><code>receive</code></td>
+<td>异步可调用：从服务器<strong>取事件</strong>（如请求体块）</td>
+<td>打开包裹取货</td>
+</tr>
+<tr>
+<td><code>send</code></td>
+<td>异步可调用：向服务器<strong>发事件</strong>（状态码、头、正文）</td>
+<td>回寄回执与货物</td>
+</tr>
+</tbody></table>
+<p><strong>HTTP</strong> 下：一次请求 ≈ 一次对 <code>app(...)</code> 的调用，<code>scope[&quot;type&quot;] == &quot;http&quot;</code>。<br><strong>WebSocket</strong> 下：连接存活期间共用一个 scope，事件持续进出。<br>另有 <strong><code>lifespan</code></strong> 类型：不服务用户请求，只负责进程内「启动 &#x2F; 关闭」。</p>
+<h3 id="2-3-框架在合同之上堆的东西"><a href="#2-3-框架在合同之上堆的东西" class="headerlink" title="2.3 框架在合同之上堆的东西"></a>2.3 框架在合同之上堆的东西</h3><p>FastAPI <strong>并不替代</strong> ASGI；它实现上述 callable，并在内部叠：</p>
+<ol>
+<li><strong>Starlette</strong>：路由、中间件、Request&#x2F;Response、WebSocket 等 ASGI 工具层。</li>
+<li><strong>Pydantic</strong>：把 query&#x2F;body 等解析成类型安全的数据模型（细节见 <a href="../02.%E5%BC%80%E5%8F%91-02.python/Python-%E5%8C%85-pydantic-%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E5%AE%9A%E4%B9%89%E5%92%8C%E5%AD%97%E6%AE%B5%E6%A0%A1%E9%AA%8C.md">Pydantic 笔记</a>）。</li>
+<li><strong>你的路由函数</strong>：业务逻辑；框架负责把 <code>scope/receive/send</code> 翻译成函数参数与返回值。</li>
+</ol>
+<p>第一性原理结论：<strong>你会写的每个 <code>@app.get</code>，最终都要变成对 <code>send</code> 的若干次调用。</strong></p>
+<hr>
+<h2 id="3-白话重建（费曼稿）"><a href="#3-白话重建（费曼稿）" class="headerlink" title="3. 白话重建（费曼稿）"></a>3. 白话重建（费曼稿）</h2><p>把整条链路讲给「只懂寄快递」的人听：</p>
+<ol>
+<li><strong>客户</strong>往某个门牌（主机:端口）扔一个信封（HTTP 请求）。</li>
+<li><strong>门房（uvicorn）<strong>拆开信封，填一张</strong>派送单（scope）</strong>：送去哪条路径、什么方法、有哪些贴纸（headers）。正文可能太大，先不一次性塞进派送单，后面用 <strong>receive</strong> 一块块取。</li>
+<li>门房把派送单交给<strong>公司前台（FastAPI 应用）</strong>。前台按路径找柜员（路由），柜员可能先找后勤（依赖注入，见 03），再办事。</li>
+<li>柜员办完，前台把结果整理成「回执事件」：先说状态与贴纸，再一段段正文，通过 <strong>send</strong> 交给门房。</li>
+<li>门房写回套接字，客户收到响应。</li>
+</ol>
+<p><strong>和 Flask 差在哪（只记一点）</strong>：Flask 走 <strong>WSGI</strong>——一次调用通常是「同步函数拿完请求、返回完响应」；ASGI 把交互拆成 <strong>事件流</strong>，天然能挂异步 IO、WebSocket、流式响应，也才能和「同一进程里的其他 ASGI 应用」（例如 MCP 的 HTTP 传输）组合。</p>
+<p><strong>进程级另一条线（lifespan）</strong>：店开门时备货（连库、加载模型），打烊时收摊。这条线<strong>不是每个请求都跑</strong>，而是<strong>每个 worker 进程 &#x2F; 事件循环</strong>在开始接客前、停业时各走一轮。多 worker 时，每个进程各自备货——所以「全局只连一次」的直觉在多进程下是错的。</p>
+<hr>
+<h2 id="4-结构图（双重编码）·-全链路执行流程"><a href="#4-结构图（双重编码）·-全链路执行流程" class="headerlink" title="4. 结构图（双重编码）· 全链路执行流程"></a>4. 结构图（双重编码）· 全链路执行流程</h2><p>先建立「服务器 ↔ 应用」粗图，再展开 FastAPI 进程内<strong>全部可能组件</strong>的任务流转。与 <strong><a href="./FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97.md#0-%E5%AE%8C%E6%95%B4%E6%89%A7%E8%A1%8C%E9%80%BB%E8%BE%91%E6%B5%81%E7%A8%8B%E5%9B%BE%E4%BB%BB%E5%8A%A1%E6%B5%81%E8%BD%AC">04 §0</a></strong> 同源，便于中间件&#x2F;异常篇对照。</p>
+<h3 id="4-1-粗粒度：ASGI-两边"><a href="#4-1-粗粒度：ASGI-两边" class="headerlink" title="4.1 粗粒度：ASGI 两边"></a>4.1 粗粒度：ASGI 两边</h3><p><img src="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/image.png" alt="ASGI 请求生命周期（科普漫画）"></p>
+<p>读图时同时记住两层时间尺度：</p>
+<table>
+<thead>
+<tr>
+<th>尺度</th>
+<th>跑几次</th>
+<th>典型工作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>lifespan</strong>（进程&#x2F;事件循环）</td>
+<td>每 worker 启动与关闭各一套</td>
+<td>建池、加载模型、释放资源</td>
+</tr>
+<tr>
+<td><strong>单次 HTTP 请求</strong></td>
+<td>每请求一次 <code>app(scope, receive, send)</code></td>
+<td>中间件 → 路由 → 依赖 → 校验 → 业务 → 响应事件</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-细粒度：一次-HTTP-的完整组件链"><a href="#4-2-细粒度：一次-HTTP-的完整组件链" class="headerlink" title="4.2 细粒度：一次 HTTP 的完整组件链"></a>4.2 细粒度：一次 HTTP 的完整组件链</h3><p><img src="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/fig-full-request-lifecycle-comic.png" alt="全链路请求生命周期（科普漫画）"></p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>组件</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>网络</td>
+<td>客户端、TCP、反向代理（可选）</td>
+<td>字节进出</td>
+</tr>
+<tr>
+<td>ASGI 服务器</td>
+<td><strong>uvicorn</strong> 等</td>
+<td>解析协议 → 调 <code>app(scope, receive, send)</code></td>
+</tr>
+<tr>
+<td>应用</td>
+<td><strong>FastAPI &#x2F; Starlette</strong></td>
+<td>ASGI 应用本体</td>
+</tr>
+<tr>
+<td>横切</td>
+<td><strong>中间件洋葱</strong></td>
+<td>进路由前 &#x2F; 出响应后；可短路</td>
+</tr>
+<tr>
+<td>错误</td>
+<td><strong>exception_handler</strong></td>
+<td>异常 → Response</td>
+</tr>
+<tr>
+<td>路由</td>
+<td>路由表 &#x2F; <code>APIRouter</code></td>
+<td>method+path 匹配</td>
+</tr>
+<tr>
+<td>注入</td>
+<td><strong>Depends</strong></td>
+<td>用户、会话等</td>
+</tr>
+<tr>
+<td>校验</td>
+<td><strong>Pydantic</strong></td>
+<td>Path&#x2F;Query&#x2F;Body；失败常 422</td>
+</tr>
+<tr>
+<td>业务</td>
+<td>端点 <code>async def</code> &#x2F; <code>def</code></td>
+<td>后者常进线程池</td>
+</tr>
+<tr>
+<td>整形</td>
+<td><code>response_model</code>、状态码</td>
+<td>出站形状</td>
+</tr>
+<tr>
+<td>后置</td>
+<td><strong>BackgroundTasks</strong></td>
+<td>响应后轻量活</td>
+</tr>
+<tr>
+<td>回写</td>
+<td><strong>send</strong></td>
+<td>响应事件写回服务器</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">  C[客户端] --&gt; N[TCP / 可选反向代理]</span><br><span class="line">  N --&gt; U[uvicorn ASGI 服务器]</span><br><span class="line">  U --&gt;|scope receive send| APP[FastAPI ASGI 应用]</span><br><span class="line"></span><br><span class="line">  subgraph life[&quot;进程时钟 · 非每请求&quot;]</span><br><span class="line">    L1[lifespan 启动] -.-&gt; APP</span><br><span class="line">    APP -.-&gt; L2[lifespan 关闭]</span><br><span class="line">  end</span><br><span class="line"></span><br><span class="line">  APP --&gt; MW_IN[中间件洋葱 · 请求下行]</span><br><span class="line">  MW_IN --&gt; RT&#123;路由匹配&#125;</span><br><span class="line">  RT --&gt;|否| E404[404 / 405]</span><br><span class="line">  RT --&gt;|是| DEP[Depends]</span><br><span class="line">  DEP --&gt; VAL[参数校验]</span><br><span class="line">  VAL --&gt;|失败| E422[422 handler]</span><br><span class="line">  VAL --&gt;|通过| EP&#123;端点 async / sync&#125;</span><br><span class="line">  EP --&gt; BIZ[业务逻辑]</span><br><span class="line">  BIZ --&gt; RESP[Response / response_model]</span><br><span class="line">  BIZ -.-&gt;|异常| EH[exception_handler]</span><br><span class="line">  E404 --&gt; MW_OUT</span><br><span class="line">  E422 --&gt; MW_OUT</span><br><span class="line">  EH --&gt; MW_OUT</span><br><span class="line">  RESP --&gt; MW_OUT[中间件洋葱 · 响应上行]</span><br><span class="line">  MW_OUT --&gt; SEND[ASGI send]</span><br><span class="line">  SEND --&gt; U --&gt; C</span><br><span class="line">  RESP -.-&gt; BG[BackgroundTasks 可选]</span><br></pre></td></tr></table></figure>
+
+<p><strong>旁路</strong>：中间件不调 <code>call_next</code> 则短路；WebSocket 为长连接事件流；<code>mount</code> 把前缀交给子 ASGI 应用；多 worker 则每进程一套 lifespan。中间件洋葱与异常落点的排错见 <a href="./FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97.md">04</a>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>中间件洋葱</strong>：请求从外层进入、响应从内层传出；后注册的 <code>add_middleware</code> 通常更靠外。</p>
+</blockquote>
+<hr>
+<h2 id="5-最小代码：只证明原理"><a href="#5-最小代码：只证明原理" class="headerlink" title="5. 最小代码：只证明原理"></a>5. 最小代码：只证明原理</h2><h3 id="5-1-纯-ASGI：不用-FastAPI-也能应答"><a href="#5-1-纯-ASGI：不用-FastAPI-也能应答" class="headerlink" title="5.1 纯 ASGI：不用 FastAPI 也能应答"></a>5.1 纯 ASGI：不用 FastAPI 也能应答</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># plain_asgi.py —— 证明合同长什么样</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">app</span>(<span class="params">scope, receive, send</span>):</span><br><span class="line">    <span class="keyword">if</span> scope[<span class="string">&quot;type&quot;</span>] != <span class="string">&quot;http&quot;</span>:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">await</span> send(&#123;</span><br><span class="line">        <span class="string">&quot;type&quot;</span>: <span class="string">&quot;http.response.start&quot;</span>,</span><br><span class="line">        <span class="string">&quot;status&quot;</span>: <span class="number">200</span>,</span><br><span class="line">        <span class="string">&quot;headers&quot;</span>: [(<span class="string">b&quot;content-type&quot;</span>, <span class="string">b&quot;text/plain; charset=utf-8&quot;</span>)],</span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="keyword">await</span> send(&#123;</span><br><span class="line">        <span class="string">&quot;type&quot;</span>: <span class="string">&quot;http.response.body&quot;</span>,</span><br><span class="line">        <span class="string">&quot;body&quot;</span>: <span class="string">b&quot;hello from raw ASGI\n&quot;</span>,</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行：uvicorn plain_asgi:app --port 8000</span></span><br></pre></td></tr></table></figure>
+
+<p>合上眼睛应能复述：没有路由装饰器，只有 <strong>send 两次事件</strong>（先 start，再 body）。</p>
+<h3 id="5-2-FastAPI：同一合同上的薄封装"><a href="#5-2-FastAPI：同一合同上的薄封装" class="headerlink" title="5.2 FastAPI：同一合同上的薄封装"></a>5.2 FastAPI：同一合同上的薄封装</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># main.py</span></span><br><span class="line"><span class="keyword">from</span> contextlib <span class="keyword">import</span> asynccontextmanager</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@asynccontextmanager</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">lifespan</span>(<span class="params">app: FastAPI</span>):</span><br><span class="line">    <span class="comment"># 启动：备货（示例仅打印）</span></span><br><span class="line">    app.state.ready = <span class="literal">True</span></span><br><span class="line">    <span class="keyword">yield</span></span><br><span class="line">    <span class="comment"># 关闭：收摊</span></span><br><span class="line">    app.state.ready = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">app = FastAPI(lifespan=lifespan)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/ping&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">ping</span>():</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;ok&quot;</span>: <span class="literal">True</span>, <span class="string">&quot;ready&quot;</span>: app.state.ready&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行：uvicorn main:app --reload --port 8000</span></span><br><span class="line"><span class="comment"># 探针：curl -s http://127.0.0.1:8000/ping</span></span><br></pre></td></tr></table></figure>
+
+<p>要点：</p>
+<ul>
+<li><code>FastAPI(...)</code> 实例<strong>就是</strong> ASGI 应用（可被 uvicorn 加载，也可被别的 ASGI 应用 mount）。</li>
+<li><code>lifespan</code> 推荐写法是 <strong>async context manager</strong> 交给 <code>FastAPI(lifespan=...)</code>；<code>yield</code> 前为启动，后为关闭。官方已不推荐再依赖旧的 <code>@app.on_event(&quot;startup&quot;)</code> 风格作为新代码默认。</li>
+<li>路由函数返回 <code>dict</code> 时，框架负责序列化并最终变成对 <code>send</code> 的调用——你日常不必手写事件字典。</li>
+</ul>
+<h3 id="5-3-组件位置速查"><a href="#5-3-组件位置速查" class="headerlink" title="5.3 组件位置速查"></a>5.3 组件位置速查</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">uvicorn  →  加载 main:app</span><br><span class="line">                │</span><br><span class="line">                ├─ lifespan：启动 / 关闭（每 worker 一次套）</span><br><span class="line">                │</span><br><span class="line">                └─ 每个 HTTP 请求：</span><br><span class="line">                     scope + receive + send</span><br><span class="line">                         → 中间件洋葱（下行）</span><br><span class="line">                         → 路由匹配</span><br><span class="line">                         → Depends</span><br><span class="line">                         → Pydantic 校验</span><br><span class="line">                         → 端点 async/def</span><br><span class="line">                         → Response（或 exception_handler）</span><br><span class="line">                         → 中间件洋葱（上行）</span><br><span class="line">                         → send 事件</span><br><span class="line">                         →（可选）BackgroundTasks</span><br></pre></td></tr></table></figure>
+
+<p>完整图见 <a href="#4-%E7%BB%93%E6%9E%84%E5%9B%BE%E5%8F%8C%E9%87%8D%E7%BC%96%E7%A0%81%E5%85%A8%E9%93%BE%E8%B7%AF%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B">§4</a>。</p>
+<hr>
+<h2 id="6-和-Flask-WSGI-的边界（防混淆）"><a href="#6-和-Flask-WSGI-的边界（防混淆）" class="headerlink" title="6. 和 Flask &#x2F; WSGI 的边界（防混淆）"></a>6. 和 Flask &#x2F; WSGI 的边界（防混淆）</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>WSGI（Flask 典型）</th>
+<th>ASGI（FastAPI 典型）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>调用形态</td>
+<td>同步 <code>environ</code> + <code>start_response</code></td>
+<td>异步 <code>scope</code> + <code>receive</code> + <code>send</code></td>
+</tr>
+<tr>
+<td>长连接 &#x2F; 流式</td>
+<td>别扭或靠扩展</td>
+<td>协议一等公民（WebSocket、chunked&#x2F;流式）</td>
+</tr>
+<tr>
+<td>并发模型</td>
+<td>多线程&#x2F;多进程为主</td>
+<td>事件循环 + 可混进程&#x2F;多 worker</td>
+</tr>
+<tr>
+<td>应用组合</td>
+<td>中间件栈，形态偏 WSGI</td>
+<td>ASGI 应用可嵌套、mount</td>
+</tr>
+</tbody></table>
+<p>不必贬低 Flask：同步 CRUD、模板站仍然合适。选 FastAPI 的常见理由是 <strong>API + 类型校验 + 异步 IO + ASGI 生态组合</strong>（含后续与 MCP 共进程）。</p>
+<hr>
+<h2 id="7-合书自测（费曼三问）"><a href="#7-合书自测（费曼三问）" class="headerlink" title="7. 合书自测（费曼三问）"></a>7. 合书自测（费曼三问）</h2><p>遮住上文，口头或纸笔回答：</p>
+<ol>
+<li><strong>两句话解释</strong>：ASGI 服务器和 ASGI 应用各干什么？<code>scope / receive / send</code> 分别像什么？</li>
+<li><strong>一点本质差异</strong>：相对 Flask&#x2F;WSGI，ASGI 把「一次调用返回完整响应」改成了什么？这为什么能支撑 WebSocket &#x2F; 流式？</li>
+<li><strong>画出 4～6 步</strong>：从客户端发起到收到 JSON，中间经过哪些角色？（对照 <a href="#4-%E7%BB%93%E6%9E%84%E5%9B%BE%E5%8F%8C%E9%87%8D%E7%BC%96%E7%A0%81%E5%85%A8%E9%93%BE%E8%B7%AF%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B">§4</a> 自检；加分：标出中间件前半段&#x2F;后半段）</li>
+</ol>
+<p><strong>加分题</strong>：多开 4 个 uvicorn worker 时，lifespan 里的「全局连接池」会建几份？为什么？</p>
+<hr>
+<h2 id="8-闪卡候选（间隔重复）"><a href="#8-闪卡候选（间隔重复）" class="headerlink" title="8. 闪卡候选（间隔重复）"></a>8. 闪卡候选（间隔重复）</h2><table>
+<thead>
+<tr>
+<th>正面</th>
+<th>背面</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ASGI 应用 callable 三参数？</td>
+<td><code>scope</code>, <code>receive</code>, <code>send</code></td>
+</tr>
+<tr>
+<td>HTTP 下一次请求对应几次应用调用？</td>
+<td>通常一次（一个 http scope）</td>
+</tr>
+<tr>
+<td>lifespan 和单次请求谁更「少跑」？</td>
+<td>lifespan：每 worker 启停；请求：每次</td>
+</tr>
+<tr>
+<td>FastAPI 底下主要两块库？</td>
+<td>Starlette（ASGI 工具）+ Pydantic（数据）</td>
+</tr>
+<tr>
+<td><code>uvicorn main:app</code> 里 <code>app</code> 是什么？</td>
+<td>模块 <code>main</code> 中的 ASGI 应用对象</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>心智模型：<strong>服务器兑现字节 ↔ 事件；应用兑现 <code>scope/receive/send</code>；FastAPI 是后者上的生产力层。</strong></li>
+<li>两层时钟：<strong>lifespan（进程）</strong> 与 <strong>请求（每次）</strong> 不要混用。</li>
+<li>单次请求主链：<strong>中间件 → 路由 → Depends → 校验 → 端点 → Response → 中间件 → send</strong>（全图见 <a href="#4-%E7%BB%93%E6%9E%84%E5%9B%BE%E5%8F%8C%E9%87%8D%E7%BC%96%E7%A0%81%E5%85%A8%E9%93%BE%E8%B7%AF%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B">§4</a>）。</li>
+<li>下一篇 <strong><a href="./FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B.md">02 路由与数据模型</a></strong>：Path &#x2F; Query &#x2F; Body &#x2F; 响应模型六组块。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          
+            <a href="/tags/FastAPI/" rel="tag"><i class="fa fa-tag"></i> FastAPI</a>
+          
+            <a href="/tags/ASGI/" rel="tag"><i class="fa fa-tag"></i> ASGI</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-00.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB%E4%B8%8E%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95/" rel="next" title="FastAPI-00.系列导读与学习方法">
+                <i class="fa fa-chevron-left"></i> FastAPI-00.系列导读与学习方法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" rel="prev" title="FastAPI-02.路由与数据模型">
+                FastAPI-02.路由与数据模型 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">939</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">794</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%EF%BC%9A%E6%B2%A1%E6%9C%89%E8%BF%99%E5%B1%82%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B%E4%BC%9A%E5%9D%8F%E5%9C%A8%E5%93%AA"><span class="nav-number">1.</span> <span class="nav-text">1. 问题：没有这层心智模型会坏在哪</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%8B%86%E5%88%B0%E5%BA%95%EF%BC%9A%E6%9C%80%E5%B0%91%E5%BF%85%E8%A6%81%E7%BB%84%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">2. 拆到底：最少必要组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-ASGI-%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%88%E8%B0%81%E5%90%AC%E7%AB%AF%E5%8F%A3%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 ASGI 服务器（谁听端口）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-ASGI-%E5%BA%94%E7%94%A8%EF%BC%88%E4%B8%80%E4%B8%AA%E5%8F%AF%E7%AD%89%E5%BE%85%E7%9A%84%E8%B0%83%E7%94%A8%E7%BA%A6%E5%AE%9A%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 ASGI 应用（一个可等待的调用约定）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E6%A1%86%E6%9E%B6%E5%9C%A8%E5%90%88%E5%90%8C%E4%B9%8B%E4%B8%8A%E5%A0%86%E7%9A%84%E4%B8%9C%E8%A5%BF"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 框架在合同之上堆的东西</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E7%99%BD%E8%AF%9D%E9%87%8D%E5%BB%BA%EF%BC%88%E8%B4%B9%E6%9B%BC%E7%A8%BF%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 白话重建（费曼稿）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%BB%93%E6%9E%84%E5%9B%BE%EF%BC%88%E5%8F%8C%E9%87%8D%E7%BC%96%E7%A0%81%EF%BC%89%C2%B7-%E5%85%A8%E9%93%BE%E8%B7%AF%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 结构图（双重编码）· 全链路执行流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E7%B2%97%E7%B2%92%E5%BA%A6%EF%BC%9AASGI-%E4%B8%A4%E8%BE%B9"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 粗粒度：ASGI 两边</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E7%BB%86%E7%B2%92%E5%BA%A6%EF%BC%9A%E4%B8%80%E6%AC%A1-HTTP-%E7%9A%84%E5%AE%8C%E6%95%B4%E7%BB%84%E4%BB%B6%E9%93%BE"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 细粒度：一次 HTTP 的完整组件链</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E4%BB%A3%E7%A0%81%EF%BC%9A%E5%8F%AA%E8%AF%81%E6%98%8E%E5%8E%9F%E7%90%86"><span class="nav-number">5.</span> <span class="nav-text">5. 最小代码：只证明原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E7%BA%AF-ASGI%EF%BC%9A%E4%B8%8D%E7%94%A8-FastAPI-%E4%B9%9F%E8%83%BD%E5%BA%94%E7%AD%94"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 纯 ASGI：不用 FastAPI 也能应答</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-FastAPI%EF%BC%9A%E5%90%8C%E4%B8%80%E5%90%88%E5%90%8C%E4%B8%8A%E7%9A%84%E8%96%84%E5%B0%81%E8%A3%85"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 FastAPI：同一合同上的薄封装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E7%BB%84%E4%BB%B6%E4%BD%8D%E7%BD%AE%E9%80%9F%E6%9F%A5"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 组件位置速查</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%92%8C-Flask-WSGI-%E7%9A%84%E8%BE%B9%E7%95%8C%EF%BC%88%E9%98%B2%E6%B7%B7%E6%B7%86%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 和 Flask &#x2F; WSGI 的边界（防混淆）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%90%88%E4%B9%A6%E8%87%AA%E6%B5%8B%EF%BC%88%E8%B4%B9%E6%9B%BC%E4%B8%89%E9%97%AE%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 合书自测（费曼三问）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E9%97%AA%E5%8D%A1%E5%80%99%E9%80%89%EF%BC%88%E9%97%B4%E9%9A%94%E9%87%8D%E5%A4%8D%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">8. 闪卡候选（间隔重复）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

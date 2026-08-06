@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="machine_learning,距离计算,KNN," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="用场景、比喻与最小公式讲清 K 近邻：算距离、找邻居、投票；k 怎么选、为何要标准化、何时能用何时别用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="1201.机器学习-算法-KNN">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="用场景、比喻与最小公式讲清 K 近邻：算距离、找邻居、投票；k 怎么选、为何要标准化、何时能用何时别用。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig01-neighbor-vote.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig02-pipeline.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig03-scale-trap.png">
+<meta property="article:published_time" content="2018-06-11T16:08:25.000Z">
+<meta property="article:modified_time" content="2026-08-06T05:38:57.218Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="KNN">
+<meta property="article:tag" content="machine_learning">
+<meta property="article:tag" content="距离计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig01-neighbor-vote.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/1201.机器学习-算法-KNN/"/>
+
+
+
+
+
+  <title>1201.机器学习-算法-KNN | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">1201.机器学习-算法-KNN</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-12T00:08:25+08:00">
+                2018-06-12
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/machine-learning/" itemprop="url" rel="index">
+                    <span itemprop="name">machine_learning</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/machine-learning/%E7%AE%97%E6%B3%95/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  用场景、比喻与最小公式讲清 K 近邻：算距离、找邻居、投票；k 怎么选、为何要标准化、何时能用何时别用。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>一部新片过来：接吻镜头 18 次、打斗镜头 7 次。库里已有一批标好「爱情片 &#x2F; 动作片」的老片，各自也有这两个计数。没有一条干净的直线能把两类彻底分开——爱情片里也会打几下，动作片里也会亲一下。</p>
+<p>这时一个很朴素的办法是：<strong>别先学一条全局规则，先去问「最像它的几部老片」都是什么类型</strong>。这就是 <strong>K 近邻</strong>（K-Nearest Neighbors，<strong>KNN</strong>）的思路。</p>
+<blockquote>
+<p>段末注释：<strong>KNN</strong> 用距离找邻居再投票（或取平均），属于<strong>基于实例</strong>的监督学习；训练阶段几乎只「记住样本」，预测时才算距离，因此常叫<strong>惰性学习</strong>（lazy learning）。后文沿用 KNN。</p>
+</blockquote>
+<p>配图目录：<code>./1201.机器学习-算法-KNN/</code>。</p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>学习范式</td>
+<td>监督学习（需要带标签的训练样本）</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>特征 $\mathbf{x}$ → 类别（分类）或连续值（回归，邻居标签平均）</td>
+</tr>
+<tr>
+<td>在优化什么</td>
+<td>不显式拟合参数；假设「特征空间里相近的点，标签也相近」</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：Cover &amp; Hart（1967）给出近邻规则的经典分析（<em>Nearest Neighbor Pattern Classification</em>）。当时不少方法急于学一条全局决策面；KNN 用「查最近邻再表决」处理局部不规则边界，训练阶段几乎只存样本，把计算留到预测时。</p>
+<p><strong>比喻</strong>：像搬进新小区，想判断这里适不适合带娃——你不会先解一个全市方程，而是先问<strong>最近几户邻居</strong>的感受，再少数服从多数（或给更近的邻居更大话语权）。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig01-neighbor-vote.png" alt="图 1　找最近邻居，再投票"></p>
+<hr>
+<h2 id="2-直觉：三步流水线"><a href="#2-直觉：三步流水线" class="headerlink" title="2. 直觉：三步流水线"></a>2. 直觉：三步流水线</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig02-pipeline.png" alt="图 2　算距离 → 找 k 个邻居 → 投票"></p>
+<ol>
+<li><strong>算距离</strong>：新样本与训练集每个点比远近。  </li>
+<li><strong>找邻居</strong>：取出距离最小的 $k$ 个训练点。  </li>
+<li><strong>做决策</strong>：分类用多数票（可加权）；回归对邻居标签取平均（可加权）。</li>
+</ol>
+<p><strong>惰性</strong>体现在：第 1～3 步都发生在<strong>预测时</strong>；所谓「训练」往往只是存下数据（外加可选的索引加速）。</p>
+<hr>
+<h2 id="3-核心链路"><a href="#3-核心链路" class="headerlink" title="3. 核心链路"></a>3. 核心链路</h2><h3 id="3-1-距离：中间量是「有多像」"><a href="#3-1-距离：中间量是「有多像」" class="headerlink" title="3.1 距离：中间量是「有多像」"></a>3.1 距离：中间量是「有多像」</h3><p>对两个 $m$ 维向量 $\mathbf{x}&#x3D;(x_1,\ldots,x_m)$、$\mathbf{z}&#x3D;(z_1,\ldots,z_m)$，最常用的是<strong>欧氏距离</strong>：</p>
+<p>$$<br>d(\mathbf{x},\mathbf{z}) &#x3D; \sqrt{\sum_{j&#x3D;1}^{m}(x_j-z_j)^2}<br>$$</p>
+<p>距离越小，越「像」。文本等高维稀疏特征更常用<strong>余弦相似度</strong>（看夹角，不看绝对长度）；选用哪一种，应让「近」在业务上真的表示「同类可能性更大」。</p>
+<h3 id="3-2-量纲：距离会被大值域特征绑架"><a href="#3-2-量纲：距离会被大值域特征绑架" class="headerlink" title="3.2 量纲：距离会被大值域特征绑架"></a>3.2 量纲：距离会被大值域特征绑架</h3><p>若一维是「年收入（万元级）」、另一维是「年龄（十级）」，欧氏距离几乎只听收入的。实务上先做<strong>标准化 &#x2F; 归一化</strong>，再算距离。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1201.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E7%AE%97%E6%B3%95-KNN/knn-fig03-scale-trap.png" alt="图 3　特征尺度不齐时的距离陷阱"></p>
+<p>简单最小–最大归一化示意：</p>
+<p>$$<br>x’ &#x3D; \frac{x - x_{\min}}{x_{\max} - x_{\min}}<br>$$</p>
+<h3 id="3-3-从邻居到标签"><a href="#3-3-从邻居到标签" class="headerlink" title="3.3 从邻居到标签"></a>3.3 从邻居到标签</h3><p>设邻居标签为 $y_{(1)},\ldots,y_{(k)}$（按下标表示「第 $i$ 近」）。</p>
+<ul>
+<li><strong>多数投票</strong>：谁票多跟谁；二分类时 $k$ 常取奇数，减少平局。  </li>
+<li><strong>距离加权投票</strong>：更近的邻居权重大，常用 $w_i &#x3D; 1&#x2F;d_i^2$（$d_i$ 为到该邻居的距离；实际实现需处理 $d_i&#x3D;0$）。</li>
+</ul>
+<p>回归时把「投票」换成对 $y_{(i)}$ 的（加权）平均即可。</p>
+<h3 id="3-4-「参数」从哪来"><a href="#3-4-「参数」从哪来" class="headerlink" title="3.4 「参数」从哪来"></a>3.4 「参数」从哪来</h3><p>KNN <strong>没有</strong>像 Logistic 那样的 $\beta$ 需要迭代估计。你要定的是超参数与协议：</p>
+<ul>
+<li>$k$：邻居个数  </li>
+<li>距离 &#x2F; 相似度定义  </li>
+<li>是否加权、是否标准化  </li>
+<li>（可选）KD-Tree &#x2F; Ball Tree &#x2F; ANN 等加速结构</li>
+</ul>
+<hr>
+<h2 id="4-手算完整实例：电影类型"><a href="#4-手算完整实例：电影类型" class="headerlink" title="4. 手算完整实例：电影类型"></a>4. 手算完整实例：电影类型</h2><h3 id="A-问题与原始表"><a href="#A-问题与原始表" class="headerlink" title="A. 问题与原始表"></a>A. 问题与原始表</h3><p>用「接吻镜头数、打斗镜头数」判爱情 &#x2F; 动作（示意）。</p>
+<table>
+<thead>
+<tr>
+<th>影片</th>
+<th>接吻 $x_1$</th>
+<th>打斗 $x_2$</th>
+<th>类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>20</td>
+<td>3</td>
+<td>爱情</td>
+</tr>
+<tr>
+<td>B</td>
+<td>18</td>
+<td>2</td>
+<td>爱情</td>
+</tr>
+<tr>
+<td>C</td>
+<td>5</td>
+<td>18</td>
+<td>动作</td>
+</tr>
+<tr>
+<td>D</td>
+<td>3</td>
+<td>20</td>
+<td>动作</td>
+</tr>
+<tr>
+<td>E</td>
+<td>15</td>
+<td>8</td>
+<td>爱情</td>
+</tr>
+</tbody></table>
+<h3 id="B-初始化"><a href="#B-初始化" class="headerlink" title="B. 初始化"></a>B. 初始化</h3><p>距离用欧氏；$k&#x3D;3$；决策为多数投票。懒学习无参数迭代——「可部署对象」就是整张训练表 + $(k,$ 度量, 投票规则$)$。</p>
+<h3 id="C-训练过程"><a href="#C-训练过程" class="headerlink" title="C. 训练过程"></a>C. 训练过程</h3><p>无显式多轮训练；预测时才算距离。下面把 <strong>E 留出复核</strong> 与 <strong>新片预测</strong> 写全。</p>
+<h3 id="D-可部署对象"><a href="#D-可部署对象" class="headerlink" title="D. 可部署对象"></a>D. 可部署对象</h3><p>训练集五条记录；$k&#x3D;3$；欧氏距离；多数票。推理<strong>不</strong>另学一套 $\beta$。</p>
+<h3 id="E-预测-推断"><a href="#E-预测-推断" class="headerlink" title="E. 预测 &#x2F; 推断"></a>E. 预测 &#x2F; 推断</h3><p><strong>（1）训练内留出复核</strong>：查询 $E&#x3D;(15,8)$，库只用 A–D（模拟「该点未入模」）。</p>
+<table>
+<thead>
+<tr>
+<th>库中影片</th>
+<th>$d(E,\cdot)$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>$\sqrt{(15-20)^2+(8-3)^2}&#x3D;\sqrt{50}\approx7.1$</td>
+</tr>
+<tr>
+<td>B</td>
+<td>$\sqrt{(15-18)^2+(8-2)^2}&#x3D;\sqrt{45}\approx6.7$</td>
+</tr>
+<tr>
+<td>C</td>
+<td>$\sqrt{(15-5)^2+(8-18)^2}&#x3D;\sqrt{200}\approx14.1$</td>
+</tr>
+<tr>
+<td>D</td>
+<td>$\sqrt{(15-3)^2+(8-20)^2}&#x3D;\sqrt{288}\approx17.0$</td>
+</tr>
+</tbody></table>
+<p>最近 3 个：B、A、C → 票型 爱情、爱情、动作 → <strong>爱情</strong>（与 E 真值一致）。</p>
+<p><strong>（2）新片</strong> $Q&#x3D;(16,6)$，库用全部 A–E：</p>
+<table>
+<thead>
+<tr>
+<th>邻居候选</th>
+<th>$d(Q,\cdot)$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>$\sqrt{25}&#x3D;5.0$</td>
+</tr>
+<tr>
+<td>B</td>
+<td>$\sqrt{20}\approx4.5$</td>
+</tr>
+<tr>
+<td>C</td>
+<td>$\sqrt{265}\approx16.3$</td>
+</tr>
+<tr>
+<td>D</td>
+<td>$\sqrt{365}\approx19.1$</td>
+</tr>
+<tr>
+<td>E</td>
+<td>$\sqrt{5}\approx2.2$</td>
+</tr>
+</tbody></table>
+<p>最近 3 个：E、B、A，全是爱情 → 判 $Q$ 为<strong>爱情片</strong>。</p>
+<hr>
+<h2 id="5-适用-不适用"><a href="#5-适用-不适用" class="headerlink" title="5. 适用 &#x2F; 不适用"></a>5. 适用 &#x2F; 不适用</h2><p>按<strong>特征 &#x2F; 训练目标 &#x2F; 训练数据</strong>三维对照；每行带一个具体例子。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>判定</th>
+<th>要求或边界</th>
+<th>具体例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>特征</td>
+<td>适用</td>
+<td>已数值化（或可算相似度）；各维量纲已标准化&#x2F;归一化；维数不宜过高，或已降维；「近」在业务上真表示更可能同类</td>
+<td>电影：<code>(接吻次数, 打斗次数)</code> 标准化后，用欧氏距离找邻居判爱情&#x2F;动作片</td>
+</tr>
+<tr>
+<td>特征</td>
+<td>不适用</td>
+<td>量纲悬殊却不缩放；原始超高维稀疏且硬上欧氏距离；类别型无编码就当数字减</td>
+<td>同时丢进「年收入（万）」和「是否会员（0&#x2F;1）」不算缩放，距离几乎只听收入；上万维词袋直接欧氏，点与点都差不多远</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>适用</td>
+<td>分类（天然多类）或回归（邻居标签平均）；能接受「因为这几个邻居」式解释，不强制全局线性系数</td>
+<td>手写数字 0–9 多分类：新图找最像的 $k$ 张已标注图投票</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>不适用</td>
+<td>必须输出稳定可宣讲的全局规则；或只要校准很好的概率且邻域稀疏</td>
+<td>风控合规要「收入&gt;x 且负债率&lt;y → 拒绝」这类规则，树&#x2F;规则更合适；邻域里同类极少时，KNN「伪概率」很飘</td>
+</tr>
+<tr>
+<td>训练数据</td>
+<td>适用</td>
+<td>有标签；样本量中等、能整库（或索引后）参与距离计算；同类在特征空间相对成团</td>
+<td>品类约几千 SKU、每类有一批已标注样本，新商品用属性向量找近邻推荐类目</td>
+</tr>
+<tr>
+<td>训练数据</td>
+<td>不适用</td>
+<td>训练库极大且预测延迟极严（每次要扫海量点且无近似近邻）；或噪声点多还设 $k&#x3D;1$</td>
+<td>亿级用户实时特征、毫秒级打分却暴力全库 KNN；标注里夹杂大量错标且 $k&#x3D;1$，一次错邻就定乾坤</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-优缺点与常见坑"><a href="#6-优缺点与常见坑" class="headerlink" title="6. 优缺点与常见坑"></a>6. 优缺点与常见坑</h2><p><strong>优点</strong></p>
+<ul>
+<li>思路直观，实现简单，几乎无「训练」。  </li>
+<li>天然支持多分类；边界可以很弯曲。  </li>
+<li>对局部结构敏感，有时对稀有模式比强偏置线性模型更友好。</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>预测慢、占内存：要存样本并算距离（可用索引 &#x2F; 近似近邻缓解）。  </li>
+<li>可解释性弱：解释往往是「因为这几个邻居」，不是稳定规则。  </li>
+<li>受距离定义、$k$、尺度、噪声点强烈影响。</li>
+</ul>
+<p><strong>常见坑</strong></p>
+<ol>
+<li><strong>$k$ 太小</strong>：听单个噪声点的；$k$ 太大：邻域跨过真实边界，被多数类淹没。用交叉验证选；经验上常试奇数，并小于 $\sqrt{n}$ 量级作粗起点。  </li>
+<li><strong>不做标准化</strong>：大值域特征抢走距离。  </li>
+<li><strong>高维滥用欧氏距离</strong>：维数升高后点与点都「差不多远」，先降维或换度量。  </li>
+<li><strong>把惰当免费</strong>：训练快 ≠ 上线便宜；样本量上去后要算清预测延迟。</li>
+</ol>
+<hr>
+<h2 id="7-最小可运行示例"><a href="#7-最小可运行示例" class="headerlink" title="7. 最小可运行示例"></a>7. 最小可运行示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;KNN 最小示例：输入二维特征，输出类别；先标准化再拟合。&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> sklearn.neighbors <span class="keyword">import</span> KNeighborsClassifier</span><br><span class="line"><span class="keyword">from</span> sklearn.preprocessing <span class="keyword">import</span> StandardScaler</span><br><span class="line"><span class="keyword">from</span> sklearn.pipeline <span class="keyword">import</span> Pipeline</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输入：X (n_samples, n_features)；y 为类别标签</span></span><br><span class="line">X = np.array([</span><br><span class="line">    [<span class="number">20</span>, <span class="number">3</span>], [<span class="number">18</span>, <span class="number">2</span>], [<span class="number">5</span>, <span class="number">18</span>], [<span class="number">3</span>, <span class="number">20</span>], [<span class="number">15</span>, <span class="number">8</span>],</span><br><span class="line">])</span><br><span class="line">y = np.array([<span class="string">&quot;爱情&quot;</span>, <span class="string">&quot;爱情&quot;</span>, <span class="string">&quot;动作&quot;</span>, <span class="string">&quot;动作&quot;</span>, <span class="string">&quot;爱情&quot;</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 处理逻辑：标准化后找 k 个邻居多数投票；也可设 weights=&quot;distance&quot;</span></span><br><span class="line">clf = Pipeline([</span><br><span class="line">    (<span class="string">&quot;scaler&quot;</span>, StandardScaler()),</span><br><span class="line">    (<span class="string">&quot;knn&quot;</span>, KNeighborsClassifier(n_neighbors=<span class="number">3</span>, weights=<span class="string">&quot;uniform&quot;</span>)),</span><br><span class="line">])</span><br><span class="line">clf.fit(X, y)</span><br><span class="line"></span><br><span class="line">x_new = np.array([[<span class="number">16</span>, <span class="number">6</span>]])</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;预测类型:&quot;</span>, clf.predict(x_new)[<span class="number">0</span>])</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;各类概率:&quot;</span>, <span class="built_in">dict</span>(<span class="built_in">zip</span>(clf.classes_, clf.predict_proba(x_new)[<span class="number">0</span>])))</span><br></pre></td></tr></table></figure>
+
+<p><strong>预期</strong>：与手算中新片 $Q$ 一致，倾向「爱情」（代码含标准化，数值概率与纯欧氏手算不必逐位相同）。</p>
+<h3 id="重要配置参数（sklearn-KNeighborsClassifier）"><a href="#重要配置参数（sklearn-KNeighborsClassifier）" class="headerlink" title="重要配置参数（sklearn KNeighborsClassifier）"></a>重要配置参数（sklearn <code>KNeighborsClassifier</code>）</h3><table>
+<thead>
+<tr>
+<th>参数（库内常用名）</th>
+<th>训练中的作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>n_neighbors</code>（$k$）</td>
+<td>$k$ 小：边界细、噪声敏感；$k$ 大：更平滑、可能抹掉局部结构</td>
+<td>常从奇数 $k&#x3D;3,5,7$ 起；可用交叉验证扫</td>
+<td>验证波动大 → 略增大 $k$；边界过钝 → 略减小 $k$</td>
+</tr>
+<tr>
+<td><code>weights</code></td>
+<td><code>uniform</code> 等权投票；<code>distance</code> 近邻权重大</td>
+<td>默认 <code>uniform</code>；样本疏密不均可试 <code>distance</code></td>
+<td>边界样本多时 <code>distance</code> 常更稳，仍要以验证集为准</td>
+</tr>
+<tr>
+<td><code>metric</code> &#x2F; <code>p</code></td>
+<td>距离定义（欧氏、曼哈顿等）；量纲不同会主导远近</td>
+<td>标准化后常用欧氏（<code>minkowski</code> + <code>p=2</code>）</td>
+<td><strong>先标准化再调 $k$</strong>；类别特征勿直接欧氏硬套</td>
+</tr>
+<tr>
+<td><code>algorithm</code></td>
+<td>近邻检索实现（<code>auto</code>&#x2F;<code>kd_tree</code>&#x2F;<code>ball_tree</code>&#x2F;<code>brute</code>）</td>
+<td>默认 <code>auto</code> 通常足够</td>
+<td>维数很高时树索引收益下降，关注预测耗时而非只调 $k$</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-和近邻算法怎么挑"><a href="#8-和近邻算法怎么挑" class="headerlink" title="8. 和近邻算法怎么挑"></a>8. 和近邻算法怎么挑</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>更优先考虑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>要概率 + 系数解释、近似线性可分</td>
+<td>Logistic 回归</td>
+</tr>
+<tr>
+<td>局部相似、弯曲边界、多分类基线</td>
+<td><strong>KNN</strong></td>
+</tr>
+<tr>
+<td>间隔最大化、可核技巧、中小样本</td>
+<td>支持向量机（SVM）</td>
+</tr>
+<tr>
+<td>要规则解释、特征交互多</td>
+<td>决策树 &#x2F; Boosting</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ul>
+<li>KNN &#x3D; <strong>距离定义相似</strong> + <strong>取 $k$ 个邻居</strong> + <strong>投票或平均</strong>。  </li>
+<li>真正吃紧的是度量、缩放与 $k$，不是「训练出一堆系数」。  </li>
+<li>做局部、多分类、不规则边界时好用；高维、超大库、强解释需求时要谨慎或换模型。  </li>
+<li>最易踩的坑：<strong>特征未标准化就直接欧氏距离</strong>。</li>
+</ul>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Cover T., Hart P. Nearest Neighbor Pattern Classification. <em>IEEE Trans. Inf. Theory</em> <strong>1967</strong>.  </li>
+<li><a target="_blank" rel="noopener" href="https://scikit-learn.org/stable/modules/neighbors.html">scikit-learn: Nearest Neighbors</a>  </li>
+<li>Harrington P. <em>Machine Learning in Action</em>（机器学习实战）KNN 章节。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/machine-learning/" rel="tag"><i class="fa fa-tag"></i> machine_learning</a>
+          
+            <a href="/tags/%E8%B7%9D%E7%A6%BB%E8%AE%A1%E7%AE%97/" rel="tag"><i class="fa fa-tag"></i> 距离计算</a>
+          
+            <a href="/tags/KNN/" rel="tag"><i class="fa fa-tag"></i> KNN</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%B4%A0%E6%9D%90%E6%A1%86%E6%9E%B6%E8%B5%84%E6%96%99/" rel="next" title="机器学习相关素材框架资料">
+                <i class="fa fa-chevron-left"></i> 机器学习相关素材框架资料
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-07.c/2018-06-16.C%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E5%AD%A6%E4%B9%A0/" rel="prev" title="C语言学习-基础知识学习">
+                C语言学习-基础知识学习 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">939</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">794</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%9B%B4%E8%A7%89%EF%BC%9A%E4%B8%89%E6%AD%A5%E6%B5%81%E6%B0%B4%E7%BA%BF"><span class="nav-number">2.</span> <span class="nav-text">2. 直觉：三步流水线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E9%93%BE%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">3. 核心链路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E8%B7%9D%E7%A6%BB%EF%BC%9A%E4%B8%AD%E9%97%B4%E9%87%8F%E6%98%AF%E3%80%8C%E6%9C%89%E5%A4%9A%E5%83%8F%E3%80%8D"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 距离：中间量是「有多像」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%87%8F%E7%BA%B2%EF%BC%9A%E8%B7%9D%E7%A6%BB%E4%BC%9A%E8%A2%AB%E5%A4%A7%E5%80%BC%E5%9F%9F%E7%89%B9%E5%BE%81%E7%BB%91%E6%9E%B6"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 量纲：距离会被大值域特征绑架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E4%BB%8E%E9%82%BB%E5%B1%85%E5%88%B0%E6%A0%87%E7%AD%BE"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 从邻居到标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E3%80%8C%E5%8F%82%E6%95%B0%E3%80%8D%E4%BB%8E%E5%93%AA%E6%9D%A5"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 「参数」从哪来</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%89%8B%E7%AE%97%E5%AE%8C%E6%95%B4%E5%AE%9E%E4%BE%8B%EF%BC%9A%E7%94%B5%E5%BD%B1%E7%B1%BB%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 手算完整实例：电影类型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-%E9%97%AE%E9%A2%98%E4%B8%8E%E5%8E%9F%E5%A7%8B%E8%A1%A8"><span class="nav-number">4.1.</span> <span class="nav-text">A. 问题与原始表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">4.2.</span> <span class="nav-text">B. 初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E8%AE%AD%E7%BB%83%E8%BF%87%E7%A8%8B"><span class="nav-number">4.3.</span> <span class="nav-text">C. 训练过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#D-%E5%8F%AF%E9%83%A8%E7%BD%B2%E5%AF%B9%E8%B1%A1"><span class="nav-number">4.4.</span> <span class="nav-text">D. 可部署对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#E-%E9%A2%84%E6%B5%8B-%E6%8E%A8%E6%96%AD"><span class="nav-number">4.5.</span> <span class="nav-text">E. 预测 &#x2F; 推断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">5. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%BC%98%E7%BC%BA%E7%82%B9%E4%B8%8E%E5%B8%B8%E8%A7%81%E5%9D%91"><span class="nav-number">6.</span> <span class="nav-text">6. 优缺点与常见坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">7.</span> <span class="nav-text">7. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%EF%BC%88sklearn-KNeighborsClassifier%EF%BC%89"><span class="nav-number">7.1.</span> <span class="nav-text">重要配置参数（sklearn KNeighborsClassifier）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%92%8C%E8%BF%91%E9%82%BB%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E6%8C%91"><span class="nav-number">8.</span> <span class="nav-text">8. 和近邻算法怎么挑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">10.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

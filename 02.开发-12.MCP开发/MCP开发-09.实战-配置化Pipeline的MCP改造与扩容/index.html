@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="MCP,Pipeline,配置化,实战," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="在 Argo 流程已部署并完成独立测试的前提下，记录如何用统一 MCP 包装调度能力，并通过 pipelines.yaml &#x2F; auth.yaml 实现多业务域自动化扩容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MCP开发-09.实战-配置化Pipeline的MCP改造与扩容">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="在 Argo 流程已部署并完成独立测试的前提下，记录如何用统一 MCP 包装调度能力，并通过 pipelines.yaml &#x2F; auth.yaml 实现多业务域自动化扩容。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/template_list.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/mcp-argo-pipeline-arch.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_config.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_mcp.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_submit.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_result.png">
+<meta property="article:published_time" content="2026-07-28T06:30:00.000Z">
+<meta property="article:modified_time" content="2026-08-06T05:39:24.323Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="Pipeline">
+<meta property="article:tag" content="实战">
+<meta property="article:tag" content="配置化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/template_list.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-12.MCP开发/MCP开发-09.实战-配置化Pipeline的MCP改造与扩容/"/>
+
+
+
+
+
+  <title>MCP开发-09.实战-配置化Pipeline的MCP改造与扩容 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MCP开发-09.实战-配置化Pipeline的MCP改造与扩容</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-28T14:30:00+08:00">
+                2026-07-28
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index">
+                    <span itemprop="name">LLM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  在 Argo 流程已部署并完成独立测试的前提下，记录如何用统一 MCP 包装调度能力，并通过 pipelines.yaml / auth.yaml 实现多业务域自动化扩容。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>作为生信人员，每天总归跳不过的一个工作就是跑一些分析流程，而平时跑个任务，要登陆服务器，查看流程的输入接口，准备运行配置参数，总归还是要花些时间的。而最主要的问题是其中Linux操作会对于让很多非生信人员望而却步，导致这些工作都是生信分析的同学进行处理，研发阶段的参数我自己有时候都记不住🤷。</p>
+<p>项目已经开源，如果大家需要可以自取：<a target="_blank" rel="noopener" href="https://github.com/AI-skill-mcp/mcp_argo_pipeline">https://github.com/AI-skill-mcp/mcp_argo_pipeline</a></p>
+<hr>
+<h2 id="1-确定方案「一份代码-两份-YAML」"><a href="#1-确定方案「一份代码-两份-YAML」" class="headerlink" title="1. 确定方案「一份代码 + 两份 YAML」"></a>1. 确定方案「一份代码 + 两份 YAML」</h2><p>起始考虑到正常的研发、测试过程，流程起始会经常会遇到横向的扩展和纵向的迭代，而且基于argo本身的特征管理，我自己的习惯，会进行一些子模块的模板注册。所以其实即使只有几个项目，模板也会非常多。比如我自己最近测试开发的一些工作就很多。<br><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/template_list.png" alt="1785288352435"></p>
+<p>这个情况下，每个模板创建一个MCP显然不太现实，后期单独维护也维护不过来。而且MCP注册的一多就会出现几个问题：</p>
+<ul>
+<li>Tool 语义几乎相同（列模板 &#x2F; 查参数 &#x2F; 提交 &#x2F; 等结果），却重复维护；</li>
+<li>新域上线要改代码、改入口、改 Host 配置；</li>
+<li>远程鉴权、端口、kubeconfig 散落在环境变量与脚本里，难审计，随着独立MCP增加，管理复杂性让人绝望。</li>
+</ul>
+<p>所以考虑构建的，其实更像是一个argo MCP 的框架：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>统一框架</td>
+<td>所有MCP共享一个相同的顶层构建代码 <code>server.py</code></td>
+</tr>
+<tr>
+<td>调度内核</td>
+<td>通用 Tool：通用的argo接口调度工具</td>
+</tr>
+<tr>
+<td>流程配置</td>
+<td><code>pipelines.yaml</code>（流程类、模板、端口、instructions、kubeconfig）</td>
+</tr>
+<tr>
+<td>鉴权配置</td>
+<td><code>auth.yaml</code>（每域多 Bearer，带用户&#x2F;单位备注）</td>
+</tr>
+</tbody></table>
+<p><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/mcp-argo-pipeline-arch.png" alt="MCP Host 经多 Pipeline MCP 调度已部署 Argo"></p>
+<hr>
+<h2 id="2-确定定位「中转服务」"><a href="#2-确定定位「中转服务」" class="headerlink" title="2. 确定定位「中转服务」"></a>2. 确定定位「中转服务」</h2><p>首先我们肯定不会在这个服务部署服务器直接跑任务，毕竟部分高计算任务，甚至一些计算需要GPU资源，都是重计算任务，需要较大的资源。<br>所以任务依然都是通过argo CLI 调度；MCP更多的是一个中转服务，接受 Agent 的任务请求 -&gt;然后向K8s服务器发送任务，定期查看任务进展并返回任务结果。</p>
+<p>长任务仍在集群 Workflow 中执行。MCP 进程只做：</p>
+<ul>
+<li>解析配置与鉴权；</li>
+<li>调用本机 <code>argo</code> CLI（可按域注入 <code>KUBECONFIG</code>）；</li>
+<li>把结果以 Tool 返回值交给 Host。</li>
+</ul>
+<h2 id="3-功能定位「有用封装」"><a href="#3-功能定位「有用封装」" class="headerlink" title="3. 功能定位「有用封装」"></a>3. 功能定位「有用封装」</h2><p>因为顶层，我们共用同一套代码，所以我们需要进行代码功能的抽象，经过评估后，我们设计的具体tools 列表如下：</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>list_allowed_templates</code></td>
+<td>知道有哪些能用的模板</td>
+</tr>
+<tr>
+<td><code>get_template_parameters</code></td>
+<td>知道模板投递参数需要什么（Agent 可先查再提交）</td>
+</tr>
+<tr>
+<td><code>submit_template</code></td>
+<td>知道如何通过模板提交任务（可覆盖参数）</td>
+</tr>
+<tr>
+<td><code>get_workflow_status</code> &#x2F; <code>wait_workflow</code> &#x2F; <code>get_workflow_logs</code></td>
+<td>观测任务运行的状态、日志</td>
+</tr>
+<tr>
+<td><code>list_recent_workflows</code></td>
+<td>查看近期运行的任务</td>
+</tr>
+</tbody></table>
+<p><strong>安全边界</strong>：<code>submit_template</code> &#x2F; <code>get_template_parameters</code> 只接受 <code>pipelines.yaml</code> 白名单内的模板名；未列入的模板对 Agent 不可见、不可投从而来实现模板隔离。</p>
+<h2 id="4-环境确认「兼容性」"><a href="#4-环境确认「兼容性」" class="headerlink" title="4. 环境确认「兼容性」"></a>4. 环境确认「兼容性」</h2><h4 id="4-1-通信和环境"><a href="#4-1-通信和环境" class="headerlink" title="4.1 通信和环境"></a>4.1 通信和环境</h4><p>兼容不同的部署形态本地开发测试为主，远程是后面给他同事业务应用为主。</p>
+<ul>
+<li>本地部署：本地开发部署MCP时，通过<code>stdio</code>来进行评估测试，本地起、本地用无需进行鉴权；</li>
+<li>远程部署：远程服务部署service采用<code>streamable-http</code> ，远程url访问，防止url泄漏，进行鉴权；<br><code>ps 远程需要同时兼容mac和windows和linux</code>。</li>
+</ul>
+<h4 id="4-2-启动校验"><a href="#4-2-启动校验" class="headerlink" title="4.2 启动校验"></a>4.2 启动校验</h4><p>启动即校验可用性，避免「进程起来了但集群不可用」</p>
+<ol>
+<li>kubeconfig 可读，且能访问配置的 namespace；</li>
+<li>白名单内每个模板能被 <code>argo template get</code> 读到。</li>
+</ol>
+<p>MCP在启动时，本身不能发现配置的非格式问题（例如k8s.cfg 无权限），启动校验在启动阶段可以检查这些问题，（可设 <code>MCP_SKIP_STARTUP_CHECKS=1</code> 跳过）：。</p>
+<hr>
+<h2 id="5-配置面：扩容时真正要改的东西"><a href="#5-配置面：扩容时真正要改的东西" class="headerlink" title="5. 配置面：扩容时真正要改的东西"></a>5. 配置面：扩容时真正要改的东西</h2><h3 id="5-1-配置流程-pipelines-yaml："><a href="#5-1-配置流程-pipelines-yaml：" class="headerlink" title="5.1 配置流程  pipelines.yaml："></a>5.1 配置流程  <code>pipelines.yaml</code>：</h3><p>核心字段：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">defaults:</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line">  <span class="attr">host:</span> <span class="string">&quot;0.0.0.0&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">pipelines:</span></span><br><span class="line">  <span class="attr">my-domain:</span>                    <span class="comment"># 模板组 → 环境变量 MCP_PIPELINE</span></span><br><span class="line">    <span class="attr">server_name:</span> <span class="string">argo-my-domain</span> <span class="comment"># Host / MCP 面板显示名</span></span><br><span class="line">    <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line">    <span class="attr">kubeconfig:</span> <span class="string">&quot;~/.kube/config&quot;</span>  <span class="comment"># 可按域指向不同集群</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">8104</span>                    <span class="comment"># 仅 HTTP 模式使用</span></span><br><span class="line">    <span class="attr">instructions:</span> <span class="string">|</span></span><br><span class="line"><span class="string">      给 Agent 的操作说明（入口模板、路径约定等）。</span></span><br><span class="line"><span class="string"></span>    <span class="attr">templates:</span>                    <span class="comment"># 白名单 = 本域可自动化调度的能力面</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-job-a</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-job-b</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>同一域加能力</strong>：在已有 <code>templates</code> 列表追加已验收的模板名，重启该 Pipeline 进程即可；</li>
+<li><strong>新业务域</strong>：新增 <code>pipelines.&lt;id&gt;</code> 整块，分配端口与 instructions，再配鉴权并启动。</li>
+</ul>
+<p>不必为新域再写一套 Python Tool。而且每个功能域的模板可以独立启动服务，防止agent应用阶段的过渡加载。</p>
+<h3 id="5-2-auth-yaml：按域发钥匙"><a href="#5-2-auth-yaml：按域发钥匙" class="headerlink" title="5.2 auth.yaml：按域发钥匙"></a>5.2 <code>auth.yaml</code>：按域发钥匙</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">pipelines:</span></span><br><span class="line">  <span class="attr">my-domain:</span></span><br><span class="line">    <span class="attr">tokens:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">token:</span> <span class="string">&quot;replace-with-long-random1&quot;</span></span><br><span class="line">        <span class="attr">username:</span> <span class="string">&quot;alice&quot;</span></span><br><span class="line">        <span class="attr">unit:</span> <span class="string">&quot;x_group&quot;</span></span><br><span class="line">        <span class="attr">scopes:</span> [<span class="string">&quot;run&quot;</span>]   <span class="comment"># 可选，默认 run</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">token:</span> <span class="string">&quot;replace-with-long-random2&quot;</span></span><br><span class="line">        <span class="attr">username:</span> <span class="string">&quot;bob&quot;</span></span><br><span class="line">        <span class="attr">unit:</span> <span class="string">&quot;x_group&quot;</span></span><br><span class="line">        <span class="attr">scopes:</span> [<span class="string">&quot;run&quot;</span>]   <span class="comment"># 可选，默认 run</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>一域多 token：便于人&#x2F;组隔离与轮换；</li>
+<li><code>username</code> &#x2F; <code>unit</code> 供审计备注（中间件验票后写入请求上下文）；</li>
+<li>从 <code>auth.yaml.example</code> 拷贝后编辑。<br>从而可以实现精确的鉴权和定位，因为我自己目前使用的规模不会超过20人，所以token配置这么实现基本就满足需求。</li>
+</ul>
+<h3 id="5-3-客户端只改连接配置"><a href="#5-3-客户端只改连接配置" class="headerlink" title="5.3 客户端只改连接配置"></a>5.3 客户端只改连接配置</h3><p>HTTP 示例（项目 <code>.cursor/mcp.json</code>）：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;argo-my-domain&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://127.0.0.1:8104/mcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;headers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;Authorization&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Bearer replace-with-long-random1&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>stdio 则指向同一 <code>server.py</code>，用环境变量区分域：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;.../mcp_argo_pipeline/.venv/bin/python&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;.../mcp_argo_pipeline/server.py&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;MCP_PIPELINE&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my-domain&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-启动服务"><a href="#6-启动服务" class="headerlink" title="6 启动服务"></a>6 启动服务</h2><p>参考上面的部分完成配置后，我们就可以启动MCP服务，给其他人调用了。</p>
+<h3 id="步骤-A-—-写入-auth-yaml（若用-HTTP）"><a href="#步骤-A-—-写入-auth-yaml（若用-HTTP）" class="headerlink" title="步骤 A — 写入 auth.yaml（若用 HTTP）"></a>步骤 A — 写入 <code>auth.yaml</code>（若用 HTTP）</h3><p>为该域至少配一把 token；Host 的 Bearer 必须与之一致。用于鉴权。</p>
+<h3 id="步骤-2-—-依赖与启动"><a href="#步骤-2-—-依赖与启动" class="headerlink" title="步骤 2 — 依赖与启动"></a>步骤 2 — 依赖与启动</h3><p>环境依赖 uv进行管理，部署shell会自动同步uv环境的准备和服务的启动，不过你需要按需指定要启动的功能组。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> mcp/mcp_argo_pipeline</span><br><span class="line"><span class="built_in">cp</span> pipelines.yaml.example pipelines.yaml   <span class="comment"># 首次</span></span><br><span class="line"><span class="built_in">cp</span> auth.yaml.example auth.yaml</span><br><span class="line"><span class="comment"># 编辑上述 YAML 后：</span></span><br><span class="line">./start_serve.sh my-domain          <span class="comment"># 后台</span></span><br><span class="line"><span class="comment"># 或 ./start_serve.sh -f my-domain  # 前台单域</span></span><br></pre></td></tr></table></figure>
+<p>启动失败优先看：kubeconfig、模板名是否与集群一致、该域是否配置了 token。</p>
+<h2 id="7-Agent连通"><a href="#7-Agent连通" class="headerlink" title="7. Agent连通"></a>7. Agent连通</h2><h3 id="Agent配置"><a href="#Agent配置" class="headerlink" title="Agent配置"></a>Agent配置</h3><p>在这里面我们用workbuddy进行连通性测试，先填写我们的MCP配置<br><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_config.png" alt="workbuddy_cfg"><br>然后启用链接，发现每个域都绿了，恭喜你，MCP服务启动成功，并且和agent已经打通了。</p>
+<ul>
+<li>或用协议正确的 <code>initialize</code> POST 冒烟（裸 GET <code>/mcp</code> 常返回 <strong>400 Missing session ID</strong>，属协议要求，不代表服务挂了；<strong>401</strong> 才是鉴权失败）。<br><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_mcp.png" alt="MCP 面板"></li>
+</ul>
+<h3 id="运行一个任务"><a href="#运行一个任务" class="headerlink" title="运行一个任务"></a>运行一个任务</h3><p>MCP配置以后，就和其他的MCP使用一样了，可以直接通过自然语言来触发任务<br><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_submit.png" alt="MCP 面板"><br>然后过段时间就可以看到结果啦。<br><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9/workbuddy_result.png" alt="MCP 面板"></p>
+<p>ps：混元模型最近可以免费白嫖，所以这种测试现在都是在白嫖免费模型，大家有需要的也可以看看。</p>
+<p>截止目前，我们的MCP已经构建完成，并且已经可以在Agent里面通过对话，启动任务运行了。接下来你只需要把配置模板准备好，告诉他们怎么配置，以后就可以让他们自己通过Agent的自然语言投递一些大计算的分析任务啦，而且他们自己就可以直接通过自然语言询问任务进度和状态。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MCP/" rel="tag"><i class="fa fa-tag"></i> MCP</a>
+          
+            <a href="/tags/Pipeline/" rel="tag"><i class="fa fa-tag"></i> Pipeline</a>
+          
+            <a href="/tags/%E9%85%8D%E7%BD%AE%E5%8C%96/" rel="tag"><i class="fa fa-tag"></i> 配置化</a>
+          
+            <a href="/tags/%E5%AE%9E%E6%88%98/" rel="tag"><i class="fa fa-tag"></i> 实战</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-05.Paper/DOI-s41586-026-10820-0-AI%E9%87%8D%E8%AE%BE%E8%AE%A1%E8%B5%B7%E7%82%B9%E5%A2%9E%E5%BC%BA%E8%9B%8B%E7%99%BD%E8%BF%9B%E5%8C%96-wechat/" rel="next" title="给普通人看的：AI 先「加固」酶，再进化，比从野生型出发更强">
+                <i class="fa fa-chevron-left"></i> 给普通人看的：AI 先「加固」酶，再进化，比从野生型出发更强
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/03.%E5%BA%94%E7%94%A8-05.%E5%B7%A5%E5%85%B7%E6%8E%A8%E8%8D%90/00.%E8%8C%83%E5%BC%8F-%E8%BD%AF%E4%BB%B6%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D/" rel="prev" title="00.范式-软件工具介绍">
+                00.范式-软件工具介绍 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">939</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">794</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%A1%AE%E5%AE%9A%E6%96%B9%E6%A1%88%E3%80%8C%E4%B8%80%E4%BB%BD%E4%BB%A3%E7%A0%81-%E4%B8%A4%E4%BB%BD-YAML%E3%80%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 确定方案「一份代码 + 两份 YAML」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%A1%AE%E5%AE%9A%E5%AE%9A%E4%BD%8D%E3%80%8C%E4%B8%AD%E8%BD%AC%E6%9C%8D%E5%8A%A1%E3%80%8D"><span class="nav-number">2.</span> <span class="nav-text">2. 确定定位「中转服务」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8A%9F%E8%83%BD%E5%AE%9A%E4%BD%8D%E3%80%8C%E6%9C%89%E7%94%A8%E5%B0%81%E8%A3%85%E3%80%8D"><span class="nav-number">3.</span> <span class="nav-text">3. 功能定位「有用封装」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%8E%AF%E5%A2%83%E7%A1%AE%E8%AE%A4%E3%80%8C%E5%85%BC%E5%AE%B9%E6%80%A7%E3%80%8D"><span class="nav-number">4.</span> <span class="nav-text">4. 环境确认「兼容性」</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E9%80%9A%E4%BF%A1%E5%92%8C%E7%8E%AF%E5%A2%83"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 通信和环境</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E5%90%AF%E5%8A%A8%E6%A0%A1%E9%AA%8C"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 启动校验</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E9%85%8D%E7%BD%AE%E9%9D%A2%EF%BC%9A%E6%89%A9%E5%AE%B9%E6%97%B6%E7%9C%9F%E6%AD%A3%E8%A6%81%E6%94%B9%E7%9A%84%E4%B8%9C%E8%A5%BF"><span class="nav-number">5.</span> <span class="nav-text">5. 配置面：扩容时真正要改的东西</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E9%85%8D%E7%BD%AE%E6%B5%81%E7%A8%8B-pipelines-yaml%EF%BC%9A"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 配置流程  pipelines.yaml：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-auth-yaml%EF%BC%9A%E6%8C%89%E5%9F%9F%E5%8F%91%E9%92%A5%E5%8C%99"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 auth.yaml：按域发钥匙</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%8F%AA%E6%94%B9%E8%BF%9E%E6%8E%A5%E9%85%8D%E7%BD%AE"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 客户端只改连接配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1"><span class="nav-number">6.</span> <span class="nav-text">6 启动服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-A-%E2%80%94-%E5%86%99%E5%85%A5-auth-yaml%EF%BC%88%E8%8B%A5%E7%94%A8-HTTP%EF%BC%89"><span class="nav-number">6.1.</span> <span class="nav-text">步骤 A — 写入 auth.yaml（若用 HTTP）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-2-%E2%80%94-%E4%BE%9D%E8%B5%96%E4%B8%8E%E5%90%AF%E5%8A%A8"><span class="nav-number">6.2.</span> <span class="nav-text">步骤 2 — 依赖与启动</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-Agent%E8%BF%9E%E9%80%9A"><span class="nav-number">7.</span> <span class="nav-text">7. Agent连通</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Agent%E9%85%8D%E7%BD%AE"><span class="nav-number">7.1.</span> <span class="nav-text">Agent配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AA%E4%BB%BB%E5%8A%A1"><span class="nav-number">7.2.</span> <span class="nav-text">运行一个任务</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

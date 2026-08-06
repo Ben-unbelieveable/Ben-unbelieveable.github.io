@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,FastAPI,Pydantic," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="T2 模式篇：Path&#x2F;Query&#x2F;Body&#x2F;响应模型六组块、刻意练习 drills，并链接 Pydantic 笔记。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastAPI-02.路由与数据模型">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="T2 模式篇：Path&#x2F;Query&#x2F;Body&#x2F;响应模型六组块、刻意练习 drills，并链接 Pydantic 笔记。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-07-16T07:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-06T05:38:56.407Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="Pydantic">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-02.python-FastAPI/FastAPI-02.路由与数据模型/"/>
+
+
+
+
+
+  <title>FastAPI-02.路由与数据模型 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">FastAPI-02.路由与数据模型</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-16T15:00:00+08:00">
+                2026-07-16
+              </time>
+            
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91/Python/" itemprop="url" rel="index">
+                    <span itemprop="name">Python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  T2 模式篇：Path/Query/Body/响应模型六组块、刻意练习 drills，并链接 Pydantic 笔记。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本系列：<strong><a href="./FastAPI-00.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB%E4%B8%8E%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95.md">00 导读</a></strong> · <strong><a href="./FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket.md">01补 网络基础</a></strong> · <strong><a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 心智模型</a></strong> · <strong>02 路由与数据模型（本文）</strong> · <strong><a href="./FastAPI-02%E8%A1%A5.HTTP%E8%AF%B7%E6%B1%82%E6%96%B9%E6%B3%95%E5%AF%B9%E6%AF%94%E6%89%8B%E5%86%8C.md">02补 HTTP 方法对比</a></strong> · <strong><a href="./FastAPI-02%E8%A1%A52.HTTP%E7%8A%B6%E6%80%81%E7%A0%81%E8%A1%8C%E4%B8%9A%E5%85%B1%E8%AF%86%E6%89%8B%E5%86%8C.md">02补2 状态码共识</a></strong> · <a href="./FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82.md">03 依赖注入与分层</a> · <a href="./FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97.md">04 中间件异常日志</a> · <a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 异步后台与流式</a> · <a href="./FastAPI-06.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8.md">06 鉴权与安全</a> · <a href="./FastAPI-07.%E6%B5%8B%E8%AF%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E9%AA%A8%E6%9E%B6.md">07 测试与项目骨架</a> · <a href="./FastAPI-08.%E5%AE%9E%E6%88%98-HTTP%E4%B8%8EMCP%E5%85%B1%E8%BF%9B%E7%A8%8B.md">08 实战 HTTP↔MCP</a></p>
+<p><strong>行文：T2 模式篇</strong>　｜　<strong>本篇方法</strong>：组块化 + 刻意练习　｜　<strong>辅助</strong>：主动回忆、精细加工（挂 <a href="../02.%E5%BC%80%E5%8F%91-02.python/Python-%E5%8C%85-pydantic-%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E5%AE%9A%E4%B9%89%E5%92%8C%E5%AD%97%E6%AE%B5%E6%A0%A1%E9%AA%8C.md">Pydantic</a>）</p>
+<p><strong>方法语义</strong>：见 <strong><a href="./FastAPI-02%E8%A1%A5.HTTP%E8%AF%B7%E6%B1%82%E6%96%B9%E6%B3%95%E5%AF%B9%E6%AF%94%E6%89%8B%E5%86%8C.md">02补</a></strong>；<strong>状态码共识</strong>：见 <strong><a href="./FastAPI-02%E8%A1%A52.HTTP%E7%8A%B6%E6%80%81%E7%A0%81%E8%A1%8C%E4%B8%9A%E5%85%B1%E8%AF%86%E6%89%8B%E5%86%8C.md">02补2</a></strong>。</p>
+<hr>
+<h1 id="组块清单"><a href="#组块清单" class="headerlink" title="组块清单"></a>组块清单</h1><table>
+<thead>
+<tr>
+<th>组块</th>
+<th>触发条件</th>
+<th>核心写法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>G1 Path</strong></td>
+<td>资源标识在 URL 路径里</td>
+<td><code>{item_id}</code> + 类型注解</td>
+</tr>
+<tr>
+<td><strong>G2 Query</strong></td>
+<td>过滤、分页、可选参数</td>
+<td>函数参数默认值 + 注解</td>
+</tr>
+<tr>
+<td><strong>G3 Body</strong></td>
+<td>JSON 请求体</td>
+<td><code>BaseModel</code> 单对象或列表</td>
+</tr>
+<tr>
+<td><strong>G4 响应模型</strong></td>
+<td>约束输出形状、隐藏字段</td>
+<td><code>response_model=</code></td>
+</tr>
+<tr>
+<td><strong>G5 状态码</strong></td>
+<td>创建&#x2F;删除等语义</td>
+<td><code>status_code=</code> + <code>Response</code></td>
+</tr>
+<tr>
+<td><strong>G6 APIRouter</strong></td>
+<td>模块拆分、统一前缀</td>
+<td><code>APIRouter(prefix=...)</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Pydantic</strong> 是 Python 数据验证库；FastAPI 用它解析请求并生成 OpenAPI 文档。字段校验细节见 Pydantic 笔记，本篇只讲「在路由里怎么用」。</p>
+</blockquote>
+<hr>
+<h1 id="路由Path"><a href="#路由Path" class="headerlink" title="路由Path"></a>路由Path</h1><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 根据路径匹配对应的函数调用</span></span><br><span class="line"><span class="comment"># localhost:8000/  调用根目录对应函数 </span></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_item</span>():</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;message&quot;</span>: <span class="string">&quot;Hello World&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 通过路由进行调用的同时进行参数传递</span></span><br><span class="line"><span class="comment"># localhost:8000/items/99  其中的 99 会被解析为 item_id</span></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_item</span>(<span class="params">item_id: <span class="built_in">int</span><span class="string">&quot;)): </span></span></span><br><span class="line"><span class="string"><span class="params">    return &#123;&quot;</span>item_id<span class="string">&quot;: item_id&#125;</span></span></span><br><span class="line"><span class="string"><span class="params"></span></span></span><br><span class="line"><span class="string"><span class="params"># 也可以支持通过路由的多参数传递，fastapi会自动匹配最适合的路由，并填充参数</span></span></span><br><span class="line"><span class="string"><span class="params">@app.get(&quot;</span>/users/&#123;user_id&#125;/items/&#123;item_id&#125;<span class="string">&quot;)</span></span></span><br><span class="line"><span class="string"><span class="params">async def read_user_item(user_id: int, item_id: str):</span></span></span><br><span class="line"><span class="string"><span class="params">    item = &#123;&quot;</span>item_id<span class="string">&quot;: item_id, &quot;</span>owner_id<span class="string">&quot;: user_id&#125;</span></span></span><br><span class="line"><span class="string"><span class="params">    return item</span></span></span><br></pre></td></tr></table></figure>
+<p>可以看到通过路由地址，fastapi可以实现不同函数的调用选择，同时也可以简单的实现参数的传递。</p>
+<ul>
+<li><strong>误用</strong>：路径写成 <code>/items/{item_id}/{item_id}</code> 却期望两个不同变量——同名占位符会冲突；用不同名字。</li>
+</ul>
+<h1 id="参数传递"><a href="#参数传递" class="headerlink" title="参数传递"></a>参数传递</h1><p>我们可以直接通过路由路径进行传参，但是在参数多、结构复杂的情况下，使用体验会不友好，fastapi本身也提供多重参数传递方式：</p>
+<h2 id="通过查询参数"><a href="#通过查询参数" class="headerlink" title="通过查询参数"></a>通过查询参数</h2><p>http网页如果我们关注过请求地址，我们一定看到过类似这样的地址,例如：<code>https://cn.bing.com/search?pc=MOZI&amp;form=MOZLBR&amp;q=antibody</code>(这是一个搜索浏览的搜索页面，可以看到后面 search确定搜索函数，然后通过pc、form、q传递参数），而fastapi也支持这样的查询模式。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 多参数传递</span></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/users/&#123;user_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_user_item</span>(<span class="params">user_id: <span class="built_in">int</span>, item_id: <span class="built_in">str</span>,</span>):</span><br><span class="line">    item = &#123;<span class="string">&quot;item_id&quot;</span>: item_id, <span class="string">&quot;owner_id&quot;</span>: user_id&#125;</span><br><span class="line">    <span class="keyword">return</span> item</span><br></pre></td></tr></table></figure>
+<p>这时候，我们访问 <code>http://127.0.0.1:8000/users/1/items/tem_id?item_id=13</code> item_id&#x3D;13就会被解析并赋值给item_id传递到调用的函数中。</p>
+<ul>
+<li><strong>注意</strong>: 如果参数 <code>async def read_user_item(item_id:  Annotated[list[str], Query()]):</code>  则可以在查询中出现多次<code>item_id</code> 将参数构建出一个列表。</li>
+</ul>
+<h2 id="通过请求体"><a href="#通过请求体" class="headerlink" title="通过请求体"></a>通过请求体</h2><p><code>请求体是客户端发送给 API 的数据（也可能没有，直接通过）。响应体是 API 发送给客户端的数据。相当于使用自定义的数据结构，使用请求体和响应体都需要进行声明。</code><br>如果要使用请求体，需要先进行请求体数据类型的声明（继承 <code>BaseModel</code> ）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel</span><br><span class="line"><span class="comment"># 声明请求体</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Body</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    name: <span class="built_in">str</span></span><br><span class="line">    description: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line">    price: <span class="built_in">float</span></span><br><span class="line">    tax: <span class="built_in">float</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"><span class="meta">@app.post(<span class="params"><span class="string">&quot;/items/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">create_item</span>(<span class="params">item: Body</span>): <span class="comment">#定义输入参数是自己定义的Item</span></span><br><span class="line">    <span class="keyword">return</span> item</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>误用</strong>：Body 模型里塞 20 个可选字段当「万能 DTO」——应拆 Create &#x2F; Update &#x2F; Read 模型。</li>
+</ul>
+<h3 id="多请求体"><a href="#多请求体" class="headerlink" title="多请求体"></a>多请求体</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel</span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Item</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    name: <span class="built_in">str</span></span><br><span class="line">    description: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line">    price: <span class="built_in">float</span></span><br><span class="line">    tax: <span class="built_in">float</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">User</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    username: <span class="built_in">str</span></span><br><span class="line">    full_name: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.put(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">update_item</span>(<span class="params">item_id: <span class="built_in">int</span>, item: Item, user: User</span>):</span><br><span class="line">    results = &#123;<span class="string">&quot;item_id&quot;</span>: item_id, <span class="string">&quot;item&quot;</span>: item, <span class="string">&quot;user&quot;</span>: user&#125;</span><br><span class="line">    <span class="keyword">return</span> results</span><br></pre></td></tr></table></figure>
+<p>在这种情况下，FastAPI 会注意到函数中有<strong>不止一个请求体参数</strong>（有两个参数是 Pydantic 模型）。<br>因此，它会将参数名作为请求体中的键（字段名），并期望请求体格式如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;item&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;name&quot;</span>: <span class="string">&quot;Foo&quot;</span>,</span><br><span class="line">        <span class="string">&quot;description&quot;</span>: <span class="string">&quot;The pretender&quot;</span>,</span><br><span class="line">        <span class="string">&quot;price&quot;</span>: <span class="number">42.0</span>,</span><br><span class="line">        <span class="string">&quot;tax&quot;</span>: <span class="number">3.2</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">&quot;user&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;username&quot;</span>: <span class="string">&quot;dave&quot;</span>,</span><br><span class="line">        <span class="string">&quot;full_name&quot;</span>: <span class="string">&quot;Dave Grohl&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="混合传参"><a href="#混合传参" class="headerlink" title="混合传参"></a>混合传参</h2><p>之前我们已经看到可以自由地混合使用 Path、Query 和请求体参数声明，FastAPI 知道该如何处理。<br>但是我们之前可以看到 PATH、Query都是通过访问地址传输的，请求体是通过请求体进行传输的，有时候我们需要一起用，也是可以的</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated</span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Body, FastAPI</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel</span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Item</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    name: <span class="built_in">str</span></span><br><span class="line">    description: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line">    price: <span class="built_in">float</span></span><br><span class="line">    tax: <span class="built_in">float</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">User</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    username: <span class="built_in">str</span></span><br><span class="line">    full_name: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.put(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">update_item</span>(<span class="params"></span></span><br><span class="line"><span class="params">    item_id: <span class="built_in">int</span>, item: Item, user: User, importance: Annotated[<span class="built_in">int</span>, Body(<span class="params"></span>)]</span></span><br><span class="line"><span class="params"></span>):</span><br><span class="line">    results = &#123;<span class="string">&quot;item_id&quot;</span>: item_id, <span class="string">&quot;item&quot;</span>: item, <span class="string">&quot;user&quot;</span>: user, <span class="string">&quot;importance&quot;</span>: importance&#125;</span><br><span class="line">    <span class="keyword">return</span> results</span><br></pre></td></tr></table></figure>
+<p>通过<code>importance</code>注释为Body(),虽然没有声明请求体，但是他也会去请求体中获取参数，预测的请求体如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;item&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Foo&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;description&quot;</span><span class="punctuation">:</span> <span class="string">&quot;The pretender&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;price&quot;</span><span class="punctuation">:</span> <span class="number">42.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;tax&quot;</span><span class="punctuation">:</span> <span class="number">3.2</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;user&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;username&quot;</span><span class="punctuation">:</span> <span class="string">&quot;dave&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;full_name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Dave Grohl&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;importance&quot;</span><span class="punctuation">:</span> <span class="number">5</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参数校验"><a href="#参数校验" class="headerlink" title="参数校验"></a>参数校验</h2><p>在我们进行函数开发阶段，会初步定义每个参数多数据类型（Str、Int、Float、Enum，List、Dict、Tuple、Union、Optional、Any等），在请求时，会自动进行类型的校验。但是实际开发中，我们可能会有更详细的校验需求，比如国家、电话号码，邮箱地址，手机号等等。</p>
+<h3 id="有限枚举值限制"><a href="#有限枚举值限制" class="headerlink" title="有限枚举值限制"></a>有限枚举值限制</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义一个枚举类，</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ModelName</span>(<span class="built_in">str</span>, Enum):</span><br><span class="line">    alexnet = <span class="string">&quot;alexnet&quot;</span></span><br><span class="line">    resnet = <span class="string">&quot;resnet&quot;</span></span><br><span class="line">    lenet = <span class="string">&quot;lenet&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 访问/models/xxx  时，会将 xxx 赋值给变量 &#123;model_name&#125;  实现基于路径路由的传参。</span></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/models/&#123;model_name&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_model</span>(<span class="params">model_name: ModelName</span>):  <span class="comment"># 接受参数定义为一个枚举类时，传参会进行校验，如果不在枚举类中，会返回错误。</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;model_name&quot;</span>: model_name&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Annotated详细校验"><a href="#Annotated详细校验" class="headerlink" title="Annotated详细校验"></a>Annotated详细校验</h3><p>Annotated 可以用于为参数添加元数据(<code>Annotated[type, metadata]</code>), 在Fastapi中，我们可以通过 Annotated 进行更精细的数据校验包括通过 Query提供的功能进行一些标准化的校验，也可以通过自定义函数进行自定义校验。</p>
+<h4 id="Query进行查询校验"><a href="#Query进行查询校验" class="headerlink" title="Query进行查询校验"></a>Query进行查询校验</h4><p>Query除了进行参数的校验，还支持更多类型的元数据的补充（title、description、alias、deprecated、include_in_schema等等）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_items</span>(<span class="params"></span></span><br><span class="line"><span class="params">    q: Annotated[</span></span><br><span class="line"><span class="params">        <span class="built_in">str</span> | <span class="literal">None</span>,</span></span><br><span class="line"><span class="params">        Query(<span class="params"></span></span></span><br><span class="line"><span class="params"><span class="params">            title=<span class="string">&quot;Query string&quot;</span>,  <span class="comment"># 标题</span></span></span></span><br><span class="line"><span class="params"><span class="params">            alias=<span class="string">&quot;item-query&quot;</span>,  <span class="comment"># 别名</span></span></span></span><br><span class="line"><span class="params"><span class="params">            description=<span class="string">&quot;Query string for the items to search in the database that have a good match&quot;</span>,  <span class="comment"># 描述</span></span></span></span><br><span class="line"><span class="params"><span class="params">            min_length=<span class="number">3</span>,  <span class="comment"># 最小长度</span></span></span></span><br><span class="line"><span class="params"><span class="params">            max_length=<span class="number">50</span>,  <span class="comment"># 最大长度</span></span></span></span><br><span class="line"><span class="params"><span class="params">            pattern=<span class="string">&quot;^fixedquery$&quot;</span>,  <span class="comment"># 正则表达式</span></span></span></span><br><span class="line"><span class="params"><span class="params">            deprecated=<span class="literal">True</span>,  <span class="comment"># 是否弃用</span></span></span></span><br><span class="line"><span class="params"><span class="params">            include_in_schema=<span class="literal">False</span>,  <span class="comment"># 是否在schema中显示</span></span></span></span><br><span class="line"><span class="params"><span class="params">            gt=<span class="number">0</span>,  <span class="comment"># 大于</span></span></span></span><br><span class="line"><span class="params"><span class="params">        </span>),</span></span><br><span class="line"><span class="params">    ] = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params"></span>):</span><br><span class="line">    results = &#123;<span class="string">&quot;items&quot;</span>: [&#123;<span class="string">&quot;item_id&quot;</span>: <span class="string">&quot;Foo&quot;</span>&#125;, &#123;<span class="string">&quot;item_id&quot;</span>: <span class="string">&quot;Bar&quot;</span>&#125;]&#125;</span><br><span class="line">    <span class="keyword">if</span> q:</span><br><span class="line">        results.update(&#123;<span class="string">&quot;q&quot;</span>: q&#125;)</span><br><span class="line">    <span class="keyword">return</span> results</span><br></pre></td></tr></table></figure>
+<p>这样数据会校验长度，正则。</p>
+<h4 id="PATH进行路由参数校验"><a href="#PATH进行路由参数校验" class="headerlink" title="PATH进行路由参数校验"></a>PATH进行路由参数校验</h4><p>起始Query也就基本够用了，PATH和Query基本一样，只是PATH会校验路由参数。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated</span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, Path, Query</span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_items</span>(<span class="params"></span></span><br><span class="line"><span class="params">    *,</span></span><br><span class="line"><span class="params">    item_id: Annotated[<span class="built_in">int</span>, Path(<span class="params">title=<span class="string">&quot;The ID of the item to get&quot;</span>, ge=<span class="number">0</span>, le=<span class="number">1000</span></span>)],</span></span><br><span class="line"><span class="params">    size: Annotated[<span class="built_in">float</span>, Query(<span class="params">gt=<span class="number">0</span>, lt=<span class="number">10.5</span></span>)],</span></span><br><span class="line"><span class="params"></span>):</span><br><span class="line">    results = &#123;<span class="string">&quot;item_id&quot;</span>: item_id&#125;</span><br><span class="line">    <span class="keyword">if</span> size:</span><br><span class="line">        results.update(&#123;<span class="string">&quot;size&quot;</span>: size&#125;)</span><br><span class="line">    <span class="keyword">return</span> results</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="AfterValidator-自定义校验"><a href="#AfterValidator-自定义校验" class="headerlink" title="AfterValidator 自定义校验"></a>AfterValidator 自定义校验</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#自定义验证</span></span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> AfterValidator</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">check_valid_id</span>(<span class="params"><span class="built_in">id</span>: <span class="built_in">str</span></span>):</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">id</span>.startswith((<span class="string">&quot;isbn-&quot;</span>, <span class="string">&quot;imdb-&quot;</span>)):</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&#x27;Invalid ID format, it must start with &quot;isbn-&quot; or &quot;imdb-&quot;&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">id</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_items</span>(<span class="params"></span></span><br><span class="line"><span class="params">    q: Annotated[</span></span><br><span class="line"><span class="params">        <span class="built_in">str</span> | <span class="literal">None</span>, Query(<span class="params"></span></span></span><br><span class="line"><span class="params"><span class="params">            AfterValidator(<span class="params">check_valid_id</span>), <span class="comment"># 对变量运行函数进行校验。</span></span></span></span><br><span class="line"><span class="params"><span class="params">            alias=<span class="string">&quot;item-query&quot;</span>,</span></span></span><br><span class="line"><span class="params"><span class="params"></span></span></span><br><span class="line"><span class="params"><span class="params">        </span>)</span></span><br><span class="line"><span class="params">    ] = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params"></span>):</span><br><span class="line">    results = &#123;<span class="string">&quot;items&quot;</span>: [&#123;<span class="string">&quot;item_id&quot;</span>: <span class="string">&quot;Foo&quot;</span>&#125;, &#123;<span class="string">&quot;item_id&quot;</span>: <span class="string">&quot;Bar&quot;</span>&#125;]&#125;</span><br><span class="line">    </span><br></pre></td></tr></table></figure>
+
+<h4 id="请求体创建阶段，制定校验"><a href="#请求体创建阶段，制定校验" class="headerlink" title="请求体创建阶段，制定校验"></a>请求体创建阶段，制定校验</h4><p>刚才的校验，更多是在调用阶段进行的，但是针对一个请求体，校验规则一般一样，而且不回随着调用环境产生差别，所以在请求体构造阶段进行校验规则的确定会更有更好的可迁移性。而pydantic也支持这样的方案。 </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated, <span class="type">Literal</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, Query</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel, Field</span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">FilterParams</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    model_config = &#123;<span class="string">&quot;extra&quot;</span>: <span class="string">&quot;forbid&quot;</span>&#125; <span class="comment"># 限制为制定的关键字传参。</span></span><br><span class="line">    limit: <span class="built_in">int</span> = Field(<span class="number">100</span>, gt=<span class="number">0</span>, le=<span class="number">100</span>)</span><br><span class="line">    offset: <span class="built_in">int</span> = Field(<span class="number">0</span>, ge=<span class="number">0</span>)</span><br><span class="line">    order_by: <span class="type">Literal</span>[<span class="string">&quot;created_at&quot;</span>, <span class="string">&quot;updated_at&quot;</span>] = <span class="string">&quot;created_at&quot;</span></span><br><span class="line">    tags: <span class="built_in">list</span>[<span class="built_in">str</span>] = []</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_items</span>(<span class="params">filter_query: Annotated[FilterParams, Query(<span class="params"></span>)]</span>):</span><br><span class="line">    <span class="keyword">return</span> filter_query</span><br></pre></td></tr></table></figure>
+
+<p>在请求体构建阶段，就限制了每个变量的校验规则。从而避免每次调用都要重新写校验规则。</p>
+<h2 id="优雅递归处理-DEPEND复用参数处理"><a href="#优雅递归处理-DEPEND复用参数处理" class="headerlink" title="优雅递归处理-DEPEND复用参数处理"></a>优雅递归处理-DEPEND复用参数处理</h2><p>有时候有些不同的操作，需要相同的参数处理，这时DEPEND就派上了用场。不同的参数请求可以服用一个相同的参数处理逻辑。重点在于解决相同的参数处理实现可服用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated</span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Depends, FastAPI</span><br><span class="line">app = FastAPI()</span><br><span class="line"><span class="comment">#一个可以服用的参数处理逻辑，接受参数，返回参数处理结果。</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">common_parameters</span>(<span class="params">q: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>, skip: <span class="built_in">int</span> = <span class="number">0</span>, limit: <span class="built_in">int</span> = <span class="number">100</span></span>):</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;q&quot;</span>: q, <span class="string">&quot;skip&quot;</span>: skip, <span class="string">&quot;limit&quot;</span>: limit&#125;</span><br><span class="line"></span><br><span class="line">CommonsDep = Annotated[<span class="built_in">dict</span>, Depends(common_parameters)] <span class="comment"># 提高可读性的指向封装</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_items</span>(<span class="params">commons: CommonsDep</span>): <span class="comment"># read_items接受参数后，先传递给CommonsDep中执行的依赖common_parameters，然后经过common_parameters处理后返回的参数作为 read_items的实际输入。</span></span><br><span class="line">    <span class="keyword">return</span> commons</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/users/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_users</span>(<span class="params">commons: CommonsDep</span>):</span><br><span class="line">    <span class="keyword">return</span> commons</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="结果返回"><a href="#结果返回" class="headerlink" title="结果返回"></a>结果返回</h1><h2 id="返回响应模型块"><a href="#返回响应模型块" class="headerlink" title="返回响应模型块"></a>返回响应模型块</h2><p>和请求体一样，最好也进行返回体的定义，进行返回数据的筛选（防止内部参数暴露给外部），FastAPI 会看到返回类型，并确保你返回的内容 仅 包含类型中声明的字段。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ItemRead</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    <span class="built_in">id</span>: <span class="built_in">int</span></span><br><span class="line">    name: <span class="built_in">str</span></span><br><span class="line">    price: <span class="built_in">float</span></span><br><span class="line">    <span class="comment"># 不含内部字段 cost、deleted_at</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span>, response_model=ItemRead</span>)  </span><span class="comment"># 制定返回结果是自定义类型。</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">get_item</span>(<span class="params">item_id: <span class="built_in">int</span></span>)-&gt;ItemRead : <span class="comment"># 像普通函数一样定义输出对象</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;id&quot;</span>: item_id, <span class="string">&quot;name&quot;</span>: <span class="string">&quot;tea&quot;</span>, <span class="string">&quot;price&quot;</span>: <span class="number">9.9</span>, <span class="string">&quot;cost&quot;</span>: <span class="number">3.0</span>&#125; <span class="comment">#会忽略掉自定义类型中没定义的键值。</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>效果</strong>：<code>cost</code> 不会出现在 JSON；OpenAPI 也只展示 <code>ItemRead</code> 字段。</li>
+<li><strong>误用</strong>：<code>response_model</code> 与 <code>return</code> 类型不一致却不测——用 TestClient 断言响应体字段。</li>
+</ul>
+<h2 id="状态码块"><a href="#状态码块" class="headerlink" title="状态码块"></a>状态码块</h2><p>作为结果返回的一部分。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Response, status</span><br><span class="line"><span class="meta">@app.post(<span class="params"><span class="string">&quot;/items&quot;</span>, status_code=status.HTTP_201_CREATED</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">item: ItemCreate</span>):</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;id&quot;</span>: <span class="number">42</span>, **item.model_dump()&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.delete(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span>, status_code=status.HTTP_204_NO_CONTENT</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">delete_item</span>(<span class="params">item_id: <span class="built_in">int</span></span>):</span><br><span class="line">    <span class="keyword">return</span> Response(status_code=status.HTTP_204_NO_CONTENT)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>误用</strong>：204 仍 <code>return {&quot;ok&quot;: true}</code>——客户端可能收到非空 body，违背语义。</li>
+</ul>
+<h3 id="APIRouter-块"><a href="#APIRouter-块" class="headerlink" title="APIRouter 块"></a>APIRouter 块</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> APIRouter</span><br><span class="line">router = APIRouter(prefix=<span class="string">&quot;/items&quot;</span>, tags=[<span class="string">&quot;items&quot;</span>])</span><br><span class="line"></span><br><span class="line"><span class="meta">@router.get(<span class="params"><span class="string">&quot;/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">list_items</span>():</span><br><span class="line">    <span class="keyword">return</span> []</span><br><span class="line"></span><br><span class="line">app.include_router(router)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>误用</strong>：<code>prefix</code> 与路由内路径都带 <code>/items</code>，拼成 <code>/items/items</code>——约定 router 管前缀，子路由写 <code>/</code> 或 <code>/{id}</code>。</li>
+</ul>
+<hr>
+<h2 id="刻意练习：只改一处"><a href="#刻意练习：只改一处" class="headerlink" title="刻意练习：只改一处"></a>刻意练习：只改一处</h2><p>在空项目 <code>main.py</code> 上改，用 <code>uvicorn main:app --reload</code> + <code>/docs</code> 验证。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>题面</th>
+<th>只改什么</th>
+<th>验收</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D1</td>
+<td><code>GET /users/{user_id}</code>，<code>user_id</code> 必须 ≥ 1</td>
+<td>加 <code>Path(ge=1)</code></td>
+<td>传 0 得 422</td>
+</tr>
+<tr>
+<td>D2</td>
+<td><code>GET /items?q=...&amp;limit=...</code>，<code>limit</code> 默认 10、最大 50</td>
+<td>Query 注解</td>
+<td>超 50 得 422</td>
+</tr>
+<tr>
+<td>D3</td>
+<td><code>POST /items</code> 接收 <code>name</code>+<code>price</code></td>
+<td>新建 <code>ItemCreate</code></td>
+<td>body 缺字段得 422</td>
+</tr>
+<tr>
+<td>D4</td>
+<td>响应里隐藏 <code>password_hash</code></td>
+<td><code>response_model=UserPublic</code></td>
+<td>响应无 hash 字段</td>
+</tr>
+<tr>
+<td>D5</td>
+<td>创建资源返回 201</td>
+<td><code>status_code=201</code></td>
+<td>状态码为 201</td>
+</tr>
+<tr>
+<td>D6</td>
+<td>把 items 路由拆到 <code>routers/items.py</code></td>
+<td><code>APIRouter</code> + <code>include_router</code></td>
+<td><code>/items</code> 仍可访问</td>
+</tr>
+<tr>
+<td>D7</td>
+<td>同一函数既要 Path <code>item_id</code> 又要 Query <code>detail</code></td>
+<td>两种参数同函数</td>
+<td>OpenAPI 显示两类参数</td>
+</tr>
+<tr>
+<td>D8</td>
+<td><code>PUT /items/{id}</code> body 字段均可选</td>
+<td><code>ItemUpdate</code> 全 <code>Optional</code></td>
+<td>只传 <code>price</code> 也能过</td>
+</tr>
+</tbody></table>
+<hr>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          
+            <a href="/tags/FastAPI/" rel="tag"><i class="fa fa-tag"></i> FastAPI</a>
+          
+            <a href="/tags/Pydantic/" rel="tag"><i class="fa fa-tag"></i> Pydantic</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" rel="next" title="FastAPI-01.心智模型-ASGI与请求生命周期">
+                <i class="fa fa-chevron-left"></i> FastAPI-01.心智模型-ASGI与请求生命周期
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82/" rel="prev" title="FastAPI-03.依赖注入与分层">
+                FastAPI-03.依赖注入与分层 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">939</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">108</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">794</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%84%E5%9D%97%E6%B8%85%E5%8D%95"><span class="nav-number">1.</span> <span class="nav-text">组块清单</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B7%AF%E7%94%B1Path"><span class="nav-number">2.</span> <span class="nav-text">路由Path</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E4%BC%A0%E9%80%92"><span class="nav-number">3.</span> <span class="nav-text">参数传递</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E6%9F%A5%E8%AF%A2%E5%8F%82%E6%95%B0"><span class="nav-number">3.1.</span> <span class="nav-text">通过查询参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E8%AF%B7%E6%B1%82%E4%BD%93"><span class="nav-number">3.2.</span> <span class="nav-text">通过请求体</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E8%AF%B7%E6%B1%82%E4%BD%93"><span class="nav-number">3.2.1.</span> <span class="nav-text">多请求体</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E4%BC%A0%E5%8F%82"><span class="nav-number">3.3.</span> <span class="nav-text">混合传参</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.4.</span> <span class="nav-text">参数校验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E9%99%90%E6%9E%9A%E4%B8%BE%E5%80%BC%E9%99%90%E5%88%B6"><span class="nav-number">3.4.1.</span> <span class="nav-text">有限枚举值限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Annotated%E8%AF%A6%E7%BB%86%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.4.2.</span> <span class="nav-text">Annotated详细校验</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Query%E8%BF%9B%E8%A1%8C%E6%9F%A5%E8%AF%A2%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.4.2.1.</span> <span class="nav-text">Query进行查询校验</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#PATH%E8%BF%9B%E8%A1%8C%E8%B7%AF%E7%94%B1%E5%8F%82%E6%95%B0%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.4.2.2.</span> <span class="nav-text">PATH进行路由参数校验</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AfterValidator-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.4.2.3.</span> <span class="nav-text">AfterValidator 自定义校验</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E4%BD%93%E5%88%9B%E5%BB%BA%E9%98%B6%E6%AE%B5%EF%BC%8C%E5%88%B6%E5%AE%9A%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.4.2.4.</span> <span class="nav-text">请求体创建阶段，制定校验</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E9%9B%85%E9%80%92%E5%BD%92%E5%A4%84%E7%90%86-DEPEND%E5%A4%8D%E7%94%A8%E5%8F%82%E6%95%B0%E5%A4%84%E7%90%86"><span class="nav-number">3.5.</span> <span class="nav-text">优雅递归处理-DEPEND复用参数处理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E8%BF%94%E5%9B%9E"><span class="nav-number">4.</span> <span class="nav-text">结果返回</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E5%93%8D%E5%BA%94%E6%A8%A1%E5%9E%8B%E5%9D%97"><span class="nav-number">4.1.</span> <span class="nav-text">返回响应模型块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8A%B6%E6%80%81%E7%A0%81%E5%9D%97"><span class="nav-number">4.2.</span> <span class="nav-text">状态码块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#APIRouter-%E5%9D%97"><span class="nav-number">4.2.1.</span> <span class="nav-text">APIRouter 块</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%BB%E6%84%8F%E7%BB%83%E4%B9%A0%EF%BC%9A%E5%8F%AA%E6%94%B9%E4%B8%80%E5%A4%84"><span class="nav-number">4.3.</span> <span class="nav-text">刻意练习：只改一处</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
