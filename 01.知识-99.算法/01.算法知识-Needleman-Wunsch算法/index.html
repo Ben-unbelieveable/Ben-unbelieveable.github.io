@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="生物信息学,算法,动态规划,序列比对,Needleman-Wunsch," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Needleman–Wunsch 全局两两序列比对：问题定义、评分、二次动态规划递推、填表与回溯、完整数值例；对照 Smith–Waterman &#x2F; Gotoh，以及 Biopython、EMBOSS、parasail 等社区实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Needleman-Wunsch算法">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Needleman–Wunsch 全局两两序列比对：问题定义、评分、二次动态规划递推、填表与回溯、完整数值例；对照 Smith–Waterman &#x2F; Gotoh，以及 Biopython、EMBOSS、parasail 等社区实现。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig01-nw-global-vs-local.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig02-nw-three-moves.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig03-nw-traceback.png">
+<meta property="article:published_time" content="2026-08-26T02:11:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Needleman-Wunsch">
+<meta property="article:tag" content="动态规划">
+<meta property="article:tag" content="序列比对">
+<meta property="article:tag" content="生物信息学">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig01-nw-global-vs-local.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-99.算法/01.算法知识-Needleman-Wunsch算法/"/>
+
+
+
+
+
+  <title>Needleman-Wunsch算法 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Needleman-Wunsch算法</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-26T10:11:00+08:00">
+                2026-08-26
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/%E7%BB%8F%E5%85%B8%E7%AE%97%E6%B3%95/" itemprop="url" rel="index">
+                    <span itemprop="name">经典算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Needleman–Wunsch 全局两两序列比对：问题定义、评分、二次动态规划递推、填表与回溯、完整数值例；对照 Smith–Waterman / Gotoh，以及 Biopython、EMBOSS、parasail 等社区实现。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>Needleman–Wunsch 算法</strong>（Needleman–Wunsch algorithm，<strong>NW</strong>）用<strong>动态规划</strong>（dynamic programming，<strong>DP</strong>）求两条字符串的<strong>最优全局比对</strong>（global pairwise alignment）：从第一个字符比到最后一个字符，允许插入&#x2F;删除造成的空位，使整条比对在给定评分下得分最高（或编辑距离最小）。它是生物序列比对的起点，也是后续 <strong>Smith–Waterman</strong>、<strong>Gotoh</strong>、<strong>BLAST</strong> 等算法的共同祖先之一。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>全局</strong>指两端都必须吃进比对，不能只截最相似的一段；<strong>最优</strong>只相对你给定的匹配&#x2F;错配&#x2F;空位分数，换一套分数就换一条「最优」。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig01-nw-global-vs-local.png" alt="图 1　全局比对必须两端走完；局部比对只在中段会合"></p>
+<hr>
+<h2 id="1-要比的到底是什么"><a href="#1-要比的到底是什么" class="headerlink" title="1. 要比的到底是什么"></a>1. 要比的到底是什么</h2><p>给两条序列 (A &#x3D; a_1 a_2 \ldots a_n)、(B &#x3D; b_1 b_2 \ldots b_m)（DNA &#x2F; RNA &#x2F; 蛋白质 &#x2F; 任意字母表）。一次<strong>比对</strong>是把它们拉成等长，空位记为 (-)，且去掉空位后分别还原为 (A)、(B)。每一列只能是三种事件之一：</p>
+<table>
+<thead>
+<tr>
+<th align="left">列类型</th>
+<th align="left">写法</th>
+<th align="left">生物学读法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>匹配</strong>（match）</td>
+<td align="left">(a_i &#x3D; b_j)</td>
+<td align="left">同一残基保留</td>
+</tr>
+<tr>
+<td align="left"><strong>错配</strong>（mismatch）</td>
+<td align="left">(a_i \neq b_j)</td>
+<td align="left">替换</td>
+</tr>
+<tr>
+<td align="left"><strong>空位</strong>（gap &#x2F; indel）</td>
+<td align="left">(a_i) 对 (-)，或 (-) 对 (b_j)</td>
+<td align="left">插入或删除</td>
+</tr>
+</tbody></table>
+<p>比对的得分是各列分数之和。<strong>NW</strong> 在全部合法全局比对里取总分最优的那一条（并列最优可有多条）。</p>
+<p>和「编辑距离」是同一张桌子的两面：最大化相似度 (S)，与最小化距离 (D)，在分数符号对偶时给出同一条路径（Sellers, 1974）。下文一律写<strong>最大化得分</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>indel</strong> &#x3D; insertion or deletion，一条空位从序列 (A) 看是删除、从 (B) 看是插入，算法不区分方向。</p>
+</blockquote>
+<hr>
+<h2 id="2-1970-原文和今天课堂上的-NW-不是同一份伪代码"><a href="#2-1970-原文和今天课堂上的-NW-不是同一份伪代码" class="headerlink" title="2. 1970 原文和今天课堂上的 NW 不是同一份伪代码"></a>2. 1970 原文和今天课堂上的 NW 不是同一份伪代码</h2><p>Needleman &amp; Wunsch（<em>J. Mol. Biol.</em> 1970, 48:443–453）要解决的是：两条蛋白质能否配出「最大匹配」，从而判断同源。原文允许空位不罚款（(d&#x3D;0)），递推对更早的整行&#x2F;整列取 (\max)，朴素实现是<strong>三次</strong>时间。Sankoff（1972）以及后来的教材，把「线性空位 + 三向邻居」收成今天人人会写的<strong>二次</strong> DP。Wagner–Fischer（1974）在字符串校正问题上得到同一结构。</p>
+<p>本文讲的是<strong>现代标准形</strong>：线性空位惩罚、(O(nm)) 填一张表。仿射空位（开口贵、延伸便宜）是 Gotoh（1982）的三矩阵推广，见第 8 节。</p>
+<hr>
+<h2 id="3-评分：算法保证最优，不保证生物学正确"><a href="#3-评分：算法保证最优，不保证生物学正确" class="headerlink" title="3. 评分：算法保证最优，不保证生物学正确"></a>3. 评分：算法保证最优，不保证生物学正确</h2><p>记 (s(x,y)) 为字符对分数，(d) 为<strong>线性空位分</strong>（通常 (d&lt;0)）。一条比对的总分：</p>
+<p>[<br>S &#x3D; \sum_{\text{非空位列}} s(a,b) + d \cdot (#\text{空位字符})<br>]</p>
+<p>教学常用：(s(x,x)&#x3D;+1)，(s(x,y)&#x3D;-1)（(x\neq y)），(d&#x3D;-1)。蛋白质应换成<strong>替换矩阵</strong>（substitution matrix），如 <strong>BLOSUM62</strong>、<strong>PAM250</strong>；核酸常用 match&#x2F;mismatch，或 <code>NUC.4.4</code>。</p>
+<p>空位比错配「更贵」时，算法倾向替换而不是撕开序列；空位太便宜则会出现碎片化缺口。仿射模型 (g(\ell)&#x3D;\alpha+(\ell-1)\beta)（(\alpha) 开口、(\beta) 延伸，(\lvert\alpha\rvert&gt;\lvert\beta\rvert)）更贴近「一次断裂、一段连续 indel」的诱变图像，但那已经不是单矩阵 NW。</p>
+<blockquote>
+<p><strong>段末注释</strong>：BLOSUM 编号越大表示序列越近（BLOSUM80 近、BLOSUM45 远）；PAM 正好相反。默认蛋白质矩阵是 BLOSUM62。</p>
+</blockquote>
+<hr>
+<h2 id="4-状态、递推、初始化"><a href="#4-状态、递推、初始化" class="headerlink" title="4. 状态、递推、初始化"></a>4. 状态、递推、初始化</h2><p><strong>最优子结构</strong>：(A[1..i]) 与 (B[1..j]) 的最优全局比对，最后一列只可能是 ((a_i,b_j))、((a_i,-)) 或 ((-,b_j))；前缀必须已经最优。</p>
+<p>定义 (F_{i,j}) 为 (A[1..i]) 与 (B[1..j]) 的最优得分。行对应 (A) 的前缀，列对应 (B) 的前缀。</p>
+<p><strong>边界</strong>（从空串一路空位走到当前前缀）：</p>
+<p>[<br>F_{0,0}&#x3D;0,\qquad F_{i,0}&#x3D;i\cdot d,\qquad F_{0,j}&#x3D;j\cdot d<br>]</p>
+<p><strong>递推</strong>（(i,j\ge 1)）：</p>
+<h1 id="F-i-j"><a href="#F-i-j" class="headerlink" title="[F_{i,j}"></a>[<br>F_{i,j}</h1><p>\max<br>\begin{cases}<br>F_{i-1,j-1}+s(a_i,b_j) &amp; \text{对角：对齐 }a_i\text{ 与 }b_j\<br>F_{i-1,j}+d &amp; \text{向上：}a_i\text{ 对空位}\<br>F_{i,j-1}+d &amp; \text{向左：}b_j\text{ 对空位}<br>\end{cases}<br>]</p>
+<p>整表最优分在右下角 (F_{n,m})。比对本身不在格子里，而在<strong>回溯指针</strong>里：每个格子记下是谁给出了 (\max)（并列则都记，对应多条最优比对）。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig02-nw-three-moves.png" alt="图 2　每个格子只看三个邻居，取 MAX"></p>
+<blockquote>
+<p><strong>段末注释</strong>：向上消耗 (A) 的一个字符、向左消耗 (B) 的一个字符；把行列对调时，「上&#x2F;左」跟着对调，公式本身不变。</p>
+</blockquote>
+<hr>
+<h2 id="5-数值例：GCATGCG-vs-GATTACA"><a href="#5-数值例：GCATGCG-vs-GATTACA" class="headerlink" title="5. 数值例：GCATGCG vs GATTACA"></a>5. 数值例：<code>GCATGCG</code> vs <code>GATTACA</code></h2><p>取 (A&#x3D;) <code>GCATGCG</code>，(B&#x3D;) <code>GATTACA</code>，(s&#x3D;+1&#x2F;-1)，(d&#x3D;-1)。这是教材里最常见的 7×7 例子。</p>
+<h3 id="5-1-填表"><a href="#5-1-填表" class="headerlink" title="5.1 填表"></a>5.1 填表</h3><p>第一行、第一列按边界写成 (0,-1,\ldots,-7)。左上第一个实格子是 <code>G</code> vs <code>G</code>：</p>
+<p>[<br>\max(0+1,;-1-1,;-1-1)&#x3D;1<br>]</p>
+<p>按行扫完得：</p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">(-)</th>
+<th align="center">G</th>
+<th align="center">A</th>
+<th align="center">T</th>
+<th align="center">T</th>
+<th align="center">A</th>
+<th align="center">C</th>
+<th align="center">A</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">(-)</td>
+<td align="center">0</td>
+<td align="center">−1</td>
+<td align="center">−2</td>
+<td align="center">−3</td>
+<td align="center">−4</td>
+<td align="center">−5</td>
+<td align="center">−6</td>
+<td align="center">−7</td>
+</tr>
+<tr>
+<td align="center">G</td>
+<td align="center">−1</td>
+<td align="center"><strong>1</strong></td>
+<td align="center">0</td>
+<td align="center">−1</td>
+<td align="center">−2</td>
+<td align="center">−3</td>
+<td align="center">−4</td>
+<td align="center">−5</td>
+</tr>
+<tr>
+<td align="center">C</td>
+<td align="center">−2</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">−1</td>
+<td align="center">−2</td>
+<td align="center">−3</td>
+<td align="center">−2</td>
+<td align="center">−3</td>
+</tr>
+<tr>
+<td align="center">A</td>
+<td align="center">−3</td>
+<td align="center">−1</td>
+<td align="center"><strong>1</strong></td>
+<td align="center">0</td>
+<td align="center">−1</td>
+<td align="center">−1</td>
+<td align="center">−2</td>
+<td align="center">−1</td>
+</tr>
+<tr>
+<td align="center">T</td>
+<td align="center">−4</td>
+<td align="center">−2</td>
+<td align="center">0</td>
+<td align="center"><strong>2</strong></td>
+<td align="center">1</td>
+<td align="center">0</td>
+<td align="center">−1</td>
+<td align="center">−2</td>
+</tr>
+<tr>
+<td align="center">G</td>
+<td align="center">−5</td>
+<td align="center">−3</td>
+<td align="center">−1</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+<td align="center">−1</td>
+<td align="center">−2</td>
+</tr>
+<tr>
+<td align="center">C</td>
+<td align="center">−6</td>
+<td align="center">−4</td>
+<td align="center">−2</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center"><strong>1</strong></td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">G</td>
+<td align="center">−7</td>
+<td align="center">−5</td>
+<td align="center">−3</td>
+<td align="center">−1</td>
+<td align="center">−1</td>
+<td align="center">−1</td>
+<td align="center">0</td>
+<td align="center"><strong>0</strong></td>
+</tr>
+</tbody></table>
+<p>(F_{7,7}&#x3D;0) 即最优全局得分。若干格子存在并列来源（例如 (F_{4,4}&#x3D;1) 可来自对角或左邻），所以最优比对不唯一。</p>
+<h3 id="5-2-回溯"><a href="#5-2-回溯" class="headerlink" title="5.2 回溯"></a>5.2 回溯</h3><p>从 ((7,7)) 走回 ((0,0))。优先对角、再上、再左，得到一条最优路径：</p>
+<p>[<br>(0,0)\xrightarrow{\text{对角 }G&#x2F;G}<br>(1,1)\xrightarrow{\text{上 }C&#x2F;-}<br>(2,1)\xrightarrow{\text{对角 }A&#x2F;A}<br>(3,2)\xrightarrow{\text{左 }-&#x2F;T}<br>(3,3)\xrightarrow{\text{对角 }T&#x2F;T}<br>(4,4)\xrightarrow{\text{对角 }G&#x2F;A}<br>(5,5)\xrightarrow{\text{对角 }C&#x2F;C}<br>(6,6)\xrightarrow{\text{对角 }G&#x2F;A}<br>(7,7)<br>]</p>
+<p>写成比对（列分数：(+1,-1,+1,-1,+1,-1,+1,-1)）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GCA-TGCG</span><br><span class="line">G-ATTACA</span><br></pre></td></tr></table></figure>
+
+<p>总分 (0)，与 (F_{7,7}) 一致。另一条常见并列解是 <code>GCATG-CG</code> &#x2F; <code>G-ATTACA</code>，分数同为 (0)。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-99.%E7%AE%97%E6%B3%95/01.%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86-Needleman-Wunsch%E7%AE%97%E6%B3%95/fig03-nw-traceback.png" alt="图 3　从右下角的总分沿指针走回原点，才得到比对字符串"></p>
+<p>回溯规则：</p>
+<table>
+<thead>
+<tr>
+<th align="left">来源</th>
+<th align="center">(A) 写</th>
+<th align="center">(B) 写</th>
+<th align="center">指针</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">(F_{i-1,j-1}+s(a_i,b_j))</td>
+<td align="center">(a_i)</td>
+<td align="center">(b_j)</td>
+<td align="center">(i{-}1,;j{-}1)</td>
+</tr>
+<tr>
+<td align="left">(F_{i-1,j}+d)</td>
+<td align="center">(a_i)</td>
+<td align="center">(-)</td>
+<td align="center">(i{-}1,;j)</td>
+</tr>
+<tr>
+<td align="left">(F_{i,j-1}+d)</td>
+<td align="center">(-)</td>
+<td align="center">(b_j)</td>
+<td align="center">(i,;j{-}1)</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：只算分、不回溯时，空间可压成两行 (O(\min(n,m)))；既要分又要比对且只要线性空间，用 Hirschberg（1975）分治，时间仍是 (O(nm))，常数大约翻倍。</p>
+</blockquote>
+<hr>
+<h2 id="6-复杂度"><a href="#6-复杂度" class="headerlink" title="6. 复杂度"></a>6. 复杂度</h2><p>每格 (O(1))，格数 ((n+1)(m+1))，时间、朴素空间都是 (O(nm))。两条长 (10^4) 的序列约 (10^8) 格，笔记本能算；两条染色体不行。Four Russians 可改进到 (O(nm&#x2F;\log n))，实践中更常见的是 <strong>SIMD</strong>（parasail）或低分歧时的 <strong>Wavefront</strong>（WFA2），而不是改教科书递推。</p>
+<hr>
+<h2 id="7-和邻居算法差在哪一句话"><a href="#7-和邻居算法差在哪一句话" class="headerlink" title="7. 和邻居算法差在哪一句话"></a>7. 和邻居算法差在哪一句话</h2><table>
+<thead>
+<tr>
+<th align="left">算法</th>
+<th align="left">改哪一句</th>
+<th align="left">适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>NW</strong>（本文）</td>
+<td align="left">边界强制空位罚到底；回溯从 ((n,m)) 到 ((0,0))</td>
+<td align="left">全长同源、长度接近</td>
+</tr>
+<tr>
+<td align="left"><strong>半全局</strong>（semi-global &#x2F; overlap）</td>
+<td align="left">末端空位 (d&#x3D;0)；从最后一行&#x2F;列的最大格起回溯</td>
+<td align="left">读段对参考、引物、重叠群</td>
+</tr>
+<tr>
+<td align="left"><strong>Smith–Waterman</strong>（1981）</td>
+<td align="left">递推加 (\max(\ldots,0))；从全局最大格回溯到 (0)</td>
+<td align="left">局部同源、结构域、BLAST 的精确原型</td>
+</tr>
+<tr>
+<td align="left"><strong>Gotoh</strong>（1982）</td>
+<td align="left">三张表 (M,I,D) 区分开口&#x2F;延伸</td>
+<td align="left">几乎所有生产级比对器的默认空位</td>
+</tr>
+</tbody></table>
+<p>Gotoh 的仿射递推（相似度形式，记号随教材略有出入）：</p>
+<p>[<br>\begin{aligned}<br>M_{i,j} &amp;&#x3D; s(a_i,b_j)+\max(M_{i-1,j-1},,I_{i-1,j-1},,D_{i-1,j-1})\<br>I_{i,j} &amp;&#x3D; \max(M_{i-1,j}+\alpha,,I_{i-1,j}+\beta)\<br>D_{i,j} &amp;&#x3D; \max(M_{i,j-1}+\alpha,,D_{i,j-1}+\beta)<br>\end{aligned}<br>]</p>
+<p>时间仍是 (O(nm))，只是每格常数变成约 3 倍。Biopython 的 <code>PairwiseAligner(mode=&#39;global&#39;)</code> 在开口≠延伸时走的就是 Gotoh，不是 1970 原文。</p>
+<blockquote>
+<p><strong>段末注释</strong>：长度差很大时硬跑 NW，短序列会被一长串末端空位「拉满」整条长序列，分数和生物学都无意义；改半全局或局部。</p>
+</blockquote>
+<hr>
+<h2 id="8-实现：先手写线性空位，再生产用社区库"><a href="#8-实现：先手写线性空位，再生产用社区库" class="headerlink" title="8. 实现：先手写线性空位，再生产用社区库"></a>8. 实现：先手写线性空位，再生产用社区库</h2><p>社区方案优先（应用场景 &#x2F; 风险一并写）：</p>
+<table>
+<thead>
+<tr>
+<th align="left">工具</th>
+<th align="left">场景</th>
+<th align="left">实现要点</th>
+<th align="left">风险</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">手写 NW（下面代码）</td>
+<td align="left">教学、改评分、单测对照</td>
+<td align="left">单矩阵线性空位</td>
+<td align="left">慢；不要当生产比对器</td>
+</tr>
+<tr>
+<td align="left"><strong>Biopython</strong> <code>Bio.Align.PairwiseAligner</code></td>
+<td align="left">交互、&lt;10 kb、脚本</td>
+<td align="left">C 后端 Gotoh；<code>mode=&#39;global&#39;</code></td>
+<td align="left"><strong>默认空位分为 0</strong>，配 BLOSUM 会疯狂插空；必须显式设 <code>open_gap_score</code> &#x2F; <code>extend_gap_score</code>。<code>Bio.pairwise2</code> 已弃用</td>
+</tr>
+<tr>
+<td align="left"><strong>EMBOSS <code>needle</code></strong></td>
+<td align="left">要可审计的固定默认参数</td>
+<td align="left">经典全局比对 CLI</td>
+<td align="left">无 SIMD，批量慢</td>
+</tr>
+<tr>
+<td align="left"><strong>parasail</strong>（Daily, 2016）</td>
+<td align="left">高通量 NW&#x2F;SW</td>
+<td align="left">SSE&#x2F;AVX</td>
+<td align="left">优势在长序列批循环里才明显</td>
+</tr>
+<tr>
+<td align="left"><strong>edlib</strong></td>
+<td align="left">只要编辑距离、DNA</td>
+<td align="left">Myers 位并行</td>
+<td align="left">不含替换矩阵</td>
+</tr>
+<tr>
+<td align="left"><strong>WFA2 &#x2F; pywfa</strong></td>
+<td align="left">长且分歧 &lt;5%</td>
+<td align="left">波前，内存随差异长</td>
+<td align="left">远同源会退回 Gotoh 复杂度</td>
+</tr>
+<tr>
+<td align="left"><strong>BLAST &#x2F; MMseqs2</strong></td>
+<td align="left">库搜索、全对全</td>
+<td align="left">种子–延伸启发式</td>
+<td align="left"><strong>不保证</strong>全局最优；不能拿来当 NW 的替代证明</td>
+</tr>
+</tbody></table>
+<h3 id="8-1-线性空位-NW（教学完整版）"><a href="#8-1-线性空位-NW（教学完整版）" class="headerlink" title="8.1 线性空位 NW（教学完整版）"></a>8.1 线性空位 NW（教学完整版）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">List</span>, <span class="type">Tuple</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">needleman_wunsch</span>(<span class="params"></span></span><br><span class="line"><span class="params">    seq_a: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    seq_b: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    <span class="keyword">match</span>: <span class="built_in">int</span> = <span class="number">1</span>,</span></span><br><span class="line"><span class="params">    mismatch: <span class="built_in">int</span> = -<span class="number">1</span>,</span></span><br><span class="line"><span class="params">    gap: <span class="built_in">int</span> = -<span class="number">1</span>,</span></span><br><span class="line"><span class="params"></span>) -&gt; <span class="type">Tuple</span>[<span class="built_in">str</span>, <span class="built_in">str</span>, <span class="built_in">int</span>]:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;计算两条序列的一条最优全局比对（线性空位）。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入:</span></span><br><span class="line"><span class="string">        seq_a, seq_b: 待比对字符串。</span></span><br><span class="line"><span class="string">        match, mismatch, gap: 匹配分、错配分、线性空位分（gap 一般为负）。</span></span><br><span class="line"><span class="string">    输出:</span></span><br><span class="line"><span class="string">        (aligned_a, aligned_b, score): 一条最优比对及其总分。</span></span><br><span class="line"><span class="string">    处理逻辑:</span></span><br><span class="line"><span class="string">        填 (n+1)×(m+1) 得分表；回溯优先对角、再上、再左，并列时只取一条。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    n, m = <span class="built_in">len</span>(seq_a), <span class="built_in">len</span>(seq_b)</span><br><span class="line">    score_of = <span class="keyword">lambda</span> x, y: <span class="keyword">match</span> <span class="keyword">if</span> x == y <span class="keyword">else</span> mismatch</span><br><span class="line"></span><br><span class="line">    f: <span class="type">List</span>[<span class="type">List</span>[<span class="built_in">int</span>]] = [[<span class="number">0</span>] * (m + <span class="number">1</span>) <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>):</span><br><span class="line">        f[i][<span class="number">0</span>] = i * gap</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(m + <span class="number">1</span>):</span><br><span class="line">        f[<span class="number">0</span>][j] = j * gap</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, n + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, m + <span class="number">1</span>):</span><br><span class="line">            f[i][j] = <span class="built_in">max</span>(</span><br><span class="line">                f[i - <span class="number">1</span>][j - <span class="number">1</span>] + score_of(seq_a[i - <span class="number">1</span>], seq_b[j - <span class="number">1</span>]),</span><br><span class="line">                f[i - <span class="number">1</span>][j] + gap,</span><br><span class="line">                f[i][j - <span class="number">1</span>] + gap,</span><br><span class="line">            )</span><br><span class="line"></span><br><span class="line">    aligned_a, aligned_b = [], []</span><br><span class="line">    i, j = n, m</span><br><span class="line">    <span class="keyword">while</span> i &gt; <span class="number">0</span> <span class="keyword">or</span> j &gt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">if</span> (</span><br><span class="line">            i &gt; <span class="number">0</span></span><br><span class="line">            <span class="keyword">and</span> j &gt; <span class="number">0</span></span><br><span class="line">            <span class="keyword">and</span> f[i][j] == f[i - <span class="number">1</span>][j - <span class="number">1</span>] + score_of(seq_a[i - <span class="number">1</span>], seq_b[j - <span class="number">1</span>])</span><br><span class="line">        ):</span><br><span class="line">            aligned_a.append(seq_a[i - <span class="number">1</span>])</span><br><span class="line">            aligned_b.append(seq_b[j - <span class="number">1</span>])</span><br><span class="line">            i -= <span class="number">1</span></span><br><span class="line">            j -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">elif</span> i &gt; <span class="number">0</span> <span class="keyword">and</span> f[i][j] == f[i - <span class="number">1</span>][j] + gap:</span><br><span class="line">            aligned_a.append(seq_a[i - <span class="number">1</span>])</span><br><span class="line">            aligned_b.append(<span class="string">&quot;-&quot;</span>)</span><br><span class="line">            i -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            aligned_a.append(<span class="string">&quot;-&quot;</span>)</span><br><span class="line">            aligned_b.append(seq_b[j - <span class="number">1</span>])</span><br><span class="line">            j -= <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(<span class="built_in">reversed</span>(aligned_a)), <span class="string">&quot;&quot;</span>.join(<span class="built_in">reversed</span>(aligned_b)), f[n][m]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    a, b, s = needleman_wunsch(<span class="string">&quot;GCATGCG&quot;</span>, <span class="string">&quot;GATTACA&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(a)  <span class="comment"># GCA-TGCG</span></span><br><span class="line">    <span class="built_in">print</span>(b)  <span class="comment"># G-ATTACA</span></span><br><span class="line">    <span class="built_in">print</span>(s)  <span class="comment"># 0</span></span><br></pre></td></tr></table></figure>
+
+<p>蛋白质把 <code>score_of</code> 换成查表即可，递推不动。</p>
+<h3 id="8-2-生产路径：Biopython（显式空位）"><a href="#8-2-生产路径：Biopython（显式空位）" class="headerlink" title="8.2 生产路径：Biopython（显式空位）"></a>8.2 生产路径：Biopython（显式空位）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> Bio.Align <span class="keyword">import</span> PairwiseAligner, substitution_matrices</span><br><span class="line"></span><br><span class="line">aligner = PairwiseAligner(mode=<span class="string">&quot;global&quot;</span>, match_score=<span class="number">1</span>, mismatch_score=-<span class="number">1</span>)</span><br><span class="line">aligner.open_gap_score = -<span class="number">1</span></span><br><span class="line">aligner.extend_gap_score = -<span class="number">1</span>  <span class="comment"># 等于 open 时退化为线性空位，接近手写 NW</span></span><br><span class="line"><span class="built_in">print</span>(aligner.algorithm)        <span class="comment"># 应看到 Needleman-Wunsch 或 Gotoh global ...</span></span><br><span class="line"></span><br><span class="line">aln = <span class="built_in">next</span>(aligner.align(<span class="string">&quot;GCATGCG&quot;</span>, <span class="string">&quot;GATTACA&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(aln.score)  <span class="comment"># 0</span></span><br><span class="line"></span><br><span class="line">prot = PairwiseAligner(</span><br><span class="line">    mode=<span class="string">&quot;global&quot;</span>,</span><br><span class="line">    substitution_matrix=substitution_matrices.load(<span class="string">&quot;BLOSUM62&quot;</span>),</span><br><span class="line">    open_gap_score=-<span class="number">11</span>,</span><br><span class="line">    extend_gap_score=-<span class="number">1</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><code>aligner.score(a, b)</code> 只算分、更快。最优比对可能极多，设 <code>aligner.max_alignments</code> 防止爆内存。</p>
+<hr>
+<h2 id="9-什么时候不该用-NW"><a href="#9-什么时候不该用-NW" class="headerlink" title="9. 什么时候不该用 NW"></a>9. 什么时候不该用 NW</h2><ul>
+<li><strong>长度差大、只关心一段同源</strong>：SW 或半全局。</li>
+<li><strong>一条 query 对整个库</strong>：BLAST、DIAMOND、MMseqs2；NW 是 (O(nm)) 精确器，不是搜索引擎。</li>
+<li><strong>蛋白质同一度 &lt;25%</strong>：序列 DP 进入暮光区，改 profile（HHsearch &#x2F; HMMER）或结构（Foldseek）。</li>
+<li><strong>低复杂度 &#x2F; 串联重复</strong>：未 mask 时分数虚高。</li>
+<li><strong>把「能出比对」当成「同源」</strong>：任何两条串 NW 都会吐出一条全局比对；同源要靠 bit score &#x2F; E-value &#x2F; 置换检验，不是靠路径存在。</li>
+</ul>
+<p>同一条比对的百分同一度至少有四种分母（含不含内部空位、较短条、平均长），同一对序列可差十几个百分点。写报告时必须写清定义。</p>
+<hr>
+<h2 id="10-要点"><a href="#10-要点" class="headerlink" title="10. 要点"></a>10. 要点</h2><ol>
+<li><strong>NW &#x3D; 全局 + DP</strong>。状态是双前缀最优分，转移只有对角&#x2F;上&#x2F;左。</li>
+<li><strong>课堂上的二次递推</strong>是 1970 之后定型的线性空位版；原文更一般、也更慢。</li>
+<li><strong>分数是先验</strong>。最优保证的是算术，不是进化。</li>
+<li><strong>要仿射空位用 Gotoh，要局部用 SW，要末端免费用半全局</strong>——改边界或加 (\max(0,\cdot))，不是另起一套哲学。</li>
+<li><strong>手写只为看清指针</strong>；批量与长序列用 parasail &#x2F; WFA2 &#x2F; EMBOSS，库搜索用 BLAST 系。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF%E5%AD%A6/" rel="tag"><i class="fa fa-tag"></i> 生物信息学</a>
+          
+            <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"><i class="fa fa-tag"></i> 算法</a>
+          
+            <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" rel="tag"><i class="fa fa-tag"></i> 动态规划</a>
+          
+            <a href="/tags/%E5%BA%8F%E5%88%97%E6%AF%94%E5%AF%B9/" rel="tag"><i class="fa fa-tag"></i> 序列比对</a>
+          
+            <a href="/tags/Needleman-Wunsch/" rel="tag"><i class="fa fa-tag"></i> Needleman-Wunsch</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-06.%E5%9B%BE/" rel="next" title="数据结构：图">
+                <i class="fa fa-chevron-left"></i> 数据结构：图
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-0.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB/" rel="prev" title="大模型算法要点：开关与剂量的宏观导读">
+                大模型算法要点：开关与剂量的宏观导读 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%A6%81%E6%AF%94%E7%9A%84%E5%88%B0%E5%BA%95%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">1. 要比的到底是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1970-%E5%8E%9F%E6%96%87%E5%92%8C%E4%BB%8A%E5%A4%A9%E8%AF%BE%E5%A0%82%E4%B8%8A%E7%9A%84-NW-%E4%B8%8D%E6%98%AF%E5%90%8C%E4%B8%80%E4%BB%BD%E4%BC%AA%E4%BB%A3%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text">2. 1970 原文和今天课堂上的 NW 不是同一份伪代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E8%AF%84%E5%88%86%EF%BC%9A%E7%AE%97%E6%B3%95%E4%BF%9D%E8%AF%81%E6%9C%80%E4%BC%98%EF%BC%8C%E4%B8%8D%E4%BF%9D%E8%AF%81%E7%94%9F%E7%89%A9%E5%AD%A6%E6%AD%A3%E7%A1%AE"><span class="nav-number">3.</span> <span class="nav-text">3. 评分：算法保证最优，不保证生物学正确</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%8A%B6%E6%80%81%E3%80%81%E9%80%92%E6%8E%A8%E3%80%81%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">4.</span> <span class="nav-text">4. 状态、递推、初始化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#F-i-j"><span class="nav-number">5.</span> <span class="nav-text">[F_{i,j}</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%95%B0%E5%80%BC%E4%BE%8B%EF%BC%9AGCATGCG-vs-GATTACA"><span class="nav-number">5.1.</span> <span class="nav-text">5. 数值例：GCATGCG vs GATTACA</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%A1%AB%E8%A1%A8"><span class="nav-number">5.1.1.</span> <span class="nav-text">5.1 填表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%9B%9E%E6%BA%AF"><span class="nav-number">5.1.2.</span> <span class="nav-text">5.2 回溯</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%A4%8D%E6%9D%82%E5%BA%A6"><span class="nav-number">5.2.</span> <span class="nav-text">6. 复杂度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%92%8C%E9%82%BB%E5%B1%85%E7%AE%97%E6%B3%95%E5%B7%AE%E5%9C%A8%E5%93%AA%E4%B8%80%E5%8F%A5%E8%AF%9D"><span class="nav-number">5.3.</span> <span class="nav-text">7. 和邻居算法差在哪一句话</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%AE%9E%E7%8E%B0%EF%BC%9A%E5%85%88%E6%89%8B%E5%86%99%E7%BA%BF%E6%80%A7%E7%A9%BA%E4%BD%8D%EF%BC%8C%E5%86%8D%E7%94%9F%E4%BA%A7%E7%94%A8%E7%A4%BE%E5%8C%BA%E5%BA%93"><span class="nav-number">5.4.</span> <span class="nav-text">8. 实现：先手写线性空位，再生产用社区库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#8-1-%E7%BA%BF%E6%80%A7%E7%A9%BA%E4%BD%8D-NW%EF%BC%88%E6%95%99%E5%AD%A6%E5%AE%8C%E6%95%B4%E7%89%88%EF%BC%89"><span class="nav-number">5.4.1.</span> <span class="nav-text">8.1 线性空位 NW（教学完整版）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-2-%E7%94%9F%E4%BA%A7%E8%B7%AF%E5%BE%84%EF%BC%9ABiopython%EF%BC%88%E6%98%BE%E5%BC%8F%E7%A9%BA%E4%BD%8D%EF%BC%89"><span class="nav-number">5.4.2.</span> <span class="nav-text">8.2 生产路径：Biopython（显式空位）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%B8%8D%E8%AF%A5%E7%94%A8-NW"><span class="nav-number">5.5.</span> <span class="nav-text">9. 什么时候不该用 NW</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E8%A6%81%E7%82%B9"><span class="nav-number">5.6.</span> <span class="nav-text">10. 要点</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,PropertyGraphIndex,GraphRAG," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="PropertyGraphIndex 用 kg_extractor 抽实体关系建成属性图，查询时 sub-retriever 命中实体再沿边扩 hop，include_text 回填原文并给出 source_nodes。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PropertyGraphIndex">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-PropertyGraphIndex/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="PropertyGraphIndex 用 kg_extractor 抽实体关系建成属性图，查询时 sub-retriever 命中实体再沿边扩 hop，include_text 回填原文并给出 source_nodes。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-PropertyGraphIndex/llamaindex-fig01-property-graph-index.png">
+<meta property="article:published_time" content="2026-08-20T05:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="GraphRAG">
+<meta property="article:tag" content="PropertyGraphIndex">
+<meta property="article:tag" content="RAG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-PropertyGraphIndex/llamaindex-fig01-property-graph-index.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-LlamaIndex/LlamaIndex-03-索引-PropertyGraphIndex/"/>
+
+
+
+
+
+  <title>PropertyGraphIndex | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-PropertyGraphIndex/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">PropertyGraphIndex</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-20T13:20:00+08:00">
+                2026-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LlamaIndex/" itemprop="url" rel="index">
+                    <span itemprop="name">LlamaIndex</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  PropertyGraphIndex 用 kg_extractor 抽实体关系建成属性图，查询时 sub-retriever 命中实体再沿边扩 hop，include_text 回填原文并给出 source_nodes。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>「GAPDH knockdown 如何影响糖酵解」这类问句，两段各自和问句相似也拼不出因果链——段落相似度没有边。<strong>PropertyGraphIndex</strong> 离线从 chunk 抽出实体与关系，建成带标签和属性的图；查询时先命中种子实体，再沿边走若干跳，最后把节点挂着的原文 chunk 回填给生成模型。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PropertyGraphIndex</strong> &#x3D; LlamaIndex 的属性图索引：入库用 <code>kg_extractors</code> 写图，查询用 <code>sub_retrievers</code> 走路。它不是 Microsoft GraphRAG（社区摘要产品），也不是只存向量的 <code>VectorStoreIndex</code>。旧类 <code>KnowledgeGraphIndex</code> 自 0.10.53 起已弃用。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-PropertyGraphIndex/llamaindex-fig01-property-graph-index.png" alt="抽三元组建属性图、sub-retriever 沿边走路、include_text 回填原文与 source_nodes（科普示意）"></p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>知识层的<strong>属性图索引</strong>：实体&#x2F;关系 + 可选 embedding；查询走子图而非纯 top-k 段落</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>list[Document]</code> → <code>PropertyGraphIndex</code> → 路径文本 &#x2F; <code>NodeWithScore</code> &#x2F; <code>Response</code></td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>from_documents()</code>、<code>from_existing()</code>、<code>as_retriever(sub_retrievers=...)</code>、<code>as_query_engine()</code></td>
+</tr>
+<tr>
+<td>与 LangChain &#x2F; LangGraph</td>
+<td>近邻是「图库 + 子图召回」；LangGraph 节点里只 <code>query</code> &#x2F; <code>retrieve</code>，不要在图里现抽三元组</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：早期 <code>KnowledgeGraphIndex</code> 只能存刚性三元组，抽取与检索绑死。当前对象改用标注属性图（Labeled Property Graph，<strong>LPG</strong>）：节点和边都可以带类型与 key-value 属性，抽取器、图库、子检索器可拆开换。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>LPG</strong> &#x3D; 节点有标签（如 <code>GENE</code>）、边上有关系类型（如 <code>KNOCKDOWN_AFFECTS</code>），二者都可挂属性。比「只有 (s, p, o) 三元组、无属性」的旧 KG 索引更贴 Neo4j 一类图库。</p>
+</blockquote>
+<hr>
+<h2 id="2-前置依赖与环境"><a href="#2-前置依赖与环境" class="headerlink" title="2. 前置依赖与环境"></a>2. 前置依赖与环境</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br><span class="line">ollama pull qwen3.5:9b</span><br><span class="line">ollama pull nomic-embed-text</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Python 3.10+；<code>llama-index-core</code> <strong>0.14.x</strong>  </li>
+<li><strong>必须</strong>同时设 <code>Settings.llm</code> 与 <code>Settings.embed_model</code>：抽取走 LLM，实体节点默认还要 embedding  </li>
+<li>默认图库 <code>SimplePropertyGraphStore</code> <strong>不支持 Cypher</strong>；生产换 Neo4j 等再考虑 <code>TextToCypherRetriever</code>  </li>
+<li>示例用同步 <code>query()</code>；FastAPI 用 <code>await qe.aquery(...)</code>  </li>
+<li>对接 Neo4j：<code>pip install llama-index-graph-stores-neo4j</code>（本篇示例用内存店）</li>
+</ul>
+<hr>
+<h2 id="3-实现逻辑"><a href="#3-实现逻辑" class="headerlink" title="3. 实现逻辑"></a>3. 实现逻辑</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1. Settings.llm / Settings.embed_model 设成本地 Ollama</span><br><span class="line">2. 准备 Document（稳定 doc_id + metadata）</span><br><span class="line">3. PropertyGraphIndex.from_documents(docs, kg_extractors=[...])</span><br><span class="line">   内部：切 Node → 每个 chunk 跑 kg_extractors → 实体/关系写入 property_graph_store</span><br><span class="line">        →（默认）给图节点算 embedding</span><br><span class="line">4. retriever.retrieve(q) 或 qe.query(q)</span><br><span class="line">   默认 sub-retrievers：LLMSynonymRetriever + VectorContextRetriever</span><br><span class="line">5. 命中实体后沿边走 path_depth 跳；include_text=True 时附带源 chunk</span><br><span class="line">6. query 再合成答案；引用仍在 response.source_nodes</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Document(text=&quot;……GAPDH knockdown……糖酵解……&quot;, metadata=&#123;section:&quot;methods&quot;&#125;)</span><br><span class="line">  → kg_extractor 抽出路径 (GAPDH, knockdown, 糖酵解表型)</span><br><span class="line">  → 图节点 GAPDH / 糖酵解表型（可带 embedding）；边类型 knockdown</span><br><span class="line">  → retrieve(&quot;GAPDH knockdown 影响什么？&quot;)</span><br><span class="line">NodeWithScore(text=&quot;路径 + 可选原文 chunk&quot;, score=…)</span><br><span class="line">  → query</span><br><span class="line">Response(response=&quot;……糖酵解……&quot;, source_nodes=[...])</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-原理说明"><a href="#4-原理说明" class="headerlink" title="4. 原理说明"></a>4. 原理说明</h2><p>主轴是：<strong>入库把散文变成可走的边；查询先找种子实体，再扩子图，最后回填原文。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">1. from_documents 切出 TextNode[]（transformations 或 Settings 默认 splitter）</span><br><span class="line">2. 对每个 Node 依次跑 kg_extractors（默认同跑 SimpleLLMPathExtractor + ImplicitPathExtractor）</span><br><span class="line">3. SimpleLLMPathExtractor：LLM 从 chunk 抽出单跳路径 (e1, rel, e2)，写入图</span><br><span class="line">4. ImplicitPathExtractor：把 Node.relationships（如前后 chunk）也变成图上的边——不调 LLM，也不是知识三元组</span><br><span class="line">5. embed_kg_nodes=True（默认）时，图节点再走 embed_model，写入 vector_store 或图库自带向量</span><br><span class="line">6. as_retriever：若未传 sub_retrievers，默认 LLMSynonymRetriever（问句 → 同义词/关键词 → 精确撞实体名）</span><br><span class="line">   以及（有 embedding 时）VectorContextRetriever（问句向量 → 相似图节点 → 再取相连路径）</span><br><span class="line">7. 每个 sub-retriever 在命中节点后沿边走 path_depth 跳，合并成 NodeWithScore</span><br><span class="line">8. include_text=True：路径节点回填其来源 chunk 正文，否则合成器只能看到三元组短句</span><br><span class="line">9. as_query_engine：第 6～8 步之后把文本交给 llm；source_nodes 挂检索结果</span><br><span class="line">10. 换库：property_graph_store=Neo4jPropertyGraphStore(...)；已有图用 from_existing，不要再抽一遍</span><br><span class="line">少了第 3 步（抽取失败/别名分裂）→ 图上没有可走的边，后面跳得再远也空</span><br><span class="line">少了第 8 步 → 答案可能只有「GAPDH —knockdown→ 糖酵解」而缺剂量、品系等原文约束</span><br><span class="line">少了第 9 步只 print(str(response)) → 无法证明走的是 methods 那条 chunk</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>SimpleLLMPathExtractor</code></strong> 出现在步骤 3。无预定义本体，LLM 自由命名实体和关系，覆盖广、一致性差。<code>max_paths_per_chunk</code> 限制每块抽出条数。</p>
+<p><strong><code>SchemaLLMPathExtractor</code></strong> 可替换步骤 3。用 <code>possible_entities</code> &#x2F; <code>possible_relations</code> &#x2F; <code>kg_validation_schema</code> 白名单；<code>strict=True</code> 时丢掉模式外三元组。领域稳定（基因、品系、方法）时优先它。本地小模型若结构化输出不稳，先退回 Simple，或把 <code>strict=False</code> 当建议而非硬校验。</p>
+<p><strong><code>DynamicLLMPathExtractor</code></strong> 介于二者：给一组允许类型作引导，但允许模型扩展新类型。</p>
+<p><strong><code>LLMSynonymRetriever</code> &#x2F; <code>VectorContextRetriever</code></strong> 出现在步骤 6。前者吃 LLM 费用换别名（GAPDH &#x2F; Gapdh &#x2F; 甘油醛-3-磷酸脱氢酶）；后者吃 embedding。两路都只是 <strong>PGRetriever 的子检索器</strong>，不是 Router，也不是段落级 BM25。</p>
+<p><strong><code>TextToCypherRetriever</code></strong> 仅图库支持 Cypher 时可用。任意生成的 Cypher 有注入与误删风险，生产用只读角色或改用 <code>CypherTemplateRetriever</code>（模板 + LLM 填参数）。</p>
+<p>社区方案对照：LlamaIndex 官方走本对象 + <code>Neo4jPropertyGraphStore</code>；Microsoft GraphRAG 做社区摘要、LightRAG 做轻量图增强，<strong>API 与本类不是同一套</strong>。风险点相同：抽取噪声边会被多跳放大；实体未链接时「GAPDH」和「Gapdh」会变成两个节点。</p>
+<hr>
+<h2 id="5-最小可运行示例"><a href="#5-最小可运行示例" class="headerlink" title="5. 最小可运行示例"></a>5. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Literal</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> Document, PropertyGraphIndex, Settings</span><br><span class="line"><span class="keyword">from</span> llama_index.core.indices.property_graph <span class="keyword">import</span> SchemaLLMPathExtractor</span><br><span class="line"><span class="keyword">from</span> llama_index.embeddings.ollama <span class="keyword">import</span> OllamaEmbedding</span><br><span class="line"><span class="keyword">from</span> llama_index.llms.ollama <span class="keyword">import</span> Ollama</span><br><span class="line"></span><br><span class="line">Settings.llm = Ollama(model=<span class="string">&quot;qwen3.5:9b&quot;</span>, request_timeout=<span class="number">180.0</span>, temperature=<span class="number">0</span>)</span><br><span class="line">Settings.embed_model = OllamaEmbedding(</span><br><span class="line">    model_name=<span class="string">&quot;nomic-embed-text&quot;</span>,</span><br><span class="line">    base_url=<span class="string">&quot;http://localhost:11434&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">docs = [</span><br><span class="line">    Document(</span><br><span class="line">        text=(</span><br><span class="line">            <span class="string">&quot;定量 PCR 以小鼠肝脏 GAPDH 为内参。&quot;</span></span><br><span class="line">            <span class="string">&quot;实验对象为 SPF 级 C57BL/6 小鼠。&quot;</span></span><br><span class="line">            <span class="string">&quot;用 siRNA knockdown GAPDH 后，糖酵解表型下降。&quot;</span></span><br><span class="line">        ),</span><br><span class="line">        doc_id=<span class="string">&quot;paper_001&quot;</span>,</span><br><span class="line">        metadata=&#123;<span class="string">&quot;species&quot;</span>: <span class="string">&quot;小鼠&quot;</span>, <span class="string">&quot;section&quot;</span>: <span class="string">&quot;methods&quot;</span>&#125;,</span><br><span class="line">    ),</span><br><span class="line">    Document(</span><br><span class="line">        text=<span class="string">&quot;Python 的列表推导式用一行从可迭代对象生成列表。&quot;</span>,</span><br><span class="line">        doc_id=<span class="string">&quot;py_001&quot;</span>,</span><br><span class="line">        metadata=&#123;<span class="string">&quot;species&quot;</span>: <span class="string">&quot;无关&quot;</span>, <span class="string">&quot;section&quot;</span>: <span class="string">&quot;lang&quot;</span>&#125;,</span><br><span class="line">    ),</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">entities = <span class="type">Literal</span>[<span class="string">&quot;GENE&quot;</span>, <span class="string">&quot;STRAIN&quot;</span>, <span class="string">&quot;METHOD&quot;</span>, <span class="string">&quot;PHENOTYPE&quot;</span>]</span><br><span class="line">relations = <span class="type">Literal</span>[<span class="string">&quot;USED_AS_CONTROL_IN&quot;</span>, <span class="string">&quot;USES_STRAIN&quot;</span>, <span class="string">&quot;KNOCKDOWN_AFFECTS&quot;</span>]</span><br><span class="line"><span class="comment"># 0.14 起可用 (主语类型, 关系, 宾语类型)；内部会收成 &#123;&quot;relationships&quot;: [...]&#125;</span></span><br><span class="line">schema = &#123;</span><br><span class="line">    <span class="string">&quot;relationships&quot;</span>: [</span><br><span class="line">        (<span class="string">&quot;GENE&quot;</span>, <span class="string">&quot;USED_AS_CONTROL_IN&quot;</span>, <span class="string">&quot;METHOD&quot;</span>),</span><br><span class="line">        (<span class="string">&quot;METHOD&quot;</span>, <span class="string">&quot;USES_STRAIN&quot;</span>, <span class="string">&quot;STRAIN&quot;</span>),</span><br><span class="line">        (<span class="string">&quot;GENE&quot;</span>, <span class="string">&quot;KNOCKDOWN_AFFECTS&quot;</span>, <span class="string">&quot;PHENOTYPE&quot;</span>),</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">kg_extractor = SchemaLLMPathExtractor(</span><br><span class="line">    llm=Settings.llm,</span><br><span class="line">    possible_entities=entities,</span><br><span class="line">    possible_relations=relations,</span><br><span class="line">    kg_validation_schema=schema,</span><br><span class="line">    strict=<span class="literal">True</span>,</span><br><span class="line">    max_triplets_per_chunk=<span class="number">8</span>,</span><br><span class="line">    num_workers=<span class="number">1</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">index = PropertyGraphIndex.from_documents(</span><br><span class="line">    docs,</span><br><span class="line">    kg_extractors=[kg_extractor],</span><br><span class="line">    show_progress=<span class="literal">True</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">retriever = index.as_retriever(include_text=<span class="literal">True</span>, similarity_top_k=<span class="number">4</span>)</span><br><span class="line">hits = retriever.retrieve(<span class="string">&quot;GAPDH knockdown 影响什么表型？&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>([(h.node.get_content()[:<span class="number">80</span>], h.score) <span class="keyword">for</span> h <span class="keyword">in</span> hits])</span><br><span class="line"></span><br><span class="line">qe = index.as_query_engine(include_text=<span class="literal">True</span>, similarity_top_k=<span class="number">4</span>)</span><br><span class="line">resp = qe.query(<span class="string">&quot;GAPDH knockdown 影响什么表型？实验对象是什么品系？&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(resp)</span><br><span class="line"><span class="keyword">for</span> n <span class="keyword">in</span> resp.source_nodes:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;cite&quot;</span>, n.node.metadata, n.score)</span><br><span class="line"><span class="comment"># 预期形态：答案含糖酵解与 C57BL/6；source_nodes 能指回 methods</span></span><br></pre></td></tr></table></figure>
+
+<p>本地小模型若 <code>strict=True</code> 抽空：改 <code>strict=False</code>，或换成默认的 <code>SimpleLLMPathExtractor</code>（不传 <code>kg_extractors</code> 即该组合）。图已在 Neo4j 时用 <code>PropertyGraphIndex.from_existing(property_graph_store=...)</code>，不要对同一语料重复抽取。</p>
+<hr>
+<h2 id="6-重要配置参数"><a href="#6-重要配置参数" class="headerlink" title="6. 重要配置参数"></a>6. 重要配置参数</h2><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>kg_extractors</code></td>
+<td>list &#x2F; Simple + Implicit</td>
+<td>每个 chunk 上的抽边器</td>
+<td>不传则自由抽 + 切分邻接边；决定图的上限</td>
+<td>领域稳定用 Schema</td>
+<td>先小语料看抽出的边再全库</td>
+</tr>
+<tr>
+<td><code>embed_kg_nodes</code></td>
+<td>bool &#x2F; <code>True</code></td>
+<td>是否给图节点算向量</td>
+<td><code>False</code> 则默认子检索少掉 VectorContext 路</td>
+<td>要语义别名时保持 True</td>
+<td>与 <code>Settings.embed_model</code> 绑定</td>
+</tr>
+<tr>
+<td><code>include_text</code></td>
+<td>bool &#x2F; 常用 <code>True</code></td>
+<td>路径是否回填源 chunk</td>
+<td><code>False</code> 合成器只见短三元组</td>
+<td>问答必须 True</td>
+<td>只要图统计可 False</td>
+</tr>
+<tr>
+<td><code>similarity_top_k</code></td>
+<td>int &#x2F; 常为 2</td>
+<td>向量路取几个图节点</td>
+<td>过小漏种子；过大噪声边增多</td>
+<td>4～8</td>
+<td>与 <code>path_depth</code> 一起拧</td>
+</tr>
+<tr>
+<td><code>path_depth</code></td>
+<td>int &#x2F; 默认 1</td>
+<td>命中后再走几跳</td>
+<td>跳数↑召回↑、错边放大↑</td>
+<td>1～2 入门</td>
+<td>抽取脏时先降到 1</td>
+</tr>
+<tr>
+<td><code>max_paths_per_chunk</code> &#x2F; <code>max_triplets_per_chunk</code></td>
+<td>int &#x2F; 约 10</td>
+<td>每块最多抽几条</td>
+<td>过大费用高、噪声边多</td>
+<td>5～10</td>
+<td>方法节短块够用</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>bool &#x2F; Schema 常用 <code>True</code></td>
+<td>是否丢掉模式外三元组</td>
+<td><code>False</code> 当建议，图会变杂</td>
+<td>本体已定时 True</td>
+<td>小模型抽空再放宽</td>
+</tr>
+<tr>
+<td><code>property_graph_store</code></td>
+<td>图库适配器 &#x2F; Simple</td>
+<td>图存在哪</td>
+<td>Simple 无 Cypher、单机 JSON；Neo4j 可持久与向量</td>
+<td>生产换 Neo4j 等</td>
+<td>密钥走环境变量，禁止写进 YAML&#x2F;示例明文</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-适用-不适用"><a href="#7-适用-不适用" class="headerlink" title="7. 适用 &#x2F; 不适用"></a>7. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>适用</th>
+<th>不适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任务形态</td>
+<td>多跳关系、要沿「基因→干预→表型」走路</td>
+<td>单跳事实、同义改写——<code>VectorStoreIndex</code> + hybrid 更便宜</td>
+</tr>
+<tr>
+<td>语料</td>
+<td>实体类型稳定、改动不频繁</td>
+<td>每天大面积改稿——全量重抽成本高于重嵌</td>
+</tr>
+<tr>
+<td>工程阶段</td>
+<td>已能接受 LLM 抽取误差，并准备做实体归一</td>
+<td>必须精确命中货号&#x2F;基因号——加 BM25 &#x2F; metadata filter，不要指望抽边</td>
+</tr>
+</tbody></table>
+<p>工具环、审批、会话恢复：索引仍用本对象，编排走 LangGraph。</p>
+<hr>
+<h2 id="8-易踩坑"><a href="#8-易踩坑" class="headerlink" title="8. 易踩坑"></a>8. 易踩坑</h2><ol>
+<li><strong>把它当成 Microsoft GraphRAG</strong>：本类不自动做社区摘要；只提供 LPG 构建与子检索器。  </li>
+<li><strong>继续用 <code>KnowledgeGraphIndex</code></strong>：已弃用，新代码只用 <code>PropertyGraphIndex</code>。  </li>
+<li><strong><code>include_text=False</code> 还当 RAG 问答</strong>：合成器看不到品系、剂量等原文约束。  </li>
+<li><strong>实体未归一</strong>：GAPDH &#x2F; Gapdh &#x2F; 甘油醛-3-磷酸脱氢酶变成三个节点，同义词检索只能部分兜住。  </li>
+<li><strong>在 <code>SimplePropertyGraphStore</code> 上开 <code>TextToCypherRetriever</code></strong>：内存店没有 Cypher。  </li>
+<li><strong>每次启动 <code>from_documents</code> 重抽</strong>：LLM 抽取比 embedding 更贵；persist 或 <code>from_existing</code>。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>PropertyGraphIndex</strong> 把文档建成 <strong>LPG</strong>：抽取器写边，子检索器走路，<code>include_text</code> 回填 chunk。  </li>
+<li>默认抽取是自由三元组 + 切分邻接边；领域稳定改 <strong>SchemaLLMPathExtractor</strong>。  </li>
+<li>默认检索是同义词 + 图节点向量，不是段落 BM25。  </li>
+<li>引用看 <strong><code>source_nodes</code></strong>；生产图库换 Neo4j，索引 API 保持 <code>from_documents</code> &#x2F; <code>from_existing</code>。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/indexing/lpg_index_guide/">Property Graph Index</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/examples/property_graph/property_graph_advanced/">Property graph construction with schemas</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/examples/property_graph/dynamic_kg_extraction/">Comparing LLM path extractors</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/PropertyGraphIndex/" rel="tag"><i class="fa fa-tag"></i> PropertyGraphIndex</a>
+          
+            <a href="/tags/GraphRAG/" rel="tag"><i class="fa fa-tag"></i> GraphRAG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-06-%E5%90%8E%E5%A4%84%E7%90%86-Rerank%E4%B8%8ENodePostprocessor/" rel="next" title="Rerank与NodePostprocessor">
+                <i class="fa fa-chevron-left"></i> Rerank与NodePostprocessor
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-00.%E5%87%BD%E6%95%B0%E5%BA%94%E7%94%A8%E9%80%9F%E6%9F%A5/" rel="prev" title="LangChain：函数应用速查">
+                LangChain：函数应用速查 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%89%8D%E7%BD%AE%E4%BE%9D%E8%B5%96%E4%B8%8E%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text">2. 前置依赖与环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">3.</span> <span class="nav-text">3. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">4. 原理说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">6. 重要配置参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">7.</span> <span class="nav-text">7. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

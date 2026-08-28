@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,NodeParser,SentenceSplitter," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="SentenceSplitter 如何按句打包 TextNode；chunk_size 以 token 计、overlap 防止方法句切断，以及 from_documents 如何接到 Settings.text_splitter。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NodeParser">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-02-%E5%88%87%E5%88%86-NodeParser/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="SentenceSplitter 如何按句打包 TextNode；chunk_size 以 token 计、overlap 防止方法句切断，以及 from_documents 如何接到 Settings.text_splitter。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-02-%E5%88%87%E5%88%86-NodeParser/llamaindex-fig01-sentence-splitter.png">
+<meta property="article:published_time" content="2026-08-20T03:40:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="NodeParser">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="SentenceSplitter">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-02-%E5%88%87%E5%88%86-NodeParser/llamaindex-fig01-sentence-splitter.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-LlamaIndex/LlamaIndex-02-切分-NodeParser/"/>
+
+
+
+
+
+  <title>NodeParser | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-02-%E5%88%87%E5%88%86-NodeParser/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">NodeParser</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-20T11:40:00+08:00">
+                2026-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LlamaIndex/" itemprop="url" rel="index">
+                    <span itemprop="name">LlamaIndex</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  SentenceSplitter 如何按句打包 TextNode；chunk_size 以 token 计、overlap 防止方法句切断，以及 from_documents 如何接到 Settings.text_splitter。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>方法节里「20 μL、60°C、3 只小鼠」经常被切在两段：检索只命中前半，生成就编造后半。LlamaIndex 的 <strong>NodeParser</strong> 把 <code>Document</code> 切成 <code>TextNode</code>，默认 <strong>SentenceSplitter</strong> 先按句切开再打包到 <code>chunk_size</code>，并用 <code>chunk_overlap</code> 让边界句出现在相邻两块里。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>NodeParser</strong> &#x3D; <code>list[Document] → list[Node]</code> 的切分器；<strong><code>chunk_size</code> 按 token 计</strong>（默认 tiktoken），不是字符数。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-02-%E5%88%87%E5%88%86-NodeParser/llamaindex-fig01-sentence-splitter.png" alt="SentenceSplitter 按句打包，重叠窗口避免切断方法句（科普示意）"></p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>知识层的<strong>切分</strong>：来源正文 → 可嵌入、可引用的块</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>list[Document]</code> → <code>list[TextNode]</code>（继承 metadata，挂 SOURCE &#x2F; PREV &#x2F; NEXT）</td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>SentenceSplitter(...).get_nodes_from_documents()</code>；或 <code>Settings.text_splitter</code> &#x2F; <code>from_documents(transformations=...)</code></td>
+</tr>
+<tr>
+<td>与 LangChain &#x2F; LangGraph</td>
+<td>近邻是 <code>langchain-text-splitters</code>；LangGraph 不切块</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：裸按字符 <code>text[i:i+n]</code> 会切断术语与数字。SentenceSplitter 在「不超过 token 预算」的约束下尽量在句号处断开，并把 Document 的 metadata &#x2F; 排除键拷到每个子 Node。</p>
+<p>切分策略（层级、语义切分、评测口径）见 RAG 目录；本篇只讲 LlamaIndex 怎么把剂量拧到 API 上。</p>
+<hr>
+<h2 id="2-前置依赖与环境"><a href="#2-前置依赖与环境" class="headerlink" title="2. 前置依赖与环境"></a>2. 前置依赖与环境</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Python 3.10+；<code>llama-index-core</code> <strong>0.14.x</strong>  </li>
+<li><strong>本篇不调 LLM</strong>。<code>SemanticSplitterNodeParser</code> 才需要 embedding，此处不展开。  </li>
+<li><code>from_documents</code> 若未传 <code>transformations</code> 且未改 <code>Settings.text_splitter</code>，会用全局默认 splitter。</li>
+</ul>
+<hr>
+<h2 id="3-实现逻辑"><a href="#3-实现逻辑" class="headerlink" title="3. 实现逻辑"></a>3. 实现逻辑</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1. 准备 Document（text + metadata + 稳定 doc_id）</span><br><span class="line">2. SentenceSplitter(chunk_size, chunk_overlap)</span><br><span class="line">3. get_nodes_from_documents(docs)</span><br><span class="line">4. 内部：按句切开 → 累积 token 直到 chunk_size → 输出一块</span><br><span class="line">5. 下一块从 overlap 对应的尾部句子接着取</span><br><span class="line">6. 每个 Node 继承 metadata；写 SOURCE；可选 PREVIOUS/NEXT</span><br><span class="line">7. 记录 start_char_idx / end_char_idx，便于原文对齐</span><br><span class="line">8. 这些 Node 再交给 VectorStoreIndex 或 IngestionPipeline 的下一步</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Document.text = &quot;句A。句B。句C。句D。&quot;  # 假设每句约 20 token，chunk_size=45, overlap≈20</span><br><span class="line">  → Node0.text ≈ &quot;句A。句B。&quot;</span><br><span class="line">  → Node1.text ≈ &quot;句B。句C。&quot;   # 句B 在 overlap 里</span><br><span class="line">  metadata 两块相同；SOURCE 都指向同一 doc_id</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-原理说明"><a href="#4-原理说明" class="headerlink" title="4. 原理说明"></a>4. 原理说明</h2><p>主轴是：<strong>parser 不改 Document，只派生 Node；token 预算决定打包，句子边界决定刀口。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">1. get_nodes_from_documents 取出每个 Document.text</span><br><span class="line">2. 用分隔符（句号、换行、paragraph_separator）得到句子列表</span><br><span class="line">3. 用与模型相近的 tokenizer 累加 token</span><br><span class="line">4. 累加即将超过 chunk_size：封上当前块为 TextNode</span><br><span class="line">5. 回退 overlap 个 token 对应的句子，作为下一块开头</span><br><span class="line">6. 拷贝 metadata、excluded_*、text_template</span><br><span class="line">7. relationships[SOURCE] = 父 Document；include_prev_next_rel 则链邻居</span><br><span class="line">8. start_char_idx / end_char_idx 映射回原文字符区间</span><br><span class="line">少了第 5 步（overlap=0）→ 「20 μL」与「退火 60°C」分家，召回只得半句</span><br><span class="line">少了第 6 步 → 块上没有 species，metadata 过滤全空</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>SentenceSplitter</code></strong>（类，<code>llama_index.core.node_parser</code>）出现在步骤 2。功能：句感知打包。默认 <code>chunk_size=1024</code>，<code>chunk_overlap=20</code>。</p>
+<p><strong><code>get_nodes_from_documents(documents, show_progress=False)</code></strong>（方法）出现在步骤 1。输入非空 <code>list[Document]</code>；输出 <code>list[TextNode]</code>，长度 ≥1（极短文可能 1 块）。</p>
+<p><strong><code>Settings.text_splitter</code></strong> 出现在索引构建：<code>VectorStoreIndex.from_documents</code> 未传 <code>transformations</code> 时读它。局部覆盖：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">index = VectorStoreIndex.from_documents(</span><br><span class="line">    documents,</span><br><span class="line">    transformations=[SentenceSplitter(chunk_size=<span class="number">512</span>, chunk_overlap=<span class="number">64</span>)],</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>其它 parser（按需，不在本篇示例展开）：</p>
+<table>
+<thead>
+<tr>
+<th>类</th>
+<th>刀口</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TokenTextSplitter</code></td>
+<td>纯 token 窗</td>
+<td>无标点日志</td>
+</tr>
+<tr>
+<td><code>HierarchicalNodeParser</code></td>
+<td>多尺寸父子块</td>
+<td>先宽召回再精读子块</td>
+</tr>
+<tr>
+<td><code>SentenceWindowNodeParser</code></td>
+<td>一句 + 左右窗口</td>
+<td>后续 auto-merging</td>
+</tr>
+<tr>
+<td><code>SemanticSplitterNodeParser</code></td>
+<td>嵌入相似度断点</td>
+<td>段落主题切换；要 embedding</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-最小可运行示例"><a href="#5-最小可运行示例" class="headerlink" title="5. 最小可运行示例"></a>5. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> Document</span><br><span class="line"><span class="keyword">from</span> llama_index.core.node_parser <span class="keyword">import</span> SentenceSplitter</span><br><span class="line"><span class="keyword">from</span> llama_index.core.schema <span class="keyword">import</span> NodeRelationship</span><br><span class="line"></span><br><span class="line">doc = Document(</span><br><span class="line">    text=(</span><br><span class="line">        <span class="string">&quot;定量 PCR 以小鼠肝脏 GAPDH 为内参。反应体系 20 μL。&quot;</span></span><br><span class="line">        <span class="string">&quot;退火温度 60°C，循环 40 次。每个生物学重复使用 3 只 SPF 级 C57BL/6 小鼠。&quot;</span></span><br><span class="line">        <span class="string">&quot;阴性对照以无模板水代替 cDNA。&quot;</span></span><br><span class="line">    ),</span><br><span class="line">    doc_id=<span class="string">&quot;paper_001&quot;</span>,</span><br><span class="line">    metadata=&#123;<span class="string">&quot;species&quot;</span>: <span class="string">&quot;小鼠&quot;</span>, <span class="string">&quot;section&quot;</span>: <span class="string">&quot;methods&quot;</span>&#125;,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关键参数：小 chunk_size 便于看见切块；overlap 让「20 μL」与后句有机会同窗</span></span><br><span class="line">parser = SentenceSplitter(chunk_size=<span class="number">48</span>, chunk_overlap=<span class="number">16</span>)</span><br><span class="line">nodes = parser.get_nodes_from_documents([doc])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出：每块 text、字符区间、SOURCE、邻接</span></span><br><span class="line"><span class="keyword">for</span> i, n <span class="keyword">in</span> <span class="built_in">enumerate</span>(nodes):</span><br><span class="line">    src = n.relationships.get(NodeRelationship.SOURCE)</span><br><span class="line">    nxt = n.relationships.get(NodeRelationship.NEXT)</span><br><span class="line">    <span class="built_in">print</span>(i, n.start_char_idx, n.end_char_idx, n.metadata[<span class="string">&quot;species&quot;</span>])</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot; &quot;</span>, n.text)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;  SOURCE&quot;</span>, <span class="literal">None</span> <span class="keyword">if</span> src <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">else</span> src.node_id, <span class="string">&quot;NEXT&quot;</span>, <span class="literal">None</span> <span class="keyword">if</span> nxt <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">else</span> nxt.node_id)</span><br><span class="line"><span class="comment"># 预期：≥2 块；每块 metadata.species==小鼠；SOURCE==paper_001；相邻块有 NEXT</span></span><br></pre></td></tr></table></figure>
+
+<p>把 <code>chunk_overlap</code> 改成 <code>0</code> 再跑一遍，比较「20 μL」是否与「60°C」分家——这就是 overlap 的可观测差。</p>
+<hr>
+<h2 id="6-重要配置参数"><a href="#6-重要配置参数" class="headerlink" title="6. 重要配置参数"></a>6. 重要配置参数</h2><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk_size</code></td>
+<td>int，默认 1024</td>
+<td>每块目标 <strong>token</strong> 上限</td>
+<td>过大混入噪声、挤上下文；过小切断方法句、块数暴涨</td>
+<td>方法节 256～512；综述 512～1024</td>
+<td>按生成模型窗口与 top_k 反算</td>
+</tr>
+<tr>
+<td><code>chunk_overlap</code></td>
+<td>int，默认 20</td>
+<td>相邻块重叠的 token 预算</td>
+<td>过小跨句指代丢失；过大重复占检索位</td>
+<td>约为 <code>chunk_size</code> 的 10%～20%</td>
+<td>与 size 成对调，不要只拧一个</td>
+</tr>
+<tr>
+<td><code>separator</code></td>
+<td>str，默认 <code>&quot; &quot;</code></td>
+<td>句子再细拆时的分隔</td>
+<td>中文空格少，主要靠句号&#x2F;换行</td>
+<td>保持默认</td>
+<td>不要改成空串</td>
+</tr>
+<tr>
+<td><code>paragraph_separator</code></td>
+<td>str，默认 <code>&quot;\n\n\n&quot;</code></td>
+<td>段边界</td>
+<td>与你的文件实际空行数不一致则整段当一句</td>
+<td>Markdown 常用 <code>&quot;\n\n&quot;</code></td>
+<td>先 <code>print</code> 原文里的换行再设</td>
+</tr>
+<tr>
+<td><code>include_metadata</code></td>
+<td>bool，默认 <code>True</code></td>
+<td>是否把 Document.metadata 拷到 Node</td>
+<td><code>False</code> 则引用丢页码&#x2F;物种</td>
+<td>保持 <code>True</code></td>
+<td>几乎总开</td>
+</tr>
+<tr>
+<td><code>include_prev_next_rel</code></td>
+<td>bool，默认 <code>True</code></td>
+<td>是否写 PREVIOUS&#x2F;NEXT</td>
+<td><code>False</code> 则窗口扩展&#x2F;邻块拼接做不了</td>
+<td>层级&#x2F;窗口检索保持 <code>True</code></td>
+<td>省一点存储可关，默认开</td>
+</tr>
+<tr>
+<td><code>Settings.chunk_size</code></td>
+<td>int</td>
+<td>不换 splitter 类、只改全局默认块长</td>
+<td>与显式 <code>SentenceSplitter(chunk_size=...)</code> 谁后生效看调用点</td>
+<td>与上表同源</td>
+<td>索引构建处显式传 <code>transformations</code> 更不易踩</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-适用-不适用"><a href="#7-适用-不适用" class="headerlink" title="7. 适用 &#x2F; 不适用"></a>7. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>适用</th>
+<th>不适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任务形态</td>
+<td>叙事&#x2F;方法段落、句边界清晰</td>
+<td>超长无标点表、纯代码——改 TokenTextSplitter 或按标题切</td>
+</tr>
+<tr>
+<td>集成约束</td>
+<td>默认 tiktoken 计数与 OpenAI 系接近</td>
+<td>本地 tokenizer 与 tiktoken 差很大时，块长体感会偏</td>
+</tr>
+<tr>
+<td>工程阶段</td>
+<td>任何 <code>from_documents</code> 之前</td>
+<td>已按标题&#x2F;HTML 树切好——直接造 <code>TextNode</code>，跳过 parser</td>
+</tr>
+</tbody></table>
+<p>需要父子层级时用 <code>HierarchicalNodeParser</code>，不要把 <code>chunk_size</code> 拧到 64 冒充层级。</p>
+<hr>
+<h2 id="8-易踩坑"><a href="#8-易踩坑" class="headerlink" title="8. 易踩坑"></a>8. 易踩坑</h2><ol>
+<li><strong>把 <code>chunk_size</code> 当字符数</strong>：中文 1024 token 远不是 1024 字，块会比直觉大或小。用 <code>len(nodes)</code> 和每块 <code>text</code> 目测。  </li>
+<li><strong><code>overlap=0</code> 切方法句</strong>：剂量与条件分家，看起来像幻觉，其实是召回半句。  </li>
+<li><strong>改了 parser 却走 <code>from_documents</code> 默认</strong>：忘记传 <code>transformations</code> &#x2F; <code>Settings.text_splitter</code>，索引仍是旧刀口。  </li>
+<li><strong>切完丢掉 <code>start_char_idx</code></strong>：后面做引用高亮时无法对齐 PDF 原文。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>SentenceSplitter</strong>：按句打包到 <strong>token</strong> 预算，<strong>overlap</strong> 保跨句条件。  </li>
+<li>子 Node <strong>继承 metadata</strong>，并挂 <strong>SOURCE &#x2F; PREV &#x2F; NEXT</strong>。  </li>
+<li>接到索引时用 <code>transformations=</code> 或 <code>Settings.text_splitter</code>，不要假设默认值等于你设过的数字。  </li>
+<li>切分策略对错用 RAG 评测看，本篇只保证 API 剂量拧在刀口上。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/loading/node_parsers/">Node Parser 模块</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/sentence_splitter/">SentenceSplitter API</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/NodeParser/" rel="tag"><i class="fa fa-tag"></i> NodeParser</a>
+          
+            <a href="/tags/SentenceSplitter/" rel="tag"><i class="fa fa-tag"></i> SentenceSplitter</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-VectorStoreIndex/" rel="next" title="VectorStoreIndex">
+                <i class="fa fa-chevron-left"></i> VectorStoreIndex
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Reader%E4%B8%8EIngestionPipeline/" rel="prev" title="Reader与IngestionPipeline">
+                Reader与IngestionPipeline <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%89%8D%E7%BD%AE%E4%BE%9D%E8%B5%96%E4%B8%8E%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text">2. 前置依赖与环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">3.</span> <span class="nav-text">3. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">4. 原理说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">6. 重要配置参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">7.</span> <span class="nav-text">7. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

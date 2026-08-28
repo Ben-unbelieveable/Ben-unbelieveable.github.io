@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Agent,RAG,Workflow," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="用 @step 与类型化 Event 编排 retrieve → rerank → synthesize；Context.store 存 query；timeout 防空转。与 LangGraph State+边 不是同一模型。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Workflow">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-08-%E7%BC%96%E6%8E%92-Workflow/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="用 @step 与类型化 Event 编排 retrieve → rerank → synthesize；Context.store 存 query；timeout 防空转。与 LangGraph State+边 不是同一模型。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-08-%E7%BC%96%E6%8E%92-Workflow/llamaindex-fig01-workflow-events.png">
+<meta property="article:published_time" content="2026-08-20T05:10:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="Workflow">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-08-%E7%BC%96%E6%8E%92-Workflow/llamaindex-fig01-workflow-events.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-LlamaIndex/LlamaIndex-08-编排-Workflow/"/>
+
+
+
+
+
+  <title>Workflow | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-08-%E7%BC%96%E6%8E%92-Workflow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Workflow</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-20T13:10:00+08:00">
+                2026-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LlamaIndex/" itemprop="url" rel="index">
+                    <span itemprop="name">LlamaIndex</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  用 @step 与类型化 Event 编排 retrieve → rerank → synthesize；Context.store 存 query；timeout 防空转。与 LangGraph State+边 不是同一模型。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>QueryEngine 把检索和生成焊死，中间插不上「先 CE 再决定要不要上网补检索」。<strong>Workflow</strong> 用类型化 <strong>Event</strong> 当边：一个 <code>@step</code> 吃某种 Event，吐另一种；返回 <code>StopEvent</code> 就结束。循环是「步骤再次发出自己能吃的 Event」，不是共享 State 上的自环边。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Workflow</strong> 是事件驱动编排；<strong>LangGraph</strong> 是共享 <code>State</code> + 显式边 + checkpointer。RAG 固定 DAG 用前者省事；要审批&#x2F;断点续跑用后者。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-08-%E7%BC%96%E6%8E%92-Workflow/llamaindex-fig01-workflow-events.png" alt="StartEvent 信封传到 retrieve，再变成 RerankedEvent，最后 StopEvent；旁边对照 LangGraph 黑板（科普示意）"></p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>知识层侧的<strong>多步 DAG&#x2F;弱环编排</strong>：步骤由 Event 类型接线</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>await workflow.run(**kwargs)</code> → <code>StopEvent.result</code></td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>class X(Workflow)</code>、<code>@step</code>、<code>StartEvent</code> &#x2F; <code>StopEvent</code>、<code>ctx.store</code></td>
+</tr>
+<tr>
+<td>与 LangChain &#x2F; LangGraph</td>
+<td>不是 LCEL，也不是 StateGraph；节点内仍可调 Retriever &#x2F; LLM</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：DAG 框架把分支画成难读的边。Workflow 用普通 <code>if</code> 返回不同 Event 类型来分支；用「再 emit 上游 Event」来循环。校验器在运行前检查：有没有人生产某个步骤在吃的类型。</p>
+<hr>
+<h2 id="2-前置依赖与环境"><a href="#2-前置依赖与环境" class="headerlink" title="2. 前置依赖与环境"></a>2. 前置依赖与环境</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br><span class="line">ollama pull qwen3.5:9b</span><br><span class="line">ollama pull nomic-embed-text</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>run</code> 为 async；<code>timeout</code> 单位秒  </li>
+<li>独立包 <code>llama-index-workflows</code> 可 <code>from workflows import Workflow</code>；本系列用 <code>llama_index.core.workflow</code> 再导出路径，避免两套 import  </li>
+<li>较新运行时共享状态走 <strong><code>ctx.store.set/get</code></strong>（旧文 <code>ctx.set</code> 可能失效）</li>
+</ul>
+<hr>
+<h2 id="3-实现逻辑"><a href="#3-实现逻辑" class="headerlink" title="3. 实现逻辑"></a>3. 实现逻辑</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1. 定义 Event 子类（字段=步骤间契约）</span><br><span class="line">2. Workflow 子类里写 @step：参数 ev: 某Event → 返回 另Event</span><br><span class="line">3. 第一个可运行步骤吃 StartEvent；run(query=...) 变成 StartEvent.query</span><br><span class="line">4. retrieve 步：aretrieve，把 nodes 放进 RetrievedEvent</span><br><span class="line">5. 需要跨步的小状态：await ctx.store.set(&quot;query&quot;, q)</span><br><span class="line">6. 最后一步返回 StopEvent(result=...)</span><br><span class="line">7. await w.run(...) 得到 result；要看中间事件则 handler.stream_events()</span><br></pre></td></tr></table></figure>
+
+<p><strong>节点表（本篇示例）</strong></p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>吃</th>
+<th>吐</th>
+<th>读</th>
+<th>写</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>retrieve</td>
+<td>StartEvent</td>
+<td>RetrievedEvent</td>
+<td>ev.query</td>
+<td>ctx.store[“query”]</td>
+</tr>
+<tr>
+<td>synthesize</td>
+<td>RetrievedEvent</td>
+<td>StopEvent</td>
+<td>ev.nodes, store[“query”]</td>
+<td>result 文本</td>
+</tr>
+</tbody></table>
+<p><strong>边</strong>：由类型推断，不必 <code>add_edge</code>。</p>
+<hr>
+<h2 id="4-原理说明"><a href="#4-原理说明" class="headerlink" title="4. 原理说明"></a>4. 原理说明</h2><p>主轴是：<strong>边 &#x3D; Event 类型；状态默认不共享，要共享就显式放进 Context.store。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">1. run(**kwargs) 构造 StartEvent，字段即 kwargs</span><br><span class="line">2. 调度所有声明为吃 StartEvent 的 step（通常一个）</span><br><span class="line">3. step 是 async 函数，返回一个 Event 或 list[Event]</span><br><span class="line">4. 运行时按返回类型找到下一个 step；编译前 validate 生产者/消费者</span><br><span class="line">5. ctx.store 是**这一次 run** 的 KV，不是跨进程 Saver</span><br><span class="line">6. 若 step 再返回自己的输入类型，形成环；必须靠 timeout / 自写计数跳出</span><br><span class="line">7. StopEvent 出现则停止，result 交给 await</span><br><span class="line">8. handler = w.run(...)；async for ev in handler.stream_events() 可观测中间 Event</span><br><span class="line">少了 StopEvent → 校验失败或挂到 timeout</span><br><span class="line">用 Event 塞超大 Node 列表可以，但不要把整个 Index 放进 Event 再序列化去「持久化」——那不是 checkpointer</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>@step</code></strong> 出现在步骤 2。输入输出类型必须可被静态图检查。动态 <code>ctx.send_event</code> 是进阶，本篇不用。</p>
+<p><strong><code>StartEvent</code></strong> 出现在步骤 1。可用 <code>ev.query</code> 或 <code>ev.get(&quot;query&quot;)</code>。</p>
+<p><strong><code>StopEvent(result=...)</code></strong> 出现在步骤 6。<code>result</code> 可以是 str &#x2F; dict &#x2F; 任意对象。</p>
+<p><strong><code>timeout</code></strong> 在 <code>Workflow(timeout=60)</code>。RAG 三步本地模型建议 60～180。</p>
+<p>与 LangGraph：那边 <code>add_edge</code> + reducer 合并；这边<strong>没有 reducer</strong>，后一个 Event 就是下一拍的全部输入。</p>
+<hr>
+<h2 id="5-最小可运行示例"><a href="#5-最小可运行示例" class="headerlink" title="5. 最小可运行示例"></a>5. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">List</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> Document, Settings, VectorStoreIndex, get_response_synthesizer</span><br><span class="line"><span class="keyword">from</span> llama_index.core.node_parser <span class="keyword">import</span> SentenceSplitter</span><br><span class="line"><span class="keyword">from</span> llama_index.core.schema <span class="keyword">import</span> NodeWithScore</span><br><span class="line"><span class="keyword">from</span> llama_index.core.workflow <span class="keyword">import</span> Event, StartEvent, StopEvent, Workflow, step, Context</span><br><span class="line"><span class="keyword">from</span> llama_index.embeddings.ollama <span class="keyword">import</span> OllamaEmbedding</span><br><span class="line"><span class="keyword">from</span> llama_index.llms.ollama <span class="keyword">import</span> Ollama</span><br><span class="line"></span><br><span class="line">Settings.llm = Ollama(model=<span class="string">&quot;qwen3.5:9b&quot;</span>, request_timeout=<span class="number">120.0</span>, temperature=<span class="number">0</span>)</span><br><span class="line">Settings.embed_model = OllamaEmbedding(</span><br><span class="line">    model_name=<span class="string">&quot;nomic-embed-text&quot;</span>,</span><br><span class="line">    base_url=<span class="string">&quot;http://localhost:11434&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">index = VectorStoreIndex.from_documents(</span><br><span class="line">    [Document(text=<span class="string">&quot;定量 PCR 以小鼠肝脏 GAPDH 为内参。实验对象为 C57BL/6 小鼠。&quot;</span>,</span><br><span class="line">              doc_id=<span class="string">&quot;paper_001&quot;</span>)],</span><br><span class="line">    transformations=[SentenceSplitter(chunk_size=<span class="number">128</span>, chunk_overlap=<span class="number">20</span>)],</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RetrievedEvent</span>(<span class="title class_ inherited__">Event</span>):</span><br><span class="line">    nodes: <span class="type">List</span>[NodeWithScore]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RAGFlow</span>(<span class="title class_ inherited__">Workflow</span>):</span><br><span class="line"><span class="meta">    @step</span></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">retrieve</span>(<span class="params">self, ctx: Context, ev: StartEvent</span>) -&gt; RetrievedEvent:</span><br><span class="line">        query = ev.get(<span class="string">&quot;query&quot;</span>)</span><br><span class="line">        <span class="keyword">await</span> ctx.store.<span class="built_in">set</span>(<span class="string">&quot;query&quot;</span>, query)</span><br><span class="line">        nodes = <span class="keyword">await</span> index.as_retriever(similarity_top_k=<span class="number">3</span>).aretrieve(query)</span><br><span class="line">        <span class="keyword">return</span> RetrievedEvent(nodes=nodes)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @step</span></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">synthesize</span>(<span class="params">self, ctx: Context, ev: RetrievedEvent</span>) -&gt; StopEvent:</span><br><span class="line">        query = <span class="keyword">await</span> ctx.store.get(<span class="string">&quot;query&quot;</span>)</span><br><span class="line">        synth = get_response_synthesizer(response_mode=<span class="string">&quot;compact&quot;</span>, llm=Settings.llm)</span><br><span class="line">        resp = <span class="keyword">await</span> synth.asynthesize(query, nodes=ev.nodes)</span><br><span class="line">        cites = [n.node.doc_id <span class="keyword">for</span> n <span class="keyword">in</span> resp.source_nodes]</span><br><span class="line">        <span class="keyword">return</span> StopEvent(result=&#123;<span class="string">&quot;answer&quot;</span>: <span class="built_in">str</span>(resp), <span class="string">&quot;cites&quot;</span>: cites&#125;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    w = RAGFlow(timeout=<span class="number">120</span>, verbose=<span class="literal">False</span>)</span><br><span class="line">    <span class="comment"># 输入</span></span><br><span class="line">    out = <span class="keyword">await</span> w.run(query=<span class="string">&quot;实验对象是什么物种？&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(out)  <span class="comment"># 输出：含 answer 与 cites</span></span><br><span class="line">    <span class="comment"># 预期：answer 含小鼠；cites 含 paper_001</span></span><br><span class="line"></span><br><span class="line">asyncio.run(main())</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-重要配置参数"><a href="#6-重要配置参数" class="headerlink" title="6. 重要配置参数"></a>6. 重要配置参数</h2><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>timeout</code></td>
+<td>float，秒</td>
+<td>整次 run 墙钟上限</td>
+<td>过短误杀本地生成；过长空转</td>
+<td>60～180</td>
+<td>含 CE&#x2F;多步时加大</td>
+</tr>
+<tr>
+<td><code>verbose</code></td>
+<td>bool</td>
+<td>打印步骤调度</td>
+<td>只影响日志</td>
+<td>调试 True</td>
+<td>生产 False</td>
+</tr>
+<tr>
+<td><code>ctx.store</code></td>
+<td>KV</td>
+<td>跨 step 共享本次 run 的小状态</td>
+<td>不写则下一步看不见 query</td>
+<td>只放 query、计数</td>
+<td>不要塞整个向量库</td>
+</tr>
+<tr>
+<td>Event 字段</td>
+<td>Pydantic</td>
+<td>步骤间唯一数据契约</td>
+<td>漏字段下一拍 AttributeError</td>
+<td>显式 List[NodeWithScore]</td>
+<td>与函数返回类型一致</td>
+</tr>
+<tr>
+<td><code>run(**kwargs)</code></td>
+<td>kwargs→StartEvent</td>
+<td>入口字段</td>
+<td>名字必须和 ev.get 一致</td>
+<td><code>query=</code></td>
+<td>不要既用 query 又用 question</td>
+</tr>
+<tr>
+<td><code>stream_events</code></td>
+<td>handler 上</td>
+<td>观测中间 Event</td>
+<td>不改变结果</td>
+<td>对接 SSE</td>
+<td>先 await 跑通再流</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-适用-不适用"><a href="#7-适用-不适用" class="headerlink" title="7. 适用 &#x2F; 不适用"></a>7. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>适用</th>
+<th>不适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任务形态</td>
+<td>固定 retrieve→rerank→合成；偶发 if 分支</td>
+<td>人工审批、会话级 checkpoint</td>
+</tr>
+<tr>
+<td>集成约束</td>
+<td>单进程 async</td>
+<td>多实例恢复——官方 durable 仍弱于 LangGraph Saver</td>
+</tr>
+<tr>
+<td>工程阶段</td>
+<td>把焊死的 QueryEngine 拆开插针</td>
+<td>已有 StateGraph 团队——不必双轨编排</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-易踩坑"><a href="#8-易踩坑" class="headerlink" title="8. 易踩坑"></a>8. 易踩坑</h2><ol>
+<li><strong>step 写成同步 def</strong>：调度器期望 async，卡死或报错。  </li>
+<li><strong>忘了 StopEvent</strong>：校验失败或一直跑到 timeout。  </li>
+<li><strong><code>ctx.set</code> 抄旧文</strong>：新版本用 <code>ctx.store</code>。  </li>
+<li><strong>把 Workflow 当 LangGraph</strong>：没有 <code>thread_id</code> 级 put&#x2F;get_tuple，重启即失。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>边是 <strong>Event 类型</strong>，不是 <code>add_edge</code>。  </li>
+<li><strong>StartEvent.kwargs → … → StopEvent.result</strong>。  </li>
+<li>跨步小状态放 <strong><code>ctx.store</code></strong>。  </li>
+<li>要 HITL &#x2F; 持久化线程：检索步骤留下，外壳换 LangGraph。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/understanding/workflows/">Workflows 介绍</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/examples/workflow/rag/">RAG + Reranking Workflow</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Agent/" rel="tag"><i class="fa fa-tag"></i> Agent</a>
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/Workflow/" rel="tag"><i class="fa fa-tag"></i> Workflow</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-09-%E5%A4%9AAgent-AgentWorkflow/" rel="next" title="AgentWorkflow">
+                <i class="fa fa-chevron-left"></i> AgentWorkflow
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-07-Agent-FunctionAgent/" rel="prev" title="FunctionAgent">
+                FunctionAgent <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%89%8D%E7%BD%AE%E4%BE%9D%E8%B5%96%E4%B8%8E%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text">2. 前置依赖与环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">3.</span> <span class="nav-text">3. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">4. 原理说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">6. 重要配置参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">7.</span> <span class="nav-text">7. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

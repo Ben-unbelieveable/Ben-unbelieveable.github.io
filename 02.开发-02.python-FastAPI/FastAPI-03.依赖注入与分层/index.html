@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="FastAPI,架构," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="T1+T2：依赖注入心智模型、Depends 组块、router&#x2F;service&#x2F;repo 分层与最小项目结构。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastAPI：依赖注入与分层">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="T1+T2：依赖注入心智模型、Depends 组块、router&#x2F;service&#x2F;repo 分层与最小项目结构。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-07-16T07:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="架构">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-02.python-FastAPI/FastAPI-03.依赖注入与分层/"/>
+
+
+
+
+
+  <title>FastAPI：依赖注入与分层 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">FastAPI：依赖注入与分层</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-16T15:20:00+08:00">
+                2026-07-16
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index">
+                    <span itemprop="name">工程实践</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/Python/" itemprop="url" rel="index">
+                    <span itemprop="name">Python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  T1+T2：依赖注入心智模型、Depends 组块、router/service/repo 分层与最小项目结构。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <h2 id="1-问题：路由函数越来越胖"><a href="#1-问题：路由函数越来越胖" class="headerlink" title="1. 问题：路由函数越来越胖"></a>1. 问题：路由函数越来越胖</h2><p>典型坏味道：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&#123;item_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">get_item</span>(<span class="params">item_id: <span class="built_in">int</span></span>):</span><br><span class="line">    db = connect_db()          <span class="comment"># 连接从哪来？</span></span><br><span class="line">    user = parse_jwt(...)      <span class="comment"># 鉴权混在业务里</span></span><br><span class="line">    item = db.query(item_id)   <span class="comment"># SQL 与 HTTP 缠在一起</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> item:</span><br><span class="line">        <span class="keyword">raise</span> HTTPException(<span class="number">404</span>)</span><br><span class="line">    <span class="keyword">return</span> item</span><br></pre></td></tr></table></figure>
+
+<p>依赖注入（<strong>Dependency Injection</strong>，<strong>DI</strong>）要回答：<strong>谁创建连接、谁校验身份、谁查库</strong>——路由只编排。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>DI</strong> 指由框架在调用路由前，按声明自动解析并注入依赖对象，而不是在函数内部 <code>new</code> 或全局单例硬取。</p>
+</blockquote>
+<hr>
+<h2 id="2-费曼白话：前台、后勤、柜员"><a href="#2-费曼白话：前台、后勤、柜员" class="headerlink" title="2. 费曼白话：前台、后勤、柜员"></a>2. 费曼白话：前台、后勤、柜员</h2><p>延续 01 的比喻：</p>
+<ul>
+<li><strong>柜员</strong> &#x3D; 路由函数（接待这一单客户）。</li>
+<li><strong>后勤</strong> &#x3D; <code>Depends(...)</code> 提供的对象（数据库会话、当前用户、配置）。</li>
+<li><strong>前台系统</strong> &#x3D; FastAPI 依赖图解析器：先算后勤，再叫柜员；后勤之间也可互相依赖。</li>
+</ul>
+<p><strong>双重编码（结构图）</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">请求 → 中间件（04）</span><br><span class="line">         → 依赖树解析（Depends）</span><br><span class="line">              ├─ get_settings()</span><br><span class="line">              ├─ get_db() ──依赖──► get_settings()</span><br><span class="line">              └─ get_current_user() ──依赖──► get_db()</span><br><span class="line">         → 路由函数(item_id, db, user)</span><br><span class="line">         → 响应</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-Depends-组块"><a href="#3-Depends-组块" class="headerlink" title="3. Depends 组块"></a>3. Depends 组块</h2><h3 id="G1-简单依赖"><a href="#G1-简单依赖" class="headerlink" title="G1 简单依赖"></a>G1 简单依赖</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Depends, FastAPI</span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pagination</span>(<span class="params">skip: <span class="built_in">int</span> = <span class="number">0</span>, limit: <span class="built_in">int</span> = <span class="number">20</span></span>):</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;skip&quot;</span>: skip, <span class="string">&quot;limit&quot;</span>: limit&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">list_items</span>(<span class="params">page: <span class="built_in">dict</span> = Depends(<span class="params">pagination</span>)</span>):</span><br><span class="line">    <span class="keyword">return</span> page</span><br></pre></td></tr></table></figure>
+
+<h3 id="G2-可复用依赖（yield-清理）"><a href="#G2-可复用依赖（yield-清理）" class="headerlink" title="G2 可复用依赖（yield 清理）"></a>G2 可复用依赖（yield 清理）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collections.abc <span class="keyword">import</span> Generator</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_db</span>() -&gt; Generator:</span><br><span class="line">    db = SessionLocal()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">yield</span> db</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        db.close()</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>适用</strong>：每请求一个 DB 会话，结束必关。</li>
+<li><strong>误用</strong>：在 <code>yield</code> 前做重 IO 却不缓存——应放 lifespan（01）。</li>
+</ul>
+<h3 id="G3-依赖链"><a href="#G3-依赖链" class="headerlink" title="G3 依赖链"></a>G3 依赖链</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_settings</span>():</span><br><span class="line">    <span class="keyword">return</span> Settings()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_db</span>(<span class="params">settings: Settings = Depends(<span class="params">get_settings</span>)</span>):</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_current_user</span>(<span class="params"></span></span><br><span class="line"><span class="params">    token: <span class="built_in">str</span> = Depends(<span class="params">oauth2_scheme</span>),</span></span><br><span class="line"><span class="params">    db=Depends(<span class="params">get_db</span>),</span></span><br><span class="line"><span class="params"></span>):</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>解析顺序：<strong>settings → db → user</strong>（框架按图拓扑排序）。</p>
+<h3 id="G4-Annotated-别名（推荐）"><a href="#G4-Annotated-别名（推荐）" class="headerlink" title="G4 Annotated 别名（推荐）"></a>G4 <code>Annotated</code> 别名（推荐）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated</span><br><span class="line"></span><br><span class="line">DbDep = Annotated[Session, Depends(get_db)]</span><br><span class="line"><span class="comment"># 一种缩写形式</span></span><br><span class="line"><span class="comment"># DbDep = Annotated[get_db, Depends()]</span></span><br><span class="line">UserDep = Annotated[User, Depends(get_current_user)]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/me&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_me</span>(<span class="params">user: UserDep, db: DbDep</span>):</span><br><span class="line">    <span class="keyword">return</span> user</span><br></pre></td></tr></table></figure>
+
+<p>路由签名更短，测试时 <code>app.dependency_overrides</code> 更好换假实现。</p>
+<h3 id="G5-路由级依赖"><a href="#G5-路由级依赖" class="headerlink" title="G5 路由级依赖"></a>G5 路由级依赖</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">router = APIRouter(dependencies=[Depends(verify_api_key)])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@router.get(<span class="params"><span class="string">&quot;/secret&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">secret</span>():</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;ok&quot;</span>: <span class="literal">True</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整组路由共享同一依赖，不必每个函数重复写。</p>
+<hr>
+<h3 id="G6-类依赖"><a href="#G6-类依赖" class="headerlink" title="G6 类依赖"></a>G6 类依赖</h3><p>同时需要注意，DEPEND不只是可以使用函数，也可以使用类，例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">fake_items_db = [&#123;<span class="string">&quot;item_name&quot;</span>: <span class="string">&quot;Foo&quot;</span>&#125;, &#123;<span class="string">&quot;item_name&quot;</span>: <span class="string">&quot;Bar&quot;</span>&#125;, &#123;<span class="string">&quot;item_name&quot;</span>: <span class="string">&quot;Baz&quot;</span>&#125;]</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CommonQueryParams</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, q: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>, skip: <span class="built_in">int</span> = <span class="number">0</span>, limit: <span class="built_in">int</span> = <span class="number">100</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.q = q</span><br><span class="line">        <span class="variable language_">self</span>.skip = skip</span><br><span class="line">        <span class="variable language_">self</span>.limit = limit</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/items/&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_items</span>(<span class="params">commons: Annotated[CommonQueryParams, Depends(<span class="params"></span>)]</span>):</span><br><span class="line">    response = &#123;&#125;</span><br><span class="line">    <span class="keyword">if</span> commons.q:</span><br><span class="line">        response.update(&#123;<span class="string">&quot;q&quot;</span>: commons.q&#125;)</span><br><span class="line">    items = fake_items_db[commons.skip : commons.skip + commons.limit]</span><br><span class="line">    response.update(&#123;<span class="string">&quot;items&quot;</span>: items&#125;)</span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="4-分层组块（工程目录）"><a href="#4-分层组块（工程目录）" class="headerlink" title="4. 分层组块（工程目录）"></a>4. 分层组块（工程目录）</h2><p>小中型 API 推荐四层，<strong>依赖方向单向向下</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">app/</span><br><span class="line">├── main.py              # FastAPI 实例、lifespan、挂 router</span><br><span class="line">├── core/</span><br><span class="line">│   ├── config.py        # Settings（pydantic-settings）</span><br><span class="line">│   └── deps.py          # get_db、get_current_user</span><br><span class="line">├── routers/</span><br><span class="line">│   └── items.py         # 只处理 HTTP：参数、状态码</span><br><span class="line">├── services/</span><br><span class="line">│   └── items.py         # 业务规则、事务边界</span><br><span class="line">├── repositories/</span><br><span class="line">│   └── items.py         # 持久化/SQL/外部 API</span><br><span class="line">└── schemas/</span><br><span class="line">    └── items.py         # Pydantic 模型（Create/Read）</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>允许</th>
+<th>禁止</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>router</strong></td>
+<td>调 service、抛 HTTPException</td>
+<td>直接写 SQL</td>
+</tr>
+<tr>
+<td><strong>service</strong></td>
+<td>调 repo、业务校验</td>
+<td>依赖 Request 对象</td>
+</tr>
+<tr>
+<td><strong>repository</strong></td>
+<td>CRUD、查询</td>
+<td>决定 HTTP 状态码</td>
+</tr>
+<tr>
+<td><strong>schemas</strong></td>
+<td>数据结构</td>
+<td>业务逻辑</td>
+</tr>
+</tbody></table>
+<p><strong>最小贯通示例</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># services/items.py</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_item_or_none</span>(<span class="params">service_db, item_id: <span class="built_in">int</span></span>):</span><br><span class="line">    <span class="keyword">return</span> repo_get_by_id(service_db, item_id)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># routers/items.py</span></span><br><span class="line"><span class="meta">@router.get(<span class="params"><span class="string">&quot;/&#123;item_id&#125;&quot;</span>, response_model=ItemRead</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">get_item</span>(<span class="params">item_id: <span class="built_in">int</span>, db: DbDep</span>):</span><br><span class="line">    item = get_item_or_none(db, item_id)</span><br><span class="line">    <span class="keyword">if</span> item <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> HTTPException(status_code=<span class="number">404</span>, detail=<span class="string">&quot;Item not found&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> item</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="5-测试挂钩：dependency-overrides"><a href="#5-测试挂钩：dependency-overrides" class="headerlink" title="5. 测试挂钩：dependency_overrides"></a>5. 测试挂钩：<code>dependency_overrides</code></h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">fake_db</span>():</span><br><span class="line">    <span class="keyword">yield</span> FakeSession()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">app.dependency_overrides[get_db] = fake_db</span><br><span class="line"><span class="comment"># 测试结束后：app.dependency_overrides.clear()</span></span><br></pre></td></tr></table></figure>
+
+<p>这是 DI 的工程收益：<strong>不换路由代码，换实现</strong>（07 展开）。</p>
+<hr>
+<h2 id="6-合书自测"><a href="#6-合书自测" class="headerlink" title="6. 合书自测"></a>6. 合书自测</h2><ol>
+<li>用一句话向同事解释 <code>Depends</code> 在请求里的执行时机。</li>
+<li><code>yield</code> 依赖和 lifespan 各解决什么？各跑几次？</li>
+<li>画 router → service → repo 三层，标一条「读 item」调用链。</li>
+</ol>
+<hr>
+<h2 id="7-闪卡候选"><a href="#7-闪卡候选" class="headerlink" title="7. 闪卡候选"></a>7. 闪卡候选</h2><table>
+<thead>
+<tr>
+<th>正面</th>
+<th>背面</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Depends</code> 解析顺序？</td>
+<td>按依赖图，被依赖者先执行</td>
+</tr>
+<tr>
+<td><code>dependency_overrides</code> 用途？</td>
+<td>测试&#x2F;本地替换依赖实现</td>
+</tr>
+<tr>
+<td>router 能否 import repository？</td>
+<td>能但不推荐；经 service 保持业务集中</td>
+</tr>
+<tr>
+<td><code>APIRouter(dependencies=[...])</code>？</td>
+<td>路由组级共享依赖</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>DI</strong> 把横切能力（DB、用户、配置）从路由里拔出，FastAPI 用 <code>Depends</code> 自动接线。</li>
+<li><strong>分层</strong> 把 HTTP 与业务、持久化分开，后续鉴权（06）、测试（07）、MCP 实战（08）都受益。</li>
+<li>下一篇 <strong><a href="./FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97.md">04 中间件、异常与日志</a></strong>：全局横切与排错。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/FastAPI/" rel="tag"><i class="fa fa-tag"></i> FastAPI</a>
+          
+            <a href="/tags/%E6%9E%B6%E6%9E%84/" rel="tag"><i class="fa fa-tag"></i> 架构</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" rel="next" title="FastAPI：路由与数据模型">
+                <i class="fa fa-chevron-left"></i> FastAPI：路由与数据模型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97/" rel="prev" title="FastAPI：中间件异常与日志">
+                FastAPI：中间件异常与日志 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%EF%BC%9A%E8%B7%AF%E7%94%B1%E5%87%BD%E6%95%B0%E8%B6%8A%E6%9D%A5%E8%B6%8A%E8%83%96"><span class="nav-number">1.</span> <span class="nav-text">1. 问题：路由函数越来越胖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%B4%B9%E6%9B%BC%E7%99%BD%E8%AF%9D%EF%BC%9A%E5%89%8D%E5%8F%B0%E3%80%81%E5%90%8E%E5%8B%A4%E3%80%81%E6%9F%9C%E5%91%98"><span class="nav-number">2.</span> <span class="nav-text">2. 费曼白话：前台、后勤、柜员</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Depends-%E7%BB%84%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">3. Depends 组块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#G1-%E7%AE%80%E5%8D%95%E4%BE%9D%E8%B5%96"><span class="nav-number">3.1.</span> <span class="nav-text">G1 简单依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G2-%E5%8F%AF%E5%A4%8D%E7%94%A8%E4%BE%9D%E8%B5%96%EF%BC%88yield-%E6%B8%85%E7%90%86%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">G2 可复用依赖（yield 清理）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G3-%E4%BE%9D%E8%B5%96%E9%93%BE"><span class="nav-number">3.3.</span> <span class="nav-text">G3 依赖链</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G4-Annotated-%E5%88%AB%E5%90%8D%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-number">3.4.</span> <span class="nav-text">G4 Annotated 别名（推荐）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G5-%E8%B7%AF%E7%94%B1%E7%BA%A7%E4%BE%9D%E8%B5%96"><span class="nav-number">3.5.</span> <span class="nav-text">G5 路由级依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G6-%E7%B1%BB%E4%BE%9D%E8%B5%96"><span class="nav-number">3.6.</span> <span class="nav-text">G6 类依赖</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%88%86%E5%B1%82%E7%BB%84%E5%9D%97%EF%BC%88%E5%B7%A5%E7%A8%8B%E7%9B%AE%E5%BD%95%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. 分层组块（工程目录）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%B5%8B%E8%AF%95%E6%8C%82%E9%92%A9%EF%BC%9Adependency-overrides"><span class="nav-number">5.</span> <span class="nav-text">5. 测试挂钩：dependency_overrides</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%90%88%E4%B9%A6%E8%87%AA%E6%B5%8B"><span class="nav-number">6.</span> <span class="nav-text">6. 合书自测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%97%AA%E5%8D%A1%E5%80%99%E9%80%89"><span class="nav-number">7.</span> <span class="nav-text">7. 闪卡候选</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

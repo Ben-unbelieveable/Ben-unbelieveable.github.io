@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Tool,ToolNode," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="LangChain 侧工具执行循环：解析 tool_calls、ToolMessage 回填与错误处理；对比 LangGraph ToolNode。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ToolNode与执行">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-03-%E5%B7%A5%E5%85%B7-ToolNode%E4%B8%8E%E6%89%A7%E8%A1%8C/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="LangChain 侧工具执行循环：解析 tool_calls、ToolMessage 回填与错误处理；对比 LangGraph ToolNode。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-08-10T09:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Tool">
+<meta property="article:tag" content="ToolNode">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-langchain/LangChain-03-工具-ToolNode与执行/"/>
+
+
+
+
+
+  <title>ToolNode与执行 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-03-%E5%B7%A5%E5%85%B7-ToolNode%E4%B8%8E%E6%89%A7%E8%A1%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ToolNode与执行</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T17:00:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LangChain/" itemprop="url" rel="index">
+                    <span itemprop="name">LangChain</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  LangChain 侧工具执行循环：解析 tool_calls、ToolMessage 回填与错误处理；对比 LangGraph ToolNode。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><code>bind_tools</code> 之后模型会返回 <code>tool_calls</code>，但 <strong>谁去执行函数、谁把结果写回 messages</strong> 仍需一层执行逻辑。手写 for 循环容易漏并行、漏错误包装。<strong>LangGraph</strong> 提供 <code>ToolNode</code> 作为标准执行节点；在纯 LangChain&#x2F;LCEL 场景下，你需要同等语义的执行模式——本篇讲 <strong>LangChain 侧</strong> 如何可靠跑工具，并说明与 LangGraph <code>ToolNode</code> 的分工。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ToolNode</strong> 在 LangGraph 中为预构建工具执行节点；LangChain 应用层可手写等价循环或委托 <code>create_agent</code> 内置图。</p>
+</blockquote>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>能力层<strong>工具执行</strong>：AIMessage.tool_calls → ToolMessage</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>AIMessage</code>（含 tool_calls）→ <code>list[ToolMessage]</code></td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td>手写 <code>execute_tools</code>；或 LangGraph <code>ToolNode(tools).invoke({&quot;messages&quot;:[ai]})</code></td>
+</tr>
+<tr>
+<td>与 LangGraph</td>
+<td>LangGraph <strong>ToolNode</strong> 是官方实现；<code>create_agent</code> 内部也用它；本篇侧重执行语义与 LangChain 手写模式</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-实现逻辑"><a href="#2-实现逻辑" class="headerlink" title="2. 实现逻辑"></a>2. 实现逻辑</h2><p>手写 LangChain 执行循环（与 ToolNode 语义对齐）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1. ai = model_with_tools.invoke(messages)</span><br><span class="line">2. 若 not ai.tool_calls → 结束，返回 ai</span><br><span class="line">3. 对每个 call：按 name 查 tools_by_name[call[&quot;name&quot;]]</span><br><span class="line">4. result = tool.invoke(call[&quot;args&quot;])  # 捕获异常 → 错误字符串仍写入 ToolMessage</span><br><span class="line">5. tool_msgs.append(ToolMessage(content=str(result), tool_call_id=call[&quot;id&quot;]))</span><br><span class="line">6. messages.extend([ai, *tool_msgs])</span><br><span class="line">7. 回到步骤 1，直到无 tool_calls 或达 max_iterations</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tool_calls=[&#123;id:&quot;1&quot;, name:&quot;add&quot;, args:&#123;a:1,b:2&#125;&#125;]</span><br><span class="line">  → ToolMessage(content=&quot;3&quot;, tool_call_id=&quot;1&quot;)</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-原理说明"><a href="#3-原理说明" class="headerlink" title="3. 原理说明"></a>3. 原理说明</h2><h3 id="3-1-LangGraph-ToolNode-做什么"><a href="#3-1-LangGraph-ToolNode-做什么" class="headerlink" title="3.1 LangGraph ToolNode 做什么"></a>3.1 LangGraph ToolNode 做什么</h3><p><strong><code>ToolNode</code></strong>（类，<code>langgraph.prebuilt</code>）<br>功能：从 state 的最后一条 <code>AIMessage</code> 取出 <code>tool_calls</code>，并行执行，把 <code>ToolMessage</code> 追加回 <code>messages</code>。</p>
+<table>
+<thead>
+<tr>
+<th>字段 &#x2F; 参数</th>
+<th>类型</th>
+<th>默认值</th>
+<th>最小维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tools</code></td>
+<td>list</td>
+<td>构造必填</td>
+<td>len≥1，name 须覆盖模型可能调用的工具</td>
+</tr>
+<tr>
+<td><code>handle_tool_errors</code></td>
+<td>bool</td>
+<td><code>True</code></td>
+<td>True 时异常变 ToolMessage 文本</td>
+</tr>
+</tbody></table>
+<p><strong><code>ToolNode.invoke(state, config=None)</code></strong>（方法）<br>输入最小结构：<code>{&quot;messages&quot;: [AIMessage(tool_calls=[至少 1 条])]}</code>。<br>输出：<code>{&quot;messages&quot;: [..., ToolMessage, ...]}</code>，ToolMessage 条数 &#x3D; 有效 tool_calls 条数。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langgraph.prebuilt <span class="keyword">import</span> ToolNode</span><br><span class="line">out = ToolNode([add]).invoke(&#123;<span class="string">&quot;messages&quot;</span>: [ai]&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-LangChain-侧为何还要理解"><a href="#3-2-LangChain-侧为何还要理解" class="headerlink" title="3.2 LangChain 侧为何还要理解"></a>3.2 LangChain 侧为何还要理解</h3><p>线性脚本未上图时手写循环即可。自定义 Agent 前须知 <strong>tool_call_id</strong> 与错误回填。<code>create_agent</code> 内置 ToolNode，调试仍看 ToolMessage 序列。</p>
+<h3 id="3-3-错误回填策略"><a href="#3-3-错误回填策略" class="headerlink" title="3.3 错误回填策略"></a>3.3 错误回填策略</h3><p>参数非法：把错误文本放进 <code>ToolMessage.content</code>，让模型自修正。执行期异常：<code>handle_tool_errors=True</code> 时不把图打崩。<br>最小回填：每条失败的 tool_call <strong>仍要 1 条</strong> ToolMessage（id 对齐），不能缺 id。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ToolMessage(content=<span class="string">&quot;参数 a 必须是 int&quot;</span>, tool_call_id=call[<span class="string">&quot;id&quot;</span>])</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-4-与-return-direct"><a href="#3-4-与-return-direct" class="headerlink" title="3.4 与 return_direct"></a>3.4 与 return_direct</h3><p><strong><code>return_direct: bool = False</code></strong>（Tool 字段）<br>功能：<code>True</code> 时部分 Agent 跳过再次 call model，直接把工具结果给用户。手写循环须显式分支。<br>最小维度：布尔；与 ToolNode 默认行为（始终产出 ToolMessage）独立。</p>
+<hr>
+<h2 id="4-最小可运行示例"><a href="#4-最小可运行示例" class="headerlink" title="4. 最小可运行示例"></a>4. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U langchain-openai langgraph</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI</span><br><span class="line"><span class="keyword">from</span> langchain_core.tools <span class="keyword">import</span> tool</span><br><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage</span><br><span class="line"><span class="keyword">from</span> langgraph.prebuilt <span class="keyword">import</span> ToolNode</span><br><span class="line"></span><br><span class="line"><span class="meta">@tool</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">a: <span class="built_in">int</span>, b: <span class="built_in">int</span></span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Add two numbers.&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> a + b</span><br><span class="line"></span><br><span class="line">model = ChatOpenAI(</span><br><span class="line">    model=<span class="string">&quot;qwen3.5:9b&quot;</span>,</span><br><span class="line">    api_key=<span class="string">&quot;ollama&quot;</span>,</span><br><span class="line">    base_url=<span class="string">&quot;http://localhost:11434/v1&quot;</span>,</span><br><span class="line">    temperature=<span class="number">0</span>,</span><br><span class="line">).bind_tools([add])</span><br><span class="line"></span><br><span class="line">ai = model.invoke([HumanMessage(<span class="string">&quot;计算 2+3，必须用 add 工具。&quot;</span>)])</span><br><span class="line"><span class="built_in">print</span>(ai.tool_calls)</span><br><span class="line"><span class="comment"># 预期形态：name=add，args 含 a、b</span></span><br><span class="line"></span><br><span class="line">tool_node = ToolNode([add])</span><br><span class="line">out = tool_node.invoke(&#123;<span class="string">&quot;messages&quot;</span>: [ai]&#125;)</span><br><span class="line">tool_msg = out[<span class="string">&quot;messages&quot;</span>][-<span class="number">1</span>]</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">type</span>(tool_msg).__name__, tool_msg.content, tool_msg.tool_call_id == ai.tool_calls[<span class="number">0</span>][<span class="string">&quot;id&quot;</span>])</span><br><span class="line"><span class="comment"># 预期：ToolMessage 5 True</span></span><br><span class="line"></span><br><span class="line">final = model.invoke([HumanMessage(<span class="string">&quot;计算 2+3，必须用 add 工具。&quot;</span>), ai, tool_msg])</span><br><span class="line"><span class="built_in">print</span>(final.content)</span><br><span class="line"><span class="comment"># 预期形态：含 5</span></span><br></pre></td></tr></table></figure>
+
+<p>纯 LangChain 手写（不依赖 ToolNode）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> AIMessage, ToolMessage</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_tool_calls</span>(<span class="params">ai: AIMessage, tools</span>):</span><br><span class="line">    by_name = &#123;t.name: t <span class="keyword">for</span> t <span class="keyword">in</span> tools&#125;</span><br><span class="line">    <span class="keyword">return</span> [</span><br><span class="line">        ToolMessage(</span><br><span class="line">            content=<span class="built_in">str</span>(by_name[c[<span class="string">&quot;name&quot;</span>]].invoke(c[<span class="string">&quot;args&quot;</span>])),</span><br><span class="line">            tool_call_id=c[<span class="string">&quot;id&quot;</span>],</span><br><span class="line">        )</span><br><span class="line">        <span class="keyword">for</span> c <span class="keyword">in</span> ai.tool_calls</span><br><span class="line">    ]</span><br></pre></td></tr></table></figure>
+
+<h3 id="重要配置参数"><a href="#重要配置参数" class="headerlink" title="重要配置参数"></a>重要配置参数</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>handle_tool_errors</code></td>
+<td>bool&#x2F;str&#x2F;callable，ToolNode，默认 True</td>
+<td>工具抛错时是否改写成 ToolMessage 而不是打崩图</td>
+<td>True 模型可看到错误并自愈；False 直接中断</td>
+<td>True</td>
+<td>生产建议 True</td>
+</tr>
+<tr>
+<td><code>tools</code></td>
+<td>list[BaseTool]，构造必填</td>
+<td>ToolNode 允许执行的白名单</td>
+<td>与 bind_tools 名不一致则 KeyError</td>
+<td>与 bind 列表同一批</td>
+<td>不要漏注册</td>
+</tr>
+<tr>
+<td><code>max_iterations</code></td>
+<td>int，Agent 层</td>
+<td>工具循环最多跑几轮</td>
+<td>过小答不完；过大费钱、易死循环</td>
+<td>10～25</td>
+<td>防无限 loop</td>
+</tr>
+<tr>
+<td><code>tool_call_id</code></td>
+<td>str，回填必填</td>
+<td>把执行结果对上哪一次模型调用</td>
+<td>缺失或错配则下一轮非法</td>
+<td>与 AIMessage 一致</td>
+<td>从 tool_calls 原样拷</td>
+</tr>
+<tr>
+<td><code>messages_key</code></td>
+<td>str，默认 <code>&quot;messages&quot;</code></td>
+<td>state 里消息列表的字段名</td>
+<td>自定义 state 不改此键会读空</td>
+<td><code>&quot;messages&quot;</code></td>
+<td>与图 state 定义一致</td>
+</tr>
+<tr>
+<td>并行执行</td>
+<td>ToolNode 内置，默认开</td>
+<td>一条 AIMessage 上多个 tool_call 同时跑</td>
+<td>IO 工具加速；注意下游 rate limit</td>
+<td>默认开</td>
+<td>有副作用的工具慎并行</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-易踩坑"><a href="#5-易踩坑" class="headerlink" title="5. 易踩坑"></a>5. 易踩坑</h2><ol>
+<li><strong>只 bind 了工具却用未注册 name 执行</strong>：模型幻觉出 <code>foo</code>，<code>tools_by_name</code> 无此键。  </li>
+<li><strong>异常直接 raise 不回填</strong>：模型看不到失败原因，下一轮上下文断裂。  </li>
+<li><strong>混淆 LangChain 与 LangGraph 职责</strong>：ToolNode 属 LangGraph；纯 LCEL 无环时手写循环即可，不必强行上图。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>工具链核心：<strong>tool_calls → invoke → ToolMessage(tool_call_id)</strong>。  </li>
+<li>LangGraph <strong>ToolNode</strong> 是标准执行实现；LangChain 脚本可手写同等循环。  </li>
+<li>错误应 <strong>回填为 ToolMessage 文本</strong>，便于模型修正。  </li>
+<li><code>create_agent</code> 内部已封装该循环；自定义时本篇逻辑仍适用。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://reference.langchain.com/python/langgraph.prebuilt/tool_node/ToolNode">LangGraph ToolNode</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langchain/tools">Tools 概念</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langchain/agents">create_agent</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Tool/" rel="tag"><i class="fa fa-tag"></i> Tool</a>
+          
+            <a href="/tags/ToolNode/" rel="tag"><i class="fa fa-tag"></i> ToolNode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-03-%E6%B6%88%E6%81%AF-Messages%E4%B8%8E%E5%AF%B9%E8%AF%9D%E7%BB%93%E6%9E%84/" rel="next" title="Messages与对话结构">
+                <i class="fa fa-chevron-left"></i> Messages与对话结构
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-02-%E6%8F%90%E7%A4%BA%E8%AF%8D-FewShot/" rel="prev" title="FewShot">
+                FewShot <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">2.</span> <span class="nav-text">2. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">3.</span> <span class="nav-text">3. 原理说明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-LangGraph-ToolNode-%E5%81%9A%E4%BB%80%E4%B9%88"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 LangGraph ToolNode 做什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-LangChain-%E4%BE%A7%E4%B8%BA%E4%BD%95%E8%BF%98%E8%A6%81%E7%90%86%E8%A7%A3"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 LangChain 侧为何还要理解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E9%94%99%E8%AF%AF%E5%9B%9E%E5%A1%AB%E7%AD%96%E7%95%A5"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 错误回填策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E4%B8%8E-return-direct"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 与 return_direct</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">重要配置参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">5.</span> <span class="nav-text">5. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">7.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

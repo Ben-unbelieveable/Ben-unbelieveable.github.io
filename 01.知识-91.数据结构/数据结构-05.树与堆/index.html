@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,数据结构,heapq,bisect,树,堆," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="以 CPython 标准库为准介绍堆、有序数组与树：heapq 最小堆、bisect 折半、手写二叉搜索树 &#x2F; 字典树 &#x2F; 并查集；说明为何日常不手写红黑树。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据结构：树与堆">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-05.%E6%A0%91%E4%B8%8E%E5%A0%86/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="以 CPython 标准库为准介绍堆、有序数组与树：heapq 最小堆、bisect 折半、手写二叉搜索树 &#x2F; 字典树 &#x2F; 并查集；说明为何日常不手写红黑树。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-05.%E6%A0%91%E4%B8%8E%E5%A0%86/fig01-heap-tree.png">
+<meta property="article:published_time" content="2026-08-24T02:30:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="bisect">
+<meta property="article:tag" content="heapq">
+<meta property="article:tag" content="堆">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="树">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-05.%E6%A0%91%E4%B8%8E%E5%A0%86/fig01-heap-tree.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-91.数据结构/数据结构-05.树与堆/"/>
+
+
+
+
+
+  <title>数据结构：树与堆 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-05.%E6%A0%91%E4%B8%8E%E5%A0%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">数据结构：树与堆</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-24T10:30:00+08:00">
+                2026-08-24
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">生物信息</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  以 CPython 标准库为准介绍堆、有序数组与树：heapq 最小堆、bisect 折半、手写二叉搜索树 / 字典树 / 并查集；说明为何日常不手写红黑树。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>Python 标准库 <strong>没有</strong> 红黑树或 B 树容器。树家族在 CPython 里的生产入口只有两条：</p>
+<ol>
+<li><strong>堆（heap）</strong>：<code>heapq</code>，数组下的完全二叉树，只保证堆序。</li>
+<li><strong>有序数组 + 折半</strong>：<code>bisect</code>，用连续 <code>list</code> 换 (O(\log n)) 查找、(O(n)) 插入。</li>
+</ol>
+<p>手写 <strong>二叉搜索树（Binary Search Tree，BST）</strong>、<strong>字典树（Trie）</strong>、<strong>并查集（Union-Find）</strong> 是算法题与特定场景，不是默认容器。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>堆序</strong>只约束「父优于子」，不保证中序有序；<strong>BST</strong> 才保证左 &lt; 根 &lt; 右。两者都是树，操作契约不同。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-05.%E6%A0%91%E4%B8%8E%E5%A0%86/fig01-heap-tree.png" alt="图 1　堆是躺平在数组上的树；有序查找优先折半，不要手搓红黑树"></p>
+<hr>
+<h2 id="1-选型"><a href="#1-选型" class="headerlink" title="1. 选型"></a>1. 选型</h2><table>
+<thead>
+<tr>
+<th>你要的操作</th>
+<th>用这个</th>
+<th>复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>反复取最小 &#x2F; 最大</td>
+<td><code>heapq</code></td>
+<td>入堆出堆 (O(\log n))，看堆顶 (O(1))</td>
+</tr>
+<tr>
+<td>有序序列里找插入点</td>
+<td><code>bisect</code></td>
+<td>查找 (O(\log n))</td>
+</tr>
+<tr>
+<td>偶尔插入且 (n) 不大</td>
+<td><code>list</code> + <code>bisect.insort</code></td>
+<td>插入 (O(n))</td>
+</tr>
+<tr>
+<td>频繁插入且保持键有序</td>
+<td>第三方 <code>sortedcontainers</code></td>
+<td>期望 (O(\log n))</td>
+</tr>
+<tr>
+<td>前缀匹配</td>
+<td>嵌套 <code>dict</code> 当 Trie</td>
+<td>与键长成正比</td>
+</tr>
+<tr>
+<td>连通性 &#x2F; 分组合并</td>
+<td>并查集</td>
+<td>近乎 (O(1))（反 Ackermann）</td>
+</tr>
+</tbody></table>
+<p>不要为「有一个 TreeMap」在 Python 里手写红黑树。那是 C++ <code>std::map</code> 的事。</p>
+<hr>
+<h2 id="2-堆：heapq-是最小堆"><a href="#2-堆：heapq-是最小堆" class="headerlink" title="2. 堆：heapq 是最小堆"></a>2. 堆：<code>heapq</code> 是最小堆</h2><p>底层就是普通 <code>list</code>：下标 (i) 的孩子是 (2i+1)、(2i+2)。<code>heap[0]</code> 永远是当前最小。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> heapq</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">merge_k</span>(<span class="params">lists</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;k 路有序表归并。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：lists，每个元素已升序。</span></span><br><span class="line"><span class="string">    输出：一条升序 list。</span></span><br><span class="line"><span class="string">    处理：堆里放 (值, 表号, 下标)，弹出谁就推进谁。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    h, out = [], []</span><br><span class="line">    <span class="keyword">for</span> i, row <span class="keyword">in</span> <span class="built_in">enumerate</span>(lists):</span><br><span class="line">        <span class="keyword">if</span> row:</span><br><span class="line">            heapq.heappush(h, (row[<span class="number">0</span>], i, <span class="number">0</span>))</span><br><span class="line">    <span class="keyword">while</span> h:</span><br><span class="line">        val, i, j = heapq.heappop(h)</span><br><span class="line">        out.append(val)</span><br><span class="line">        j += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> j &lt; <span class="built_in">len</span>(lists[i]):</span><br><span class="line">            heapq.heappush(h, (lists[i][j], i, j))</span><br><span class="line">    <span class="keyword">return</span> out</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">top_k_max</span>(<span class="params">nums, k</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;最大的 k 个（堆里只留 k 个最小候选）。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：nums 可迭代，k 正整数。</span></span><br><span class="line"><span class="string">    输出：无序的 k 个最大值（要有序再 sort）。</span></span><br><span class="line"><span class="string">    处理：维护规模 k 的最小堆，比堆顶大才替换。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    h = []</span><br><span class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> nums:</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(h) &lt; k:</span><br><span class="line">            heapq.heappush(h, x)</span><br><span class="line">        <span class="keyword">elif</span> x &gt; h[<span class="number">0</span>]:</span><br><span class="line">            heapq.heapreplace(h, x)</span><br><span class="line">    <span class="keyword">return</span> h</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>heapify(a)</code></td>
+<td>原地建堆 (O(n))</td>
+</tr>
+<tr>
+<td><code>heappush</code> &#x2F; <code>heappop</code></td>
+<td>入 &#x2F; 出最小</td>
+</tr>
+<tr>
+<td><code>heappushpop</code> &#x2F; <code>heapreplace</code></td>
+<td>组合操作，少一次调整</td>
+</tr>
+<tr>
+<td><code>nlargest</code> &#x2F; <code>nsmallest</code></td>
+<td>(k \ll n) 时比全排序快</td>
+</tr>
+<tr>
+<td><code>merge</code></td>
+<td>多路已序迭代器归并</td>
+</tr>
+</tbody></table>
+<p><strong>最大堆</strong>：压 <code>-x</code>，或压 <code>(-priority, x)</code>。只比对象时，必须保证同类可比较，或自己拆成元组，避免 <code>TypeError</code>。</p>
+<p>优先级相同要稳定：压 <code>(priority, seq, item)</code>，<code>seq</code> 是单调计数器。<code>queue.PriorityQueue</code> 是这套东西加一把锁。</p>
+<hr>
+<h2 id="3-有序数组：bisect"><a href="#3-有序数组：bisect" class="headerlink" title="3. 有序数组：bisect"></a>3. 有序数组：<code>bisect</code></h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> bisect</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rank_of</span>(<span class="params">sorted_xs, x</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;x 在升序数组里应插入的位置（左边界）。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：sorted_xs 已升序，x 可比较。</span></span><br><span class="line"><span class="string">    输出：下标 i，满足左侧都 &lt; x。</span></span><br><span class="line"><span class="string">    处理：bisect_left，O(log n) 次比较。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> bisect.bisect_left(sorted_xs, x)</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bisect_left</code></td>
+<td>第一个 (\ge x) 的位置</td>
+</tr>
+<tr>
+<td><code>bisect_right</code></td>
+<td>第一个 (&gt; x) 的位置</td>
+</tr>
+<tr>
+<td><code>insort_left</code> &#x2F; <code>insort_right</code></td>
+<td>插入并保持有序（内部仍是 <code>list.insert</code>，(O(n))）</td>
+</tr>
+</tbody></table>
+<p>(n) 到 (10^5) 且插入频繁时，<code>insort</code> 会慢。那时才上 <code>sortedcontainers.SortedList</code>。</p>
+<hr>
+<h2 id="4-手写-BST-Trie-并查集"><a href="#4-手写-BST-Trie-并查集" class="headerlink" title="4. 手写 BST &#x2F; Trie &#x2F; 并查集"></a>4. 手写 BST &#x2F; Trie &#x2F; 并查集</h2><p>教学与算法题用。BST 退化成链时查找变 (O(n))，生产不靠它保序。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">BSTNode</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;二叉搜索树节点：左子 &lt; val &lt; 右子。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, val</span>):</span><br><span class="line">        <span class="variable language_">self</span>.val = val</span><br><span class="line">        <span class="variable language_">self</span>.left = <span class="literal">None</span></span><br><span class="line">        <span class="variable language_">self</span>.right = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bst_insert</span>(<span class="params">root, val</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;插入值，重复值忽略。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：root 为 BSTNode 或 None，val 可比较。</span></span><br><span class="line"><span class="string">    输出：新根。</span></span><br><span class="line"><span class="string">    处理：小的走左、大的走右，空位挂上新节点。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> root <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">return</span> BSTNode(val)</span><br><span class="line">    <span class="keyword">if</span> val &lt; root.val:</span><br><span class="line">        root.left = bst_insert(root.left, val)</span><br><span class="line">    <span class="keyword">elif</span> val &gt; root.val:</span><br><span class="line">        root.right = bst_insert(root.right, val)</span><br><span class="line">    <span class="keyword">return</span> root</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_trie</span>(<span class="params">words</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;用嵌套 dict 建字典树。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：words 字符串可迭代。</span></span><br><span class="line"><span class="string">    输出：根 dict；路径上的 &quot;$&quot; 标记词尾。</span></span><br><span class="line"><span class="string">    处理：逐字符 setdefault 下一层。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    root = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> w <span class="keyword">in</span> words:</span><br><span class="line">        node = root</span><br><span class="line">        <span class="keyword">for</span> ch <span class="keyword">in</span> w:</span><br><span class="line">            node = node.setdefault(ch, &#123;&#125;)</span><br><span class="line">        node[<span class="string">&quot;$&quot;</span>] = <span class="literal">True</span></span><br><span class="line">    <span class="keyword">return</span> root</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UnionFind</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;并查集：路径压缩 + 按秩合并。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：构造 n 为元素个数 0..n-1。</span></span><br><span class="line"><span class="string">    find(x) → 根；union(a, b) → 是否把两组合并（原先不在一组为 True）。</span></span><br><span class="line"><span class="string">    处理：父指针森林；find 时压平路径，union 时小树挂大树。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, n</span>):</span><br><span class="line">        <span class="variable language_">self</span>.p = <span class="built_in">list</span>(<span class="built_in">range</span>(n))</span><br><span class="line">        <span class="variable language_">self</span>.r = [<span class="number">0</span>] * n</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">find</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="keyword">while</span> <span class="variable language_">self</span>.p[x] != x:</span><br><span class="line">            <span class="variable language_">self</span>.p[x] = <span class="variable language_">self</span>.p[<span class="variable language_">self</span>.p[x]]</span><br><span class="line">            x = <span class="variable language_">self</span>.p[x]</span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">union</span>(<span class="params">self, a, b</span>):</span><br><span class="line">        ra, rb = <span class="variable language_">self</span>.find(a), <span class="variable language_">self</span>.find(b)</span><br><span class="line">        <span class="keyword">if</span> ra == rb:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.r[ra] &lt; <span class="variable language_">self</span>.r[rb]:</span><br><span class="line">            ra, rb = rb, ra</span><br><span class="line">        <span class="variable language_">self</span>.p[rb] = ra</span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.r[ra] == <span class="variable language_">self</span>.r[rb]:</span><br><span class="line">            <span class="variable language_">self</span>.r[ra] += <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>线段树 &#x2F; 树状数组没有标准库。竞赛与区间题再手写；业务里区间统计更常见的是先排序再扫，或把数据丢进数据库 &#x2F; pandas。</p>
+<p>B &#x2F; B+ 树是磁盘索引的形状，在 Python 进程里你碰到的是 SQLite &#x2F; 引擎，不是一个 <code>BPlusTree</code> 类。</p>
+<hr>
+<h2 id="5-踩坑"><a href="#5-踩坑" class="headerlink" title="5. 踩坑"></a>5. 踩坑</h2><ol>
+<li><strong>把堆当有序数组</strong>：<code>sorted(heap)</code> 才有序；直接 <code>for x in heap</code> 不是排序遍历。</li>
+<li><strong><code>heappop</code> 空堆</strong>：<code>IndexError</code>。先判空。</li>
+<li><strong>元组比较</strong>：<code>(1, &quot;b&quot;)</code> 能和 <code>(1, &quot;a&quot;)</code> 比，但 <code>(1, None)</code> 在部分版本会炸。优先级元组字段要类型一致。</li>
+<li><strong><code>bisect</code> 用在未排序 <code>list</code></strong>：不报错，结果错。</li>
+<li><strong>BST 插入有序序列</strong>：退化成链表。要平衡去用第三方或换结构。</li>
+</ol>
+<hr>
+<h2 id="6-自检"><a href="#6-自检" class="headerlink" title="6. 自检"></a>6. 自检</h2><ol>
+<li>堆和 BST 哪个能 (O(1)) 看最值？哪个能中序得到有序序列？</li>
+<li><code>heapq</code> 只有最小堆，最大堆怎么做？</li>
+<li><code>bisect.insort</code> 查找很快，插入为什么仍可能慢？</li>
+<li>并查集的 <code>find</code> 为什么要路径压缩？</li>
+</ol>
+<hr>
+<h2 id="7-社区口径与风险"><a href="#7-社区口径与风险" class="headerlink" title="7. 社区口径与风险"></a>7. 社区口径与风险</h2><p><code>heapq</code>、<code>bisect</code> 是标准库首选。有序映射 &#x2F; 有序表的社区方案是 <a target="_blank" rel="noopener" href="https://grantjenks.com/docs/sortedcontainers/">sortedcontainers</a>（<code>SortedList</code> &#x2F; <code>SortedDict</code>，内部是分块 + 折半）；风险是多一个依赖，以及它不是红黑树，极端模式的常数与 C++ <code>std::map</code> 不同。不要为对标 Java <code>TreeMap</code> 自己写一套旋转。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag"><i class="fa fa-tag"></i> 数据结构</a>
+          
+            <a href="/tags/heapq/" rel="tag"><i class="fa fa-tag"></i> heapq</a>
+          
+            <a href="/tags/bisect/" rel="tag"><i class="fa fa-tag"></i> bisect</a>
+          
+            <a href="/tags/%E6%A0%91/" rel="tag"><i class="fa fa-tag"></i> 树</a>
+          
+            <a href="/tags/%E5%A0%86/" rel="tag"><i class="fa fa-tag"></i> 堆</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-04.%E5%93%88%E5%B8%8C%E8%A1%A8/" rel="next" title="数据结构：哈希表">
+                <i class="fa fa-chevron-left"></i> 数据结构：哈希表
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-07.Python%E6%A0%87%E5%87%86%E5%BA%93%E9%80%9F%E6%9F%A5/" rel="prev" title="数据结构：Python标准库速查">
+                数据结构：Python标准库速查 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%80%89%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">1. 选型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%A0%86%EF%BC%9Aheapq-%E6%98%AF%E6%9C%80%E5%B0%8F%E5%A0%86"><span class="nav-number">2.</span> <span class="nav-text">2. 堆：heapq 是最小堆</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%EF%BC%9Abisect"><span class="nav-number">3.</span> <span class="nav-text">3. 有序数组：bisect</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%89%8B%E5%86%99-BST-Trie-%E5%B9%B6%E6%9F%A5%E9%9B%86"><span class="nav-number">4.</span> <span class="nav-text">4. 手写 BST &#x2F; Trie &#x2F; 并查集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%B8%A9%E5%9D%91"><span class="nav-number">5.</span> <span class="nav-text">5. 踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%87%AA%E6%A3%80"><span class="nav-number">6.</span> <span class="nav-text">6. 自检</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E7%A4%BE%E5%8C%BA%E5%8F%A3%E5%BE%84%E4%B8%8E%E9%A3%8E%E9%99%A9"><span class="nav-number">7.</span> <span class="nav-text">7. 社区口径与风险</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="FastAPI,中间件," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="T3 辨析篇：文首全链路执行流程图；中间件 vs 依赖、HTTPException vs handler、交错排错题与 15 分钟验收骨架。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastAPI：中间件异常与日志">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="T3 辨析篇：文首全链路执行流程图；中间件 vs 依赖、HTTPException vs handler、交错排错题与 15 分钟验收骨架。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97/fig-full-request-lifecycle-comic.png">
+<meta property="article:published_time" content="2026-07-16T07:40:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="中间件">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97/fig-full-request-lifecycle-comic.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-02.python-FastAPI/FastAPI-04.中间件异常与日志/"/>
+
+
+
+
+
+  <title>FastAPI：中间件异常与日志 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">FastAPI：中间件异常与日志</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-16T15:40:00+08:00">
+                2026-07-16
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index">
+                    <span itemprop="name">工程实践</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/Python/" itemprop="url" rel="index">
+                    <span itemprop="name">Python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  T3 辨析篇：文首全链路执行流程图；中间件 vs 依赖、HTTPException vs handler、交错排错题与 15 分钟验收骨架。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本系列：<strong><a href="./FastAPI-00.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB%E4%B8%8E%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95.md">00 导读</a></strong> · <strong><a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 心智模型</a></strong> · <strong><a href="./FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B.md">02 路由</a></strong> · <strong><a href="./FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82.md">03 依赖注入</a></strong> · <strong>04 中间件异常日志（本文）</strong> · <a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 异步</a> · <a href="./FastAPI-06.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8.md">06 鉴权</a> · <a href="./FastAPI-07.%E6%B5%8B%E8%AF%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E9%AA%A8%E6%9E%B6.md">07 测试</a> · <a href="./FastAPI-08.%E5%AE%9E%E6%88%98-HTTP%E4%B8%8EMCP%E5%85%B1%E8%BF%9B%E7%A8%8B.md">08 实战</a></p>
+<p><strong>行文：T3 辨析篇</strong>　｜　<strong>本篇方法</strong>：交错练习 + 排错　｜　<strong>全链路心智</strong>与 <a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md#4-%E7%BB%93%E6%9E%84%E5%9B%BE%E5%8F%8C%E9%87%8D%E7%BC%96%E7%A0%81%E5%85%A8%E9%93%BE%E8%B7%AF%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B">01 §4</a> 同源</p>
+<hr>
+<h2 id="0-完整执行逻辑流程图（任务流转）"><a href="#0-完整执行逻辑流程图（任务流转）" class="headerlink" title="0. 完整执行逻辑流程图（任务流转）"></a>0. 完整执行逻辑流程图（任务流转）</h2><p>读中间件 &#x2F; 异常 &#x2F; 日志前，先把一次请求会经过的<strong>全部组件</strong>摆上台面。细节原理见 <a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01</a>；本节省「在管道哪一层动手」。</p>
+<h3 id="0-1-两层时钟（先分清）"><a href="#0-1-两层时钟（先分清）" class="headerlink" title="0.1 两层时钟（先分清）"></a>0.1 两层时钟（先分清）</h3><table>
+<thead>
+<tr>
+<th>尺度</th>
+<th>触发</th>
+<th>典型组件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>进程 &#x2F; worker</strong></td>
+<td>启动、关闭</td>
+<td><code>lifespan</code>、连接池、模型加载</td>
+</tr>
+<tr>
+<td><strong>单次 HTTP 请求</strong></td>
+<td>每个请求一次</td>
+<td>中间件洋葱 → 路由 → 依赖 → 校验 → 端点 → 响应 →（可选）BackgroundTasks</td>
+</tr>
+</tbody></table>
+<p><code>lifespan</code> <strong>不</strong>插入每个请求中间；WebSocket &#x2F; <code>mount</code> 子应用是旁路，见 §0.5。</p>
+<h3 id="0-2-漫画总览"><a href="#0-2-漫画总览" class="headerlink" title="0.2 漫画总览"></a>0.2 漫画总览</h3><p><img src="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97/fig-full-request-lifecycle-comic.png" alt="全链路请求生命周期（科普漫画）"></p>
+<h3 id="0-3-组件清单（可能出现的架构件）"><a href="#0-3-组件清单（可能出现的架构件）" class="headerlink" title="0.3 组件清单（可能出现的架构件）"></a>0.3 组件清单（可能出现的架构件）</h3><table>
+<thead>
+<tr>
+<th>层</th>
+<th>组件</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>网络</td>
+<td>客户端、TCP、反向代理（可选）</td>
+<td>字节进出；TLS&#x2F;负载均衡常在 uvicorn 外</td>
+</tr>
+<tr>
+<td>ASGI 服务器</td>
+<td><strong>uvicorn</strong> 等</td>
+<td>解析 HTTP&#x2F;WS → 调应用 <code>app(scope, receive, send)</code></td>
+</tr>
+<tr>
+<td>应用壳</td>
+<td><strong>FastAPI &#x2F; Starlette</strong></td>
+<td>实现 ASGI callable；叠路由与中间件</td>
+</tr>
+<tr>
+<td>横切</td>
+<td><strong>中间件洋葱</strong>（含 CORS 等）</td>
+<td><code>call_next</code> 前&#x2F;后加工；可短路不进路由</td>
+</tr>
+<tr>
+<td>错误管道</td>
+<td><strong>ExceptionMiddleware</strong> 概念层 + <code>exception_handler</code></td>
+<td>把异常变成 Response</td>
+</tr>
+<tr>
+<td>路由</td>
+<td><strong>APIRouter &#x2F; 路由表</strong></td>
+<td>按 method+path 匹配；否则 404&#x2F;405</td>
+</tr>
+<tr>
+<td>注入</td>
+<td><strong>Depends</strong>（含安全依赖）</td>
+<td>解析用户、DB session 等</td>
+</tr>
+<tr>
+<td>校验</td>
+<td><strong>Pydantic</strong>（Path&#x2F;Query&#x2F;Body）</td>
+<td>失败 → 422（可定制 handler）</td>
+</tr>
+<tr>
+<td>业务</td>
+<td><strong>端点</strong> <code>async def</code> &#x2F; <code>def</code>（后者常进线程池）</td>
+<td>真正业务</td>
+</tr>
+<tr>
+<td>出站整形</td>
+<td><code>response_model</code>、状态码、Response 子类</td>
+<td>过滤字段、定成功码</td>
+</tr>
+<tr>
+<td>后置</td>
+<td><strong>BackgroundTasks</strong></td>
+<td>响应发出后同进程轻量活</td>
+</tr>
+<tr>
+<td>协议回写</td>
+<td><code>send</code> 事件</td>
+<td><code>http.response.start</code> &#x2F; <code>body</code>（或流式多段）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>中间件洋葱</strong>指请求从外层进、响应从内层出，像剥洋葱；后 <code>add_middleware</code> 的一般更靠外。后文「洋葱」即此意。</p>
+</blockquote>
+<h3 id="0-4-HTTP-主路径（精确流转）"><a href="#0-4-HTTP-主路径（精确流转）" class="headerlink" title="0.4 HTTP 主路径（精确流转）"></a>0.4 HTTP 主路径（精确流转）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">  C[客户端] --&gt; N[TCP / 可选反向代理]</span><br><span class="line">  N --&gt; U[uvicorn ASGI 服务器]</span><br><span class="line">  U --&gt;|构造 scope receive send| APP[FastAPI ASGI 应用]</span><br><span class="line"></span><br><span class="line">  subgraph life[&quot;进程时钟 · 非每请求&quot;]</span><br><span class="line">    L1[lifespan 启动] -.-&gt; APP</span><br><span class="line">    APP -.-&gt; L2[lifespan 关闭]</span><br><span class="line">  end</span><br><span class="line"></span><br><span class="line">  APP --&gt; MW_IN[中间件洋葱 · 请求下行&lt;br/&gt;外层 → 内层 · 前半段 / 可直接 return]</span><br><span class="line"></span><br><span class="line">  MW_IN --&gt; RT&#123;路由匹配&lt;br/&gt;method + path&#125;</span><br><span class="line">  RT --&gt;|否| E404[404 / 405 Response]</span><br><span class="line">  RT --&gt;|是| DEP[解析 Depends 依赖树]</span><br><span class="line">  DEP --&gt; VAL[Path / Query / Body 校验]</span><br><span class="line">  VAL --&gt;|失败| E422[RequestValidationError → 422 handler]</span><br><span class="line">  VAL --&gt;|通过| EP&#123;端点&#125;</span><br><span class="line">  EP --&gt;|async def| LOOP[事件循环直接 await]</span><br><span class="line">  EP --&gt;|def 同步| POOL[线程池执行]</span><br><span class="line">  LOOP --&gt; BIZ[业务逻辑]</span><br><span class="line">  POOL --&gt; BIZ</span><br><span class="line">  BIZ --&gt; RM[response_model / 状态码 / Response]</span><br><span class="line">  RM --&gt; RESP[Response 对象]</span><br><span class="line">  E404 --&gt; MW_OUT</span><br><span class="line">  E422 --&gt; MW_OUT</span><br><span class="line">  RESP --&gt; MW_OUT[中间件洋葱 · 响应上行&lt;br/&gt;内层 → 外层 · 后半段]</span><br><span class="line"></span><br><span class="line">  BIZ -.-&gt;|raise HTTPException| EH[exception_handler → Response]</span><br><span class="line">  BIZ -.-&gt;|未捕获异常| EH500[500 handler / 默认 500]</span><br><span class="line">  EH --&gt; MW_OUT</span><br><span class="line">  EH500 --&gt; MW_OUT</span><br><span class="line"></span><br><span class="line">  MW_OUT --&gt; SEND[ASGI send 事件]</span><br><span class="line">  SEND --&gt; U</span><br><span class="line">  U --&gt; C</span><br><span class="line"></span><br><span class="line">  RESP -.-&gt;|可选| BG[BackgroundTasks&lt;br/&gt;响应后同进程]</span><br></pre></td></tr></table></figure>
+
+<p><strong>读图要点</strong>：</p>
+<ol>
+<li>中间件的「前半段」在进路由前；「后半段」在拿到 <code>Response</code> 之后——对应 <code>await call_next(request)</code> 两侧。  </li>
+<li>依赖、校验、端点都在 <code>call_next</code> <strong>之内</strong>。  </li>
+<li><code>HTTPException</code> &#x2F; 校验异常通常在进入响应上行前被转成 Response，仍会经过外层中间件后半段（除非中间件自身短路）。</li>
+</ol>
+<h3 id="0-5-旁路与变体（完整架构覆盖）"><a href="#0-5-旁路与变体（完整架构覆盖）" class="headerlink" title="0.5 旁路与变体（完整架构覆盖）"></a>0.5 旁路与变体（完整架构覆盖）</h3><table>
+<thead>
+<tr>
+<th>变体</th>
+<th>流转差异</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>中间件短路</strong></td>
+<td>前半段直接 <code>return Response</code>，不调 <code>call_next</code> → 无路由&#x2F;无依赖</td>
+</tr>
+<tr>
+<td><strong>CORS 预检 OPTIONS</strong></td>
+<td>常在最外层 <code>CORSMiddleware</code> 直接应答</td>
+</tr>
+<tr>
+<td><strong>WebSocket</strong></td>
+<td><code>scope[&quot;type&quot;]==&quot;websocket&quot;</code>；长连接收发，不是「一次 Response」模型</td>
+</tr>
+<tr>
+<td><strong>StreamingResponse &#x2F; SSE</strong></td>
+<td>仍走中间件+路由；<code>send</code> 多次 body 块</td>
+</tr>
+<tr>
+<td><strong><code>app.mount</code> 子应用</strong></td>
+<td>前缀匹配后把 scope 交给另一个 ASGI 应用（可另有中间件栈）</td>
+</tr>
+<tr>
+<td><strong>多 worker</strong></td>
+<td>每进程独立 lifespan + 独立事件循环；请求粘在某一个 worker</td>
+</tr>
+</tbody></table>
+<p>洋葱顺序放大（请求 ↓ &#x2F; 响应 ↑）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">请求 ↓                          响应 ↑</span><br><span class="line">  最外层中间件（后 add 的，如 CORS）</span><br><span class="line">    → 用户 http 中间件</span><br><span class="line">      → （框架异常转响应层）</span><br><span class="line">        → 路由 → Depends → 校验 → 端点</span><br><span class="line">      ← Response / handler 生成的 Response</span><br><span class="line">    ← 用户中间件后半段（改 header、记耗时）</span><br><span class="line">  ← 最外层后半段</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="1-易混对照表"><a href="#1-易混对照表" class="headerlink" title="1. 易混对照表"></a>1. 易混对照表</h2><table>
+<thead>
+<tr>
+<th>对比</th>
+<th>A</th>
+<th>B</th>
+<th>怎么选</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>横切位置</td>
+<td><strong>中间件</strong></td>
+<td><strong>Depends</strong></td>
+<td>要改每个请求的 request&#x2F;response 流 → 中间件；要注入业务对象&#x2F;用户 → Depends</td>
+</tr>
+<tr>
+<td>错误出口</td>
+<td><strong><code>HTTPException</code></strong></td>
+<td><strong>全局 <code>exception_handler</code></strong></td>
+<td>业务可预期错误用前者；统一 JSON 形状、未捕获异常用后者</td>
+</tr>
+<tr>
+<td>校验失败</td>
+<td><strong>422 默认</strong></td>
+<td><strong>自定义 validation handler</strong></td>
+<td>要友好错误码&#x2F;字段格式 → 自定义 handler</td>
+</tr>
+<tr>
+<td>日志粒度</td>
+<td><strong>中间件记 access</strong></td>
+<td><strong>业务 logger</strong></td>
+<td>access 记路径&#x2F;耗时；业务记领域事件</td>
+</tr>
+<tr>
+<td>执行顺序</td>
+<td>中间件 <strong>洋葱模型</strong></td>
+<td>依赖在进路由前</td>
+<td>中间件包在最外；CORS 通常最外一层</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>CORS</strong>（Cross-Origin Resource Sharing，跨源资源共享）是浏览器限制下，服务端通过响应头允许前端跨域访问的机制。</p>
+</blockquote>
+<hr>
+<h2 id="2-中间件组块"><a href="#2-中间件组块" class="headerlink" title="2. 中间件组块"></a>2. 中间件组块</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> uuid</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, Request</span><br><span class="line"><span class="keyword">from</span> starlette.middleware.cors <span class="keyword">import</span> CORSMiddleware</span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line">app.add_middleware(</span><br><span class="line">    CORSMiddleware,</span><br><span class="line">    allow_origins=[<span class="string">&quot;http://localhost:3000&quot;</span>],</span><br><span class="line">    allow_methods=[<span class="string">&quot;*&quot;</span>],</span><br><span class="line">    allow_headers=[<span class="string">&quot;*&quot;</span>],</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.middleware(<span class="params"><span class="string">&quot;http&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">request_context</span>(<span class="params">request: Request, call_next</span>):</span><br><span class="line">    request_id = request.headers.get(<span class="string">&quot;X-Request-ID&quot;</span>, <span class="built_in">str</span>(uuid.uuid4()))</span><br><span class="line">    start = time.perf_counter()</span><br><span class="line">    response = <span class="keyword">await</span> call_next(request)</span><br><span class="line">    elapsed_ms = (time.perf_counter() - start) * <span class="number">1000</span></span><br><span class="line">    response.headers[<span class="string">&quot;X-Request-ID&quot;</span>] = request_id</span><br><span class="line">    response.headers[<span class="string">&quot;X-Process-Time&quot;</span>] = <span class="string">f&quot;<span class="subst">&#123;elapsed_ms:<span class="number">.2</span>f&#125;</span>ms&quot;</span></span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>洋葱</strong>：后 <code>add_middleware</code> 的在外层（先收到请求、最后送出响应）。</li>
+<li><strong>误用</strong>：在中间件里做 DB 查询业务——应放 service + Depends。</li>
+</ul>
+<hr>
+<h2 id="3-异常处理组块"><a href="#3-异常处理组块" class="headerlink" title="3. 异常处理组块"></a>3. 异常处理组块</h2><h3 id="3-1-业务可预期：HTTPException"><a href="#3-1-业务可预期：HTTPException" class="headerlink" title="3.1 业务可预期：HTTPException"></a>3.1 业务可预期：<code>HTTPException</code></h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> HTTPException, status</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">raise</span> HTTPException(</span><br><span class="line">    status_code=status.HTTP_404_NOT_FOUND,</span><br><span class="line">    detail=<span class="string">&quot;Item not found&quot;</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-统一未捕获异常"><a href="#3-2-统一未捕获异常" class="headerlink" title="3.2 统一未捕获异常"></a>3.2 统一未捕获异常</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Request</span><br><span class="line"><span class="keyword">from</span> fastapi.responses <span class="keyword">import</span> JSONResponse</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.exception_handler(<span class="params">Exception</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">unhandled_exception_handler</span>(<span class="params">request: Request, exc: Exception</span>):</span><br><span class="line">    <span class="comment"># 生产环境勿把 str(exc) 直接返回客户端</span></span><br><span class="line">    <span class="keyword">return</span> JSONResponse(</span><br><span class="line">        status_code=<span class="number">500</span>,</span><br><span class="line">        content=&#123;<span class="string">&quot;detail&quot;</span>: <span class="string">&quot;Internal server error&quot;</span>, <span class="string">&quot;path&quot;</span>: request.url.path&#125;,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-校验错误-422-定制"><a href="#3-3-校验错误-422-定制" class="headerlink" title="3.3 校验错误 422 定制"></a>3.3 校验错误 422 定制</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi.exceptions <span class="keyword">import</span> RequestValidationError</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.exception_handler(<span class="params">RequestValidationError</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">validation_handler</span>(<span class="params">request: Request, exc: RequestValidationError</span>):</span><br><span class="line">    <span class="keyword">return</span> JSONResponse(</span><br><span class="line">        status_code=<span class="number">422</span>,</span><br><span class="line">        content=&#123;<span class="string">&quot;detail&quot;</span>: exc.errors(), <span class="string">&quot;body&quot;</span>: exc.body&#125;,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-日志组块"><a href="#4-日志组块" class="headerlink" title="4. 日志组块"></a>4. 日志组块</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"></span><br><span class="line">logger = logging.getLogger(<span class="string">&quot;app&quot;</span>)</span><br><span class="line"></span><br><span class="line">logging.basicConfig(</span><br><span class="line">    level=logging.INFO,</span><br><span class="line">    <span class="built_in">format</span>=<span class="string">&quot;%(asctime)s %(levelname)s [%(name)s] %(message)s&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 在中间件或路由里</span></span><br><span class="line">logger.info(<span class="string">&quot;item_created id=%s user=%s&quot;</span>, item_id, user.<span class="built_in">id</span>)</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>记什么</th>
+<th>放哪</th>
+<th>示例字段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每条 HTTP</td>
+<td>中间件</td>
+<td>method, path, status, ms, request_id</td>
+</tr>
+<tr>
+<td>业务事件</td>
+<td>service</td>
+<td>action, entity_id, outcome</td>
+</tr>
+<tr>
+<td>异常栈</td>
+<td>exception handler</td>
+<td><code>logger.exception(...)</code></td>
+</tr>
+</tbody></table>
+<p><strong>误用</strong>：<code>print</code> 调试上线——无级别、无聚合，难与 access 日志关联。</p>
+<hr>
+<h2 id="5-交错练习题（打乱类型）"><a href="#5-交错练习题（打乱类型）" class="headerlink" title="5. 交错练习题（打乱类型）"></a>5. 交错练习题（打乱类型）</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>场景</th>
+<th>应选</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Q1</td>
+<td>所有响应加 <code>X-Request-ID</code></td>
+<td>中间件</td>
+<td>横切 response</td>
+</tr>
+<tr>
+<td>Q2</td>
+<td>从 JWT 解析当前用户</td>
+<td>Depends</td>
+<td>注入路由参数</td>
+</tr>
+<tr>
+<td>Q3</td>
+<td>资源不存在返回 404 JSON</td>
+<td>HTTPException</td>
+<td>业务分支</td>
+</tr>
+<tr>
+<td>Q4</td>
+<td>未捕获异常统一 500 形状</td>
+<td>exception_handler</td>
+<td>全局兜底</td>
+</tr>
+<tr>
+<td>Q5</td>
+<td>允许前端 <code>localhost:3000</code> 跨域</td>
+<td>CORSMiddleware</td>
+<td>浏览器策略</td>
+</tr>
+<tr>
+<td>Q6</td>
+<td>Pydantic 校验失败要固定错误格式</td>
+<td>validation handler</td>
+<td>422 定制</td>
+</tr>
+<tr>
+<td>Q7</td>
+<td>记录每个接口耗时</td>
+<td>中间件</td>
+<td>与业务解耦</td>
+</tr>
+<tr>
+<td>Q8</td>
+<td>同一 router 要求 API Key</td>
+<td><code>APIRouter(dependencies=...)</code></td>
+<td>路由级 Depends（见 03）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-康奈尔排错栏（错误-→-现象-→-根因-→-修法）"><a href="#6-康奈尔排错栏（错误-→-现象-→-根因-→-修法）" class="headerlink" title="6. 康奈尔排错栏（错误 → 现象 → 根因 → 修法）"></a>6. 康奈尔排错栏（错误 → 现象 → 根因 → 修法）</h2><table>
+<thead>
+<tr>
+<th>错误用例</th>
+<th>现象</th>
+<th>根因</th>
+<th>修法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>中间件里 <code>return</code> 不调 <code>call_next</code></td>
+<td>所有路由 404&#x2F;无响应</td>
+<td>请求未进入应用</td>
+<td>必须 <code>response = await call_next(request)</code></td>
+</tr>
+<tr>
+<td>CORS 加在最内层</td>
+<td>浏览器仍报 CORS</td>
+<td>预检未过外层</td>
+<td><code>CORSMiddleware</code> 尽量最先 <code>add</code>（最后注册&#x3D;最外）</td>
+</tr>
+<tr>
+<td><code>HTTPException(500)</code> 包 <code>try/except Exception</code></td>
+<td>客户端收不到预期 body</td>
+<td>被全局 handler 吃掉</td>
+<td>区分 <code>HTTPException</code> 与 <code>Exception</code></td>
+</tr>
+<tr>
+<td>validation handler 返回非 JSON</td>
+<td><code>/docs</code> 调试异常</td>
+<td>响应类型不对</td>
+<td>用 <code>JSONResponse</code></td>
+</tr>
+<tr>
+<td>日志无 request_id</td>
+<td>多请求难关联</td>
+<td>未贯穿中间件</td>
+<td>中间件写入 header + logger <code>extra</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-15-分钟验收骨架"><a href="#7-15-分钟验收骨架" class="headerlink" title="7. 15 分钟验收骨架"></a>7. 15 分钟验收骨架</h2><p>在新 <code>main.py</code> 一次性接入：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 检查清单（打勾即过关）</span></span><br><span class="line"><span class="comment"># [ ] CORSMiddleware（若需前端）</span></span><br><span class="line"><span class="comment"># [ ] http 中间件：request_id + 耗时头</span></span><br><span class="line"><span class="comment"># [ ] RequestValidationError handler</span></span><br><span class="line"><span class="comment"># [ ] HTTPException 保持默认或统一包装</span></span><br><span class="line"><span class="comment"># [ ] Exception → 500 JSON（不泄露栈）</span></span><br><span class="line"><span class="comment"># [ ] logging.basicConfig + 中间件一条 access 级 info</span></span><br></pre></td></tr></table></figure>
+
+<p>用 <code>curl -i</code> 与故意传错 body 触发 422&#x2F;500 各一次。</p>
+<hr>
+<h2 id="8-闪卡候选"><a href="#8-闪卡候选" class="headerlink" title="8. 闪卡候选"></a>8. 闪卡候选</h2><table>
+<thead>
+<tr>
+<th>正面</th>
+<th>背面</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>中间件 vs Depends？</td>
+<td>改请求&#x2F;响应管道 vs 注入参数</td>
+</tr>
+<tr>
+<td>洋葱模型谁先收到请求？</td>
+<td>最后 <code>add_middleware</code> 的最外层</td>
+</tr>
+<tr>
+<td>422 谁抛出？</td>
+<td>FastAPI&#x2F;Pydantic 请求校验</td>
+</tr>
+<tr>
+<td>生产 500 响应能带 <code>str(exc)</code> 吗？</td>
+<td>不应；记日志，对外通用文案</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>先有全链路</strong>：中间件包在路由外；Depends&#x2F;校验&#x2F;端点在 <code>call_next</code> 内；异常多在出洋葱前变成 Response（见 <a href="#0-%E5%AE%8C%E6%95%B4%E6%89%A7%E8%A1%8C%E9%80%BB%E8%BE%91%E6%B5%81%E7%A8%8B%E5%9B%BE%E4%BB%BB%E5%8A%A1%E6%B5%81%E8%BD%AC">§0</a>）。</li>
+<li><strong>中间件</strong>管管道；<strong>Depends</strong>管注入；<strong>HTTPException</strong>管预期错误；<strong>handler</strong>管兜底与 422 形状。</li>
+<li>下一篇 <strong><a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 异步、后台任务与流式</a></strong>：弄清「写了 async 为什么还卡」。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/FastAPI/" rel="tag"><i class="fa fa-tag"></i> FastAPI</a>
+          
+            <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" rel="tag"><i class="fa fa-tag"></i> 中间件</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82/" rel="next" title="FastAPI：依赖注入与分层">
+                <i class="fa fa-chevron-left"></i> FastAPI：依赖注入与分层
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94/" rel="prev" title="FastAPI：异步后台任务与流式响应">
+                FastAPI：异步后台任务与流式响应 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E5%AE%8C%E6%95%B4%E6%89%A7%E8%A1%8C%E9%80%BB%E8%BE%91%E6%B5%81%E7%A8%8B%E5%9B%BE%EF%BC%88%E4%BB%BB%E5%8A%A1%E6%B5%81%E8%BD%AC%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">0. 完整执行逻辑流程图（任务流转）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0-1-%E4%B8%A4%E5%B1%82%E6%97%B6%E9%92%9F%EF%BC%88%E5%85%88%E5%88%86%E6%B8%85%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">0.1 两层时钟（先分清）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-2-%E6%BC%AB%E7%94%BB%E6%80%BB%E8%A7%88"><span class="nav-number">1.2.</span> <span class="nav-text">0.2 漫画总览</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-3-%E7%BB%84%E4%BB%B6%E6%B8%85%E5%8D%95%EF%BC%88%E5%8F%AF%E8%83%BD%E5%87%BA%E7%8E%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E4%BB%B6%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">0.3 组件清单（可能出现的架构件）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-4-HTTP-%E4%B8%BB%E8%B7%AF%E5%BE%84%EF%BC%88%E7%B2%BE%E7%A1%AE%E6%B5%81%E8%BD%AC%EF%BC%89"><span class="nav-number">1.4.</span> <span class="nav-text">0.4 HTTP 主路径（精确流转）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-5-%E6%97%81%E8%B7%AF%E4%B8%8E%E5%8F%98%E4%BD%93%EF%BC%88%E5%AE%8C%E6%95%B4%E6%9E%B6%E6%9E%84%E8%A6%86%E7%9B%96%EF%BC%89"><span class="nav-number">1.5.</span> <span class="nav-text">0.5 旁路与变体（完整架构覆盖）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%98%93%E6%B7%B7%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="nav-number">2.</span> <span class="nav-text">1. 易混对照表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%AD%E9%97%B4%E4%BB%B6%E7%BB%84%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">2. 中间件组块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E7%BB%84%E5%9D%97"><span class="nav-number">4.</span> <span class="nav-text">3. 异常处理组块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%B8%9A%E5%8A%A1%E5%8F%AF%E9%A2%84%E6%9C%9F%EF%BC%9AHTTPException"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 业务可预期：HTTPException</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E7%BB%9F%E4%B8%80%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 统一未捕获异常</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%A0%A1%E9%AA%8C%E9%94%99%E8%AF%AF-422-%E5%AE%9A%E5%88%B6"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 校验错误 422 定制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%97%A5%E5%BF%97%E7%BB%84%E5%9D%97"><span class="nav-number">5.</span> <span class="nav-text">4. 日志组块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BA%A4%E9%94%99%E7%BB%83%E4%B9%A0%E9%A2%98%EF%BC%88%E6%89%93%E4%B9%B1%E7%B1%BB%E5%9E%8B%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">5. 交错练习题（打乱类型）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%BA%B7%E5%A5%88%E5%B0%94%E6%8E%92%E9%94%99%E6%A0%8F%EF%BC%88%E9%94%99%E8%AF%AF-%E2%86%92-%E7%8E%B0%E8%B1%A1-%E2%86%92-%E6%A0%B9%E5%9B%A0-%E2%86%92-%E4%BF%AE%E6%B3%95%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">6. 康奈尔排错栏（错误 → 现象 → 根因 → 修法）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-15-%E5%88%86%E9%92%9F%E9%AA%8C%E6%94%B6%E9%AA%A8%E6%9E%B6"><span class="nav-number">8.</span> <span class="nav-text">7. 15 分钟验收骨架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E9%97%AA%E5%8D%A1%E5%80%99%E9%80%89"><span class="nav-number">9.</span> <span class="nav-text">8. 闪卡候选</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

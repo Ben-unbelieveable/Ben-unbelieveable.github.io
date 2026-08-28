@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="正则化,Dropout,LLM,训练," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Dropout：训练时按比率 p 随机把激活置零，抑制过拟合；推理默认关闭。覆盖反向 Dropout、经验比率，以及 BERT &#x2F; GPT-2 &#x2F; LLaMA &#x2F; ProteinMPNN &#x2F; LoRA 落点。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dropout：训练时随机失活，抑制过拟合">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="Dropout：训练时按比率 p 随机把激活置零，抑制过拟合；推理默认关闭。覆盖反向 Dropout、经验比率，以及 BERT &#x2F; GPT-2 &#x2F; LLaMA &#x2F; ProteinMPNN &#x2F; LoRA 落点。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/algo-fig01-dropout-train-infer.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/algo-fig02-dropout-residual.png">
+<meta property="article:published_time" content="2026-08-26T03:10:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Dropout">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="正则化">
+<meta property="article:tag" content="训练">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/algo-fig01-dropout-train-infer.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-25.LLM-算法知识/5050.大模型-算法要点-01.Dropout-训练时随机失活/"/>
+
+
+
+
+
+  <title>Dropout：训练时随机失活，抑制过拟合 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Dropout：训练时随机失活，抑制过拟合</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-26T11:10:00+08:00">
+                2026-08-26
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">大模型</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9/" itemprop="url" rel="index">
+                    <span itemprop="name">算法要点</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Dropout：训练时按比率 p 随机把激活置零，抑制过拟合；推理默认关闭。覆盖反向 Dropout、经验比率，以及 BERT / GPT-2 / LLaMA / ProteinMPNN / LoRA 落点。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>Dropout（随机失活）</strong> 是训练时以比率 (p) <strong>随机把激活置零</strong>、推理时<strong>关掉随机</strong>的正则手段。它<strong>不是</strong>可学习的「更新权重」，也不是推理温度。Srivastava <em>et al.</em>（2014）提出时，目的是打破神经元<strong>共适应（co-adaptation）</strong>，使网络不能依赖某一条固定通路。</p>
+<blockquote>
+<p>段末注释：<strong>共适应</strong>指若干单元总是一起激活、单独拿出来就不工作；Dropout 强迫表示分散到多条路径。后文 (p) 表示被置零的概率。</p>
+</blockquote>
+<p><strong>系列导读</strong>：<a href="5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-0.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB.md">5050.大模型-算法要点-0</a><br><strong>插图</strong>：<code>5050.大模型-算法要点/algo-fig01~02*.png</code></p>
+<hr>
+<h2 id="1-作用"><a href="#1-作用" class="headerlink" title="1. 作用"></a>1. 作用</h2><table>
+<thead>
+<tr>
+<th align="left">层面</th>
+<th align="left">Dropout 在干什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>正则</strong></td>
+<td align="left">减小对训练集捷径的依赖，缓解过拟合</td>
+</tr>
+<tr>
+<td align="left"><strong>隐式集成</strong></td>
+<td align="left">每个 batch 看到一张随机子网，近似「许多瘦网络投票」</td>
+</tr>
+<tr>
+<td align="left"><strong>残差上的剂量</strong></td>
+<td align="left">加在子层输出 (\Delta) 上，削弱本层更新、保留残差主干</td>
+</tr>
+</tbody></table>
+<p>它<strong>不</strong>替代 weight decay，也<strong>不</strong>替代数据增强。数据极大、每个样本几乎只见一次时（现代 LLM 预训练），过拟合压力下降，许多模型把 (p) 收到 <strong>0</strong>。</p>
+<hr>
+<h2 id="2-功能-机制"><a href="#2-功能-机制" class="headerlink" title="2. 功能 &#x2F; 机制"></a>2. 功能 &#x2F; 机制</h2><h3 id="2-1-训练开、推理关"><a href="#2-1-训练开、推理关" class="headerlink" title="2.1 训练开、推理关"></a>2.1 训练开、推理关</h3><p>社区默认实现是 PyTorch <code>nn.Dropout</code> 的<strong>反向 Dropout（inverted dropout）</strong>：训练时置零后还要除以 (1-p)，使期望与推理一致。</p>
+<p>[<br>\tilde{\mathbf{x}} &#x3D;<br>\begin{cases}<br>\dfrac{\mathbf{m}\odot\mathbf{x}}{1-p}, &amp; \text{train},; m_i\sim\mathrm{Bernoulli}(1-p)\[0.6em]<br>\mathbf{x}, &amp; \text{eval &#x2F; 推理}<br>\end{cases}<br>]</p>
+<p><code>model.train()</code> 才丢单元；<code>model.eval()</code>（或 <code>training=False</code>）必须关掉，否则同一输入会抖。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/algo-fig01-dropout-train-infer.png" alt="图 1　训练：约 \(p\) 的单元休眠；推理：全员在岗"></p>
+<h3 id="2-2-加在增量上，不加在残差主干上"><a href="#2-2-加在增量上，不加在残差主干上" class="headerlink" title="2.2 加在增量上，不加在残差主干上"></a>2.2 加在增量上，不加在残差主干上</h3><p>Transformer &#x2F; ProteinMPNN 的典型写法是 <strong>子层输出再 Dropout，再残差相加</strong>：</p>
+<p>[<br>\mathbf{h}\leftarrow \mathrm{Norm}\big(\mathbf{h}+\mathrm{Dropout}(\Delta)\big)<br>]</p>
+<p>(\Delta) 来自 Attention 或 FFN（或 MPNN 的消息聚合）。主干 (\mathbf{h}) 不被随机掐断，网络才叠得深。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-01.Dropout-%E8%AE%AD%E7%BB%83%E6%97%B6%E9%9A%8F%E6%9C%BA%E5%A4%B1%E6%B4%BB/algo-fig02-dropout-residual.png" alt="图 2　Dropout 只打在 \(\Delta\) 上，skip 仍完整"></p>
+<h3 id="2-3-和「更新权重」的区别"><a href="#2-3-和「更新权重」的区别" class="headerlink" title="2.3 和「更新权重」的区别"></a>2.3 和「更新权重」的区别</h3><table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">Dropout 的 (p)</th>
+<th align="left">MLP &#x2F; Attention 的 (W)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">谁设</td>
+<td align="left">超参，写死或扫</td>
+<td align="left">反向传播学习</td>
+</tr>
+<tr>
+<td align="left">训练</td>
+<td align="left">随机掩码，每次不同</td>
+<td align="left">按梯度更新</td>
+</tr>
+<tr>
+<td align="left">推理</td>
+<td align="left">默认关闭</td>
+<td align="left">照常使用</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-默认经验值"><a href="#3-默认经验值" class="headerlink" title="3. 默认经验值"></a>3. 默认经验值</h2><p>经验随<strong>数据重复次数</strong>和<strong>模型位置</strong>变，没有全局最优。下表是可复述的社区默认，不是调参保证。</p>
+<table>
+<thead>
+<tr>
+<th align="left">场景</th>
+<th align="center">常见 (p)</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">早期 MLP 隐层（2014 论文）</td>
+<td align="center"><strong>0.5</strong></td>
+<td align="left">输入层约 0.2；对现代残差网过大</td>
+</tr>
+<tr>
+<td align="left">原版 Transformer &#x2F; BERT &#x2F; GPT-2 &#x2F; T5</td>
+<td align="center"><strong>0.1</strong></td>
+<td align="left">Attention、残差、embedding 常同一档</td>
+</tr>
+<tr>
+<td align="left">大模型预训练（LLaMA 等）</td>
+<td align="center"><strong>0</strong></td>
+<td align="left">数据近单遍，Dropout 易欠拟合</td>
+</tr>
+<tr>
+<td align="left">小数据微调、图模型、ProteinMPNN</td>
+<td align="center"><strong>0.1</strong></td>
+<td align="left">过拟合更明显</td>
+</tr>
+<tr>
+<td align="left">LoRA &#x2F; PEFT</td>
+<td align="center"><strong>0.05–0.1</strong></td>
+<td align="left">只打在低秩适配器上</td>
+</tr>
+<tr>
+<td align="left">残差 &#x2F; 注意力上试探上限</td>
+<td align="center">(\le 0.3)</td>
+<td align="left">再大常直接伤验证集</td>
+</tr>
+</tbody></table>
+<p><strong>加大 (p)</strong>：验证远好于训练、数据少、宽度大。<br><strong>减小或置 0</strong>：预训练 loss 降不动、生成变钝、数据已远超「多 epoch 重复」。</p>
+<p>HuggingFace 常见字段：<code>hidden_dropout_prob</code>、<code>attention_probs_dropout_prob</code>（BERT 系）；<code>resid_pdrop</code>、<code>attn_pdrop</code>、<code>embd_pdrop</code>（GPT-2 系）。PEFT：<code>lora_dropout</code>。</p>
+<hr>
+<h2 id="4-整体应用"><a href="#4-整体应用" class="headerlink" title="4. 整体应用"></a>4. 整体应用</h2><h3 id="4-1-架构里插在哪"><a href="#4-1-架构里插在哪" class="headerlink" title="4.1 架构里插在哪"></a>4.1 架构里插在哪</h3><table>
+<thead>
+<tr>
+<th align="left">位置</th>
+<th align="left">名字</th>
+<th align="left">作用对象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Attention 权重</td>
+<td align="left">attention dropout</td>
+<td align="left">softmax 后的 (A_{ij})</td>
+</tr>
+<tr>
+<td align="left">子层输出</td>
+<td align="left">residual &#x2F; hidden dropout</td>
+<td align="left">(\Delta_{\mathrm{attn}})、(\Delta_{\mathrm{ffn}})</td>
+</tr>
+<tr>
+<td align="left">词嵌入</td>
+<td align="left">embedding dropout</td>
+<td align="left">token 向量</td>
+</tr>
+<tr>
+<td align="left">深度残差（视觉更多）</td>
+<td align="left">DropPath &#x2F; Stochastic Depth</td>
+<td align="left"><strong>整条残差支路</strong></td>
+</tr>
+</tbody></table>
+<p>设计时先问：这是<strong>元素级噪声</strong>还是<strong>整层跳过</strong>。后者是 DropPath，不是 <code>nn.Dropout</code>。</p>
+<h3 id="4-2-训练脚本"><a href="#4-2-训练脚本" class="headerlink" title="4.2 训练脚本"></a>4.2 训练脚本</h3><ul>
+<li>模块写进网络后，只要 <code>model.train()</code> 就会生效。  </li>
+<li>与 weight decay、label smoothing <strong>可叠加</strong>，调 (p) 时先看验证过拟合再动。  </li>
+<li>混合精度下 Dropout 仍按 mask 乘，一般不必改 (p)。</li>
+</ul>
+<h3 id="4-3-推理与少见例外"><a href="#4-3-推理与少见例外" class="headerlink" title="4.3 推理与少见例外"></a>4.3 推理与少见例外</h3><ul>
+<li><strong>默认</strong>：服务、评测、确定性解码一律 <code>eval()</code>，(p) 不参与。  </li>
+<li><strong>MC Dropout</strong>：故意保持 train 模式多次前向，用输出方差估不确定度。这是主动要随机，不是漏关 eval。大模型在线服务几乎不用。</li>
+</ul>
+<hr>
+<h2 id="5-使用案例"><a href="#5-使用案例" class="headerlink" title="5. 使用案例"></a>5. 使用案例</h2><h3 id="5-1-BERT-GPT-2：经典-p-0-1"><a href="#5-1-BERT-GPT-2：经典-p-0-1" class="headerlink" title="5.1 BERT &#x2F; GPT-2：经典 (p&#x3D;0.1)"></a>5.1 BERT &#x2F; GPT-2：经典 (p&#x3D;0.1)</h3><p>BERT 预训练与微调都写 <strong>dropout 0.1（全层）</strong>。GPT-2 配置默认 <code>resid_pdrop = attn_pdrop = embd_pdrop = 0.1</code>。适合「中等语料、会多 epoch 扫」的 Encoder &#x2F; 早期 Decoder。</p>
+<h3 id="5-2-LLaMA-系预训练：关掉"><a href="#5-2-LLaMA-系预训练：关掉" class="headerlink" title="5.2 LLaMA 系预训练：关掉"></a>5.2 LLaMA 系预训练：关掉</h3><p>LLaMA 论文不报 Dropout；后续单 epoch 预训练实验（如 <em>Drop Dropout on Single-Epoch LM Pretraining</em>）也支持 <strong>(p&#x3D;0) 更强</strong>。数据几乎不重复时，随机掐通路主要在制造噪声，不是正则。</p>
+<h3 id="5-3-ProteinMPNN：残差增量上-p-0-1"><a href="#5-3-ProteinMPNN：残差增量上-p-0-1" class="headerlink" title="5.3 ProteinMPNN：残差增量上 (p&#x3D;0.1)"></a>5.3 ProteinMPNN：残差增量上 (p&#x3D;0.1)</h3><p>官方 <code>EncLayer</code> &#x2F; <code>DecLayer</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">h_V = norm(h_V + dropout(dh))   <span class="comment"># dh = 聚合消息或 FFN 增量</span></span><br><span class="line">h_E = norm(h_E + dropout(dE))   <span class="comment"># 仅 Encoder 边更新</span></span><br></pre></td></tr></table></figure>
+
+<p>默认 <code>dropout=0.1</code>。图模型样本少于网页语料，0.1 仍是稳妥剂量；它<strong>不</strong>参与推理时的氨基酸采样温度。</p>
+<h3 id="5-4-LoRA-微调"><a href="#5-4-LoRA-微调" class="headerlink" title="5.4 LoRA 微调"></a>5.4 LoRA 微调</h3><p><code>lora_dropout=0.1</code>（或 0.05）只作用在低秩支路。底座已冻结、适配器参数少，中等 (p) 比改底座 <code>hidden_dropout_prob</code> 更常见。</p>
+<h3 id="5-5-踩坑"><a href="#5-5-踩坑" class="headerlink" title="5.5 踩坑"></a>5.5 踩坑</h3><ol>
+<li>推理忘了 <code>eval()</code> → logits 抖动，像温度被偷偷打开。  </li>
+<li>把 (p&#x3D;0.5) 直接套进 Transformer 残差 → 欠拟合。  </li>
+<li>把 Dropout 当成「指定更新权重」——权重是 (W)；(p) 只决定本次哪些激活被看见。</li>
+</ol>
+<hr>
+<h2 id="6-易混对照"><a href="#6-易混对照" class="headerlink" title="6. 易混对照"></a>6. 易混对照</h2><table>
+<thead>
+<tr>
+<th align="left">名称</th>
+<th align="left">差在哪</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Weight decay</strong></td>
+<td align="left">惩罚 (|W|^2)，确定性；Dropout 惩罚的是<strong>激活通路</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>DropPath</strong></td>
+<td align="left">随机丢掉<strong>整条残差支</strong>，不是逐元素</td>
+</tr>
+<tr>
+<td align="left"><strong>Label smoothing</strong></td>
+<td align="left">改监督分布，不改前向掩码</td>
+</tr>
+<tr>
+<td align="left"><strong>Temperature</strong></td>
+<td align="left">推理时拉平&#x2F;锐化 softmax，全程确定性（给定种子）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>Srivastava <em>et al.</em>, <em>Dropout: A Simple Way to Prevent Neural Networks from Overfitting</em>, JMLR 2014.  </li>
+<li>Vaswani <em>et al.</em>, <em>Attention Is All You Need</em>（残差 Dropout (P_{\mathrm{drop}}&#x3D;0.1)）.  </li>
+<li>Devlin <em>et al.</em>, BERT；Radford <em>et al.</em>, GPT-2；Touvron <em>et al.</em>, LLaMA.  </li>
+<li>实现：PyTorch <code>torch.nn.Dropout</code>；HuggingFace <code>*pdrop</code> &#x2F; <code>*_dropout_prob</code>。  </li>
+<li>结构对照：ProteinMPNN <code>EncLayer</code> 残差 Dropout。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" rel="tag"><i class="fa fa-tag"></i> 正则化</a>
+          
+            <a href="/tags/Dropout/" rel="tag"><i class="fa fa-tag"></i> Dropout</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E8%AE%AD%E7%BB%83/" rel="tag"><i class="fa fa-tag"></i> 训练</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-0.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB/" rel="next" title="大模型算法要点：开关与剂量的宏观导读">
+                <i class="fa fa-chevron-left"></i> 大模型算法要点：开关与剂量的宏观导读
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-25.LLM-%E7%AE%97%E6%B3%95%E7%9F%A5%E8%AF%86/5050.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E7%AE%97%E6%B3%95%E8%A6%81%E7%82%B9-02.LayerNorm-%E7%A8%B3%E4%BD%8F%E6%BF%80%E6%B4%BB%E5%B0%BA%E5%BA%A6/" rel="prev" title="LayerNorm：稳住激活尺度，让深层可训">
+                LayerNorm：稳住激活尺度，让深层可训 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BD%9C%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">1. 作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%8A%9F%E8%83%BD-%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">2. 功能 &#x2F; 机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%AE%AD%E7%BB%83%E5%BC%80%E3%80%81%E6%8E%A8%E7%90%86%E5%85%B3"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 训练开、推理关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E5%8A%A0%E5%9C%A8%E5%A2%9E%E9%87%8F%E4%B8%8A%EF%BC%8C%E4%B8%8D%E5%8A%A0%E5%9C%A8%E6%AE%8B%E5%B7%AE%E4%B8%BB%E5%B9%B2%E4%B8%8A"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 加在增量上，不加在残差主干上</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%92%8C%E3%80%8C%E6%9B%B4%E6%96%B0%E6%9D%83%E9%87%8D%E3%80%8D%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 和「更新权重」的区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E9%BB%98%E8%AE%A4%E7%BB%8F%E9%AA%8C%E5%80%BC"><span class="nav-number">3.</span> <span class="nav-text">3. 默认经验值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%95%B4%E4%BD%93%E5%BA%94%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">4. 整体应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E6%9E%B6%E6%9E%84%E9%87%8C%E6%8F%92%E5%9C%A8%E5%93%AA"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 架构里插在哪</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E8%AE%AD%E7%BB%83%E8%84%9A%E6%9C%AC"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 训练脚本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E6%8E%A8%E7%90%86%E4%B8%8E%E5%B0%91%E8%A7%81%E4%BE%8B%E5%A4%96"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 推理与少见例外</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BD%BF%E7%94%A8%E6%A1%88%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 使用案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-BERT-GPT-2%EF%BC%9A%E7%BB%8F%E5%85%B8-p-0-1"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 BERT &#x2F; GPT-2：经典 (p&#x3D;0.1)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-LLaMA-%E7%B3%BB%E9%A2%84%E8%AE%AD%E7%BB%83%EF%BC%9A%E5%85%B3%E6%8E%89"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 LLaMA 系预训练：关掉</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-ProteinMPNN%EF%BC%9A%E6%AE%8B%E5%B7%AE%E5%A2%9E%E9%87%8F%E4%B8%8A-p-0-1"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 ProteinMPNN：残差增量上 (p&#x3D;0.1)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-LoRA-%E5%BE%AE%E8%B0%83"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 LoRA 微调</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-%E8%B8%A9%E5%9D%91"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 踩坑</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%98%93%E6%B7%B7%E5%AF%B9%E7%85%A7"><span class="nav-number">6.</span> <span class="nav-text">6. 易混对照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">7.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

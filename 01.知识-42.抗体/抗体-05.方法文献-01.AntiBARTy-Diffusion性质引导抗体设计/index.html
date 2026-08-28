@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="方法文献,AntiBARTy,扩散模型,可开发性,OAS," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="深读 Venderley (arXiv:2309.13129)：AntiBARTy 预训练与 pooled 潜空间、性质条件 DDPM 与 classifier-free guidance、溶解度用例结果与任务边界。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AntiBARTy Diffusion 文献解读：BART 潜空间上的性质引导抗体生成">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="深读 Venderley (arXiv:2309.13129)：AntiBARTy 预训练与 pooled 潜空间、性质条件 DDPM 与 classifier-free guidance、溶解度用例结果与任务边界。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/fig01-antibarty-pipeline.png">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/fig02-pool-cfg.png">
+<meta property="article:published_time" content="2026-07-22T01:10:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="AntiBARTy">
+<meta property="article:tag" content="OAS">
+<meta property="article:tag" content="可开发性">
+<meta property="article:tag" content="扩散模型">
+<meta property="article:tag" content="方法文献">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/fig01-antibarty-pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-42.抗体/抗体-05.方法文献-01.AntiBARTy-Diffusion性质引导抗体设计/"/>
+
+
+
+
+
+  <title>AntiBARTy Diffusion 文献解读：BART 潜空间上的性质引导抗体生成 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">AntiBARTy Diffusion 文献解读：BART 潜空间上的性质引导抗体生成</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-22T09:10:00+08:00">
+                2026-07-22
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">生物信息</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF/%E6%8A%97%E4%BD%93/" itemprop="url" rel="index">
+                    <span itemprop="name">抗体</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  深读 Venderley (arXiv:2309.13129)：AntiBARTy 预训练与 pooled 潜空间、性质条件 DDPM 与 classifier-free guidance、溶解度用例结果与任务边界。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>系列</strong>：<a href="./%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-00.%E7%B3%BB%E5%88%97%E8%AF%B4%E6%98%8E.md">抗体-05.方法文献系列说明</a> · 第 01 篇<br><strong>范式对照</strong>：<a href="./%E6%8A%97%E4%BD%93-00.%E6%8A%97%E4%BD%93%E4%BA%B2%E5%92%8C%E5%8A%9B%E6%94%B9%E9%80%A0%E5%8F%91%E5%B1%95%E8%8C%83%E5%BC%8F.md">亲和力改造范式 · 方向 4b 生成</a>（性质引导 de novo，非抗原条件）</p>
+<hr>
+<h2 id="0-文献卡片"><a href="#0-文献卡片" class="headerlink" title="0. 文献卡片"></a>0. 文献卡片</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>题名</strong></td>
+<td>AntiBARTy Diffusion for Property Guided Antibody Design</td>
+</tr>
+<tr>
+<td><strong>作者 &#x2F; 机构</strong></td>
+<td>Jordan Venderley &#x2F; Eli Lilly and Company</td>
+</tr>
+<tr>
+<td><strong>载体</strong></td>
+<td>arXiv 预印本，2023-09</td>
+</tr>
+<tr>
+<td><strong>链接</strong></td>
+<td><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2309.13129">arXiv:2309.13129</a> · <a target="_blank" rel="noopener" href="https://arxiv.org/html/2309.13129">HTML</a></td>
+</tr>
+<tr>
+<td><strong>一句话贡献</strong></td>
+<td>先训抗体专用 BART（AntiBARTy），再在其<strong>冻结潜空间</strong>上训性质条件扩散模型，用 <strong>无分类器引导</strong> 做 IgG 可变区从头生成（用例：计算机溶解度）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>BART</strong>（Bidirectional and Auto-Regressive Transformers，双向与自回归变换器）是「编码器看腐蚀序列、解码器做去腐蚀」的序列到序列预训练范式；<strong>IgG</strong>（Immunoglobulin G，免疫球蛋白 G）是最常见治疗抗体同种型。</p>
+</blockquote>
+<hr>
+<h2 id="1-问题与动机"><a href="#1-问题与动机" class="headerlink" title="1. 问题与动机"></a>1. 问题与动机</h2><p>工业抗体路径通常是：展示库&#x2F;杂交瘤拿到抗原特异性 binder → 再改可开发性（溶解度、免疫原性、可制造性等），同时尽量保住亲和力。性质标签往往<strong>远少于</strong>公开抗体序列；若直接在氨基酸串上训强条件生成器，容易欠拟合或牺牲「像不像抗体」。</p>
+<p>作者策略拆成两步：</p>
+<ol>
+<li>用海量无标签序列学强先验 (p(\text{序列}))（AntiBARTy）；  </li>
+<li>把少量性质数据「挂」到冻结潜空间上，用扩散 + 引导采样推向有利性质模式。</li>
+</ol>
+<p>相对结构扩散（如 DiffAb）与离散序列引导扩散（如 Gruver et al.），本文刻意走：<strong>序列优先、计算便宜、可变长、不依赖抗原 3D、不要求固定编辑预算</strong>。</p>
+<hr>
+<h2 id="2-方法总览"><a href="#2-方法总览" class="headerlink" title="2. 方法总览"></a>2. 方法总览</h2><p><img src="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/fig01-antibarty-pipeline.png" alt="图 1　AntiBARTy Diffusion 两阶段：大规模 BART 先验 → 潜空间性质条件扩散 → 解码成 VH 序列（科普示意）"></p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>模块</th>
+<th>输入</th>
+<th>输出</th>
+<th>参数量（作者）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>AntiBARTy（BART）</td>
+<td>腐蚀后的 Fv 序列</td>
+<td>去腐蚀序列；编码器连续潜表示</td>
+<td>~16M</td>
+</tr>
+<tr>
+<td>B</td>
+<td>性质条件 DDPM（U-Net）</td>
+<td>噪声潜向量 + 时间步 ± 性质类</td>
+<td>去噪潜编码</td>
+<td>~3M</td>
+</tr>
+<tr>
+<td>生成</td>
+<td>CFG 采样 + decoder</td>
+<td>(z_T\sim\mathcal{N}(0,I))、引导强度 (w)、链类型 token</td>
+<td>氨基酸序列</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Fv</strong>（fragment variable，可变片段）含 VH&#x2F;VL 可变域；<strong>DDPM</strong>（denoising diffusion probabilistic model，去噪扩散概率模型）通过多步加噪&#x2F;去噪学习数据分布；<strong>CFG</strong>（classifier-free guidance，无分类器引导）用「有条件 − 无条件」噪声预测差引导采样，无需单独训练分类器。</p>
+</blockquote>
+<p>端到端采样伪代码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">z_T ~ N(0, I)</span><br><span class="line">for t = T … 1:</span><br><span class="line">    ε̂ = ε_θ(z_t, t, ∅) + w · (ε_θ(z_t, t, c) − ε_θ(z_t, t, ∅))   # CFG</span><br><span class="line">    z_&#123;t-1&#125; ← 按 DDPM 后验一步更新</span><br><span class="line">seq ← AntiBARTy.decoder(z_0 | 起始 token=&lt;heavy&gt;)   # Gumbel, T=0.1</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-实现细节（一）：AntiBARTy"><a href="#3-实现细节（一）：AntiBARTy" class="headerlink" title="3. 实现细节（一）：AntiBARTy"></a>3. 实现细节（一）：AntiBARTy</h2><h3 id="3-1-数据与预处理"><a href="#3-1-数据与预处理" class="headerlink" title="3.1 数据与预处理"></a>3.1 数据与预处理</h3><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>规模</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OAS 人源 IgG 重链 Fv</td>
+<td>2.54 亿</td>
+<td>Observed Antibody Space</td>
+</tr>
+<tr>
+<td>OAS 人源 IgG 轻链 Fv</td>
+<td>3.42 亿</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>UniProtKB</td>
+<td>0.28 亿</td>
+<td>增加非抗体蛋白多样性</td>
+</tr>
+</tbody></table>
+<p>过滤：长度限制在 ([100,140]) 氨基酸；去掉含未知残基 <code>X</code> 的链。<br>前缀标签：<code>&lt;heavy&gt;</code> &#x2F; <code>&lt;light&gt;</code> &#x2F; <code>&lt;protein&gt;</code>；末尾 <code>&lt;EOS&gt;</code>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>OAS</strong>（Observed Antibody Space，观测到的抗体空间）是清洗、注释后的大规模抗体序列库；<strong>UniProtKB</strong>（UniProt Knowledgebase）为通用蛋白知识库。</p>
+</blockquote>
+<p>合计量级约 <strong>6 亿+</strong> 条，与综述常用「超 6 亿 Fv」表述一致。</p>
+<h3 id="3-2-预训练目标与架构"><a href="#3-2-预训练目标与架构" class="headerlink" title="3.2 预训练目标与架构"></a>3.2 预训练目标与架构</h3><ul>
+<li><strong>目标</strong>：BART 去腐蚀——编码器读被破坏序列，解码器重建干净序列。  </li>
+<li><strong>腐蚀类型</strong>（训练时 on-the-fly）：token masking、插入&#x2F;删除（indel）、infilling。  </li>
+<li><strong>结构</strong>：encoder &#x2F; decoder 各 <strong>6</strong> 层注意力；Flash Attention；4×A100；约 <strong>6 epoch &#x2F; 6 天</strong>。  </li>
+<li><strong>强腐蚀极限</strong>：接近纯 decoder 语言模型；弱腐蚀则保留双向上下文。</li>
+</ul>
+<p>相对 encoder-only 抗体 LM（如 AntiBERTy）：BART 给出<strong>精确自回归似然</strong>，作者提到利于 repertoire 的 evolutionary velocity 等分析（本文未展开）。<br>相对纯 decoder（如 IgLM）：多出可冻结的<strong>连续编码器潜空间</strong>，便于接扩散。</p>
+<h3 id="3-3-微调：质量对齐-max-pooled-条件化"><a href="#3-3-微调：质量对齐-max-pooled-条件化" class="headerlink" title="3.3 微调：质量对齐 + max-pooled 条件化"></a>3.3 微调：质量对齐 + max-pooled 条件化</h3><p>OAS 存在 N 端截断等质量问题。预训练后在 <strong>OAS paired 子集</strong>（更高质量）上短微调，把生成分布拉回「可被 ANARCI 正确编号」的完整抗体。</p>
+<p><strong>关键改动</strong>：解码器 cross-attention 改为对编码器输出在序列维做 <strong>max-pooling</strong>，得到固定维聚合嵌入，再供解码注意。</p>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>作者判断</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全长 token 级 cross-attn</td>
+<td>变长 Fv 难与固定维扩散潜变量对齐</td>
+</tr>
+<tr>
+<td>自然语言 latent diffusion 常用的经验长度采样</td>
+<td>抗体场景不如 pooling</td>
+</tr>
+<tr>
+<td><strong>max-pooled 聚合嵌入</strong></td>
+<td>与扩散生成编码联用时序列质量更好</td>
+</tr>
+</tbody></table>
+<p>微调后 <strong>冻结</strong> AntiBARTy 全参数。</p>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-01.AntiBARTy-Diffusion%E6%80%A7%E8%B4%A8%E5%BC%95%E5%AF%BC%E6%8A%97%E4%BD%93%E8%AE%BE%E8%AE%A1/fig02-pool-cfg.png" alt="图 2　上：变长序列 → max-pool 成固定「指纹」潜向量；下：CFG 用有&#x2F;无条件噪声预测差引导性质方向（科普示意）"></p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ANARCI</strong>（Antigen receptor Numbering And Receptor ClassificatIon）用于可变域编号与链型&#x2F;物种分类，是本文生成质量的粗检工具。</p>
+</blockquote>
+<hr>
+<h2 id="4-实现细节（二）：潜空间性质条件扩散"><a href="#4-实现细节（二）：潜空间性质条件扩散" class="headerlink" title="4. 实现细节（二）：潜空间性质条件扩散"></a>4. 实现细节（二）：潜空间性质条件扩散</h2><h3 id="4-1-为何在潜空间扩散？"><a href="#4-1-为何在潜空间扩散？" class="headerlink" title="4.1 为何在潜空间扩散？"></a>4.1 为何在潜空间扩散？</h3><p>在<strong>归一化后的编码器连续潜空间</strong>训 DDPM，而非离散氨基酸空间：</p>
+<ul>
+<li>复用已学抗体流形，降低「生成不像抗体」的风险；  </li>
+<li>长度可变：最终长度由 decoder 决定，不绑定固定编辑预算（对比 guided discrete diffusion）；  </li>
+<li>indel 已在 BART 腐蚀中成为先验一部分，与亲和力成熟中 indel 的生物学角色一致。</li>
+</ul>
+<h3 id="4-2-U-Net-与条件融合"><a href="#4-2-U-Net-与条件融合" class="headerlink" title="4.2 U-Net 与条件融合"></a>4.2 U-Net 与条件融合</h3><ul>
+<li>骨干：<strong>3 层</strong> U-Net，约 <strong>3M</strong> 参数；  </li>
+<li>上采样阶段融合：自编码输入 + <strong>可学习性质类嵌入</strong> + <strong>时间步嵌入</strong>；  </li>
+<li>同时支持条件 &#x2F; 无条件噪声预测，供 CFG 使用。</li>
+</ul>
+<h3 id="4-3-性质标签与训练配方（溶解度用例）"><a href="#4-3-性质标签与训练配方（溶解度用例）" class="headerlink" title="4.3 性质标签与训练配方（溶解度用例）"></a>4.3 性质标签与训练配方（溶解度用例）</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>设定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>性质来源</td>
+<td>Protein-Sol 对 paired OAS 子集中一批 <strong>VH</strong> 的 <strong>in silico</strong> 溶解度</td>
+</tr>
+<tr>
+<td>低溶类</td>
+<td>分数 (&lt; 0.45)</td>
+</tr>
+<tr>
+<td>高溶类</td>
+<td>分数 (&gt; 0.7)</td>
+</tr>
+<tr>
+<td>规模</td>
+<td>每类约 <strong>2 万</strong> 条</td>
+</tr>
+<tr>
+<td>CFG 训练</td>
+<td>以概率 <strong>0.1</strong> 丢弃性质类嵌入（学无条件分支）</td>
+</tr>
+<tr>
+<td>类别不平衡</td>
+<td>条件训练集 <strong>10× 上采样</strong></td>
+</tr>
+</tbody></table>
+<p>无条件分支还使用 AntiBARTy 微调集上的嵌入。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Protein-Sol</strong> 是基于序列特征的蛋白质溶解度预测工具；本文优化的是其分数景观，<strong>不等于</strong>实测溶解度。</p>
+</blockquote>
+<p>CFG 噪声预测（符号与常见图像 CFG 一致）：</p>
+<p>[<br>\hat{\varepsilon}(z_t,t,c)&#x3D;\varepsilon_\theta(z_t,t,\varnothing)+w\bigl(\varepsilon_\theta(z_t,t,c)-\varepsilon_\theta(z_t,t,\varnothing)\bigr)<br>]</p>
+<p>其中 (c) 为性质类，(w) 为引导强度。作者观察：推向<strong>低溶解度</strong>往往需要<strong>更大的 (w)</strong>，才能达到与高溶侧相当的分布偏移。</p>
+<h3 id="4-4-解码超参"><a href="#4-4-解码超参" class="headerlink" title="4.4 解码超参"></a>4.4 解码超参</h3><ul>
+<li>decoder 输入初始化：<code>&lt;heavy&gt;</code>（主结果为重链）；  </li>
+<li>解码：Gumbel 采样式贪心，温度 <strong>0.1</strong>（偏确定、低随机性）。</li>
+</ul>
+<hr>
+<h2 id="5-结果与口径"><a href="#5-结果与口径" class="headerlink" title="5. 结果与口径"></a>5. 结果与口径</h2><h3 id="5-1-仅-AntiBARTy（无扩散）"><a href="#5-1-仅-AntiBARTy（无扩散）" class="headerlink" title="5.1 仅 AntiBARTy（无扩散）"></a>5.1 仅 AntiBARTy（无扩散）</h3><p>另训「只条件 <code>&lt;heavy&gt;</code> &#x2F; <code>&lt;light&gt;</code>」版本，各采 1k 条：长度分布可复现高质量训练集；ANARCI 链型全对，germline 物种分布与训练一致；样本彼此唯一。说明微调缓解了预训练集 N 端截断导致的分布污染。</p>
+<h3 id="5-2-AntiBARTy-Diffusion（溶解度引导）"><a href="#5-2-AntiBARTy-Diffusion（溶解度引导）" class="headerlink" title="5.2 AntiBARTy Diffusion（溶解度引导）"></a>5.2 AntiBARTy Diffusion（溶解度引导）</h3><table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>作者报告</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无条件溶解度分布</td>
+<td>贴近全训练集</td>
+</tr>
+<tr>
+<td>高&#x2F;低溶条件采样</td>
+<td>Protein-Sol 分数明显分离</td>
+</tr>
+<tr>
+<td>ANARCI</td>
+<td>全为重链；&gt;99.9% 人源 germline</td>
+</tr>
+<tr>
+<td>新颖性</td>
+<td>&gt;99.9% 不在溶解度训练集；与最近邻有 Levenshtein 距离分布</td>
+</tr>
+<tr>
+<td>潜空间覆盖（UMAP）</td>
+<td>高溶引导避开低溶模式，聚集于高溶区域</td>
+</tr>
+</tbody></table>
+<p><strong>口径提醒</strong>：全部为 <strong>in silico</strong>；无表达、无 SPR&#x2F;BLI、无抗原结合实验。数字不可与亲和力成熟论文的「(N) 倍 (K_D)」横比。</p>
+<hr>
+<h2 id="6-局限、风险与任务边界"><a href="#6-局限、风险与任务边界" class="headerlink" title="6. 局限、风险与任务边界"></a>6. 局限、风险与任务边界</h2><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>标签代理</strong></td>
+<td>优化 Protein-Sol，可能与真实溶解&#x2F;表达脱钩</td>
+</tr>
+<tr>
+<td><strong>无抗原条件</strong></td>
+<td>不能替代 DiffAb &#x2F; dyMEAN &#x2F; RFantibody 等 binder 设计</td>
+</tr>
+<tr>
+<td><strong>无湿实验</strong></td>
+<td>作者结论亦写明计划实验验证</td>
+</tr>
+<tr>
+<td><strong>CFG 强度</strong></td>
+<td>(w) 过大易模式崩塌或「假性质」；高低溶所需 (w) 不对称</td>
+</tr>
+<tr>
+<td><strong>配对</strong></td>
+<td>主结果在 VH；完整治疗分子还需 VL 配对与恒定区</td>
+</tr>
+<tr>
+<td><strong>数据偏倚</strong></td>
+<td>OAS&#x2F;人源 IgG 主导；跨物种&#x2F;特殊格式需另评</td>
+</tr>
+</tbody></table>
+<p><strong>一句话边界</strong>：本方法属于「<strong>可开发性&#x2F;性质引导的序列 de novo</strong>」，不是「表位定制亲和力设计」主引擎。</p>
+<hr>
+<h2 id="7-与相近方法对照（选型用）"><a href="#7-与相近方法对照（选型用）" class="headerlink" title="7. 与相近方法对照（选型用）"></a>7. 与相近方法对照（选型用）</h2><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>条件对象</th>
+<th>表示空间</th>
+<th>更适合</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>AntiBARTy Diffusion</strong></td>
+<td>序列性质（溶解度等）</td>
+<td>BART pooled latent</td>
+<td>性质偏置的合法抗体采样</td>
+</tr>
+<tr>
+<td>DiffAb &#x2F; RFantibody</td>
+<td>抗原结构 &#x2F; 表位</td>
+<td>结构（±序列）</td>
+<td>抗原特异性结合</td>
+</tr>
+<tr>
+<td>EAGLE</td>
+<td>表位结构</td>
+<td>ESM embedding 上扩散</td>
+<td>表位条件全长序列</td>
+</tr>
+<tr>
+<td>Guided discrete diffusion（Gruver）</td>
+<td>性质 + 编辑预算</td>
+<td>离散序列</td>
+<td>固定长度 lead 优化（有实验报道）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-工程取用建议"><a href="#8-工程取用建议" class="headerlink" title="8. 工程取用建议"></a>8. 工程取用建议</h2><ol>
+<li><strong>有用时</strong>：已有大量无标签抗体序列 + 少量可计算&#x2F;可预测性质；需要<strong>新颖、可变长、像抗体</strong>的候选池，并偏向某一性质模式。  </li>
+<li><strong>不够时</strong>：必须指定抗原表位、或必须以实测亲和力&#x2F;溶解度闭环为准——需另接结构条件生成或湿实验筛选。  </li>
+<li><strong>复现注意</strong>：原文为 Lilly 内部工作，公开信息以 arXiv 方法节为准；实现时重点对齐——<strong>(i) max-pool 潜向量、(ii) 0.1 条件 dropout CFG、(iii) 性质集上采样</strong>。  </li>
+<li><strong>本仓库衔接</strong>：范式总览 4b；注释质控可用 <a href="./%E6%8A%97%E4%BD%93-04.%E5%B7%A5%E5%85%B7-04.ANARCI-%E6%8A%97%E4%BD%93%E7%BB%93%E6%9E%84%E6%B3%A8%E9%87%8A%E5%B7%A5%E5%85%B7%E7%A7%91%E6%99%AE.md">ANARCI 科普</a>；抗原条件设计见工具-02 与后续方法文献篇目。</li>
+</ol>
+<hr>
+<h2 id="9-可核对原文要点清单"><a href="#9-可核对原文要点清单" class="headerlink" title="9. 可核对原文要点清单"></a>9. 可核对原文要点清单</h2><ul>
+<li><input disabled type="checkbox"> 数据：OAS 254M VH + 342M VL + UniProt 28M；长度 ([100,140])  </li>
+<li><input disabled type="checkbox"> AntiBARTy：6+6 层，~16M；BART 腐蚀；paired 微调 + max-pool  </li>
+<li><input disabled type="checkbox"> 扩散：3 层 U-Net，~3M；Protein-Sol 高低溶各 ~20k；mask (p&#x3D;0.1)；条件 10× upsample  </li>
+<li><input disabled type="checkbox"> 采样：标准正态潜向量 → CFG → decoder（<code>&lt;heavy&gt;</code>，Gumbel (T&#x3D;0.1)）  </li>
+<li><input disabled type="checkbox"> 结果：in silico 溶解度可分；ANARCI&#x2F;新颖性高；无湿实验、无抗原设计</li>
+</ul>
+<hr>
+<h2 id="参考文献（本篇）"><a href="#参考文献（本篇）" class="headerlink" title="参考文献（本篇）"></a>参考文献（本篇）</h2><ol>
+<li>Venderley J. <em>AntiBARTy Diffusion for Property Guided Antibody Design</em>. arXiv:2309.13129, 2023.  </li>
+<li>Lewis et al. BART. ACL 2020.  </li>
+<li>Ho &amp; Salimans. Classifier-free diffusion guidance. NeurIPS Workshop 2021.  </li>
+<li>Ho et al. Denoising diffusion probabilistic models. NeurIPS 2020.  </li>
+<li>Olsen et al. Observed Antibody Space. <em>Protein Science</em> 2022.  </li>
+<li>Hebditch et al. Protein-Sol. <em>Bioinformatics</em> 2017.</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE/" rel="tag"><i class="fa fa-tag"></i> 方法文献</a>
+          
+            <a href="/tags/AntiBARTy/" rel="tag"><i class="fa fa-tag"></i> AntiBARTy</a>
+          
+            <a href="/tags/%E6%89%A9%E6%95%A3%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 扩散模型</a>
+          
+            <a href="/tags/%E5%8F%AF%E5%BC%80%E5%8F%91%E6%80%A7/" rel="tag"><i class="fa fa-tag"></i> 可开发性</a>
+          
+            <a href="/tags/OAS/" rel="tag"><i class="fa fa-tag"></i> OAS</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-00.%E7%B3%BB%E5%88%97%E8%AF%B4%E6%98%8E/" rel="next" title="抗体：方法文献系列说明：一篇方法一篇详解">
+                <i class="fa fa-chevron-left"></i> 抗体：方法文献系列说明：一篇方法一篇详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-05.%E6%96%B9%E6%B3%95%E6%96%87%E7%8C%AE-02.AbDiffuser%E5%85%A8%E5%8E%9F%E5%AD%90%E6%8A%97%E4%BD%93%E5%BA%8F%E5%88%97%E7%BB%93%E6%9E%84%E5%85%B1%E8%AE%BE%E8%AE%A1/" rel="prev" title="AbDiffuser 文献解读：APMixer 驱动的全原子抗体序列–结构共设计">
+                AbDiffuser 文献解读：APMixer 驱动的全原子抗体序列–结构共设计 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E6%96%87%E7%8C%AE%E5%8D%A1%E7%89%87"><span class="nav-number">1.</span> <span class="nav-text">0. 文献卡片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E4%B8%8E%E5%8A%A8%E6%9C%BA"><span class="nav-number">2.</span> <span class="nav-text">1. 问题与动机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%96%B9%E6%B3%95%E6%80%BB%E8%A7%88"><span class="nav-number">3.</span> <span class="nav-text">2. 方法总览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9AAntiBARTy"><span class="nav-number">4.</span> <span class="nav-text">3. 实现细节（一）：AntiBARTy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%95%B0%E6%8D%AE%E4%B8%8E%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 数据与预处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%A2%84%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87%E4%B8%8E%E6%9E%B6%E6%9E%84"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 预训练目标与架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%BE%AE%E8%B0%83%EF%BC%9A%E8%B4%A8%E9%87%8F%E5%AF%B9%E9%BD%90-max-pooled-%E6%9D%A1%E4%BB%B6%E5%8C%96"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 微调：质量对齐 + max-pooled 条件化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%EF%BC%88%E4%BA%8C%EF%BC%89%EF%BC%9A%E6%BD%9C%E7%A9%BA%E9%97%B4%E6%80%A7%E8%B4%A8%E6%9D%A1%E4%BB%B6%E6%89%A9%E6%95%A3"><span class="nav-number">5.</span> <span class="nav-text">4. 实现细节（二）：潜空间性质条件扩散</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%B8%BA%E4%BD%95%E5%9C%A8%E6%BD%9C%E7%A9%BA%E9%97%B4%E6%89%A9%E6%95%A3%EF%BC%9F"><span class="nav-number">5.1.</span> <span class="nav-text">4.1 为何在潜空间扩散？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-U-Net-%E4%B8%8E%E6%9D%A1%E4%BB%B6%E8%9E%8D%E5%90%88"><span class="nav-number">5.2.</span> <span class="nav-text">4.2 U-Net 与条件融合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E6%80%A7%E8%B4%A8%E6%A0%87%E7%AD%BE%E4%B8%8E%E8%AE%AD%E7%BB%83%E9%85%8D%E6%96%B9%EF%BC%88%E6%BA%B6%E8%A7%A3%E5%BA%A6%E7%94%A8%E4%BE%8B%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">4.3 性质标签与训练配方（溶解度用例）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E8%A7%A3%E7%A0%81%E8%B6%85%E5%8F%82"><span class="nav-number">5.4.</span> <span class="nav-text">4.4 解码超参</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E7%BB%93%E6%9E%9C%E4%B8%8E%E5%8F%A3%E5%BE%84"><span class="nav-number">6.</span> <span class="nav-text">5. 结果与口径</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E4%BB%85-AntiBARTy%EF%BC%88%E6%97%A0%E6%89%A9%E6%95%A3%EF%BC%89"><span class="nav-number">6.1.</span> <span class="nav-text">5.1 仅 AntiBARTy（无扩散）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-AntiBARTy-Diffusion%EF%BC%88%E6%BA%B6%E8%A7%A3%E5%BA%A6%E5%BC%95%E5%AF%BC%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">5.2 AntiBARTy Diffusion（溶解度引导）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B1%80%E9%99%90%E3%80%81%E9%A3%8E%E9%99%A9%E4%B8%8E%E4%BB%BB%E5%8A%A1%E8%BE%B9%E7%95%8C"><span class="nav-number">7.</span> <span class="nav-text">6. 局限、风险与任务边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%8E%E7%9B%B8%E8%BF%91%E6%96%B9%E6%B3%95%E5%AF%B9%E7%85%A7%EF%BC%88%E9%80%89%E5%9E%8B%E7%94%A8%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">7. 与相近方法对照（选型用）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B7%A5%E7%A8%8B%E5%8F%96%E7%94%A8%E5%BB%BA%E8%AE%AE"><span class="nav-number">9.</span> <span class="nav-text">8. 工程取用建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%8F%AF%E6%A0%B8%E5%AF%B9%E5%8E%9F%E6%96%87%E8%A6%81%E7%82%B9%E6%B8%85%E5%8D%95"><span class="nav-number">10.</span> <span class="nav-text">9. 可核对原文要点清单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%EF%BC%88%E6%9C%AC%E7%AF%87%EF%BC%89"><span class="nav-number">11.</span> <span class="nav-text">参考文献（本篇）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

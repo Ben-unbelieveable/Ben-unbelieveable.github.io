@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="安全,MCP,鉴权," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="面向未接触过鉴权的开发者，按「本地自用 → 内网共享 → 区分用户 → 统一登录 → 公网发布」的场景递进，说明 MCP 鉴权要改什么、原理穿插何处，并配示例代码。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MCP开发：鉴权与安全验证">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-08.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8%E9%AA%8C%E8%AF%81/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="面向未接触过鉴权的开发者，按「本地自用 → 内网共享 → 区分用户 → 统一登录 → 公网发布」的场景递进，说明 MCP 鉴权要改什么、原理穿插何处，并配示例代码。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-08.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8%E9%AA%8C%E8%AF%81/mcp-oauth-flow-diagram.png">
+<meta property="article:published_time" content="2026-07-27T06:50:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="安全">
+<meta property="article:tag" content="鉴权">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-08.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8%E9%AA%8C%E8%AF%81/mcp-oauth-flow-diagram.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-12.MCP开发/MCP开发-08.鉴权与安全验证/"/>
+
+
+
+
+
+  <title>MCP开发：鉴权与安全验证 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-08.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8%E9%AA%8C%E8%AF%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MCP开发：鉴权与安全验证</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-27T14:50:00+08:00">
+                2026-07-27
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">大模型</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  面向未接触过鉴权的开发者，按「本地自用 → 内网共享 → 区分用户 → 统一登录 → 公网发布」的场景递进，说明 MCP 鉴权要改什么、原理穿插何处，并配示例代码。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>前面我们已经介绍了怎么开发、部署一个MCP服务，并在客户端进行配置，但是会引入另外的问题。如果没办法分辨那些事合理的请求，会导致资源的滥用，甚至被不可预期的用户暴力使用，所以这个时候，我们需要开始考虑鉴权，在MCP的调用阶段进行用户的级别，确保是合法用户在使用我们的MCP服务。<br>目前常用的鉴权方式有 「OAuth」「Bearer」。</p>
+<hr>
+<h2 id="开始之前：鉴权到底拦的是哪一层？"><a href="#开始之前：鉴权到底拦的是哪一层？" class="headerlink" title="开始之前：鉴权到底拦的是哪一层？"></a>开始之前：鉴权到底拦的是哪一层？</h2><p>想象 MCP 像一扇门后面的工具箱。Cursor 等宿主通过协议来「开门拿工具」。</p>
+<ul>
+<li><strong>鉴权</strong>（authentication &#x2F; authorization 在实践里常混称「鉴权」）：回答「来的人有没有资格开门、能拿哪些工具」。</li>
+<li><strong>Tool 业务参数</strong>：回答「工具怎么用」，例如 <code>template_name=sirna-predict</code>。</li>
+</ul>
+<p>常见误区：把长期密钥做成 Tool 参数，例如 <code>submit_template(api_token=...)</code>。模型可能把 token 写进对话、日志，也和协议推荐的做法不一致。正确位置是：</p>
+<ul>
+<li>本地子进程：环境变量、本机密钥文件  </li>
+<li>远程 HTTP：请求头里的凭证（后面会反复看到 <code>Authorization: Bearer ...</code>）</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：本文说的 <strong>MCP</strong>（Model Context Protocol，模型上下文协议）指工具协议本身；<strong>Host</strong> 指 Cursor、Claude Desktop 等承载模型的应用。</p>
+</blockquote>
+<hr>
+<h2 id="场景一：只有我自己在本机-Cursor-里用"><a href="#场景一：只有我自己在本机-Cursor-里用" class="headerlink" title="场景一：只有我自己在本机 Cursor 里用"></a>场景一：只有我自己在本机 Cursor 里用</h2><h3 id="你的需求"><a href="#你的需求" class="headerlink" title="你的需求"></a>你的需求</h3><ul>
+<li>在自己电脑上调试 &#x2F; 日常使用  </li>
+<li>不打算给同事一个网址去连</li>
+</ul>
+<h3 id="这时候通常怎么连"><a href="#这时候通常怎么连" class="headerlink" title="这时候通常怎么连"></a>这时候通常怎么连</h3><p>Host 用 <code>command</code> 在本机 <strong>拉起一个 Python 进程</strong>，双方通过进程的标准输入输出说话。这种传输叫 <strong>stdio</strong>。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Cursor ──(stdin/stdout 管道)──▶ 本机 python server.py</span><br><span class="line">         没有监听 0.0.0.0 端口</span><br></pre></td></tr></table></figure>
+
+<h3 id="鉴权上你要改什么"><a href="#鉴权上你要改什么" class="headerlink" title="鉴权上你要改什么"></a>鉴权上你要改什么</h3><p><strong>应用层往往什么都不用加。</strong> 安全边界已经变成：</p>
+<ul>
+<li>谁能登录这台电脑  </li>
+<li>谁能改 <code>.cursor/mcp.json</code> 并执行你的脚本  </li>
+<li>脚本里用的本机凭据（例如 <code>~/.kube/config</code>、本机 <code>argo</code>）属于谁。</li>
+<li></li>
+</ul>
+<p>这种模式一般不需要进行额外的鉴权，毕竟已经有权限操作服务端的电脑了，加了鉴权操作，电脑也能改</p>
+<h3 id="示例：最小-Server-Host-配置"><a href="#示例：最小-Server-Host-配置" class="headerlink" title="示例：最小 Server + Host 配置"></a>示例：最小 Server + Host 配置</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> mcp.server.fastmcp <span class="keyword">import</span> FastMCP</span><br><span class="line"></span><br><span class="line">mcp = FastMCP(<span class="string">&quot;local-tools&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">@mcp.tool()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ping</span>() -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;健康检查。输入：无。输出：固定字符串。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;pong&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    mcp.run(transport=<span class="string">&quot;stdio&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;local-tools&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;/path/to/.venv/bin/python&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/path/to/server.py&quot;</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="场景二：想让同事用-URL-连上你的-MCP（第一次上远程）"><a href="#场景二：想让同事用-URL-连上你的-MCP（第一次上远程）" class="headerlink" title="场景二：想让同事用 URL 连上你的 MCP（第一次上远程）"></a>场景二：想让同事用 URL 连上你的 MCP（第一次上远程）</h2><h3 id="你的需求-1"><a href="#你的需求-1" class="headerlink" title="你的需求"></a>你的需求</h3><ul>
+<li>服务跑在一台内网机器或容器里  </li>
+<li>同事的 Cursor 不再执行你的 <code>server.py</code>，而是填写一个 <code>url</code></li>
+</ul>
+<p>为此我们需要做如下的步骤：</p>
+<ol>
+<li><strong>Server</strong>：<code>transport=&quot;streamable-http&quot;</code>，绑定合适的 host&#x2F;port。  </li>
+<li><strong>运行方式</strong>：用 systemd &#x2F; Docker &#x2F; 手动进程保持服务常驻；不再依赖 Cursor 拉起。  </li>
+<li><strong>同事配置</strong>：<code>url</code> 指向你的 MCP 端点（常见形如 <code>http://host:8000/mcp</code>）。  </li>
+<li><strong>马上要面对的问题</strong>：端口一旦对网络可达，<strong>不认识的人也能打过来</strong>。所以从下一小节开始加「门口查票」。</li>
+</ol>
+<h3 id="首先切换MCP的启动模式-stdio-streamable-http"><a href="#首先切换MCP的启动模式-stdio-streamable-http" class="headerlink" title="首先切换MCP的启动模式(stdio -&gt; streamable-http)"></a>首先切换MCP的启动模式(stdio -&gt; streamable-http)</h3><p>本地 stdio 时，Cursor <strong>负责启动</strong>进程（进程是在本地启动的）。<br>远程时，你必须先 <strong>自己把 MCP 做成常驻 HTTP 服务</strong>（类似FastAPI），Cursor 只负责连接。现行推荐传输是 <strong>Streamable HTTP</strong>（可流式的 HTTP 传输）。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">【本地】Cursor  --command启动--&gt;  python(stdio)</span><br><span class="line"></span><br><span class="line">【远程】你先启动: python 监听 :8000/mcp</span><br><span class="line">        同事 Cursor  --url--&gt;  http(s)://那台机器/mcp</span><br></pre></td></tr></table></figure>
+<p><strong>只把 <code>mcp.run(transport=&quot;stdio&quot;)</code> 改成 <code>streamable-http</code>，却仍用 <code>command</code> 去配 Cursor——会连不上。</strong><br>启动切换后，对应的客户端配置也需要调整，进程已经在按「HTTP」听端口。远程场景下，同事的 <code>mcp.json</code> 应变成 <code>url</code>（可选再加鉴权头）。</p>
+<h3 id="示例：启动服务后，可以通过url访问"><a href="#示例：启动服务后，可以通过url访问" class="headerlink" title="示例：启动服务后，可以通过url访问"></a>示例：启动服务后，可以通过url访问</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> mcp.server.fastmcp <span class="keyword">import</span> FastMCP</span><br><span class="line"></span><br><span class="line">mcp = FastMCP(<span class="string">&quot;team-tools&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">@mcp.tool()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ping</span>() -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;健康检查。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;pong&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="comment"># 内网调试可先 127.0.0.1；要给同事机器访问再改为 0.0.0.0，并配合防火墙</span></span><br><span class="line">    mcp.run(transport=<span class="string">&quot;streamable-http&quot;</span>, host=<span class="string">&quot;0.0.0.0&quot;</span>, port=<span class="number">8000</span>)</span><br></pre></td></tr></table></figure>
+
+<p>同事侧：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;team-tools&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://10.0.0.12:8000/mcp&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>我们可以先通过行面的示例，了解基于url模式的服务启动和调用模式。</p>
+<h2 id="场景三：内网共享，先共用一把「门口通行证」"><a href="#场景三：内网共享，先共用一把「门口通行证」" class="headerlink" title="场景三：内网共享，先共用一把「门口通行证」"></a>场景三：内网共享，先共用一把「门口通行证」</h2><p>我们之前已经开始用 http服务监听MCP的端口了，这个时候服务是在公网的，任何人都可能访问，为了安全，我们需要确保只有特定的人群可以访问我们部署到公网的服务，这个时候，我们需要开始进行鉴权。</p>
+<h3 id="先弄懂：Bearer-是什么"><a href="#先弄懂：Bearer-是什么" class="headerlink" title="先弄懂：Bearer 是什么"></a>先弄懂：Bearer 是什么</h3><p>HTTP 里一种极常见的写法是：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">Authorization</span><span class="punctuation">: </span>Bearer &lt;一段字符串&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Bearer</strong>（持有者令牌）的字面意思是：谁「持有」这段字符串，谁就能用。<br>后面无论是「管理员发的固定口令」「JWT」还是「OAuth 换来的 access_token」，<strong>请求头长得往往一样</strong>；差别在于这段字符串 <strong>怎么发出来、服务端怎么验</strong>。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Bearer</strong> 的用法约定见 <a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc6750">RFC 6750</a>。MCP 在 HTTP 资源请求里也使用该请求头形态。</p>
+</blockquote>
+<h3 id="鉴权上你要改什么-1"><a href="#鉴权上你要改什么-1" class="headerlink" title="鉴权上你要改什么"></a>鉴权上你要改什么</h3><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>调整</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>服务端</td>
+<td>增加「读 <code>Authorization</code> → 和配置的密钥比对 → 失败返回 401」的逻辑（中间件或网关）</td>
+</tr>
+<tr>
+<td>服务端配置</td>
+<td>环境变量如 <code>MCP_API_TOKEN</code>（不要写进仓库）</td>
+</tr>
+<tr>
+<td>同事 <code>mcp.json</code></td>
+<td>在 <code>headers</code> 里带同一把 Bearer</td>
+</tr>
+<tr>
+<td>运维</td>
+<td>内网 HTTPS 更佳；至少限制来源网段</td>
+</tr>
+</tbody></table>
+<h3 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h3><ul>
+<li>已使用 Streamable HTTP  </li>
+<li>ASGI 中间件（Starlette &#x2F; FastAPI）或网关验头  </li>
+<li>比对建议用 <code>hmac.compare_digest</code>，降低时序攻击风险</li>
+</ul>
+<h3 id="示例：单密钥校验（理解用）"><a href="#示例：单密钥校验（理解用）" class="headerlink" title="示例：单密钥校验（理解用）"></a>示例：单密钥校验（理解用）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> hmac</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Callable</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> starlette.middleware.base <span class="keyword">import</span> BaseHTTPMiddleware</span><br><span class="line"><span class="keyword">from</span> starlette.requests <span class="keyword">import</span> Request</span><br><span class="line"><span class="keyword">from</span> starlette.responses <span class="keyword">import</span> JSONResponse, Response</span><br><span class="line"></span><br><span class="line">EXPECTED = os.environ.get(<span class="string">&quot;MCP_API_TOKEN&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BearerAuthMiddleware</span>(<span class="title class_ inherited__">BaseHTTPMiddleware</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;门口查票：Authorization 是否等于服务端配置的那一把密钥。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">dispatch</span>(<span class="params">self, request: Request, call_next: <span class="type">Callable</span></span>) -&gt; Response:</span><br><span class="line">        auth = request.headers.get(<span class="string">&quot;authorization&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> auth.lower().startswith(<span class="string">&quot;bearer &quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> JSONResponse(&#123;<span class="string">&quot;error&quot;</span>: <span class="string">&quot;missing bearer&quot;</span>&#125;, status_code=<span class="number">401</span>)</span><br><span class="line">        token = auth.split(<span class="string">&quot; &quot;</span>, <span class="number">1</span>)[<span class="number">1</span>].strip()</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> EXPECTED <span class="keyword">or</span> <span class="keyword">not</span> hmac.compare_digest(token, EXPECTED):</span><br><span class="line">            <span class="keyword">return</span> JSONResponse(&#123;<span class="string">&quot;error&quot;</span>: <span class="string">&quot;invalid token&quot;</span>&#125;, status_code=<span class="number">401</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">await</span> call_next(request)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将中间件挂到 FastMCP 的 Streamable HTTP ASGI app 上（具体 API 随 SDK 版本略有差异）：</span></span><br><span class="line"><span class="comment"># app = mcp.streamable_http_app()</span></span><br><span class="line"><span class="comment"># app.add_middleware(BearerAuthMiddleware)</span></span><br><span class="line"><span class="comment"># 再用 uvicorn 启动 app</span></span><br></pre></td></tr></table></figure>
+
+<p>同事配置：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;team-tools&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://mcp.internal.example/mcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;headers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;Authorization&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Bearer $&#123;env:TEAM_MCP_TOKEN&#125;&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="这个阶段的代价（心里有数即可）"><a href="#这个阶段的代价（心里有数即可）" class="headerlink" title="这个阶段的代价（心里有数即可）"></a>这个阶段的代价（心里有数即可）</h3><ul>
+<li>一把密钥大家共用：泄露 &#x3D; 全员沦陷  </li>
+<li>日志里看不出是谁调用的  </li>
+<li>换密钥要通知所有人改环境变量</li>
+</ul>
+<h2 id="只适合小范围的使用，公司内部的服务功能、有限范围等不记名授权。"><a href="#只适合小范围的使用，公司内部的服务功能、有限范围等不记名授权。" class="headerlink" title="只适合小范围的使用，公司内部的服务功能、有限范围等不记名授权。"></a>只适合小范围的使用，公司内部的服务功能、有限范围等不记名授权。</h2><h2 id="场景四：要分清是谁在调用，并能单独作废某人"><a href="#场景四：要分清是谁在调用，并能单独作废某人" class="headerlink" title="场景四：要分清是谁在调用，并能单独作废某人"></a>场景四：要分清是谁在调用，并能单独作废某人</h2><p>有时候，我们可能需要知道谁在调用 MCP，并能单独废除某人的权限，记录每个人的使用情况等。这个时候，我们仍然可以在后端中间件中进行功能等扩展，引入一个用户表（记录每个人的token、和我们需要记录的其他信息）。<br>发钥匙时可以给 Alice、Bob 各发一串随机 token；服务端 <strong>只存哈希</strong>，明文只在发放时展示一次。吊销 &#x3D; 从表删掉对应行。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">请求: Authorization: Bearer tok_alice_xxx</span><br><span class="line">服务端: sha256(tok_alice_xxx) → 查表 → user_id=alice, scopes=&#123;submit,read&#125;</span><br><span class="line">业务: 打日志、按 scopes 决定能否 submit</span><br></pre></td></tr></table></figure>
+
+<h3 id="鉴权上你要改什么-2"><a href="#鉴权上你要改什么-2" class="headerlink" title="鉴权上你要改什么"></a>鉴权上你要改什么</h3><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>调整</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>服务端</td>
+<td>密钥表（文件 &#x2F; SQLite &#x2F; Redis）；中间件解析 Bearer → 查表 → 注入「当前用户」</td>
+</tr>
+<tr>
+<td>业务 Tool</td>
+<td>需要时读取当前用户，做 scope 检查或写入审计字段</td>
+</tr>
+<tr>
+<td>同事配置</td>
+<td>每人 <code>headers</code> 里用 <strong>自己的</strong> token，不再共用一把</td>
+</tr>
+<tr>
+<td>管理流程</td>
+<td>由于个人token的引入，对应增加「发钥 &#x2F; 吊销」操作（哪怕先是运维手工改表）</td>
+</tr>
+</tbody></table>
+<h3 id="示例：token-→-用户"><a href="#示例：token-→-用户" class="headerlink" title="示例：token → 用户"></a>示例：token → 用户</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Callable</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> starlette.middleware.base <span class="keyword">import</span> BaseHTTPMiddleware</span><br><span class="line"><span class="keyword">from</span> starlette.requests <span class="keyword">import</span> Request</span><br><span class="line"><span class="keyword">from</span> starlette.responses <span class="keyword">import</span> JSONResponse, Response</span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass(<span class="params">frozen=<span class="literal">True</span></span>)</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Principal</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;门口验票通过后的「你是谁」。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    user_id: <span class="built_in">str</span></span><br><span class="line">    scopes: <span class="built_in">frozenset</span>[<span class="built_in">str</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">_TOKEN_STORE: <span class="built_in">dict</span>[<span class="built_in">str</span>, Principal] = &#123;&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">_hash_token</span>(<span class="params">raw: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">return</span> hashlib.sha256(raw.encode(<span class="string">&quot;utf-8&quot;</span>)).hexdigest()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">issue_token</span>(<span class="params">raw_token: <span class="built_in">str</span>, user_id: <span class="built_in">str</span>, scopes: <span class="built_in">set</span>[<span class="built_in">str</span>]</span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;管理员发钥：只把 hash 与用户登记入库。&quot;&quot;&quot;</span></span><br><span class="line">    _TOKEN_STORE[_hash_token(raw_token)] = Principal(user_id, <span class="built_in">frozenset</span>(scopes))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">revoke_user</span>(<span class="params">user_id: <span class="built_in">str</span></span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;按用户吊销：删除所有属于该用户的 hash 记录。&quot;&quot;&quot;</span></span><br><span class="line">    dead = [h <span class="keyword">for</span> h, p <span class="keyword">in</span> _TOKEN_STORE.items() <span class="keyword">if</span> p.user_id == user_id]</span><br><span class="line">    <span class="keyword">for</span> h <span class="keyword">in</span> dead:</span><br><span class="line">        <span class="keyword">del</span> _TOKEN_STORE[h]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MultiBearerMiddleware</span>(<span class="title class_ inherited__">BaseHTTPMiddleware</span>):</span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">dispatch</span>(<span class="params">self, request: Request, call_next: <span class="type">Callable</span></span>) -&gt; Response:</span><br><span class="line">        auth = request.headers.get(<span class="string">&quot;authorization&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> auth.lower().startswith(<span class="string">&quot;bearer &quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> JSONResponse(&#123;<span class="string">&quot;error&quot;</span>: <span class="string">&quot;missing bearer&quot;</span>&#125;, status_code=<span class="number">401</span>)</span><br><span class="line">        raw = auth.split(<span class="string">&quot; &quot;</span>, <span class="number">1</span>)[<span class="number">1</span>].strip()</span><br><span class="line">        principal = _TOKEN_STORE.get(_hash_token(raw))</span><br><span class="line">        <span class="keyword">if</span> principal <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">return</span> JSONResponse(&#123;<span class="string">&quot;error&quot;</span>: <span class="string">&quot;invalid token&quot;</span>&#125;, status_code=<span class="number">401</span>)</span><br><span class="line">        request.state.principal = principal</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">await</span> call_next(request)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">require_scope</span>(<span class="params">principal: Principal, scope: <span class="built_in">str</span></span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;业务里二次检查权限。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> scope <span class="keyword">not</span> <span class="keyword">in</span> principal.scopes:</span><br><span class="line">        <span class="keyword">raise</span> PermissionError(<span class="string">f&quot;<span class="subst">&#123;principal.user_id&#125;</span> missing scope=<span class="subst">&#123;scope&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>这已经能支撑「区分用户 + 吊销」。若你还希望 <strong>钥匙自动过期</strong>、票面自带角色信息，而不想维护一大张长期明文口令表，看场景五。</p>
+<hr>
+<h2 id="场景五：希望通行证会过期，并在票面上带上用户信息"><a href="#场景五：希望通行证会过期，并在票面上带上用户信息" class="headerlink" title="场景五：希望通行证会过期，并在票面上带上用户信息"></a>场景五：希望通行证会过期，并在票面上带上用户信息</h2><p>希望 token 里直接带上用户 id、过期时间，MCP 本地就能验，减少长期的静态口令管理。  </p>
+<h3 id="先弄懂：JWT-是一种「自带说明书的票」"><a href="#先弄懂：JWT-是一种「自带说明书的票」" class="headerlink" title="先弄懂：JWT 是一种「自带说明书的票」"></a>先弄懂：JWT 是一种「自带说明书的票」</h3><p><strong>JWT</strong>（JSON Web Token，JSON Web 令牌）通常长这样：<code>头部.载荷.签名</code>（三段 Base64）。<br>载荷里可以放 <code>sub</code>（主体，常是用户 id）、<code>exp</code>（过期时间）、<code>aud</code>（这张票打算给谁用）等字段。</p>
+<ul>
+<li><strong>签发方</strong>用密钥给票签名  </li>
+<li><strong>MCP</strong>用同一套密钥（HMAC）或公钥（RSA&#x2F;EC）验签名，并检查是否过期、受众是否为自己</li>
+</ul>
+<p>请求头仍然是：<code>Authorization: Bearer eyJhbG...</code>（看起来像乱码的 JWT）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：载荷里的字段常叫 <strong>claim</strong>（声明）。<code>aud</code>（audience，受众）用来防止「给 A 服务发的票被拿到 B 服务滥用」。</p>
+</blockquote>
+<h3 id="鉴权上你要改什么-3"><a href="#鉴权上你要改什么-3" class="headerlink" title="鉴权上你要改什么"></a>鉴权上你要改什么</h3><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>调整</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>新增「签发小服务」或登录接口</td>
+<td>用户证明身份后，签发短时 JWT（例如 1 小时）</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>中间件改为 <code>jwt.decode(...)</code>，不再做字符串全表扫描（或与表结合做黑名单）</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>共享 <code>JWT_SECRET</code>（HS256）或 MCP 只持有公钥（RS256）</td>
+</tr>
+<tr>
+<td>客户端</td>
+<td>仍配 Bearer；只是值改成 JWT，且过期后要重新获取</td>
+</tr>
+</tbody></table>
+<p>注意：JWT <strong>只解决票的格式与校验</strong>；「用户怎么登录才拿到第一张 JWT」若做成完整浏览器授权流，就会自然走到场景六的 OAuth。</p>
+<h3 id="示例：签发与校验（HS256）"><a href="#示例：签发与校验（HS256）" class="headerlink" title="示例：签发与校验（HS256）"></a>示例：签发与校验（HS256）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Any</span></span><br><span class="line"><span class="comment">#pip install PyJWT  # 若用 RS256，通常还需要: pip install cryptography</span></span><br><span class="line"><span class="keyword">import</span> jwt</span><br><span class="line"></span><br><span class="line">JWT_SECRET = os.environ[<span class="string">&quot;JWT_SECRET&quot;</span>]</span><br><span class="line">JWT_ISS = <span class="string">&quot;https://auth.internal.example&quot;</span></span><br><span class="line">JWT_AUD = <span class="string">&quot;mcp://team-tools&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">issue_access_token</span>(<span class="params">user_id: <span class="built_in">str</span>, *, ttl_sec: <span class="built_in">int</span> = <span class="number">3600</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;登录成功后调用：签发短时访问令牌。&quot;&quot;&quot;</span></span><br><span class="line">    now = <span class="built_in">int</span>(time.time())</span><br><span class="line">    payload = &#123;</span><br><span class="line">        <span class="string">&quot;iss&quot;</span>: JWT_ISS,</span><br><span class="line">        <span class="string">&quot;aud&quot;</span>: JWT_AUD,</span><br><span class="line">        <span class="string">&quot;sub&quot;</span>: user_id,</span><br><span class="line">        <span class="string">&quot;iat&quot;</span>: now,</span><br><span class="line">        <span class="string">&quot;exp&quot;</span>: now + ttl_sec,</span><br><span class="line">        <span class="string">&quot;scope&quot;</span>: <span class="string">&quot;submit read&quot;</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> jwt.encode(payload, JWT_SECRET, algorithm=<span class="string">&quot;HS256&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">verify_access_token</span>(<span class="params">token: <span class="built_in">str</span></span>) -&gt; <span class="built_in">dict</span>[<span class="built_in">str</span>, <span class="type">Any</span>]:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;MCP 门口：验签 + 校验发行方/受众/过期。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> jwt.decode(</span><br><span class="line">        token,</span><br><span class="line">        JWT_SECRET,</span><br><span class="line">        algorithms=[<span class="string">&quot;HS256&quot;</span>],</span><br><span class="line">        issuer=JWT_ISS,</span><br><span class="line">        audience=JWT_AUD,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="场景六：同事用公司账号登录，不想私下发一堆密钥"><a href="#场景六：同事用公司账号登录，不想私下发一堆密钥" class="headerlink" title="场景六：同事用公司账号登录，不想私下发一堆密钥"></a>场景六：同事用公司账号登录，不想私下发一堆密钥</h2><p>随着业务应用场景扩大，用户增加，自己管理密钥会是一个成本极高的事情，而我们之前的应用过程中，经常看到一类模式（用微信登陆、google 登陆、github登陆）这类的方式，密钥的轮转，管理等都交给统一的账号管理体系，服务端不在进行复杂的账号管理工作。在我们的MCP鉴权中也可以使用这种方案。</p>
+<p>先弄懂：<strong>OAuth 并不换一种请求头，它换的是「票怎么发到用户手里」</strong>，调 MCP 时，Host 带的往往 <strong>还是</strong>：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">Authorization</span><span class="punctuation">: </span>Bearer &lt;access_token&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>OAuth 2.1</strong>（在 OAuth 2.0 上收紧安全实践的授权框架）规定的是：如何安全地让用户在浏览器里同意授权，并让 Host 拿到这张 <code>access_token</code>。</p>
+<p>参与方可以记成三角关系：</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-12.MCP%E5%BC%80%E5%8F%91/MCP%E5%BC%80%E5%8F%91-08.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8%E9%AA%8C%E8%AF%81/mcp-oauth-flow-diagram.png" alt="MCP OAuth 2.1 鉴权参与方与信息流向"></p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>IdP</strong>（Identity Provider，身份提供商）负责「你是谁」；在 OAuth 用语里它常承担 <strong>Authorization Server</strong>（授权服务器）。MCP 此时是 <strong>Resource Server</strong>（资源服务器）：不负责登录页，只验票。</p>
+</blockquote>
+<h4 id="授权码是管理员配好的固定值吗？"><a href="#授权码是管理员配好的固定值吗？" class="headerlink" title="授权码是管理员配好的固定值吗？"></a>授权码是管理员配好的固定值吗？</h4><p><strong>不是。</strong> 每次用户点「允许」，IdP <strong>现场生成</strong>一次性短码（authorization code）。Host 再用这串码去换真正的 <code>access_token</code>。<br>管理员提前配置的是：应用的 <strong>Client ID</strong>（以及可选的 Client Secret）、允许的回调 URL 等——那是「登记 Cursor 这家应用」，不是给每个用户发固定业务口令。</p>
+<h4 id="那-IdP-要先向-MCP-领取一把「有效-MCP-token」吗？"><a href="#那-IdP-要先向-MCP-领取一把「有效-MCP-token」吗？" class="headerlink" title="那 IdP 要先向 MCP 领取一把「有效 MCP token」吗？"></a>那 IdP 要先向 MCP 领取一把「有效 MCP token」吗？</h4><p><strong>不要。</strong> 没有「第二套 MCP 预置万能密钥」需要交给 IdP。<br>IdP 用 <strong>自己的私钥</strong>签发 access_token；MCP 事先被配置为 <strong>信任这家 IdP</strong>（记住 issuer、JWKS 公钥地址、期望的 audience）。验签通过，就认为票有效。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">管理员预置的是「信任关系」：</span><br><span class="line">  MCP 知道去哪里下载 IdP 公钥，以及只接受签给自己的票</span><br></pre></td></tr></table></figure>
+
+<h3 id="鉴权上你要改什么-4"><a href="#鉴权上你要改什么-4" class="headerlink" title="鉴权上你要改什么"></a>鉴权上你要改什么</h3><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>调整</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IdP</td>
+<td>注册应用；配置 Cursor 要求的回调地址；规划 scope</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>实现&#x2F;挂载「按 JWKS 验 JWT」或 introspection；按规范暴露受保护资源元数据，方便客户端发现该找哪家 IdP</td>
+</tr>
+<tr>
+<td>MCP 配置</td>
+<td><code>issuer</code>、<code>JWKS URL</code>、<code>audience</code>（绑到你的 MCP 资源标识）</td>
+</tr>
+<tr>
+<td>同事 Cursor</td>
+<td>使用 <code>url</code>；通过产品 OAuth 流程登录，或配置 <code>auth</code>（Client ID 等）。<strong>通常不再人手粘贴长期静态 Bearer</strong></td>
+</tr>
+<tr>
+<td>运维</td>
+<td>HTTPS 必备；回调与发现端点网络可达</td>
+</tr>
+</tbody></table>
+<h3 id="依赖-1"><a href="#依赖-1" class="headerlink" title="依赖"></a>依赖</h3><table>
+<thead>
+<tr>
+<th>层级</th>
+<th>常见选择</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IdP</td>
+<td>Keycloak &#x2F; Auth0 &#x2F; Okta &#x2F; 云厂商 IAM 等</td>
+</tr>
+<tr>
+<td>验票</td>
+<td><code>PyJWT</code> + <code>PyJWKClient</code>，或网关 JWT 插件</td>
+</tr>
+<tr>
+<td>协议细节</td>
+<td>OAuth 2.1、PKCE、受保护资源元数据（RFC 9728）等，见文末链接</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PKCE</strong>（Proof Key for Code Exchange）用于降低授权码被截获盗用的风险，公有客户端场景下尤为重要；<strong>JWKS</strong>（JSON Web Key Set）是 IdP 发布公钥的标准方式。</p>
+</blockquote>
+<h3 id="示例：MCP-用-IdP-公钥验票"><a href="#示例：MCP-用-IdP-公钥验票" class="headerlink" title="示例：MCP 用 IdP 公钥验票"></a>示例：MCP 用 IdP 公钥验票</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Any</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> jwt</span><br><span class="line"><span class="keyword">from</span> jwt <span class="keyword">import</span> PyJWKClient</span><br><span class="line"></span><br><span class="line">ISSUER = <span class="string">&quot;https://idp.example.com/realms/biocloud&quot;</span></span><br><span class="line">AUDIENCE = <span class="string">&quot;https://mcp.example.com/sirna&quot;</span></span><br><span class="line">JWKS_URL = <span class="string">f&quot;<span class="subst">&#123;ISSUER&#125;</span>/protocol/openid-connect/certs&quot;</span></span><br><span class="line"></span><br><span class="line">_jwks_client = PyJWKClient(JWKS_URL)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">verify_idp_token</span>(<span class="params">token: <span class="built_in">str</span></span>) -&gt; <span class="built_in">dict</span>[<span class="built_in">str</span>, <span class="type">Any</span>]:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;验证 IdP 签发的 access_token，返回 payload（含 sub 等）。&quot;&quot;&quot;</span></span><br><span class="line">    signing_key = _jwks_client.get_signing_key_from_jwt(token)</span><br><span class="line">    <span class="keyword">return</span> jwt.decode(</span><br><span class="line">        token,</span><br><span class="line">        signing_key.key,</span><br><span class="line">        algorithms=[<span class="string">&quot;RS256&quot;</span>],</span><br><span class="line">        issuer=ISSUER,</span><br><span class="line">        audience=AUDIENCE,</span><br><span class="line">        options=&#123;<span class="string">&quot;require&quot;</span>: [<span class="string">&quot;exp&quot;</span>, <span class="string">&quot;iss&quot;</span>, <span class="string">&quot;sub&quot;</span>]&#125;,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<h3 id="示例：受保护资源元数据（示意）"><a href="#示例：受保护资源元数据（示意）" class="headerlink" title="示例：受保护资源元数据（示意）"></a>示例：受保护资源元数据（示意）</h3><p>客户端需要知道「这个 MCP 认哪家授权服务器」。一种形态是提供 JSON 元数据（路径与发现顺序以规范为准）：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;resource&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://mcp.example.com/sirna&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;authorization_servers&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;https://idp.example.com/realms/biocloud&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scopes_supported&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;mcp:submit&quot;</span><span class="punctuation">,</span> <span class="string">&quot;mcp:read&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;bearer_methods_supported&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;header&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="示例：Cursor-侧结构（示意）"><a href="#示例：Cursor-侧结构（示意）" class="headerlink" title="示例：Cursor 侧结构（示意）"></a>示例：Cursor 侧结构（示意）</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;argo-sirna&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://mcp.example.com/sirna/mcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;auth&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;CLIENT_ID&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;env:MCP_OIDC_CLIENT_ID&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;CLIENT_SECRET&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;env:MCP_OIDC_CLIENT_SECRET&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;scopes&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;mcp:submit&quot;</span><span class="punctuation">,</span> <span class="string">&quot;mcp:read&quot;</span><span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>具体字段以 <a target="_blank" rel="noopener" href="https://cursor.com/docs/mcp">Cursor MCP 文档</a> 与你所用 IdP 为准；桌面与 Web 的 OAuth 回调地址往往需要都登记到 IdP。</p>
+<h3 id="示例：不透明-token-时向-IdP「问询」"><a href="#示例：不透明-token-时向-IdP「问询」" class="headerlink" title="示例：不透明 token 时向 IdP「问询」"></a>示例：不透明 token 时向 IdP「问询」</h3><p>有的 IdP 发出的 access_token 不是 JWT，MCP 本地无法自验，可调用 introspection 接口：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> httpx</span><br><span class="line"></span><br><span class="line">INTROSPECT_URL = <span class="string">&quot;https://idp.example.com/oauth/introspect&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">introspect</span>(<span class="params">token: <span class="built_in">str</span></span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;问 IdP：这张票还有效吗、属于谁？&quot;&quot;&quot;</span></span><br><span class="line">    r = httpx.post(</span><br><span class="line">        INTROSPECT_URL,</span><br><span class="line">        data=&#123;<span class="string">&quot;token&quot;</span>: token&#125;,</span><br><span class="line">        auth=(os.environ[<span class="string">&quot;OIDC_CLIENT_ID&quot;</span>], os.environ[<span class="string">&quot;OIDC_CLIENT_SECRET&quot;</span>]),</span><br><span class="line">        timeout=<span class="number">10.0</span>,</span><br><span class="line">    )</span><br><span class="line">    r.raise_for_status()</span><br><span class="line">    data = r.json()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> data.get(<span class="string">&quot;active&quot;</span>):</span><br><span class="line">        <span class="keyword">raise</span> PermissionError(<span class="string">&quot;token inactive&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> data</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="场景七：要上公网，或公司已经有统一-API-网关"><a href="#场景七：要上公网，或公司已经有统一-API-网关" class="headerlink" title="场景七：要上公网，或公司已经有统一 API 网关"></a>场景七：要上公网，或公司已经有统一 API 网关</h2><h3 id="你的需求-2"><a href="#你的需求-2" class="headerlink" title="你的需求"></a>你的需求</h3><ul>
+<li>域名 + HTTPS、限流、证书，不想全塞进 Python 进程  </li>
+<li>或已有 Nginx &#x2F; APISIX &#x2F; 云 API 网关团队规范</li>
+</ul>
+<h3 id="先弄懂：反代不是一种「新鉴权协议」"><a href="#先弄懂：反代不是一种「新鉴权协议」" class="headerlink" title="先弄懂：反代不是一种「新鉴权协议」"></a>先弄懂：反代不是一种「新鉴权协议」</h3><p><strong>反向代理</strong>（reverse proxy）站在公网与 MCP 之间：终止 TLS、按路径转发、调超时、有时顺带验 JWT。<br>它解决的是「怎么安全地暴露服务」；票仍然可以是场景三～六里的任意一种。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Internet ──HTTPS──▶ 反代/网关 ──内网 HTTP──▶ MCP:8000</span><br><span class="line">                     ↑</span><br><span class="line">              证书、限流、可选验票</span><br></pre></td></tr></table></figure>
+
+<p><strong>本机 <code>127.0.0.1</code> 调试：反代不是必须。</strong><br><strong>公网：强烈建议有反代（或等价的云负载均衡 + 证书）。</strong></p>
+<h3 id="鉴权上你要改什么-5"><a href="#鉴权上你要改什么-5" class="headerlink" title="鉴权上你要改什么"></a>鉴权上你要改什么</h3><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>调整</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DNS &#x2F; 证书</td>
+<td>为 <code>mcp.example.com</code> 准备 HTTPS</td>
+</tr>
+<tr>
+<td>反代</td>
+<td><code>location</code> 转到各域 MCP 端口；流式场景注意关闭错误缓冲；长任务调大 <code>proxy_read_timeout</code></td>
+</tr>
+<tr>
+<td>鉴权策略二选一或组合</td>
+<td>网关验票后转发；或网关只做 TLS，验票仍在 MCP 中间件</td>
+</tr>
+<tr>
+<td>危险点</td>
+<td>若 MCP「信任」<code>X-User-Id</code> 这类头，必须保证 <strong>只有网关能注入</strong>，外网不能直打 MCP 端口伪造该头</td>
+</tr>
+</tbody></table>
+<h3 id="示例：Nginx-转发示意"><a href="#示例：Nginx-转发示意" class="headerlink" title="示例：Nginx 转发示意"></a>示例：Nginx 转发示意</h3><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">443</span> ssl;</span><br><span class="line">    <span class="attribute">server_name</span> mcp.example.com;</span><br><span class="line">    <span class="comment"># ssl_certificate ...;</span></span><br><span class="line"></span><br><span class="line">    <span class="section">location</span> /sirna/mcp &#123;</span><br><span class="line">        <span class="attribute">if</span> (<span class="variable">$http_authorization</span> = <span class="string">&quot;&quot;</span>) &#123; <span class="attribute">return</span> <span class="number">401</span>; &#125;  <span class="comment"># 仅示意；细粒度验签常用网关插件</span></span><br><span class="line">        <span class="attribute">proxy_pass</span> http://127.0.0.1:8001;</span><br><span class="line">        <span class="attribute">proxy_http_version</span> <span class="number">1</span>.<span class="number">1</span>;</span><br><span class="line">        <span class="attribute">proxy_buffering</span> <span class="literal">off</span>;</span><br><span class="line">        <span class="attribute">proxy_read_timeout</span> <span class="number">3600s</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="把场景串起来：你会反复看到的同一张「票面」"><a href="#把场景串起来：你会反复看到的同一张「票面」" class="headerlink" title="把场景串起来：你会反复看到的同一张「票面」"></a>把场景串起来：你会反复看到的同一张「票面」</h2><p>从场景三到场景六，同事调 MCP 时，HTTP 层几乎都是：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">Authorization</span><span class="punctuation">: </span>Bearer &lt;这一段&gt;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>你走到的场景</th>
+<th><code>&lt;这一段&gt;</code> 常常是</th>
+<th>服务端怎么认</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>三、共用通行证</td>
+<td>管理员发的固定字符串</td>
+<td>和配置相等</td>
+</tr>
+<tr>
+<td>四、分人通行证</td>
+<td>每人一把随机串</td>
+<td>hash 查用户表</td>
+</tr>
+<tr>
+<td>五、会过期的票</td>
+<td>自签 JWT</td>
+<td>共享密钥&#x2F;公钥验签</td>
+</tr>
+<tr>
+<td>六、公司登录</td>
+<td>IdP 签发的 access_token（常为 JWT）</td>
+<td>JWKS &#x2F; introspection</td>
+</tr>
+</tbody></table>
+<p>所以学鉴权时可以记一句：<strong>门上的锁孔形状往往一样（Bearer）；换场景，主要是换「谁有权印票、印完怎么验」。</strong></p>
+<hr>
+<h2 id="对照复习：需求-→-你改哪些地方"><a href="#对照复习：需求-→-你改哪些地方" class="headerlink" title="对照复习：需求 → 你改哪些地方"></a>对照复习：需求 → 你改哪些地方</h2><table>
+<thead>
+<tr>
+<th>我的情况</th>
+<th>优先场景</th>
+<th>Server 侧主要改动</th>
+<th>客户端主要改动</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>仅本人本机</td>
+<td>一</td>
+<td><code>stdio</code>，可不做 HTTP 鉴权</td>
+<td><code>command</code> + <code>args</code></td>
+</tr>
+<tr>
+<td>第一次给同事 URL</td>
+<td>二</td>
+<td>改为 Streamable HTTP 常驻</td>
+<td>改为 <code>url</code></td>
+</tr>
+<tr>
+<td>内网、先挡住陌生人</td>
+<td>三</td>
+<td>Bearer 单密钥中间件</td>
+<td><code>headers.Authorization</code></td>
+</tr>
+<tr>
+<td>要用户身份与吊销</td>
+<td>四</td>
+<td>多密钥表 + 注入用户</td>
+<td>每人不同 Bearer</td>
+</tr>
+<tr>
+<td>要过期与自描述票</td>
+<td>五</td>
+<td>JWT 验签；另需签发方</td>
+<td>Bearer 改为短时 JWT</td>
+</tr>
+<tr>
+<td>公司账号统一登录</td>
+<td>六</td>
+<td>信任 IdP、验 JWKS；元数据</td>
+<td>OAuth &#x2F; <code>auth</code> 配置</td>
+</tr>
+<tr>
+<td>公网或已有网关</td>
+<td>七</td>
+<td>置于网关后；防伪头</td>
+<td><code>https://</code> 的 <code>url</code></td>
+</tr>
+</tbody></table>
+<h2 id="动手时的安全习惯（简短清单）"><a href="#动手时的安全习惯（简短清单）" class="headerlink" title="动手时的安全习惯（简短清单）"></a>动手时的安全习惯（简短清单）</h2><ul>
+<li>密钥、Client Secret 不进 git  </li>
+<li>Token 放请求头，不放 URL 查询串  </li>
+<li>生产用 HTTPS；本地调试绑定 <code>127.0.0.1</code> 更稳妥  </li>
+<li>HTTP MCP 注意 Origin 校验（防 DNS rebinding，见协议传输安全章节）  </li>
+<li>静态 token 优先存哈希，并保留吊销办法  </li>
+<li>JWT &#x2F; OAuth 务必校验过期、发行方、受众  </li>
+<li>按最小权限拆 scope（只读 vs 可 submit）</li>
+</ul>
+<hr>
+<h2 id="延伸阅读"><a href="#延伸阅读" class="headerlink" title="延伸阅读"></a>延伸阅读</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization">MCP Authorization 规范</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://modelcontextprotocol.io/docs/tutorials/security/authorization">MCP Authorization 教程</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13">OAuth 2.1 Draft</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc6750">RFC 6750 Bearer</a> · <a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc7519">RFC 7519 JWT</a> · <a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc9728">RFC 9728 Protected Resource Metadata</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://cursor.com/docs/mcp">Cursor MCP 配置</a>  </li>
+<li>本系列：<a href="./MCP%E5%BC%80%E5%8F%91-03.%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%B0%83%E7%94%A8%E9%85%8D%E7%BD%AE.md">03 部署方式与调用配置</a> · <a href="./MCP%E5%BC%80%E5%8F%91-09.%E5%AE%9E%E6%88%98-%E9%85%8D%E7%BD%AE%E5%8C%96Pipeline%E7%9A%84MCP%E6%94%B9%E9%80%A0%E4%B8%8E%E6%89%A9%E5%AE%B9.md">09 配置化 Pipeline 实战</a>（工程内 <code>auth.yaml</code> 多 Bearer）</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E5%AE%89%E5%85%A8/" rel="tag"><i class="fa fa-tag"></i> 安全</a>
+          
+            <a href="/tags/MCP/" rel="tag"><i class="fa fa-tag"></i> MCP</a>
+          
+            <a href="/tags/%E9%89%B4%E6%9D%83/" rel="tag"><i class="fa fa-tag"></i> 鉴权</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-02%E8%A1%A52.HTTP%E7%8A%B6%E6%80%81%E7%A0%81%E8%A1%8C%E4%B8%9A%E5%85%B1%E8%AF%86%E6%89%8B%E5%86%8C/" rel="next" title="HTTP状态码行业共识手册">
+                <i class="fa fa-chevron-left"></i> HTTP状态码行业共识手册
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent%E5%BC%80%E5%8F%91/Agent-00.%E8%87%AA%E5%AD%A6%E5%AF%BC%E8%88%AA%E7%B4%A2%E5%BC%95%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%BA%B2%E8%A6%81/" rel="prev" title="Agent：自学导航索引与学习纲要">
+                Agent：自学导航索引与学习纲要 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E5%A7%8B%E4%B9%8B%E5%89%8D%EF%BC%9A%E9%89%B4%E6%9D%83%E5%88%B0%E5%BA%95%E6%8B%A6%E7%9A%84%E6%98%AF%E5%93%AA%E4%B8%80%E5%B1%82%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">开始之前：鉴权到底拦的是哪一层？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%80%EF%BC%9A%E5%8F%AA%E6%9C%89%E6%88%91%E8%87%AA%E5%B7%B1%E5%9C%A8%E6%9C%AC%E6%9C%BA-Cursor-%E9%87%8C%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">场景一：只有我自己在本机 Cursor 里用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E9%9C%80%E6%B1%82"><span class="nav-number">2.1.</span> <span class="nav-text">你的需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E6%97%B6%E5%80%99%E9%80%9A%E5%B8%B8%E6%80%8E%E4%B9%88%E8%BF%9E"><span class="nav-number">2.2.</span> <span class="nav-text">这时候通常怎么连</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%89%B4%E6%9D%83%E4%B8%8A%E4%BD%A0%E8%A6%81%E6%94%B9%E4%BB%80%E4%B9%88"><span class="nav-number">2.3.</span> <span class="nav-text">鉴权上你要改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E6%9C%80%E5%B0%8F-Server-Host-%E9%85%8D%E7%BD%AE"><span class="nav-number">2.4.</span> <span class="nav-text">示例：最小 Server + Host 配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%BA%8C%EF%BC%9A%E6%83%B3%E8%AE%A9%E5%90%8C%E4%BA%8B%E7%94%A8-URL-%E8%BF%9E%E4%B8%8A%E4%BD%A0%E7%9A%84-MCP%EF%BC%88%E7%AC%AC%E4%B8%80%E6%AC%A1%E4%B8%8A%E8%BF%9C%E7%A8%8B%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">场景二：想让同事用 URL 连上你的 MCP（第一次上远程）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E9%9C%80%E6%B1%82-1"><span class="nav-number">3.1.</span> <span class="nav-text">你的需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E5%85%88%E5%88%87%E6%8D%A2MCP%E7%9A%84%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F-stdio-streamable-http"><span class="nav-number">3.2.</span> <span class="nav-text">首先切换MCP的启动模式(stdio -&gt; streamable-http)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1%E5%90%8E%EF%BC%8C%E5%8F%AF%E4%BB%A5%E9%80%9A%E8%BF%87url%E8%AE%BF%E9%97%AE"><span class="nav-number">3.3.</span> <span class="nav-text">示例：启动服务后，可以通过url访问</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%89%EF%BC%9A%E5%86%85%E7%BD%91%E5%85%B1%E4%BA%AB%EF%BC%8C%E5%85%88%E5%85%B1%E7%94%A8%E4%B8%80%E6%8A%8A%E3%80%8C%E9%97%A8%E5%8F%A3%E9%80%9A%E8%A1%8C%E8%AF%81%E3%80%8D"><span class="nav-number">4.</span> <span class="nav-text">场景三：内网共享，先共用一把「门口通行证」</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E5%BC%84%E6%87%82%EF%BC%9ABearer-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">4.1.</span> <span class="nav-text">先弄懂：Bearer 是什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%89%B4%E6%9D%83%E4%B8%8A%E4%BD%A0%E8%A6%81%E6%94%B9%E4%BB%80%E4%B9%88-1"><span class="nav-number">4.2.</span> <span class="nav-text">鉴权上你要改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%9D%E8%B5%96"><span class="nav-number">4.3.</span> <span class="nav-text">依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E5%8D%95%E5%AF%86%E9%92%A5%E6%A0%A1%E9%AA%8C%EF%BC%88%E7%90%86%E8%A7%A3%E7%94%A8%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">示例：单密钥校验（理解用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E4%B8%AA%E9%98%B6%E6%AE%B5%E7%9A%84%E4%BB%A3%E4%BB%B7%EF%BC%88%E5%BF%83%E9%87%8C%E6%9C%89%E6%95%B0%E5%8D%B3%E5%8F%AF%EF%BC%89"><span class="nav-number">4.5.</span> <span class="nav-text">这个阶段的代价（心里有数即可）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AA%E9%80%82%E5%90%88%E5%B0%8F%E8%8C%83%E5%9B%B4%E7%9A%84%E4%BD%BF%E7%94%A8%EF%BC%8C%E5%85%AC%E5%8F%B8%E5%86%85%E9%83%A8%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%8A%9F%E8%83%BD%E3%80%81%E6%9C%89%E9%99%90%E8%8C%83%E5%9B%B4%E7%AD%89%E4%B8%8D%E8%AE%B0%E5%90%8D%E6%8E%88%E6%9D%83%E3%80%82"><span class="nav-number">5.</span> <span class="nav-text">只适合小范围的使用，公司内部的服务功能、有限范围等不记名授权。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E5%9B%9B%EF%BC%9A%E8%A6%81%E5%88%86%E6%B8%85%E6%98%AF%E8%B0%81%E5%9C%A8%E8%B0%83%E7%94%A8%EF%BC%8C%E5%B9%B6%E8%83%BD%E5%8D%95%E7%8B%AC%E4%BD%9C%E5%BA%9F%E6%9F%90%E4%BA%BA"><span class="nav-number">6.</span> <span class="nav-text">场景四：要分清是谁在调用，并能单独作废某人</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%89%B4%E6%9D%83%E4%B8%8A%E4%BD%A0%E8%A6%81%E6%94%B9%E4%BB%80%E4%B9%88-2"><span class="nav-number">6.1.</span> <span class="nav-text">鉴权上你要改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9Atoken-%E2%86%92-%E7%94%A8%E6%88%B7"><span class="nav-number">6.2.</span> <span class="nav-text">示例：token → 用户</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%BA%94%EF%BC%9A%E5%B8%8C%E6%9C%9B%E9%80%9A%E8%A1%8C%E8%AF%81%E4%BC%9A%E8%BF%87%E6%9C%9F%EF%BC%8C%E5%B9%B6%E5%9C%A8%E7%A5%A8%E9%9D%A2%E4%B8%8A%E5%B8%A6%E4%B8%8A%E7%94%A8%E6%88%B7%E4%BF%A1%E6%81%AF"><span class="nav-number">7.</span> <span class="nav-text">场景五：希望通行证会过期，并在票面上带上用户信息</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E5%BC%84%E6%87%82%EF%BC%9AJWT-%E6%98%AF%E4%B8%80%E7%A7%8D%E3%80%8C%E8%87%AA%E5%B8%A6%E8%AF%B4%E6%98%8E%E4%B9%A6%E7%9A%84%E7%A5%A8%E3%80%8D"><span class="nav-number">7.1.</span> <span class="nav-text">先弄懂：JWT 是一种「自带说明书的票」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%89%B4%E6%9D%83%E4%B8%8A%E4%BD%A0%E8%A6%81%E6%94%B9%E4%BB%80%E4%B9%88-3"><span class="nav-number">7.2.</span> <span class="nav-text">鉴权上你要改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E7%AD%BE%E5%8F%91%E4%B8%8E%E6%A0%A1%E9%AA%8C%EF%BC%88HS256%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">示例：签发与校验（HS256）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E5%85%AD%EF%BC%9A%E5%90%8C%E4%BA%8B%E7%94%A8%E5%85%AC%E5%8F%B8%E8%B4%A6%E5%8F%B7%E7%99%BB%E5%BD%95%EF%BC%8C%E4%B8%8D%E6%83%B3%E7%A7%81%E4%B8%8B%E5%8F%91%E4%B8%80%E5%A0%86%E5%AF%86%E9%92%A5"><span class="nav-number">8.</span> <span class="nav-text">场景六：同事用公司账号登录，不想私下发一堆密钥</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%88%E6%9D%83%E7%A0%81%E6%98%AF%E7%AE%A1%E7%90%86%E5%91%98%E9%85%8D%E5%A5%BD%E7%9A%84%E5%9B%BA%E5%AE%9A%E5%80%BC%E5%90%97%EF%BC%9F"><span class="nav-number">8.1.</span> <span class="nav-text">授权码是管理员配好的固定值吗？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%82%A3-IdP-%E8%A6%81%E5%85%88%E5%90%91-MCP-%E9%A2%86%E5%8F%96%E4%B8%80%E6%8A%8A%E3%80%8C%E6%9C%89%E6%95%88-MCP-token%E3%80%8D%E5%90%97%EF%BC%9F"><span class="nav-number">8.2.</span> <span class="nav-text">那 IdP 要先向 MCP 领取一把「有效 MCP token」吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%89%B4%E6%9D%83%E4%B8%8A%E4%BD%A0%E8%A6%81%E6%94%B9%E4%BB%80%E4%B9%88-4"><span class="nav-number">8.3.</span> <span class="nav-text">鉴权上你要改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%9D%E8%B5%96-1"><span class="nav-number">8.4.</span> <span class="nav-text">依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9AMCP-%E7%94%A8-IdP-%E5%85%AC%E9%92%A5%E9%AA%8C%E7%A5%A8"><span class="nav-number">8.5.</span> <span class="nav-text">示例：MCP 用 IdP 公钥验票</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E5%8F%97%E4%BF%9D%E6%8A%A4%E8%B5%84%E6%BA%90%E5%85%83%E6%95%B0%E6%8D%AE%EF%BC%88%E7%A4%BA%E6%84%8F%EF%BC%89"><span class="nav-number">8.6.</span> <span class="nav-text">示例：受保护资源元数据（示意）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9ACursor-%E4%BE%A7%E7%BB%93%E6%9E%84%EF%BC%88%E7%A4%BA%E6%84%8F%EF%BC%89"><span class="nav-number">8.7.</span> <span class="nav-text">示例：Cursor 侧结构（示意）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E4%B8%8D%E9%80%8F%E6%98%8E-token-%E6%97%B6%E5%90%91-IdP%E3%80%8C%E9%97%AE%E8%AF%A2%E3%80%8D"><span class="nav-number">8.8.</span> <span class="nav-text">示例：不透明 token 时向 IdP「问询」</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%83%EF%BC%9A%E8%A6%81%E4%B8%8A%E5%85%AC%E7%BD%91%EF%BC%8C%E6%88%96%E5%85%AC%E5%8F%B8%E5%B7%B2%E7%BB%8F%E6%9C%89%E7%BB%9F%E4%B8%80-API-%E7%BD%91%E5%85%B3"><span class="nav-number">9.</span> <span class="nav-text">场景七：要上公网，或公司已经有统一 API 网关</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E9%9C%80%E6%B1%82-2"><span class="nav-number">9.1.</span> <span class="nav-text">你的需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E5%BC%84%E6%87%82%EF%BC%9A%E5%8F%8D%E4%BB%A3%E4%B8%8D%E6%98%AF%E4%B8%80%E7%A7%8D%E3%80%8C%E6%96%B0%E9%89%B4%E6%9D%83%E5%8D%8F%E8%AE%AE%E3%80%8D"><span class="nav-number">9.2.</span> <span class="nav-text">先弄懂：反代不是一种「新鉴权协议」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%89%B4%E6%9D%83%E4%B8%8A%E4%BD%A0%E8%A6%81%E6%94%B9%E4%BB%80%E4%B9%88-5"><span class="nav-number">9.3.</span> <span class="nav-text">鉴权上你要改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9ANginx-%E8%BD%AC%E5%8F%91%E7%A4%BA%E6%84%8F"><span class="nav-number">9.4.</span> <span class="nav-text">示例：Nginx 转发示意</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%8A%E5%9C%BA%E6%99%AF%E4%B8%B2%E8%B5%B7%E6%9D%A5%EF%BC%9A%E4%BD%A0%E4%BC%9A%E5%8F%8D%E5%A4%8D%E7%9C%8B%E5%88%B0%E7%9A%84%E5%90%8C%E4%B8%80%E5%BC%A0%E3%80%8C%E7%A5%A8%E9%9D%A2%E3%80%8D"><span class="nav-number">10.</span> <span class="nav-text">把场景串起来：你会反复看到的同一张「票面」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E7%85%A7%E5%A4%8D%E4%B9%A0%EF%BC%9A%E9%9C%80%E6%B1%82-%E2%86%92-%E4%BD%A0%E6%94%B9%E5%93%AA%E4%BA%9B%E5%9C%B0%E6%96%B9"><span class="nav-number">11.</span> <span class="nav-text">对照复习：需求 → 你改哪些地方</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A8%E6%89%8B%E6%97%B6%E7%9A%84%E5%AE%89%E5%85%A8%E4%B9%A0%E6%83%AF%EF%BC%88%E7%AE%80%E7%9F%AD%E6%B8%85%E5%8D%95%EF%BC%89"><span class="nav-number">12.</span> <span class="nav-text">动手时的安全习惯（简短清单）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">13.</span> <span class="nav-text">延伸阅读</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

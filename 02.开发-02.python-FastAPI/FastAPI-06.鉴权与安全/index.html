@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="FastAPI,安全," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="T3+T4：API Key 与 OAuth2&#x2F;JWT 基线、安全清单闪卡、常见误配排错。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastAPI：鉴权与安全">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-06.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="T3+T4：API Key 与 OAuth2&#x2F;JWT 基线、安全清单闪卡、常见误配排错。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-07-16T08:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="安全">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-02.python-FastAPI/FastAPI-06.鉴权与安全/"/>
+
+
+
+
+
+  <title>FastAPI：鉴权与安全 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-06.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">FastAPI：鉴权与安全</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-16T16:20:00+08:00">
+                2026-07-16
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index">
+                    <span itemprop="name">工程实践</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/Python/" itemprop="url" rel="index">
+                    <span itemprop="name">Python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  T3+T4：API Key 与 OAuth2/JWT 基线、安全清单闪卡、常见误配排错。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本系列：<strong><a href="./FastAPI-00.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB%E4%B8%8E%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95.md">00 导读</a></strong> · <strong><a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 心智模型</a></strong> · <strong><a href="./FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B.md">02 路由与数据模型</a></strong> · <strong><a href="./FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82.md">03 依赖注入与分层</a></strong> · <strong><a href="./FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97.md">04 中间件异常日志</a></strong> · <strong><a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 异步后台与流式</a></strong> · <strong>06 鉴权与安全（本文）</strong> · <a href="./FastAPI-07.%E6%B5%8B%E8%AF%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E9%AA%A8%E6%9E%B6.md">07 测试与项目骨架</a> · <a href="./FastAPI-08.%E5%AE%9E%E6%88%98-HTTP%E4%B8%8EMCP%E5%85%B1%E8%BF%9B%E7%A8%8B.md">08 实战 HTTP↔MCP</a></p>
+<p><strong>行文：T3 + T4</strong>　｜　<strong>本篇方法</strong>：刻意练习 + 主动回忆　｜　<strong>辅助</strong>：间隔重复（清单闪卡）</p>
+<hr>
+<h2 id="1-选型：先回答两个问题"><a href="#1-选型：先回答两个问题" class="headerlink" title="1. 选型：先回答两个问题"></a>1. 选型：先回答两个问题</h2><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>倾向</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>调用方是脚本&#x2F;内部服务？</td>
+<td><strong>API Key</strong>（Header）</td>
+</tr>
+<tr>
+<td>调用方是用户+前端登录？</td>
+<td><strong>OAuth2 密码流 &#x2F; 授权码</strong> + <strong>JWT</strong></td>
+</tr>
+<tr>
+<td>需要细粒度权限？</td>
+<td>JWT claims + 依赖里校验 role&#x2F;scope</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>JWT</strong>（JSON Web Token）是一种签名的声明载体，常用于无状态鉴权；<strong>OAuth2</strong> 是授权框架，FastAPI 内置工具类便于对接。</p>
+</blockquote>
+<p><strong>本系列基线</strong>：掌握 API Key + JWT Bearer；OAuth2 授权码留给对接 IdP 时查官方文档。</p>
+<hr>
+<h2 id="2-API-Key-组块（内部服务）"><a href="#2-API-Key-组块（内部服务）" class="headerlink" title="2. API Key 组块（内部服务）"></a>2. API Key 组块（内部服务）</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Depends, FastAPI, HTTPException, Security, status</span><br><span class="line"><span class="keyword">from</span> fastapi.security <span class="keyword">import</span> APIKeyHeader</span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line">api_key_header = APIKeyHeader(name=<span class="string">&quot;X-API-Key&quot;</span>, auto_error=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">VALID_KEYS = &#123;<span class="string">&quot;dev-key-change-me&quot;</span>&#125;  <span class="comment"># 生产：环境变量 / Secret</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">verify_api_key</span>(<span class="params">key: <span class="built_in">str</span> | <span class="literal">None</span> = Security(<span class="params">api_key_header</span>)</span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">if</span> key <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> key <span class="keyword">not</span> <span class="keyword">in</span> VALID_KEYS:</span><br><span class="line">        <span class="keyword">raise</span> HTTPException(</span><br><span class="line">            status_code=status.HTTP_401_UNAUTHORIZED,</span><br><span class="line">            detail=<span class="string">&quot;Invalid or missing API Key&quot;</span>,</span><br><span class="line">        )</span><br><span class="line">    <span class="keyword">return</span> key</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ApiKeyDep = Annotated[<span class="built_in">str</span>, Depends(verify_api_key)]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/internal/metrics&quot;</span>, dependencies=[Depends(<span class="params">verify_api_key</span>)]</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">metrics</span>():</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;ok&quot;</span>: <span class="literal">True</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>误用</strong>：Key 写进仓库；应 <code>Settings</code> + 环境变量（07）。</li>
+<li><strong>误用</strong>：HTTPS 外网仍只信 API Key——中间人可嗅探，必须 TLS。</li>
+</ul>
+<hr>
+<h2 id="3-JWT-Bearer-组块（用户会话）"><a href="#3-JWT-Bearer-组块（用户会话）" class="headerlink" title="3. JWT Bearer 组块（用户会话）"></a>3. JWT Bearer 组块（用户会话）</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime, timedelta, timezone</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> Depends, FastAPI, HTTPException, status</span><br><span class="line"><span class="keyword">from</span> fastapi.security <span class="keyword">import</span> OAuth2PasswordBearer, OAuth2PasswordRequestForm</span><br><span class="line"><span class="keyword">from</span> jose <span class="keyword">import</span> JWTError, jwt</span><br><span class="line"><span class="keyword">from</span> passlib.context <span class="keyword">import</span> CryptContext</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel</span><br><span class="line"></span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line">SECRET_KEY = <span class="string">&quot;change-me-use-env&quot;</span></span><br><span class="line">ALGORITHM = <span class="string">&quot;HS256&quot;</span></span><br><span class="line">ACCESS_TOKEN_EXPIRE_MINUTES = <span class="number">60</span></span><br><span class="line"></span><br><span class="line">pwd_context = CryptContext(schemes=[<span class="string">&quot;bcrypt&quot;</span>], deprecated=<span class="string">&quot;auto&quot;</span>)</span><br><span class="line">oauth2_scheme = OAuth2PasswordBearer(tokenUrl=<span class="string">&quot;token&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Token</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    access_token: <span class="built_in">str</span></span><br><span class="line">    token_type: <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create_access_token</span>(<span class="params">subject: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)</span><br><span class="line">    <span class="keyword">return</span> jwt.encode(&#123;<span class="string">&quot;sub&quot;</span>: subject, <span class="string">&quot;exp&quot;</span>: expire&#125;, SECRET_KEY, algorithm=ALGORITHM)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">get_current_user</span>(<span class="params">token: <span class="built_in">str</span> = Depends(<span class="params">oauth2_scheme</span>)</span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])</span><br><span class="line">        username: <span class="built_in">str</span> | <span class="literal">None</span> = payload.get(<span class="string">&quot;sub&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> username <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> HTTPException(status_code=<span class="number">401</span>, detail=<span class="string">&quot;Invalid token&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> username</span><br><span class="line">    <span class="keyword">except</span> JWTError:</span><br><span class="line">        <span class="keyword">raise</span> HTTPException(status_code=<span class="number">401</span>, detail=<span class="string">&quot;Invalid token&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.post(<span class="params"><span class="string">&quot;/token&quot;</span>, response_model=Token</span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">login</span>(<span class="params">form: OAuth2PasswordRequestForm = Depends(<span class="params"></span>)</span>):</span><br><span class="line">    <span class="comment"># 演示：真实项目查库 + verify_password</span></span><br><span class="line">    <span class="keyword">if</span> form.username != <span class="string">&quot;demo&quot;</span> <span class="keyword">or</span> form.password != <span class="string">&quot;demo&quot;</span>:</span><br><span class="line">        <span class="keyword">raise</span> HTTPException(status_code=<span class="number">400</span>, detail=<span class="string">&quot;Incorrect username or password&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> Token(access_token=create_access_token(form.username), token_type=<span class="string">&quot;bearer&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/me&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">read_me</span>(<span class="params">user: <span class="built_in">str</span> = Depends(<span class="params">get_current_user</span>)</span>):</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;username&quot;</span>: user&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>/docs</code> 点 <strong>Authorize</strong>，用 <code>/token</code> 拿到的 bearer token 访问 <code>/me</code>。</p>
+<hr>
+<h2 id="4-安全基线清单（间隔重复闪卡源）"><a href="#4-安全基线清单（间隔重复闪卡源）" class="headerlink" title="4. 安全基线清单（间隔重复闪卡源）"></a>4. 安全基线清单（间隔重复闪卡源）</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>项</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S1</td>
+<td>密钥</td>
+<td><code>SECRET_KEY</code>、DB 密码进环境变量 &#x2F; K8s Secret</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>传输</td>
+<td>生产全站 HTTPS；HSTS 由网关处理</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>CORS</td>
+<td><code>allow_origins</code> 白名单，禁 <code>*</code> 配凭据</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>文档</td>
+<td>生产可 <code>docs_url=None</code> 或加网关鉴权</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>限流</td>
+<td>网关或中间件（本系列不展开库选型）</td>
+</tr>
+<tr>
+<td>S6</td>
+<td>输入</td>
+<td>靠 Pydantic；文件上传限制大小与类型</td>
+</tr>
+<tr>
+<td>S7</td>
+<td>错误</td>
+<td>500 不返回栈（见 04）</td>
+</tr>
+<tr>
+<td>S8</td>
+<td>依赖</td>
+<td>鉴权放 <code>Depends</code>，不散落每个 if</td>
+</tr>
+<tr>
+<td>S9</td>
+<td>密码</td>
+<td>bcrypt&#x2F;argon2，禁止明文存库</td>
+</tr>
+<tr>
+<td>S10</td>
+<td>Token</td>
+<td>短过期 + 刷新策略（按需）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-辨析排错"><a href="#5-辨析排错" class="headerlink" title="5. 辨析排错"></a>5. 辨析排错</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>根因</th>
+<th>修法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>401 但 Header 明明带了 Key</td>
+<td>头名与 <code>APIKeyHeader(name=)</code> 不一致</td>
+<td>对齐 <code>X-API-Key</code></td>
+</tr>
+<tr>
+<td><code>/docs</code> 授权后仍 401</td>
+<td><code>tokenUrl</code> 路径错</td>
+<td>与 <code>@app.post(&quot;/token&quot;)</code> 一致</td>
+</tr>
+<tr>
+<td>JWT 过期仍能通过</td>
+<td>未校验 <code>exp</code> 或时钟漂移</td>
+<td><code>jwt.decode</code> 默认校验 exp</td>
+</tr>
+<tr>
+<td>CORS + Cookie 登录失败</td>
+<td><code>allow_credentials</code> 与 <code>*</code> 冲突</td>
+<td>指定 origin 列表</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-Drills"><a href="#6-Drills" class="headerlink" title="6. Drills"></a>6. Drills</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>任务</th>
+<th>验收</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D1</td>
+<td>无 Key 访问 <code>/internal/metrics</code></td>
+<td>401</td>
+</tr>
+<tr>
+<td>D2</td>
+<td><code>/token</code> 取 token 访问 <code>/me</code></td>
+<td>200 + username</td>
+</tr>
+<tr>
+<td>D3</td>
+<td>把 <code>SECRET_KEY</code> 挪到 <code>Settings</code></td>
+<td>从 <code>.env</code> 读取</td>
+</tr>
+<tr>
+<td>D4</td>
+<td>给 <code>APIRouter</code> 整组加 <code>verify_api_key</code></td>
+<td>组内路由均受保护</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-闪卡候选"><a href="#7-闪卡候选" class="headerlink" title="7. 闪卡候选"></a>7. 闪卡候选</h2><table>
+<thead>
+<tr>
+<th>正面</th>
+<th>背面</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>API Key 放哪？</td>
+<td>Header <code>X-API-Key</code>（名可自定）</td>
+</tr>
+<tr>
+<td>OAuth2PasswordBearer 的 tokenUrl？</td>
+<td>换 token 的 POST 路径</td>
+</tr>
+<tr>
+<td>401 vs 403？</td>
+<td>未认证 vs 已认证无权限</td>
+</tr>
+<tr>
+<td>生产能把 SECRET 写代码里吗？</td>
+<td>不能</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>内部用 <strong>API Key</strong>；用户会话用 <strong>OAuth2 + JWT</strong>；都通过 <strong>Depends</strong> 注入。</li>
+<li><strong>清单 S1–S10</strong> 建议做成闪卡，部署前过一遍。</li>
+<li>下一篇 <strong><a href="./FastAPI-07.%E6%B5%8B%E8%AF%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E9%AA%A8%E6%9E%B6.md">07 测试与项目骨架</a></strong>：可运行、可测的目录与 pytest。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/FastAPI/" rel="tag"><i class="fa fa-tag"></i> FastAPI</a>
+          
+            <a href="/tags/%E5%AE%89%E5%85%A8/" rel="tag"><i class="fa fa-tag"></i> 安全</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94/" rel="next" title="FastAPI：异步后台任务与流式响应">
+                <i class="fa fa-chevron-left"></i> FastAPI：异步后台任务与流式响应
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-07.%E6%B5%8B%E8%AF%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E9%AA%A8%E6%9E%B6/" rel="prev" title="FastAPI：测试与项目骨架">
+                FastAPI：测试与项目骨架 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%80%89%E5%9E%8B%EF%BC%9A%E5%85%88%E5%9B%9E%E7%AD%94%E4%B8%A4%E4%B8%AA%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">1. 选型：先回答两个问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-API-Key-%E7%BB%84%E5%9D%97%EF%BC%88%E5%86%85%E9%83%A8%E6%9C%8D%E5%8A%A1%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">2. API Key 组块（内部服务）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-JWT-Bearer-%E7%BB%84%E5%9D%97%EF%BC%88%E7%94%A8%E6%88%B7%E4%BC%9A%E8%AF%9D%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. JWT Bearer 组块（用户会话）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%AE%89%E5%85%A8%E5%9F%BA%E7%BA%BF%E6%B8%85%E5%8D%95%EF%BC%88%E9%97%B4%E9%9A%94%E9%87%8D%E5%A4%8D%E9%97%AA%E5%8D%A1%E6%BA%90%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. 安全基线清单（间隔重复闪卡源）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%BE%A8%E6%9E%90%E6%8E%92%E9%94%99"><span class="nav-number">5.</span> <span class="nav-text">5. 辨析排错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Drills"><span class="nav-number">6.</span> <span class="nav-text">6. Drills</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%97%AA%E5%8D%A1%E5%80%99%E9%80%89"><span class="nav-number">7.</span> <span class="nav-text">7. 闪卡候选</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

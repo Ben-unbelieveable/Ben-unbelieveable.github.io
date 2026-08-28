@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="neural_network,GRU,RNN,LSTM,序列模型," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="门控循环单元（GRU）的演进脉络、相对 LSTM 的设计简化、双门架构原理、可训练参数与 BPTT 训练流程，以及应用局限；面向具备线性代数与微积分基础的读者。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GRU">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="门控循环单元（GRU）的演进脉络、相对 LSTM 的设计简化、双门架构原理、可训练参数与 BPTT 训练流程，以及应用局限；面向具备线性代数与微积分基础的读者。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig01-evolution.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig02-architecture.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig03-training.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig04-limitations.png">
+<meta property="article:published_time" content="2026-08-10T01:40:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="GRU">
+<meta property="article:tag" content="LSTM">
+<meta property="article:tag" content="RNN">
+<meta property="article:tag" content="neural_network">
+<meta property="article:tag" content="序列模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig01-evolution.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/2104.神经网络-循环神经网络-GRU/"/>
+
+
+
+
+
+  <title>GRU | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GRU</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T09:40:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index">
+                    <span itemprop="name">神经网络</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  门控循环单元（GRU）的演进脉络、相对 LSTM 的设计简化、双门架构原理、可训练参数与 BPTT 训练流程，以及应用局限；面向具备线性代数与微积分基础的读者。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>门控循环单元</strong>（Gated Recurrent Unit，<strong>GRU</strong>）由 Cho 等（2014）在神经机器翻译的 <strong>RNN 编码器-解码器</strong>框架中提出，是 <strong>LSTM</strong> 的简化门控变体。它将<strong>细胞状态</strong>与<strong>隐藏状态</strong>合并为单一的 $\mathbf{h}_t$，用<strong>更新门</strong>与<strong>重置门</strong>两个门控替代 LSTM 的三门结构，在多数任务上与 LSTM 性能相当，同时参数量更少、训练更快。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>GRU</strong> 可理解为在 $\mathbf{h}_t$ 上做<strong>凸组合</strong>：$\mathbf{h}_t &#x3D; (1-\mathbf{z}<em>t)\odot \mathbf{h}</em>{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t$，更新门 $\mathbf{z}_t$ 决定”保留旧记忆”与”写入新内容”的比例。</p>
+</blockquote>
+<p><strong>读前说明</strong>：配图位于同名目录 <code>2104.神经网络-循环神经网络-GRU/</code>。本文独立成篇；对比 LSTM 可参阅 <a href="./2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-LSTM.md">2104.神经网络-循环神经网络-LSTM</a>，基础 RNN 见 <a href="./2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-RNN.md">2104.神经网络-循环神经网络-RNN</a>。</p>
+<hr>
+<h2 id="1-从何处来：演进脉络"><a href="#1-从何处来：演进脉络" class="headerlink" title="1. 从何处来：演进脉络"></a>1. 从何处来：演进脉络</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig01-evolution.png" alt="图 1　从 LSTM 到 GRU 的简化演进（科普示意）"></p>
+<h3 id="1-1-前驱：vanilla-RNN-与-LSTM"><a href="#1-1-前驱：vanilla-RNN-与-LSTM" class="headerlink" title="1.1 前驱：vanilla RNN 与 LSTM"></a>1.1 前驱：vanilla RNN 与 LSTM</h3><p><strong>循环神经网络</strong>（Recurrent Neural Network，<strong>RNN</strong>）通过隐藏状态 $\mathbf{h}_t$ 传递序列信息，但面临<strong>梯度消失&#x2F;爆炸</strong>与<strong>长期依赖</strong>难题。<strong>长短期记忆网络</strong>（Long Short-Term Memory，<strong>LSTM</strong>）引入独立细胞状态 $\mathbf{C}_t$ 与输入&#x2F;遗忘&#x2F;输出三门，以加法更新缓解梯度衰减。</p>
+<p>LSTM 有效，但结构较重：4 组门控仿射变换 + 独立 $\mathbf{C}_t$，参数量约为 vanilla RNN 的 4 倍，推理与训练开销较大。</p>
+<h3 id="1-2-GRU-的提出动机"><a href="#1-2-GRU-的提出动机" class="headerlink" title="1.2 GRU 的提出动机"></a>1.2 GRU 的提出动机</h3><p>Cho 等（2014）在 <em>Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation</em> 中提出 GRU，核心动机：</p>
+<table>
+<thead>
+<tr>
+<th>动机</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>简化结构</strong></td>
+<td>去掉独立 $\mathbf{C}_t$，减少一组状态变量</td>
+</tr>
+<tr>
+<td><strong>减少参数</strong></td>
+<td>2 门替代 3 门，参数量约为 LSTM 的 <strong>75%</strong></td>
+</tr>
+<tr>
+<td><strong>保持门控能力</strong></td>
+<td>仍通过 sigmoid 门控制信息流动</td>
+</tr>
+<tr>
+<td><strong>工程效率</strong></td>
+<td>更快训练，更易在 seq2seq 中堆叠</td>
+</tr>
+</tbody></table>
+<h3 id="1-3-后续发展"><a href="#1-3-后续发展" class="headerlink" title="1.3 后续发展"></a>1.3 后续发展</h3><table>
+<thead>
+<tr>
+<th>年份</th>
+<th>里程碑</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>2014</strong></td>
+<td>Cho 等，<em>GRU</em></td>
+<td>与 LSTM 并列成为 RNN 门控标配</td>
+</tr>
+<tr>
+<td><strong>2014–2016</strong></td>
+<td>seq2seq + attention</td>
+<td>GRU&#x2F;LSTM 编码器 + Bahdanau 注意力</td>
+</tr>
+<tr>
+<td><strong>2015</strong></td>
+<td>Chung 等系统对比</td>
+<td>多数据集上 GRU 与 LSTM 互有胜负</td>
+</tr>
+<tr>
+<td><strong>2017+</strong></td>
+<td><strong>Transformer</strong></td>
+<td>循环结构让位于自注意力；GRU 仍用于轻量时序任务</td>
+</tr>
+<tr>
+<td><strong>2020s</strong></td>
+<td>边缘&#x2F;实时场景</td>
+<td>语音唤醒、传感器流式建模等仍可选 GRU</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Minimal GRU</strong>、<strong>QRNN</strong> 等进一步简化 RNN 的尝试存在，但 GRU 仍是工业界最常用 LSTM 替代之一。</p>
+</blockquote>
+<hr>
+<h2 id="2-要解决什么问题"><a href="#2-要解决什么问题" class="headerlink" title="2. 要解决什么问题"></a>2. 要解决什么问题</h2><h3 id="2-1-与-LSTM-共享的核心问题"><a href="#2-1-与-LSTM-共享的核心问题" class="headerlink" title="2.1 与 LSTM 共享的核心问题"></a>2.1 与 LSTM 共享的核心问题</h3><p>GRU 与 LSTM 面向同一类问题：对序列 $\mathbf{x}<em>1, \ldots, \mathbf{x}<em>T$ 建模 $P(y_t \mid \mathbf{x}</em>{\le t})$，并在 $\tau \gg 1$ 时仍能有效利用 $\mathbf{x}</em>{t-\tau}$ 的信息。</p>
+<p><strong>vanilla RNN 的瓶颈</strong>（梯度连乘、信息覆盖）在 <a href="./2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-LSTM.md">LSTM 文档</a> 中已详述；GRU 同样通过<strong>门控</strong>与<strong>插值更新</strong>缓解这些问题。</p>
+<h3 id="2-2-GRU-相对-LSTM-的额外诉求"><a href="#2-2-GRU-相对-LSTM-的额外诉求" class="headerlink" title="2.2 GRU 相对 LSTM 的额外诉求"></a>2.2 GRU 相对 LSTM 的额外诉求</h3><p>在保持长期记忆能力的前提下，进一步解决：</p>
+<ul>
+<li><strong>参数效率</strong>：小数据集或移动端部署时，更少参数 → 更低过拟合风险；</li>
+<li><strong>计算效率</strong>：少一门 → 每步少一次大矩阵乘；</li>
+<li><strong>实现简洁</strong>：仅维护 $\mathbf{h}_t$，无需同时传递 $(\mathbf{h}_t, \mathbf{C}_t)$。</li>
+</ul>
+<h3 id="2-3-设计思路：插值式记忆更新"><a href="#2-3-设计思路：插值式记忆更新" class="headerlink" title="2.3 设计思路：插值式记忆更新"></a>2.3 设计思路：插值式记忆更新</h3><p>GRU 将 LSTM 的”遗忘 + 输入”合并为<strong>更新门</strong> $\mathbf{z}_t$：</p>
+<p>$$<br>\mathbf{h}_t &#x3D; (1 - \mathbf{z}<em>t) \odot \mathbf{h}</em>{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t<br>$$</p>
+<ul>
+<li>$\mathbf{z}<em>t \approx 0$：几乎完全保留 $\mathbf{h}</em>{t-1}$（类似 LSTM 中 $\mathbf{f}_t \approx 1, \mathbf{i}_t \approx 0$）；</li>
+<li>$\mathbf{z}_t \approx 1$：几乎完全替换为候选 $\tilde{\mathbf{h}}_t$；</li>
+<li><strong>重置门</strong> $\mathbf{r}_t$ 控制计算 $\tilde{\mathbf{h}}<em>t$ 时”多大程度忽略” $\mathbf{h}</em>{t-1}$。</li>
+</ul>
+<hr>
+<h2 id="3-模型架构与原理"><a href="#3-模型架构与原理" class="headerlink" title="3. 模型架构与原理"></a>3. 模型架构与原理</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig02-architecture.png" alt="图 2　GRU 单元结构：更新门与重置门（科普示意）"></p>
+<h3 id="3-1-符号约定"><a href="#3-1-符号约定" class="headerlink" title="3.1 符号约定"></a>3.1 符号约定</h3><table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>典型维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$\mathbf{x}_t$</td>
+<td>时刻 $t$ 的输入</td>
+<td>$\mathbb{R}^{d_x}$</td>
+</tr>
+<tr>
+<td>$\mathbf{h}_{t-1}, \mathbf{h}_t$</td>
+<td>隐藏状态（兼作记忆）</td>
+<td>$\mathbb{R}^{d_h}$</td>
+</tr>
+<tr>
+<td>$\mathbf{z}_t$</td>
+<td>更新门（update gate）</td>
+<td>$\mathbb{R}^{d_h}$</td>
+</tr>
+<tr>
+<td>$\mathbf{r}_t$</td>
+<td>重置门（reset gate）</td>
+<td>$\mathbb{R}^{d_h}$</td>
+</tr>
+<tr>
+<td>$\tilde{\mathbf{h}}_t$</td>
+<td>候选隐藏状态</td>
+<td>$\mathbb{R}^{d_h}$</td>
+</tr>
+<tr>
+<td>$\sigma$</td>
+<td>sigmoid</td>
+<td>逐元素</td>
+</tr>
+<tr>
+<td>$\odot$</td>
+<td>Hadamard 积</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>拼接向量 $[\mathbf{h}_{t-1}; \mathbf{x}_t] \in \mathbb{R}^{d_h + d_x}$。</p>
+<h3 id="3-2-前向传播（标准-GRU）"><a href="#3-2-前向传播（标准-GRU）" class="headerlink" title="3.2 前向传播（标准 GRU）"></a>3.2 前向传播（标准 GRU）</h3><p><strong>Step 1 — 两门</strong></p>
+<p>$$<br>\begin{aligned}<br>\mathbf{z}_t &amp;&#x3D; \sigma!\left(\mathbf{W}<em>z,[\mathbf{h}</em>{t-1}; \mathbf{x}_t] + \mathbf{b}_z\right) &amp; \text{（更新门：新&#x2F;旧混合比例）} \<br>\mathbf{r}_t &amp;&#x3D; \sigma!\left(\mathbf{W}<em>r,[\mathbf{h}</em>{t-1}; \mathbf{x}_t] + \mathbf{b}_r\right) &amp; \text{（重置门：计算候选时是否”清零”旧状态）}<br>\end{aligned}<br>$$</p>
+<p><strong>Step 2 — 候选隐藏状态</strong></p>
+<p>$$<br>\tilde{\mathbf{h}}_t &#x3D; \tanh!\left(\mathbf{W}_h,[\mathbf{r}<em>t \odot \mathbf{h}</em>{t-1}; \mathbf{x}_t] + \mathbf{b}_h\right)<br>$$</p>
+<p>注意：$\mathbf{r}<em>t$ 仅作用于 $\mathbf{h}</em>{t-1}$ 再拼接，而非直接作用于 $\mathbf{x}_t$。</p>
+<p><strong>Step 3 — 更新隐藏状态（核心）</strong></p>
+<p>$$<br>\mathbf{h}_t &#x3D; (1 - \mathbf{z}<em>t) \odot \mathbf{h}</em>{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t<br>$$</p>
+<p><strong>Step 4 — 任务头</strong></p>
+<p>$$<br>\hat{\mathbf{y}}<em>t &#x3D; \mathbf{W}</em>{hy},\mathbf{h}_t + \mathbf{b}<em>y \quad\text{或}\quad \mathrm{softmax}(\mathbf{W}</em>{hy},\mathbf{h}_t + \mathbf{b}_y)<br>$$</p>
+<h3 id="3-3-门控直觉"><a href="#3-3-门控直觉" class="headerlink" title="3.3 门控直觉"></a>3.3 门控直觉</h3><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>条件</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>长期持有</strong></td>
+<td>$\mathbf{z}_t \approx 0$</td>
+<td>$\mathbf{h}<em>t \approx \mathbf{h}</em>{t-1}$，信息跨步传递</td>
+</tr>
+<tr>
+<td><strong>完全刷新</strong></td>
+<td>$\mathbf{z}_t \approx 1$</td>
+<td>$\mathbf{h}_t \approx \tilde{\mathbf{h}}_t$，写入新内容</td>
+</tr>
+<tr>
+<td><strong>忽略历史算候选</strong></td>
+<td>$\mathbf{r}_t \approx 0$</td>
+<td>候选 $\tilde{\mathbf{h}}_t$ 主要依赖 $\mathbf{x}_t$</td>
+</tr>
+<tr>
+<td><strong>正常递归</strong></td>
+<td>$\mathbf{r}_t \approx 1$</td>
+<td>候选同时看 $\mathbf{h}_{t-1}$ 与 $\mathbf{x}_t$</td>
+</tr>
+</tbody></table>
+<h3 id="3-4-GRU-与-LSTM-的结构对应（非严格等价）"><a href="#3-4-GRU-与-LSTM-的结构对应（非严格等价）" class="headerlink" title="3.4 GRU 与 LSTM 的结构对应（非严格等价）"></a>3.4 GRU 与 LSTM 的结构对应（非严格等价）</h3><table>
+<thead>
+<tr>
+<th>LSTM 组件</th>
+<th>GRU 中的近似角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>遗忘门 $\mathbf{f}_t$ + 输入门 $\mathbf{i}_t$</td>
+<td>更新门 $\mathbf{z}_t$（耦合控制）</td>
+</tr>
+<tr>
+<td>细胞状态 $\mathbf{C}_t$</td>
+<td>合并入 $\mathbf{h}_t$</td>
+</tr>
+<tr>
+<td>输出门 $\mathbf{o}_t$</td>
+<td>无独立输出门；$\mathbf{h}_t$ 直接对外</td>
+</tr>
+<tr>
+<td>候选 $\tilde{\mathbf{C}}_t$</td>
+<td>候选 $\tilde{\mathbf{h}}_t$，受重置门调制</td>
+</tr>
+</tbody></table>
+<h3 id="3-5-多层与双向扩展"><a href="#3-5-多层与双向扩展" class="headerlink" title="3.5 多层与双向扩展"></a>3.5 多层与双向扩展</h3><p>与 LSTM 相同：</p>
+<ul>
+<li><strong>堆叠 GRU</strong>：层间以上一层 $\mathbf{h}_t^{(l-1)}$ 为输入；</li>
+<li><strong>BiGRU</strong>：前向 + 后向，拼接 $[\overrightarrow{\mathbf{h}}_t; \overleftarrow{\mathbf{h}}_t]$ 用于编码任务。</li>
+</ul>
+<h3 id="3-6-三者对比"><a href="#3-6-三者对比" class="headerlink" title="3.6 三者对比"></a>3.6 三者对比</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Vanilla RNN</th>
+<th>LSTM</th>
+<th>GRU</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>状态变量</td>
+<td>$\mathbf{h}_t$</td>
+<td>$\mathbf{h}_t, \mathbf{C}_t$</td>
+<td>$\mathbf{h}_t$</td>
+</tr>
+<tr>
+<td>门数量</td>
+<td>0</td>
+<td>3</td>
+<td>2</td>
+</tr>
+<tr>
+<td>参数量（同 $d_h,d_x$）</td>
+<td>$1\times$</td>
+<td>$\approx 4\times$</td>
+<td>$\approx 3\times$</td>
+</tr>
+<tr>
+<td>长期依赖</td>
+<td>弱</td>
+<td>强</td>
+<td>强（任务相关）</td>
+</tr>
+<tr>
+<td>训练速度</td>
+<td>快</td>
+<td>慢</td>
+<td>中等</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-训练哪些参数"><a href="#4-训练哪些参数" class="headerlink" title="4. 训练哪些参数"></a>4. 训练哪些参数</h2><h3 id="4-1-单个-GRU-单元的可学习参数"><a href="#4-1-单个-GRU-单元的可学习参数" class="headerlink" title="4.1 单个 GRU 单元的可学习参数"></a>4.1 单个 GRU 单元的可学习参数</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>形状</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$\mathbf{W}_z, \mathbf{b}_z$</td>
+<td>$\mathbb{R}^{d_h \times (d_h + d_x)}$</td>
+<td>更新门</td>
+</tr>
+<tr>
+<td>$\mathbf{W}_r, \mathbf{b}_r$</td>
+<td>同上</td>
+<td>重置门</td>
+</tr>
+<tr>
+<td>$\mathbf{W}_h, \mathbf{b}_h$</td>
+<td>同上</td>
+<td>候选隐藏状态</td>
+</tr>
+<tr>
+<td>$\mathbf{W}_{hy}, \mathbf{b}_y$</td>
+<td>$\mathbb{R}^{d_y \times d_h}$</td>
+<td>输出头</td>
+</tr>
+</tbody></table>
+<p><strong>参数量估算</strong>（单层、单方向）：</p>
+<p>$$<br>|\Theta|_{\mathrm{GRU}} \approx 3 \cdot d_h ,(d_h + d_x + 1) + d_y(d_h + 1)<br>$$</p>
+<p>对比 LSTM 的 $4 \cdot d_c(d_h + d_x + 1)$，当 $d_h &#x3D; d_c &#x3D; d_x &#x3D; 256$ 时，GRU 核心约 <strong>394K</strong> vs LSTM <strong>525K</strong>，约为 <strong>75%</strong>。</p>
+<p><strong>权重共享</strong>：$\mathbf{W}_z, \mathbf{W}_r, \mathbf{W}_h$ 在所有时间步共享。</p>
+<h3 id="4-2-完整模型通常还包括"><a href="#4-2-完整模型通常还包括" class="headerlink" title="4.2 完整模型通常还包括"></a>4.2 完整模型通常还包括</h3><ul>
+<li>输入嵌入 $\mathbf{E}$；</li>
+<li>Dropout（推荐加在 $\mathbf{h}_t$ 输出或层间）；</li>
+<li>LayerNorm（可选）；</li>
+<li><strong>重置门偏置初始化</strong>：部分实现将 $\mathbf{b}_r$ 初始化为负值，使训练初期更倾向”保留历史”。</li>
+</ul>
+<hr>
+<h2 id="5-如何训练"><a href="#5-如何训练" class="headerlink" title="5. 如何训练"></a>5. 如何训练</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig03-training.png" alt="图 3　GRU 训练：BPTT 与参数更新（科普示意）"></p>
+<h3 id="5-1-数据与展开"><a href="#5-1-数据与展开" class="headerlink" title="5.1 数据与展开"></a>5.1 数据与展开</h3><p>与 LSTM 相同：序列 batch 化 → 按 $t&#x3D;1,\ldots,T$ 递推 $\mathbf{h}_t$ → 初始 $\mathbf{h}_0 &#x3D; \mathbf{0}$ 或可学习。</p>
+<p>GRU 仅返回 $(\mathbf{h}_t)$，无独立 $\mathbf{C}_t$，接口更简洁。</p>
+<h3 id="5-2-损失函数"><a href="#5-2-损失函数" class="headerlink" title="5.2 损失函数"></a>5.2 损失函数</h3><p>与 LSTM 完全一致，依任务选择：</p>
+<ul>
+<li><strong>序列标注</strong>：逐步交叉熵；</li>
+<li><strong>序列分类</strong>：末步交叉熵；</li>
+<li><strong>回归</strong>：MSE&#x2F;MAE；</li>
+<li><strong>语言建模</strong>：next-token 负对数似然。</li>
+</ul>
+<h3 id="5-3-反向传播：BPTT"><a href="#5-3-反向传播：BPTT" class="headerlink" title="5.3 反向传播：BPTT"></a>5.3 反向传播：BPTT</h3><p><strong>随时间反向传播</strong>（Backpropagation Through Time，<strong>BPTT</strong>）对 GRU 同样适用。对 $\mathbf{h}_t$ 的梯度递推含 $(1-\mathbf{z}_t)$ 项：</p>
+<p>$$<br>\frac{\partial \mathcal{L}}{\partial \mathbf{h}_{t-1}} &#x3D; \frac{\partial \mathcal{L}}{\partial \mathbf{h}_t} \odot (1 - \mathbf{z}_t) + \cdots<br>$$</p>
+<p>当 $\mathbf{z}_t \approx 0$ 时，梯度可沿 $\mathbf{h}$ 路径较完整回传——机制类似 LSTM 的 $\mathbf{f}_t \approx 1$。</p>
+<p><strong>Truncated BPTT</strong>：与 LSTM 相同，每 $K$ 步截断以节省显存。</p>
+<h3 id="5-4-优化实践"><a href="#5-4-优化实践" class="headerlink" title="5.4 优化实践"></a>5.4 优化实践</h3><table>
+<thead>
+<tr>
+<th>技巧</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>梯度裁剪</strong></td>
+<td>必备，尤其深层堆叠时</td>
+</tr>
+<tr>
+<td><strong>Adam &#x2F; AdamW</strong></td>
+<td>默认选择</td>
+</tr>
+<tr>
+<td><strong>Dropout</strong></td>
+<td>沿时间共享 mask（Variational Dropout）</td>
+</tr>
+<tr>
+<td><strong>GRU vs LSTM 选型</strong></td>
+<td>数据少、要快 → 先试 GRU；任务极长依赖 → 可试 LSTM</td>
+</tr>
+</tbody></table>
+<h3 id="5-5-PyTorch-最小示例"><a href="#5-5-PyTorch-最小示例" class="headerlink" title="5.5 PyTorch 最小示例"></a>5.5 PyTorch 最小示例</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">GRUClassifier</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;序列分类：输入 (batch, seq_len, d_x)，输出 (batch, num_classes)&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_x: <span class="built_in">int</span>, d_h: <span class="built_in">int</span>, num_classes: <span class="built_in">int</span>, num_layers: <span class="built_in">int</span> = <span class="number">1</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.gru = nn.GRU(</span><br><span class="line">            input_size=d_x,</span><br><span class="line">            hidden_size=d_h,</span><br><span class="line">            num_layers=num_layers,</span><br><span class="line">            batch_first=<span class="literal">True</span>,</span><br><span class="line">        )</span><br><span class="line">        <span class="variable language_">self</span>.head = nn.Linear(d_h, num_classes)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">        output, h_n = <span class="variable language_">self</span>.gru(x)  <span class="comment"># GRU 无 cell state，仅返回 h_n</span></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.head(h_n[-<span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-应用与局限"><a href="#6-应用与局限" class="headerlink" title="6. 应用与局限"></a>6. 应用与局限</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/gru-fig04-limitations.png" alt="图 4　GRU 的典型局限（科普示意）"></p>
+<h3 id="6-1-典型应用场景"><a href="#6-1-典型应用场景" class="headerlink" title="6.1 典型应用场景"></a>6.1 典型应用场景</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>神经机器翻译（历史）</strong></td>
+<td>2014–2016 seq2seq 默认编码器&#x2F;解码器</td>
+</tr>
+<tr>
+<td><strong>文本分类&#x2F;序列标注</strong></td>
+<td>与 BiLSTM 并列，GRU 常更快</td>
+</tr>
+<tr>
+<td><strong>时序预测</strong></td>
+<td>中等长度窗口，资源受限</td>
+</tr>
+<tr>
+<td><strong>语音&#x2F;对话</strong></td>
+<td>流式解码，低延迟</td>
+</tr>
+<tr>
+<td><strong>小样本学习</strong></td>
+<td>参数少于 LSTM，略抗过拟合</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-主要局限性"><a href="#6-2-主要局限性" class="headerlink" title="6.2 主要局限性"></a>6.2 主要局限性</h3><p><strong>（1）与 LSTM 一样，超长依赖仍有限</strong></p>
+<p>门控缓解梯度消失，但 $\tau \gg 500$ 时仍不如 <strong>Self-Attention</strong> &#x2F; <strong>Transformer</strong> 直接建模任意距离。</p>
+<p><strong>（2）无法时间步并行</strong></p>
+<p>与所有 RNN 相同，$t$ 依赖 $t-1$，GPU 并行度低于 Transformer。</p>
+<p><strong>（3）更新门与重置门耦合</strong></p>
+<p>LSTM 的遗忘&#x2F;输入可独立调节；GRU 的 $\mathbf{z}_t$ 同时控制”保留”与”写入”，表达力在理论上略弱于 LSTM（实践中差距常很小）。</p>
+<p><strong>（4）任务相关的选型不确定性</strong></p>
+<p>Chung 等（2014）表明两者互有胜负，无 universally better；需实验对比。</p>
+<p><strong>（5）重置门饱和风险</strong></p>
+<p>$\mathbf{r}_t \approx 0$ 时候选几乎不看历史，若长期饱和可能导致部分路径梯度仍衰减。</p>
+<p><strong>（6）已被 Transformer 取代的主流 NLP 地位</strong></p>
+<p>大规模预训练领域 GRU 已非主流；但在<strong>轻量、流式、边缘</strong>场景仍有价值。</p>
+<h3 id="6-3-GRU-vs-LSTM-选型建议"><a href="#6-3-GRU-vs-LSTM-选型建议" class="headerlink" title="6.3 GRU vs LSTM 选型建议"></a>6.3 GRU vs LSTM 选型建议</h3><table>
+<thead>
+<tr>
+<th>优先选 GRU</th>
+<th>优先选 LSTM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>训练速度&#x2F;参数量敏感</td>
+<td>序列极长、依赖极远</td>
+</tr>
+<tr>
+<td>中小规模数据</td>
+<td>需要独立细胞状态做精细门控分析</td>
+</tr>
+<tr>
+<td>快速 baseline</td>
+<td>历史复现&#x2F;与旧模型对齐</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-小结"><a href="#7-小结" class="headerlink" title="7. 小结"></a>7. 小结</h2><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>由来</strong></td>
+<td>2014 Cho 等，在 LSTM 之后简化门控 RNN</td>
+</tr>
+<tr>
+<td><strong>解决什么</strong></td>
+<td>长期依赖 + 比 LSTM 更省参数&#x2F;更快</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td>更新门 $\mathbf{z}_t$ + 重置门 $\mathbf{r}_t$，插值更新 $\mathbf{h}_t$</td>
+</tr>
+<tr>
+<td><strong>训练参数</strong></td>
+<td>$\mathbf{W}_z, \mathbf{W}_r, \mathbf{W}_h$ 及偏置，约为 LSTM 的 75%</td>
+</tr>
+<tr>
+<td><strong>训练方式</strong></td>
+<td>BPTT + 与 LSTM 相同的损失与优化技巧</td>
+</tr>
+<tr>
+<td><strong>局限</strong></td>
+<td>超长依赖、串行、与 LSTM 难分高下、NLP 主流已让位 Transformer</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Cho, K., van Merriënboer, B., Gulcehre, C., et al. (2014). Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation. <em>EMNLP</em>.</li>
+<li>Chung, J., Gulcehre, C., Cho, K., &amp; Bengio, Y. (2014). Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling. <em>NIPS</em> Workshop.</li>
+<li>Hochreiter, S., &amp; Schmidhuber, J. (1997). Long Short-Term Memory. <em>Neural Computation</em>.</li>
+<li>Goodfellow, I., Bengio, Y., &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press, Chapter 10.</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/neural-network/" rel="tag"><i class="fa fa-tag"></i> neural_network</a>
+          
+            <a href="/tags/GRU/" rel="tag"><i class="fa fa-tag"></i> GRU</a>
+          
+            <a href="/tags/RNN/" rel="tag"><i class="fa fa-tag"></i> RNN</a>
+          
+            <a href="/tags/LSTM/" rel="tag"><i class="fa fa-tag"></i> LSTM</a>
+          
+            <a href="/tags/%E5%BA%8F%E5%88%97%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 序列模型</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-LSTM/" rel="next" title="LSTM">
+                <i class="fa fa-chevron-left"></i> LSTM
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/" rel="prev" title="Self-Attention">
+                Self-Attention <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BB%8E%E4%BD%95%E5%A4%84%E6%9D%A5%EF%BC%9A%E6%BC%94%E8%BF%9B%E8%84%89%E7%BB%9C"><span class="nav-number">1.</span> <span class="nav-text">1. 从何处来：演进脉络</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%89%8D%E9%A9%B1%EF%BC%9Avanilla-RNN-%E4%B8%8E-LSTM"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 前驱：vanilla RNN 与 LSTM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-GRU-%E7%9A%84%E6%8F%90%E5%87%BA%E5%8A%A8%E6%9C%BA"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 GRU 的提出动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E5%90%8E%E7%BB%AD%E5%8F%91%E5%B1%95"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 后续发展</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%A6%81%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">2. 要解决什么问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%B8%8E-LSTM-%E5%85%B1%E4%BA%AB%E7%9A%84%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 与 LSTM 共享的核心问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-GRU-%E7%9B%B8%E5%AF%B9-LSTM-%E7%9A%84%E9%A2%9D%E5%A4%96%E8%AF%89%E6%B1%82"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 GRU 相对 LSTM 的额外诉求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF%EF%BC%9A%E6%8F%92%E5%80%BC%E5%BC%8F%E8%AE%B0%E5%BF%86%E6%9B%B4%E6%96%B0"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 设计思路：插值式记忆更新</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">3. 模型架构与原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%AC%A6%E5%8F%B7%E7%BA%A6%E5%AE%9A"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 符号约定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%89%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%88%E6%A0%87%E5%87%86-GRU%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 前向传播（标准 GRU）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E9%97%A8%E6%8E%A7%E7%9B%B4%E8%A7%89"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 门控直觉</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-GRU-%E4%B8%8E-LSTM-%E7%9A%84%E7%BB%93%E6%9E%84%E5%AF%B9%E5%BA%94%EF%BC%88%E9%9D%9E%E4%B8%A5%E6%A0%BC%E7%AD%89%E4%BB%B7%EF%BC%89"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 GRU 与 LSTM 的结构对应（非严格等价）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%A4%9A%E5%B1%82%E4%B8%8E%E5%8F%8C%E5%90%91%E6%89%A9%E5%B1%95"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 多层与双向扩展</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E4%B8%89%E8%80%85%E5%AF%B9%E6%AF%94"><span class="nav-number">3.6.</span> <span class="nav-text">3.6 三者对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%AE%AD%E7%BB%83%E5%93%AA%E4%BA%9B%E5%8F%82%E6%95%B0"><span class="nav-number">4.</span> <span class="nav-text">4. 训练哪些参数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%8D%95%E4%B8%AA-GRU-%E5%8D%95%E5%85%83%E7%9A%84%E5%8F%AF%E5%AD%A6%E4%B9%A0%E5%8F%82%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 单个 GRU 单元的可学习参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%AE%8C%E6%95%B4%E6%A8%A1%E5%9E%8B%E9%80%9A%E5%B8%B8%E8%BF%98%E5%8C%85%E6%8B%AC"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 完整模型通常还包括</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%A6%82%E4%BD%95%E8%AE%AD%E7%BB%83"><span class="nav-number">5.</span> <span class="nav-text">5. 如何训练</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E6%95%B0%E6%8D%AE%E4%B8%8E%E5%B1%95%E5%BC%80"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 数据与展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 损失函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%9ABPTT"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 反向传播：BPTT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E4%BC%98%E5%8C%96%E5%AE%9E%E8%B7%B5"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 优化实践</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-PyTorch-%E6%9C%80%E5%B0%8F%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 PyTorch 最小示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%BA%94%E7%94%A8%E4%B8%8E%E5%B1%80%E9%99%90"><span class="nav-number">6.</span> <span class="nav-text">6. 应用与局限</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%85%B8%E5%9E%8B%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 典型应用场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E4%B8%BB%E8%A6%81%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 主要局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-GRU-vs-LSTM-%E9%80%89%E5%9E%8B%E5%BB%BA%E8%AE%AE"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 GRU vs LSTM 选型建议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">7. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">8.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

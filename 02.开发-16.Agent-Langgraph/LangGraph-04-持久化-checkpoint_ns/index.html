@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="checkpoint_ns,namespace," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="compile 产物方法，以及 configurable.checkpoint_ns 如何作为复合主键的一维隔离主图与子图快照。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="checkpoint_ns">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="compile 产物方法，以及 configurable.checkpoint_ns 如何作为复合主键的一维隔离主图与子图快照。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/langgraph-fig01-compile-methods.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/langgraph-fig02-checkpoint-ns.png">
+<meta property="article:published_time" content="2026-08-10T09:45:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="checkpoint_ns">
+<meta property="article:tag" content="namespace">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/langgraph-fig01-compile-methods.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-Langgraph/LangGraph-04-持久化-checkpoint_ns/"/>
+
+
+
+
+
+  <title>checkpoint_ns | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">checkpoint_ns</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T17:45:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LangGraph/" itemprop="url" rel="index">
+                    <span itemprop="name">LangGraph</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  compile 产物方法，以及 configurable.checkpoint_ns 如何作为复合主键的一维隔离主图与子图快照。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>同一 <code>thread_id</code> 下嵌套 <strong>Subgraph</strong> 时，检查点还要再分一层空间，避免主图与子图的 superstep 快照串线。这一层键就是检查点命名空间（checkpoint namespace，<strong>checkpoint_ns</strong>），写在 <code>config[&quot;configurable&quot;]</code> 里，和 <code>thread_id</code> 一起交给 checkpointer。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>checkpoint_ns</strong> &#x3D; 同一会话内再切「哪张图」的快照抽屉；主图默认空串 <code>&quot;&quot;</code>，进子图时由框架改写成 <code>节点名:task_id</code>。</p>
+</blockquote>
+<p>社区方案：用官方 <a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langgraph/checkpointers">Checkpointers</a> 的 <code>(thread_id, checkpoint_ns, checkpoint_id)</code> 主键，不要自研第二套分区。风险：父图上的 <code>get_state</code> &#x2F; <code>get_state_history</code> 见到<strong>非空</strong> ns 会先按子图路径路由；手搓字符串当租户键会报 <code>Subgraph … not found</code>。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/langgraph-fig01-compile-methods.png" alt="图 1　StateGraph 是图纸；compile 后的 CompiledStateGraph 才提供运行 &#x2F; 快照 &#x2F; 改写按钮（对应 §4.1）"></p>
+<hr>
+<h2 id="1-定位"><a href="#1-定位" class="headerlink" title="1. 定位"></a>1. 定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>compile 产物 API + checkpoint 逻辑分区</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>configurable.checkpoint_ns</code> → 读写对应 ns 快照</td>
+</tr>
+<tr>
+<td>核心 API</td>
+<td><code>compile</code>、<code>invoke</code> &#x2F; <code>stream</code>、<code>get_state</code>、<code>checkpoint_ns</code></td>
+</tr>
+<tr>
+<td>依赖 LangChain</td>
+<td><code>Runnable</code> 接口（<code>invoke</code> &#x2F; <code>stream</code> &#x2F; <code>batch</code>）</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：只配 <code>thread_id</code> 只能隔离会话；子图与主图共用同一 thread 时，必须再靠 ns 把各自 superstep 快照拆开。</p>
+<hr>
+<h2 id="2-图拓扑"><a href="#2-图拓扑" class="headerlink" title="2. 图拓扑"></a>2. 图拓扑</h2><p><strong>节点表</strong></p>
+<table>
+<thead>
+<tr>
+<th>节点名</th>
+<th>职责</th>
+<th>读 State</th>
+<th>写 State</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>parent</code></td>
+<td>主图写 tenant</td>
+<td><code>tenant</code></td>
+<td><code>log</code></td>
+</tr>
+<tr>
+<td><code>child</code></td>
+<td>子流程 mock</td>
+<td><code>tenant</code></td>
+<td><code>log</code></td>
+</tr>
+</tbody></table>
+<p><strong>边表</strong></p>
+<table>
+<thead>
+<tr>
+<th>源</th>
+<th>目标</th>
+<th>类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>START</td>
+<td>parent</td>
+<td>固定</td>
+</tr>
+<tr>
+<td>parent</td>
+<td>child</td>
+<td>固定</td>
+</tr>
+<tr>
+<td>child</td>
+<td>END</td>
+<td>固定</td>
+</tr>
+</tbody></table>
+<p>本篇先用<strong>普通节点</strong>看 <code>base_cfg</code> 的 ns 如何锁定主图抽屉；§5 后半再挂真正的 Subgraph，看框架如何自动改写 ns。</p>
+<hr>
+<h2 id="3-invoke-生命周期"><a href="#3-invoke-生命周期" class="headerlink" title="3. invoke 生命周期"></a>3. invoke 生命周期</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. StateGraph.compile(checkpointer=cp) → CompiledStateGraph</span><br><span class="line">2. invoke(input, base_cfg)：base_cfg.configurable = &#123;thread_id=T, checkpoint_ns=&quot;&quot;&#125;</span><br><span class="line">3. 调度前 get_tuple(T, ns=&quot;&quot;)：有快照则灌 channels，无则用 input</span><br><span class="line">4. parent → child 各写一拍；每 superstep 结束 put 到 (T, &quot;&quot;)</span><br><span class="line">5. get_state(base_cfg) 再按 (T, &quot;&quot;) 取最新 StateSnapshot</span><br><span class="line">6. 若节点是 Subgraph：框架把该任务的 ns 改成 &quot;节点名:task_id&quot; 再读写</span><br></pre></td></tr></table></figure>
+
+<p>省略 <code>checkpoint_ns</code> 与显式 <code>&quot;&quot;</code> <strong>等价</strong>，都落主图抽屉。</p>
+<hr>
+<h2 id="4-原理"><a href="#4-原理" class="headerlink" title="4. 原理"></a>4. 原理</h2><h3 id="4-1-compile-产物与方法"><a href="#4-1-compile-产物与方法" class="headerlink" title="4.1 compile 产物与方法"></a>4.1 compile 产物与方法</h3><p><code>StateGraph(State)</code> 只是图纸，不能跑。<code>compile(...)</code> 返回 <strong>CompiledStateGraph</strong>（底层 <strong>Pregel</strong>，并实现 LangChain <code>Runnable</code>）。</p>
+<table>
+<thead>
+<tr>
+<th>分组</th>
+<th>方法</th>
+<th>是否吃 config.ns</th>
+<th>做什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>运行</td>
+<td><code>invoke</code> &#x2F; <code>ainvoke</code></td>
+<td>是</td>
+<td>同步 &#x2F; 异步跑完全图，返回终态</td>
+</tr>
+<tr>
+<td>运行</td>
+<td><code>stream</code> &#x2F; <code>astream</code></td>
+<td>是</td>
+<td>按 <code>stream_mode</code> 推事件</td>
+</tr>
+<tr>
+<td>运行</td>
+<td><code>stream_events</code> &#x2F; <code>astream_events</code></td>
+<td>是</td>
+<td>LCEL 风格事件流</td>
+</tr>
+<tr>
+<td>快照</td>
+<td><code>get_state</code> &#x2F; <code>aget_state</code></td>
+<td>是</td>
+<td>读该 <code>(thread_id, ns)</code> 最新（或指定 <code>checkpoint_id</code>）快照</td>
+</tr>
+<tr>
+<td>快照</td>
+<td><code>get_state_history</code> &#x2F; <code>aget_state_history</code></td>
+<td>是</td>
+<td>按 ns 列历史，新→旧</td>
+</tr>
+<tr>
+<td>改写</td>
+<td><code>update_state</code> &#x2F; <code>aupdate_state</code></td>
+<td>是</td>
+<td>把 values 合并进该 ns 当前 checkpoint</td>
+</tr>
+<tr>
+<td>改写</td>
+<td><code>bulk_update_state</code> &#x2F; <code>abulk_update_state</code></td>
+<td>是</td>
+<td>批量 &#x2F; 多步补丁</td>
+</tr>
+<tr>
+<td>拓扑</td>
+<td><code>get_graph</code> &#x2F; <code>get_subgraphs</code></td>
+<td>否</td>
+<td>画图、枚举已注册子图</td>
+</tr>
+<tr>
+<td>契约</td>
+<td><code>get_input_schema</code> &#x2F; <code>get_output_schema</code> 及 <code>*jsonschema</code></td>
+<td>否</td>
+<td>输入输出 schema</td>
+</tr>
+<tr>
+<td>其它</td>
+<td><code>with_config</code> &#x2F; <code>copy</code> &#x2F; <code>clear_cache</code></td>
+<td>视用法</td>
+<td>预置 config、清节点缓存</td>
+</tr>
+</tbody></table>
+<p>未传 <code>checkpointer</code> 时，运行类方法仍可用；<strong>快照 &#x2F; 改写类会 <code>ValueError: No checkpointer set</code></strong>。<code>batch</code> &#x2F; <code>abatch</code> 来自 Runnable，本篇不展开。</p>
+<p><code>base_cfg</code> 只对「吃 config」的那一组生效：运行、快照、改写都把同一份 <code>configurable</code> 传给 checkpointer。</p>
+<h3 id="4-2-一次-invoke-里-ns-怎么参与"><a href="#4-2-一次-invoke-里-ns-怎么参与" class="headerlink" title="4.2 一次 invoke 里 ns 怎么参与"></a>4.2 一次 invoke 里 ns 怎么参与</h3><p>复合主键是 <code>(thread_id, checkpoint_ns, checkpoint_id)</code>。<strong>InMemorySaver</strong> 把三本账嵌成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">storage[thread_id][checkpoint_ns][checkpoint_id] = (checkpoint, metadata, parent_id)</span><br><span class="line">blobs[(thread_id, ns, channel, version)] = 字段值</span><br><span class="line">writes[(thread_id, ns, checkpoint_id)] = 本拍 pending writes</span><br></pre></td></tr></table></figure>
+
+<p>图仍只打 <code>get_tuple</code> &#x2F; <code>put</code>，不直接翻这些 dict。SQL 实现则是两张表同一三维：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">PRIMARY KEY</span> (thread_id, checkpoint_ns, checkpoint_id)</span><br></pre></td></tr></table></figure>
+
+<p><code>base_cfg</code> 通常长这样：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">base_cfg = &#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: <span class="string">&quot;t1&quot;</span>, <span class="string">&quot;checkpoint_ns&quot;</span>: <span class="string">&quot;&quot;</span>&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>挂在链路上：</p>
+<ol>
+<li><code>compile(checkpointer=cp)</code> 把 Saver 绑到 CompiledStateGraph。  </li>
+<li><code>invoke(input, base_cfg)</code>（或 <code>stream</code>）取出 <code>thread_id=&quot;t1&quot;</code>、<code>checkpoint_ns=&quot;&quot;</code>。没写 ns 时运行时补 <code>&quot;&quot;</code>。  </li>
+<li><strong>调度前</strong> <code>cp.get_tuple(base_cfg)</code>：无 <code>checkpoint_id</code> 则 <code>WHERE thread_id=&#39;t1&#39; AND checkpoint_ns=&#39;&#39; ORDER BY checkpoint_id DESC LIMIT 1</code>。命中则 channels 灌入上次 state；未命中从本次 input 起。  </li>
+<li>节点返回 partial update，reducer 合并（本篇 <code>log</code> 走 <code>operator.add</code>）。  </li>
+<li><strong>每个 superstep 结束</strong> <code>cp.put(...)</code> 仍写到 <code>(t1, &quot;&quot;)</code>，并生成新的 <code>checkpoint_id</code>。<code>put_writes</code> 的 pending writes 也挂在同一三维上。  </li>
+<li><code>get_state(base_cfg)</code> 再走第 3 步的 <code>get_tuple</code>，包装成 <code>StateSnapshot</code>（<code>values</code> &#x2F; <code>next</code> &#x2F; <code>config</code> &#x2F; <code>metadata</code>）。<code>config</code> 里会回填实际用过的 <code>thread_id</code>、<code>checkpoint_ns</code>、<code>checkpoint_id</code>。</li>
+</ol>
+<p>少了第 2 步的 <code>thread_id</code> → checkpointer 无法定位行。<br>少了第 3 步按 <strong>ns 过滤</strong> → 主图会读到子图快照，或反过来。<br>第 6 步若把 ns 改成另一个字符串 → 读的是另一只抽屉，不是「同一份 state 的别名」。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint_ns/langgraph-fig02-checkpoint-ns.png" alt="图 2　同一 thread_id 下，主图 &quot;&quot; 与子图 node:uuid 是两排抽屉（对应 §4.2～§4.3）"></p>
+<h3 id="4-3-子图如何自动改写-ns"><a href="#4-3-子图如何自动改写-ns" class="headerlink" title="4.3 子图如何自动改写 ns"></a>4.3 子图如何自动改写 ns</h3><p>进入已 <code>compile</code> 的子图节点时，框架<strong>不沿用</strong>调用方手写的自定义 ns，而是拼任务级命名空间：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">parent_ns 为空：  &#123;节点名&#125;:&#123;task_id&#125;</span><br><span class="line">parent_ns 非空：  &#123;parent_ns&#125;|&#123;节点名&#125;:&#123;task_id&#125;</span><br></pre></td></tr></table></figure>
+
+<p>分隔符：层级用 <code>|</code>，节点与 task 用 <code>:</code>。嵌套两层形如 <code>outer:uuid|inner:uuid</code>。节点内可读：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">my_node</span>(<span class="params">state, config</span>):</span><br><span class="line">    ns = config[<span class="string">&quot;configurable&quot;</span>][<span class="string">&quot;checkpoint_ns&quot;</span>]  <span class="comment"># 主图 &quot;&quot;；子图 &quot;sub:&lt;task_id&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>子图 <code>compile(checkpointer=None)</code> 时继承父图 Saver，只是 ns 不同；<code>checkpointer=True</code> 则子图自管历史；<code>False</code> 关闭子图落盘。</p>
+<p>调试已注册子图：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">snap = graph.get_state(base_cfg, subgraphs=<span class="literal">True</span>)</span><br><span class="line"><span class="comment"># 中断或待执行子图任务时：snap.tasks[i].state.config[&quot;configurable&quot;][&quot;checkpoint_ns&quot;]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-4-父图-get-state-对非空-ns-的路由"><a href="#4-4-父图-get-state-对非空-ns-的路由" class="headerlink" title="4.4 父图 get_state 对非空 ns 的路由"></a>4.4 父图 get_state 对非空 ns 的路由</h3><p><code>get_state</code> &#x2F; <code>get_state_history</code> 在<strong>父图</strong>上若看到非空 <code>checkpoint_ns</code>，且 config 里没有注入内部 checkpointer 键，会先 <code>recast_checkpoint_ns</code>（去掉 <code>:task_id</code>）再 <code>get_subgraphs(namespace=...)</code>：</p>
+<table>
+<thead>
+<tr>
+<th>传入 ns</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&quot;&quot;</code> 或省略</td>
+<td>读主图抽屉</td>
+</tr>
+<tr>
+<td><code>child:&lt;task_id&gt;</code> 且存在子图 <code>child</code></td>
+<td>委派给该子图的 <code>get_state</code></td>
+</tr>
+<tr>
+<td><code>&quot;sub-demo&quot;</code> 等未注册名</td>
+<td><code>ValueError: Subgraph sub-demo not found</code></td>
+</tr>
+</tbody></table>
+<p>因此：<strong>多租户用 <code>thread_id</code>（如 <code>org:user</code>），不要用 <code>checkpoint_ns</code> 当租户键。</strong> 手搓 ns 既不会自动建抽屉，也会让快照 API 走错路由。</p>
+<hr>
+<h2 id="5-最小可运行示例"><a href="#5-最小可运行示例" class="headerlink" title="5. 最小可运行示例"></a>5. 最小可运行示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> operator</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated, TypedDict</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> langgraph.checkpoint.memory <span class="keyword">import</span> InMemorySaver</span><br><span class="line"><span class="keyword">from</span> langgraph.graph <span class="keyword">import</span> StateGraph, START, END</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">State</span>(<span class="title class_ inherited__">TypedDict</span>):</span><br><span class="line">    tenant: <span class="built_in">str</span></span><br><span class="line">    log: Annotated[<span class="built_in">list</span>[<span class="built_in">str</span>], operator.add]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">parent</span>(<span class="params">state: State</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;log&quot;</span>: [<span class="string">f&quot;parent:<span class="subst">&#123;state[<span class="string">&#x27;tenant&#x27;</span>]&#125;</span>&quot;</span>]&#125;  <span class="comment"># 拓扑 §2 parent</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">child</span>(<span class="params">state: State, config</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    ns = config[<span class="string">&quot;configurable&quot;</span>].get(<span class="string">&quot;checkpoint_ns&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;log&quot;</span>: [<span class="string">f&quot;child:<span class="subst">&#123;state[<span class="string">&#x27;tenant&#x27;</span>]&#125;</span>:ns=<span class="subst">&#123;ns!r&#125;</span>&quot;</span>]&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">builder = StateGraph(State)</span><br><span class="line">builder.add_node(<span class="string">&quot;parent&quot;</span>, parent)</span><br><span class="line">builder.add_node(<span class="string">&quot;child&quot;</span>, child)</span><br><span class="line">builder.add_edge(START, <span class="string">&quot;parent&quot;</span>)</span><br><span class="line">builder.add_edge(<span class="string">&quot;parent&quot;</span>, <span class="string">&quot;child&quot;</span>)</span><br><span class="line">builder.add_edge(<span class="string">&quot;child&quot;</span>, END)</span><br><span class="line"></span><br><span class="line">cp = InMemorySaver()</span><br><span class="line">graph = builder.<span class="built_in">compile</span>(checkpointer=cp)</span><br><span class="line"></span><br><span class="line">base_cfg = &#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: <span class="string">&quot;t1&quot;</span>, <span class="string">&quot;checkpoint_ns&quot;</span>: <span class="string">&quot;&quot;</span>&#125;&#125;</span><br><span class="line">graph.invoke(&#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;acme&quot;</span>, <span class="string">&quot;log&quot;</span>: []&#125;, base_cfg)</span><br><span class="line"></span><br><span class="line">main = graph.get_state(base_cfg)</span><br><span class="line"><span class="built_in">print</span>(main.values[<span class="string">&quot;log&quot;</span>])</span><br><span class="line"><span class="built_in">print</span>(main.config[<span class="string">&quot;configurable&quot;</span>][<span class="string">&quot;checkpoint_ns&quot;</span>])  <span class="comment"># &quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 省略 ns ≡ 显式 &quot;&quot;</span></span><br><span class="line">same = graph.get_state(&#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: <span class="string">&quot;t1&quot;</span>&#125;&#125;)</span><br><span class="line"><span class="built_in">print</span>(same.values[<span class="string">&quot;log&quot;</span>] == main.values[<span class="string">&quot;log&quot;</span>])  <span class="comment"># True</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 父图上手搓未注册 ns → 当子图路径，找不到就报错</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    graph.get_state(&#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: <span class="string">&quot;t1&quot;</span>, <span class="string">&quot;checkpoint_ns&quot;</span>: <span class="string">&quot;sub-demo&quot;</span>&#125;&#125;)</span><br><span class="line"><span class="keyword">except</span> ValueError <span class="keyword">as</span> e:</span><br><span class="line">    <span class="built_in">print</span>(e)</span><br></pre></td></tr></table></figure>
+
+<p>子图自动 ns（同一 thread，另一只抽屉）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">sub = StateGraph(State)</span><br><span class="line">sub.add_node(<span class="string">&quot;child&quot;</span>, child)</span><br><span class="line">sub.add_edge(START, <span class="string">&quot;child&quot;</span>)</span><br><span class="line">sub.add_edge(<span class="string">&quot;child&quot;</span>, END)</span><br><span class="line">subgraph = sub.<span class="built_in">compile</span>()  <span class="comment"># 继承父图 checkpointer</span></span><br><span class="line"></span><br><span class="line">main = StateGraph(State)</span><br><span class="line">main.add_node(<span class="string">&quot;parent&quot;</span>, parent)</span><br><span class="line">main.add_node(<span class="string">&quot;sub&quot;</span>, subgraph)</span><br><span class="line">main.add_edge(START, <span class="string">&quot;parent&quot;</span>)</span><br><span class="line">main.add_edge(<span class="string">&quot;parent&quot;</span>, <span class="string">&quot;sub&quot;</span>)</span><br><span class="line">main.add_edge(<span class="string">&quot;sub&quot;</span>, END)</span><br><span class="line"></span><br><span class="line">g2 = main.<span class="built_in">compile</span>(checkpointer=InMemorySaver())</span><br><span class="line">cfg = &#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: <span class="string">&quot;t1&quot;</span>&#125;&#125;  <span class="comment"># 不必手写 ns</span></span><br><span class="line">g2.invoke(&#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;acme&quot;</span>, <span class="string">&quot;log&quot;</span>: []&#125;, cfg)</span><br><span class="line">snap = g2.get_state(cfg)</span><br><span class="line"><span class="built_in">print</span>(snap.config[<span class="string">&quot;configurable&quot;</span>][<span class="string">&quot;checkpoint_ns&quot;</span>])  <span class="comment"># 主图仍是 &quot;&quot;</span></span><br><span class="line"><span class="built_in">print</span>(snap.values[<span class="string">&quot;log&quot;</span>])  <span class="comment"># 含 child:...:ns=&#x27;sub:&lt;task_id&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-执行追踪"><a href="#6-执行追踪" class="headerlink" title="6. 执行追踪"></a>6. 执行追踪</h2><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>ns</th>
+<th><code>log</code> &#x2F; 结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>invoke(..., base_cfg)</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>[&quot;parent:acme&quot;, &quot;child:acme:ns=&#39;&#39;&quot;]</code></td>
+</tr>
+<tr>
+<td><code>get_state(base_cfg)</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>同上</td>
+</tr>
+<tr>
+<td><code>get_state({thread_id: t1})</code></td>
+<td>默认 <code>&quot;&quot;</code></td>
+<td>与上一行同一抽屉</td>
+</tr>
+<tr>
+<td><code>get_state(ns=&quot;sub-demo&quot;)</code></td>
+<td>手搓</td>
+<td><code>Subgraph sub-demo not found</code></td>
+</tr>
+<tr>
+<td>子图节点内读 config</td>
+<td><code>sub:&lt;task_id&gt;</code></td>
+<td>child 那一行带该 ns</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="重要配置参数"><a href="#重要配置参数" class="headerlink" title="重要配置参数"></a>重要配置参数</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>compile(checkpointer=...)</code></td>
+<td>Saver &#x2F; <code>None</code></td>
+<td>生成 CompiledStateGraph 并绑短时记忆</td>
+<td>不传则无法 <code>get_state</code></td>
+<td>InMemorySaver</td>
+<td>生产换 Sqlite&#x2F;Postgres</td>
+</tr>
+<tr>
+<td><code>configurable.thread_id</code></td>
+<td>str，必填（有 cp 时）</td>
+<td>会话主键第一维</td>
+<td>换 ID &#x3D; 新会话</td>
+<td>UUID &#x2F; <code>org:user</code></td>
+<td>多租户只改这一维</td>
+</tr>
+<tr>
+<td><code>configurable.checkpoint_ns</code></td>
+<td>str，默认 <code>&quot;&quot;</code></td>
+<td>会话内图级分区</td>
+<td>读写都按这维过滤</td>
+<td>主图空串</td>
+<td>子图交给框架</td>
+</tr>
+<tr>
+<td><code>configurable.checkpoint_id</code></td>
+<td>str，可选</td>
+<td>定点快照</td>
+<td>不传则取该 ns 最新</td>
+<td>时间旅行</td>
+<td>与 ns 同时匹配</td>
+</tr>
+<tr>
+<td><code>invoke</code> &#x2F; <code>stream</code></td>
+<td><code>(input, config)</code></td>
+<td>按 ns 加载再写入</td>
+<td>写到 config 指定的抽屉</td>
+<td>多轮续跑</td>
+<td>主图用 <code>base_cfg</code></td>
+</tr>
+<tr>
+<td><code>get_state(config, subgraphs=False)</code></td>
+<td>→ <code>StateSnapshot</code></td>
+<td>读最新快照；非空 ns 先路由子图</td>
+<td>错 ns 读空或抛错</td>
+<td>调试子图</td>
+<td>嵌套用 <code>subgraphs=True</code></td>
+</tr>
+<tr>
+<td><code>get_state_history(config)</code></td>
+<td>迭代器</td>
+<td>只列该 ns 的历史</td>
+<td>不会跨 ns 混排</td>
+<td>回溯</td>
+<td>先对准 ns</td>
+</tr>
+<tr>
+<td><code>update_state(config, values)</code></td>
+<td>→ 新 config</td>
+<td>补丁写进该 ns</td>
+<td>写错 ns 改不到主图</td>
+<td>HITL</td>
+<td>与 resume 同 cfg</td>
+</tr>
+<tr>
+<td>Subgraph <code>compile(checkpointer=)</code></td>
+<td><code>None</code> &#x2F; <code>True</code> &#x2F; <code>False</code></td>
+<td>是否自管子图历史</td>
+<td><code>None</code> 继承父 Saver+独立 ns</td>
+<td>嵌套图</td>
+<td>默认 <code>None</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-易踩坑"><a href="#7-易踩坑" class="headerlink" title="7. 易踩坑"></a>7. 易踩坑</h2><ol>
+<li><strong>把 <code>checkpoint_ns</code> 当租户 ID</strong>：父图 <code>get_state</code> 会当子图路径；租户隔离用 <code>thread_id</code>。  </li>
+<li><strong><code>get_state</code> 未设 ns 却查子图</strong>：默认读主图 <code>&quot;&quot;</code>；要用 <code>subgraphs=True</code> 或 snapshot 回填的真实 ns。  </li>
+<li><strong>混淆 checkpoint_ns 与 Store namespace</strong>：Store 是跨 thread 长期记忆，不是 checkpoint 主键。  </li>
+<li><strong>在 <code>StateSnapshot</code> 上读 <code>.configurable</code></strong>：字段是 <code>.config[&quot;configurable&quot;]</code>。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><code>compile</code> 之后才有 <code>invoke</code> &#x2F; <code>stream</code> &#x2F; <code>get_state</code> &#x2F; <code>update_state</code> 等方法；快照类必须带 checkpointer。  </li>
+<li><strong><code>base_cfg[&quot;configurable&quot;][&quot;checkpoint_ns&quot;]</code></strong> 是复合主键的一维：invoke 读写、get_state 读取，都只碰这一只抽屉。  </li>
+<li>主图用 <code>&quot;&quot;</code>；子图 ns 由框架写成 <code>节点名:task_id</code>。不要手搓 ns 做多租户。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langgraph/checkpointers">Checkpointers — checkpoint namespace</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://reference.langchain.com/python/langgraph/pregel/Pregel">CompiledStateGraph &#x2F; Pregel</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langgraph/use-subgraphs">Subgraphs</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/checkpoint-ns/" rel="tag"><i class="fa fa-tag"></i> checkpoint_ns</a>
+          
+            <a href="/tags/namespace/" rel="tag"><i class="fa fa-tag"></i> namespace</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-04-%E6%8C%81%E4%B9%85%E5%8C%96-checkpoint%E4%B8%8Ethread_id/" rel="next" title="checkpoint与thread_id">
+                <i class="fa fa-chevron-left"></i> checkpoint与thread_id
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-05-%E4%B8%AD%E6%96%AD-interrupt%E4%B8%8EHITL/" rel="prev" title="interrupt与HITL">
+                interrupt与HITL <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%9B%BE%E6%8B%93%E6%89%91"><span class="nav-number">2.</span> <span class="nav-text">2. 图拓扑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-invoke-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-number">3.</span> <span class="nav-text">3. invoke 生命周期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86"><span class="nav-number">4.</span> <span class="nav-text">4. 原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-compile-%E4%BA%A7%E7%89%A9%E4%B8%8E%E6%96%B9%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 compile 产物与方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%B8%80%E6%AC%A1-invoke-%E9%87%8C-ns-%E6%80%8E%E4%B9%88%E5%8F%82%E4%B8%8E"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 一次 invoke 里 ns 怎么参与</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%AD%90%E5%9B%BE%E5%A6%82%E4%BD%95%E8%87%AA%E5%8A%A8%E6%94%B9%E5%86%99-ns"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 子图如何自动改写 ns</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E7%88%B6%E5%9B%BE-get-state-%E5%AF%B9%E9%9D%9E%E7%A9%BA-ns-%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 父图 get_state 对非空 ns 的路由</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%89%A7%E8%A1%8C%E8%BF%BD%E8%B8%AA"><span class="nav-number">6.</span> <span class="nav-text">6. 执行追踪</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">6.1.</span> <span class="nav-text">重要配置参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">7.</span> <span class="nav-text">7. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

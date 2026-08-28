@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Pydantic,State,Annotated," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="用 Pydantic v2 定义 AgentState：Field 约束、语义类型、自定义校验，以及 Annotated 同时挂 reducer 与校验元数据的功能图谱。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PydanticState">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="用 Pydantic v2 定义 AgentState：Field 约束、语义类型、自定义校验，以及 Annotated 同时挂 reducer 与校验元数据的功能图谱。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/langgraph-fig01-annotated-map.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/langgraph-fig02-validation-gate.png">
+<meta property="article:published_time" content="2026-08-10T09:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Annotated">
+<meta property="article:tag" content="Pydantic">
+<meta property="article:tag" content="State">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/langgraph-fig01-annotated-map.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-Langgraph/LangGraph-02-状态-PydanticState/"/>
+
+
+
+
+
+  <title>PydanticState | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">PydanticState</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T17:20:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LangGraph/" itemprop="url" rel="index">
+                    <span itemprop="name">LangGraph</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  用 Pydantic v2 定义 AgentState：Field 约束、语义类型、自定义校验，以及 Annotated 同时挂 reducer 与校验元数据的功能图谱。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>业务字段越来越多——<code>user_id</code> 必须是通用唯一识别码（Universally Unique Identifier，UUID）、<code>$amount \ge 0$</code>、SKU 必须匹配正则。纯 <strong>TypedDict</strong> 只有静态类型；<strong>Pydantic v2</strong> 模型作 State schema，可在 <strong>invoke 入图</strong>时做运行时校验，并继续用 <strong>注解类型（Annotated）</strong> 挂归约器（reducer）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Annotated</strong> &#x3D; 在类型上附加元数据的写法；LangGraph 读其中的 <strong>reducer</strong>，Pydantic 读其中的 <strong>Field &#x2F; Validator</strong>。两者可叠在同一字段上。</p>
+</blockquote>
+<p>社区方案：State 用官方支持的 <code>pydantic.BaseModel</code>（<a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#define-state">Define state — Pydantic</a>），约束用 Pydantic v2 <code>Field</code> &#x2F; 语义类型，不要自研校验层。风险：校验<strong>只发生在首节点输入</strong>；<code>create_agent</code> <strong>不支持</strong> Pydantic State；递归校验比 TypedDict &#x2F; dataclass 慢。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/langgraph-fig01-annotated-map.png" alt="图 1　Annotated 双通道：左抽屉给 Pydantic 校验，右抽屉给 LangGraph reducer（对应 §5）"></p>
+<hr>
+<h2 id="1-定位"><a href="#1-定位" class="headerlink" title="1. 定位"></a>1. 定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>带运行时校验的 State schema（入图闸门）</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>invoke(dict | BaseModel)</code> → 校验通过后跑图 → <strong>返回 dict</strong></td>
+</tr>
+<tr>
+<td>核心 API</td>
+<td><code>BaseModel</code>、<code>Field</code>、<code>Annotated[T, reducer | Field(...)]</code></td>
+</tr>
+<tr>
+<td>依赖 LangChain</td>
+<td>对话字段用 <code>AnyMessage</code> + <code>add_messages</code>；与 ChatModel 参数无关</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：TypedDict 够编排、不够守边界。对外 API &#x2F; 工单入参需要 UUID、金额、枚举时，用 Pydantic 把非法输入挡在第一拍之前。</p>
+<hr>
+<h2 id="2-图拓扑"><a href="#2-图拓扑" class="headerlink" title="2. 图拓扑"></a>2. 图拓扑</h2><p><strong>节点表</strong></p>
+<table>
+<thead>
+<tr>
+<th>节点名</th>
+<th>职责</th>
+<th>读 State</th>
+<th>写 State</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>validate_order</code></td>
+<td>读金额与明细</td>
+<td><code>amount</code>, <code>items</code></td>
+<td><code>status</code>, <code>logs</code>, <code>messages</code></td>
+</tr>
+<tr>
+<td><code>confirm</code></td>
+<td>确认</td>
+<td><code>status</code></td>
+<td><code>status</code>, <code>logs</code></td>
+</tr>
+</tbody></table>
+<p><strong>边表</strong></p>
+<table>
+<thead>
+<tr>
+<th>源</th>
+<th>目标</th>
+<th>类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>START</td>
+<td>validate_order</td>
+<td>固定</td>
+</tr>
+<tr>
+<td>validate_order</td>
+<td>confirm</td>
+<td>固定</td>
+</tr>
+<tr>
+<td>confirm</td>
+<td>END</td>
+<td>固定</td>
+</tr>
+</tbody></table>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-PydanticState/langgraph-fig02-validation-gate.png" alt="图 2　Pydantic 闸门在 START 之后、首节点之前；&#96;amount&#x3D;-1&#96; 进 ValidationError 桶，图不调度（对应 §3～§4）"></p>
+<hr>
+<h2 id="3-invoke-生命周期"><a href="#3-invoke-生命周期" class="headerlink" title="3. invoke 生命周期"></a>3. invoke 生命周期</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. invoke 传入 dict（或 BaseModel 实例）</span><br><span class="line">2. 用 AgentState 校验「首节点输入」：负 amount / 脏字段 / 坏 UUID → ValidationError，图不跑</span><br><span class="line">3. validate_order 读已校验对象，返回 partial update</span><br><span class="line">4. 合并时读 Annotated 上的 reducer（logs 走 operator.add，messages 走 add_messages；标量 last-write-wins）</span><br><span class="line">5. confirm 再写 status / logs → END</span><br><span class="line">6. 返回 dict（不是 BaseModel）；需要模型时再 AgentState(**result)</span><br></pre></td></tr></table></figure>
+
+<p>后续节点的返回值<strong>默认不再</strong>走一遍 Pydantic 全量校验——闸门只守入口。</p>
+<hr>
+<h2 id="4-原理"><a href="#4-原理" class="headerlink" title="4. 原理"></a>4. 原理</h2><h3 id="4-1-一次-invoke-的数据链路"><a href="#4-1-一次-invoke-的数据链路" class="headerlink" title="4.1 一次 invoke 的数据链路"></a>4.1 一次 invoke 的数据链路</h3><ol>
+<li><code>StateGraph(AgentState)</code> 把 <code>BaseModel</code> 子类登记为 <code>state_schema</code>；<code>compile</code> 后得到 <code>CompiledGraph</code>。  </li>
+<li><code>invoke(input)</code> 用该 schema <strong>构造&#x2F;校验首节点输入</strong>。<code>Field(ge=0)</code>、<code>UUID</code>、嵌套 <code>LineItem</code>、<code>extra=&quot;forbid&quot;</code> 都在这一步生效。失败抛 <strong>校验错误（ValidationError）</strong>，节点函数不会被调用。  </li>
+<li>节点入参是已校验对象，可用 <code>state.amount</code>（部分版本也兼容 <code>state[&quot;amount&quot;]</code>）。返回 <strong>partial dict</strong>，不要返回全量 State。  </li>
+<li>每个字段独立合并：无 <code>Annotated</code> → 覆盖；<code>Annotated[list, operator.add]</code> → 拼接；<code>Annotated[list[AnyMessage], add_messages]</code> → 按消息 <code>id</code> 去重追加。<code>Overwrite(value)</code> 可绕过 reducer 整表替换。  </li>
+<li>下一拍节点看到的是合并后的 channels。<strong>官方限制：从第二拍起不再对写入做 Pydantic 运行时校验</strong>；<code>validate_order</code> 若返回 <code>{&quot;amount&quot;: -1}</code>，<code>ge=0</code> 未必再拦。  </li>
+<li>到达 END 后返回 <strong>dict</strong>。嵌套模型在输出里通常是 dict；要属性访问需 <code>AgentState(**result)</code>。</li>
+</ol>
+<p>少了第 2 步 → 与 TypedDict 无异，脏数据进图。<br>少了第 4 步的 reducer → <code>logs</code> &#x2F; <code>messages</code> 被后写节点整表盖掉。<br>把第 2 步误当成「每步都校验」→ 节点写坏字段会静默进终态。</p>
+<h3 id="4-2-官方限制（挂在链路上）"><a href="#4-2-官方限制（挂在链路上）" class="headerlink" title="4.2 官方限制（挂在链路上）"></a>4.2 官方限制（挂在链路上）</h3><table>
+<thead>
+<tr>
+<th>限制</th>
+<th>落在哪一步</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>只校验首节点输入</td>
+<td>步骤 2</td>
+<td>后续节点写入不受 Field 约束</td>
+</tr>
+<tr>
+<td>输出不是 BaseModel</td>
+<td>步骤 6</td>
+<td><code>type(result)</code> 是 <code>dict</code></td>
+</tr>
+<tr>
+<td>报错不标节点名</td>
+<td>步骤 2</td>
+<td>堆栈只说 schema，不说哪个 node</td>
+</tr>
+<tr>
+<td>递归校验偏慢</td>
+<td>步骤 2</td>
+<td>深嵌套 &#x2F; 热路径更宜 dataclass</td>
+</tr>
+<tr>
+<td><code>field_validator</code> 改写可能不落盘</td>
+<td>步骤 2</td>
+<td>能 <code>raise</code>，<code>return</code> 规范化值不一定写回 channels</td>
+</tr>
+<tr>
+<td><code>create_agent</code> 不支持 Pydantic State</td>
+<td>构图</td>
+<td>预构建 Agent 用 TypedDict</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-功能图谱：Annotated-×-Pydantic"><a href="#5-功能图谱：Annotated-×-Pydantic" class="headerlink" title="5. 功能图谱：Annotated × Pydantic"></a>5. 功能图谱：Annotated × Pydantic</h2><p><code>Annotated[T, *metadata]</code> 是<strong>同一语法、两套读者</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>元数据形态</th>
+<th>谁读</th>
+<th>何时读</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>可调用对象（<code>operator.add</code>、<code>add_messages</code>、自定义 <code>(left, right)</code>）</td>
+<td>LangGraph</td>
+<td>节点返回后合并</td>
+<td>多写字段</td>
+</tr>
+<tr>
+<td><code>Field(...)</code> &#x2F; <code>Gt</code> &#x2F; <code>MinLen</code></td>
+<td>Pydantic</td>
+<td>入图校验</td>
+<td>边界、长度、正则</td>
+</tr>
+<tr>
+<td><code>BeforeValidator</code> &#x2F; <code>AfterValidator</code> &#x2F; <code>WrapValidator</code></td>
+<td>Pydantic</td>
+<td>入图校验</td>
+<td>规范化、跨格式解析</td>
+</tr>
+<tr>
+<td><code>UUID</code>、<code>HttpUrl</code>、<code>Literal</code>、嵌套 <code>BaseModel</code>（写在 <code>T</code> 上，不是 metadata）</td>
+<td>Pydantic</td>
+<td>入图校验</td>
+<td>语义类型</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> Field</span><br><span class="line"><span class="keyword">import</span> operator</span><br><span class="line"></span><br><span class="line"><span class="comment"># 只校验</span></span><br><span class="line">sku: Annotated[<span class="built_in">str</span>, Field(min_length=<span class="number">3</span>, pattern=<span class="string">r&quot;^[A-Z0-9-]+$&quot;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 只合并</span></span><br><span class="line">logs: Annotated[<span class="built_in">list</span>[<span class="built_in">str</span>], operator.add] = Field(default_factory=<span class="built_in">list</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 外层 reducer + 内层元素约束（列表本身也可再 Field(max_length=...)）</span></span><br><span class="line">tags: Annotated[</span><br><span class="line">    <span class="built_in">list</span>[Annotated[<span class="built_in">str</span>, Field(min_length=<span class="number">1</span>, max_length=<span class="number">32</span>)]],</span><br><span class="line">    operator.add,</span><br><span class="line">] = Field(default_factory=<span class="built_in">list</span>, max_length=<span class="number">20</span>)</span><br></pre></td></tr></table></figure>
+
+<p><code>T</code> 给类型检查器看；metadata 按框架分流。reducer 必须是 <strong>callable</strong>，不能写成字符串。</p>
+<h3 id="5-1-Field-声明参数（非约束）"><a href="#5-1-Field-声明参数（非约束）" class="headerlink" title="5.1 Field 声明参数（非约束）"></a>5.1 <code>Field</code> 声明参数（非约束）</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>类型 &#x2F; 默认</th>
+<th>作用</th>
+<th>AgentState 用法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>default</code></td>
+<td>任意</td>
+<td>缺省值</td>
+<td><code>status=&quot;pending&quot;</code></td>
+</tr>
+<tr>
+<td><code>default_factory</code></td>
+<td><code>() -&gt; T</code></td>
+<td>每次新建，避免共享可变默认</td>
+<td><code>logs</code> &#x2F; <code>items</code> &#x2F; <code>messages</code> <strong>必须</strong>用这个，禁止 <code>=[]</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>str</td>
+<td>文档与 JSON Schema</td>
+<td>给 API 层生成 OpenAPI</td>
+</tr>
+<tr>
+<td><code>examples</code></td>
+<td>list</td>
+<td>Schema 示例</td>
+<td>文档</td>
+</tr>
+<tr>
+<td><code>alias</code> &#x2F; <code>validation_alias</code></td>
+<td>str</td>
+<td>入参别名</td>
+<td>兼容外部字段名 <code>userId</code></td>
+</tr>
+<tr>
+<td><code>frozen</code></td>
+<td>bool</td>
+<td>校验后不可改该字段</td>
+<td>入图后不应变的 <code>user_id</code></td>
+</tr>
+<tr>
+<td><code>deprecated</code></td>
+<td>bool &#x2F; str</td>
+<td>标记弃用</td>
+<td>过渡字段</td>
+</tr>
+<tr>
+<td><code>exclude</code></td>
+<td>bool</td>
+<td>序列化时丢掉</td>
+<td>内部缓存不对外</td>
+</tr>
+</tbody></table>
+<p>默认值写在注解右侧：<code>status: str = &quot;pending&quot;</code> 与 <code>Field(default=&quot;pending&quot;)</code> 等价；可变容器只用 <code>default_factory</code>。</p>
+<h3 id="5-2-数值约束"><a href="#5-2-数值约束" class="headerlink" title="5.2 数值约束"></a>5.2 数值约束</h3><p>适用 <code>int</code> &#x2F; <code>float</code> &#x2F; <code>Decimal</code>。JSON Schema 对应 <code>minimum</code> &#x2F; <code>exclusiveMinimum</code> 等。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>语义</th>
+<th>合法例</th>
+<th>非法例</th>
+<th>Agent 场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>gt</code></td>
+<td>$x &gt; n$</td>
+<td><code>gt=0</code> → <code>0.01</code></td>
+<td><code>0</code></td>
+<td>单价必须为正</td>
+</tr>
+<tr>
+<td><code>ge</code></td>
+<td>$x \ge n$</td>
+<td><code>ge=0</code> → <code>0</code></td>
+<td><code>-1</code></td>
+<td>金额、计数</td>
+</tr>
+<tr>
+<td><code>lt</code></td>
+<td>$x &lt; n$</td>
+<td><code>lt=1</code> → <code>0.99</code></td>
+<td><code>1</code></td>
+<td>概率开区间</td>
+</tr>
+<tr>
+<td><code>le</code></td>
+<td>$x \le n$</td>
+<td><code>le=1</code> → <code>1</code></td>
+<td><code>1.01</code></td>
+<td>置信度闭区间</td>
+</tr>
+<tr>
+<td><code>multiple_of</code></td>
+<td>$x$ 是 $n$ 的倍数</td>
+<td><code>0.01</code> → <code>9.90</code></td>
+<td><code>9.901</code></td>
+<td>货币分位</td>
+</tr>
+<tr>
+<td><code>allow_inf_nan</code></td>
+<td>是否允许 <code>inf</code> &#x2F; <code>nan</code></td>
+<td>默认对 float 常为 True</td>
+<td>视配置</td>
+<td>金额建议 <code>False</code></td>
+</tr>
+<tr>
+<td><code>max_digits</code> &#x2F; <code>decimal_places</code></td>
+<td><code>Decimal</code> 总位数 &#x2F; 小数位</td>
+<td><code>max_digits=5, decimal_places=2</code> → <code>123.45</code></td>
+<td><code>1234.56</code></td>
+<td>精确金额</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">amount: <span class="built_in">float</span> = Field(ge=<span class="number">0</span>, le=<span class="number">1_000_000</span>, allow_inf_nan=<span class="literal">False</span>)</span><br><span class="line">confidence: <span class="built_in">float</span> = Field(ge=<span class="number">0</span>, le=<span class="number">1</span>)</span><br><span class="line">qty: <span class="built_in">int</span> = Field(ge=<span class="number">1</span>, le=<span class="number">99</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-字符串与集合约束"><a href="#5-3-字符串与集合约束" class="headerlink" title="5.3 字符串与集合约束"></a>5.3 字符串与集合约束</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>适用</th>
+<th>语义</th>
+<th>Agent 场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>min_length</code></td>
+<td>str &#x2F; list &#x2F; dict &#x2F; set</td>
+<td>最小长度 &#x2F; 元素数</td>
+<td>非空备注、至少 1 条明细</td>
+</tr>
+<tr>
+<td><code>max_length</code></td>
+<td>同上</td>
+<td>上限</td>
+<td>防超长 prompt &#x2F; 防日志膨胀</td>
+</tr>
+<tr>
+<td><code>pattern</code></td>
+<td>str</td>
+<td>整串匹配正则</td>
+<td>SKU、工单号</td>
+</tr>
+<tr>
+<td><code>fail_fast</code></td>
+<td>序列</td>
+<td>遇第一个非法元素即停</td>
+<td>大列表入参</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>任意</td>
+<td>关闭强制转换</td>
+<td><code>&quot;42&quot;</code> 不再变成 <code>int</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sku: <span class="built_in">str</span> = Field(min_length=<span class="number">3</span>, max_length=<span class="number">32</span>, pattern=<span class="string">r&quot;^[A-Z0-9-]+$&quot;</span>)</span><br><span class="line">note: <span class="built_in">str</span> | <span class="literal">None</span> = Field(default=<span class="literal">None</span>, max_length=<span class="number">200</span>)</span><br><span class="line">items: <span class="built_in">list</span>[LineItem] = Field(default_factory=<span class="built_in">list</span>, max_length=<span class="number">20</span>)</span><br></pre></td></tr></table></figure>
+
+<p><code>pattern</code> 是<strong>整值</strong>匹配；不要指望它做「包含某词」。需要子串规则用 <code>AfterValidator</code> 或 <code>field_validator</code>。</p>
+<h3 id="5-4-语义类型（写在-T-上）"><a href="#5-4-语义类型（写在-T-上）" class="headerlink" title="5.4 语义类型（写在 T 上）"></a>5.4 语义类型（写在 <code>T</code> 上）</h3><p>这些类型自带解析与校验，比手写 <code>pattern</code> 稳。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>来源</th>
+<th>入参形态</th>
+<th>失败条件</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UUID</code></td>
+<td><code>uuid.UUID</code></td>
+<td>UUID 对象或标准字符串</td>
+<td>非 UUID 文本</td>
+<td>推荐 <code>user_id</code></td>
+</tr>
+<tr>
+<td><code>datetime</code> &#x2F; <code>date</code></td>
+<td>标准库</td>
+<td>ISO 字符串或对象</td>
+<td>无法解析</td>
+<td>时区：要感知时区用 <code>AwareDatetime</code></td>
+</tr>
+<tr>
+<td><code>Decimal</code></td>
+<td><code>decimal</code></td>
+<td>数字或数字字符串</td>
+<td>非数字</td>
+<td>金额精确计算</td>
+</tr>
+<tr>
+<td><code>Literal[&quot;web&quot;,&quot;app&quot;]</code></td>
+<td><code>typing</code></td>
+<td>恰好这些值</td>
+<td><code>&quot;WEB&quot;</code>（除非先规范化）</td>
+<td>渠道、路由键</td>
+</tr>
+<tr>
+<td><code>Enum</code> &#x2F; <code>StrEnum</code></td>
+<td><code>enum</code></td>
+<td>成员名或值</td>
+<td>未定义成员</td>
+<td>订单状态</td>
+</tr>
+<tr>
+<td><code>HttpUrl</code> &#x2F; <code>AnyUrl</code></td>
+<td><code>pydantic</code></td>
+<td>URL 字符串</td>
+<td>缺 scheme 等</td>
+<td>回调地址</td>
+</tr>
+<tr>
+<td><code>EmailStr</code></td>
+<td><code>pydantic</code></td>
+<td>邮箱字符串</td>
+<td>格式非法</td>
+<td><strong>需</strong> <code>pip install email-validator</code> 或 <code>pydantic[email]</code></td>
+</tr>
+<tr>
+<td><code>IPvAnyAddress</code></td>
+<td><code>pydantic</code></td>
+<td>IP 字符串</td>
+<td>非法 IP</td>
+<td>来源地址</td>
+</tr>
+<tr>
+<td><code>SecretStr</code></td>
+<td><code>pydantic</code></td>
+<td>字符串</td>
+<td>—</td>
+<td>打印被掩码；checkpoint 仍可能落明文，密钥不要放 State</td>
+</tr>
+<tr>
+<td><code>AnyMessage</code></td>
+<td>LangChain</td>
+<td>Message 或可反序列化 dict</td>
+<td>缺 <code>type</code></td>
+<td><strong>不要</strong>用 <code>BaseMessage</code> 当序列化字段</td>
+</tr>
+</tbody></table>
+<p>Pydantic 默认会做<strong>强制转换</strong>：<code>{&quot;number&quot;: &quot;42&quot;, &quot;flag&quot;: &quot;true&quot;}</code> → <code>int</code> &#x2F; <code>bool</code>。需要「字符串就是字符串」时设 <code>strict=True</code> 或 <code>model_config = ConfigDict(strict=True)</code>。</p>
+<h3 id="5-5-复合与嵌套"><a href="#5-5-复合与嵌套" class="headerlink" title="5.5 复合与嵌套"></a>5.5 复合与嵌套</h3><table>
+<thead>
+<tr>
+<th>写法</th>
+<th>校验行为</th>
+<th>Agent 场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>list[LineItem]</code></td>
+<td>每个元素递归成 <code>LineItem</code></td>
+<td>订单行</td>
+</tr>
+<tr>
+<td><code>dict[str, int]</code></td>
+<td>键必须是 str，值必须是 int</td>
+<td>计数器表</td>
+</tr>
+<tr>
+<td><code>LineItem</code> 嵌套模型</td>
+<td>入参 dict → 模型；缺字段失败</td>
+<td>结构化子对象</td>
+</tr>
+<tr>
+<td><code>T | None</code></td>
+<td><code>None</code> 合法；有值则按 <code>T</code></td>
+<td>可选回调、可选备注</td>
+</tr>
+<tr>
+<td><code>Annotated[int, Field(gt=0)] | None</code></td>
+<td><code>None</code> 或正整数</td>
+<td>可选正数</td>
+</tr>
+<tr>
+<td>判别联合（<code>discriminator</code>）</td>
+<td>按字段选子模型</td>
+<td>多形态工具结果</td>
+</tr>
+</tbody></table>
+<p>嵌套模型与 <code>list[Model]</code> 会触发<strong>递归校验</strong>（官方点名偏慢）。热路径、超大明细用 TypedDict &#x2F; dataclass，只在 <code>input_schema</code> 用 Pydantic。</p>
+<h3 id="5-6-自定义校验器"><a href="#5-6-自定义校验器" class="headerlink" title="5.6 自定义校验器"></a>5.6 自定义校验器</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>能做什么</th>
+<th>在 LangGraph 里是否可靠</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Field</code> 约束</td>
+<td>边界 &#x2F; 长度 &#x2F; 正则</td>
+<td><strong>可靠</strong>（入图时）</td>
+</tr>
+<tr>
+<td><code>@field_validator(..., mode=&quot;after&quot;)</code> 里 <code>raise</code></td>
+<td>拒绝非法值</td>
+<td><strong>可靠</strong>（入图时）</td>
+</tr>
+<tr>
+<td>同一 validator 里 <code>return</code> 改写值（如首字母大写）</td>
+<td>规范化</td>
+<td><strong>不可靠</strong>：官方实现常「只验不写回」，改写可能丢</td>
+</tr>
+<tr>
+<td><code>@model_validator(mode=&quot;after&quot;)</code> 跨字段</td>
+<td>如 <code>amount == sum(qty * price)</code></td>
+<td><code>raise</code> 可用；改写同样可能不落盘</td>
+</tr>
+<tr>
+<td><code>AfterValidator(fn)</code> &#x2F; <code>BeforeValidator(fn)</code></td>
+<td>挂在 <code>Annotated</code> 上的函数式校验</td>
+<td>与 field_validator 同类限制</td>
+</tr>
+</tbody></table>
+<p>规范化（trim、大小写、单位换算）放在<strong>节点里显式返回</strong>，不要指望 validator 的 <code>return</code> 写进 channels。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> field_validator</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AgentState</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    amount: <span class="built_in">float</span> = Field(ge=<span class="number">0</span>)</span><br><span class="line">    items: <span class="built_in">list</span>[LineItem] = Field(default_factory=<span class="built_in">list</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @field_validator(<span class="params"><span class="string">&quot;items&quot;</span></span>)</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">items_match_amount</span>(<span class="params">cls, items: <span class="built_in">list</span>[LineItem], info</span>):</span><br><span class="line">        <span class="comment"># 跨字段更宜 model_validator；这里只演示 raise</span></span><br><span class="line">        <span class="keyword">return</span> items</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-7-ConfigDict（模型级）"><a href="#5-7-ConfigDict（模型级）" class="headerlink" title="5.7 ConfigDict（模型级）"></a>5.7 <code>ConfigDict</code>（模型级）</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>常用值</th>
+<th>作用</th>
+<th>指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extra</code></td>
+<td><code>&quot;ignore&quot;</code> &#x2F; <code>&quot;forbid&quot;</code> &#x2F; <code>&quot;allow&quot;</code></td>
+<td>未知键</td>
+<td>对外入口用 <code>&quot;forbid&quot;</code> 防脏字段</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td><code>False</code> &#x2F; <code>True</code></td>
+<td>是否强制转换</td>
+<td>API 字符串入参保持默认；内部精确类型用 <code>True</code></td>
+</tr>
+<tr>
+<td><code>str_strip_whitespace</code></td>
+<td><code>False</code> &#x2F; <code>True</code></td>
+<td>入参去首尾空白</td>
+<td>工单号、SKU 建议开</td>
+</tr>
+<tr>
+<td><code>frozen</code></td>
+<td><code>False</code> &#x2F; <code>True</code></td>
+<td>整模型不可变</td>
+<td>与节点「返回新 dict」相容；少用</td>
+</tr>
+<tr>
+<td><code>validate_assignment</code></td>
+<td><code>False</code> &#x2F; <code>True</code></td>
+<td>属性赋值再校验</td>
+<td>图内部少做 <code>state.x = ...</code>，无效</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">AgentState</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    model_config = ConfigDict(extra=<span class="string">&quot;forbid&quot;</span>, str_strip_whitespace=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-8-三套-schema-怎么选"><a href="#5-8-三套-schema-怎么选" class="headerlink" title="5.8 三套 schema 怎么选"></a>5.8 三套 schema 怎么选</h3><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>运行时校验</th>
+<th>默认值</th>
+<th>性能</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TypedDict</code> + <code>Annotated</code></td>
+<td>无</td>
+<td>无（键常需给齐）</td>
+<td>最快</td>
+<td>图内部、热路径</td>
+</tr>
+<tr>
+<td><code>dataclass</code> + <code>Annotated</code></td>
+<td>无</td>
+<td>有</td>
+<td>快</td>
+<td>只要默认值</td>
+</tr>
+<tr>
+<td><code>BaseModel</code> + <code>Annotated</code></td>
+<td><strong>入图有</strong></td>
+<td>有</td>
+<td>慢</td>
+<td>对外工单、金额、UUID</td>
+</tr>
+<tr>
+<td><code>input_schema=Pydantic</code>，内部 TypedDict</td>
+<td>只校验图输入</td>
+<td>内部自定</td>
+<td>折中</td>
+<td>生产常用：闸门与编排分离</td>
+</tr>
+</tbody></table>
+<p><code>StateGraph(OverallState, input_schema=OrderIn, output_schema=OrderOut)</code>：输入用 Pydantic 守边界，内部 channels 仍可用 TypedDict + reducer；输出按 <code>output_schema</code> 裁剪。预构建 <code>create_agent</code> 只能走 TypedDict。</p>
+<hr>
+<h2 id="6-最小可运行示例"><a href="#6-最小可运行示例" class="headerlink" title="6. 最小可运行示例"></a>6. 最小可运行示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> operator</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> Annotated, <span class="type">Literal</span></span><br><span class="line"><span class="keyword">from</span> uuid <span class="keyword">import</span> UUID</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> AIMessage, AnyMessage, HumanMessage</span><br><span class="line"><span class="keyword">from</span> langgraph.graph <span class="keyword">import</span> END, START, StateGraph</span><br><span class="line"><span class="keyword">from</span> langgraph.graph.message <span class="keyword">import</span> add_messages</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel, ConfigDict, Field, ValidationError</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LineItem</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    sku: <span class="built_in">str</span> = Field(min_length=<span class="number">3</span>, max_length=<span class="number">32</span>, pattern=<span class="string">r&quot;^[A-Z0-9-]+$&quot;</span>)</span><br><span class="line">    qty: <span class="built_in">int</span> = Field(ge=<span class="number">1</span>, le=<span class="number">99</span>)</span><br><span class="line">    unit_price: <span class="built_in">float</span> = Field(gt=<span class="number">0</span>, allow_inf_nan=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AgentState</span>(<span class="title class_ inherited__">BaseModel</span>):</span><br><span class="line">    model_config = ConfigDict(extra=<span class="string">&quot;forbid&quot;</span>, str_strip_whitespace=<span class="literal">True</span>)</span><br><span class="line"></span><br><span class="line">    user_id: UUID</span><br><span class="line">    amount: <span class="built_in">float</span> = Field(ge=<span class="number">0</span>, le=<span class="number">1_000_000</span>, allow_inf_nan=<span class="literal">False</span>)</span><br><span class="line">    status: <span class="type">Literal</span>[<span class="string">&quot;pending&quot;</span>, <span class="string">&quot;validated&quot;</span>, <span class="string">&quot;confirmed&quot;</span>] = <span class="string">&quot;pending&quot;</span></span><br><span class="line">    items: <span class="built_in">list</span>[LineItem] = Field(default_factory=<span class="built_in">list</span>, max_length=<span class="number">20</span>)</span><br><span class="line">    logs: Annotated[<span class="built_in">list</span>[<span class="built_in">str</span>], operator.add] = Field(default_factory=<span class="built_in">list</span>)</span><br><span class="line">    messages: Annotated[<span class="built_in">list</span>[AnyMessage], add_messages] = Field(default_factory=<span class="built_in">list</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">validate_order</span>(<span class="params">state: AgentState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="comment"># 拓扑对应 §2 节点 validate_order</span></span><br><span class="line">    n = <span class="built_in">len</span>(state.items)</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        <span class="string">&quot;status&quot;</span>: <span class="string">&quot;validated&quot;</span>,</span><br><span class="line">        <span class="string">&quot;logs&quot;</span>: [<span class="string">f&quot;amount=<span class="subst">&#123;state.amount&#125;</span> items=<span class="subst">&#123;n&#125;</span>&quot;</span>],</span><br><span class="line">        <span class="string">&quot;messages&quot;</span>: [AIMessage(content=<span class="string">&quot;订单已校验&quot;</span>)],</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">confirm</span>(<span class="params">state: AgentState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="comment"># 拓扑对应 §2 节点 confirm</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;status&quot;</span>: <span class="string">&quot;confirmed&quot;</span>, <span class="string">&quot;logs&quot;</span>: [<span class="string">&quot;confirmed&quot;</span>]&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">builder = StateGraph(AgentState)</span><br><span class="line">builder.add_node(<span class="string">&quot;validate_order&quot;</span>, validate_order)</span><br><span class="line">builder.add_node(<span class="string">&quot;confirm&quot;</span>, confirm)</span><br><span class="line">builder.add_edge(START, <span class="string">&quot;validate_order&quot;</span>)</span><br><span class="line">builder.add_edge(<span class="string">&quot;validate_order&quot;</span>, <span class="string">&quot;confirm&quot;</span>)</span><br><span class="line">builder.add_edge(<span class="string">&quot;confirm&quot;</span>, END)</span><br><span class="line">graph = builder.<span class="built_in">compile</span>()</span><br><span class="line"></span><br><span class="line">ok = graph.invoke(</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>,</span><br><span class="line">        <span class="string">&quot;amount&quot;</span>: <span class="number">99.0</span>,</span><br><span class="line">        <span class="string">&quot;items&quot;</span>: [&#123;<span class="string">&quot;sku&quot;</span>: <span class="string">&quot;SKU-01&quot;</span>, <span class="string">&quot;qty&quot;</span>: <span class="number">2</span>, <span class="string">&quot;unit_price&quot;</span>: <span class="number">49.5</span>&#125;],</span><br><span class="line">        <span class="string">&quot;messages&quot;</span>: [HumanMessage(content=<span class="string">&quot;下单&quot;</span>)],</span><br><span class="line">    &#125;</span><br><span class="line">)</span><br><span class="line"><span class="built_in">print</span>(ok[<span class="string">&quot;status&quot;</span>], ok[<span class="string">&quot;logs&quot;</span>], <span class="built_in">type</span>(ok))  <span class="comment"># confirmed [...] &lt;class &#x27;dict&#x27;&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> bad <span class="keyword">in</span> (</span><br><span class="line">    &#123;<span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;not-a-uuid&quot;</span>, <span class="string">&quot;amount&quot;</span>: <span class="number">1</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>, <span class="string">&quot;amount&quot;</span>: -<span class="number">1</span>&#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>,</span><br><span class="line">        <span class="string">&quot;amount&quot;</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="string">&quot;items&quot;</span>: [&#123;<span class="string">&quot;sku&quot;</span>: <span class="string">&quot;bad sku&quot;</span>, <span class="string">&quot;qty&quot;</span>: <span class="number">1</span>, <span class="string">&quot;unit_price&quot;</span>: <span class="number">1</span>&#125;],</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>,</span><br><span class="line">        <span class="string">&quot;amount&quot;</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="string">&quot;unknown&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">):</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        graph.invoke(bad)</span><br><span class="line">    <span class="keyword">except</span> ValidationError <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;拦截&quot;</span>, e.error_count(), e.errors()[<span class="number">0</span>][<span class="string">&quot;type&quot;</span>])</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="7-执行追踪"><a href="#7-执行追踪" class="headerlink" title="7. 执行追踪"></a>7. 执行追踪</h2><p>合法输入 <code>amount=99</code>、1 条明细、1 条 HumanMessage：</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th><code>status</code></th>
+<th><code>logs</code></th>
+<th><code>messages</code> 条数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>入图校验后</td>
+<td>pending</td>
+<td>[]</td>
+<td>1（Human）</td>
+</tr>
+<tr>
+<td>validate_order</td>
+<td>validated</td>
+<td><code>[&quot;amount=99.0 items=1&quot;]</code></td>
+<td>2（+ AI）</td>
+</tr>
+<tr>
+<td>confirm</td>
+<td>confirmed</td>
+<td><code>[&quot;amount=99.0 items=1&quot;, &quot;confirmed&quot;]</code></td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p><code>amount=-1</code> &#x2F; 坏 UUID &#x2F; 坏 SKU &#x2F; 多余键：停在步骤 2，两节点都不跑。</p>
+<hr>
+<h3 id="重要配置参数"><a href="#重要配置参数" class="headerlink" title="重要配置参数"></a>重要配置参数</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Field(ge/gt/le/lt)</code></td>
+<td>数值约束 &#x2F; 无</td>
+<td>入图时检查标量边界</td>
+<td>过严：合法单被拒；过松：负金额进图</td>
+<td>金额 <code>ge=0</code>；置信度 <code>[0,1]</code></td>
+<td>只守入口，节点内仍可能写坏</td>
+</tr>
+<tr>
+<td><code>Field(min_length/max_length/pattern)</code></td>
+<td>序列&#x2F;字符串约束</td>
+<td>长度与整串正则</td>
+<td><code>max_length</code> 过小截断业务；无上限则日志膨胀</td>
+<td>SKU 正则、明细 <code>max_length=20</code></td>
+<td><code>pattern</code> 不支持「包含」语义</td>
+</tr>
+<tr>
+<td><code>default_factory</code></td>
+<td><code>() -&gt; T</code></td>
+<td>为可变字段提供独立默认实例</td>
+<td>写成 <code>=[]</code> 会跨 invoke 共享同一 list</td>
+<td><code>logs</code>&#x2F;<code>items</code>&#x2F;<code>messages</code></td>
+<td>可变默认只用 factory</td>
+</tr>
+<tr>
+<td><code>Annotated[T, reducer]</code></td>
+<td>类型 + callable</td>
+<td>告诉 LangGraph 如何合并该字段</td>
+<td>不加则后写覆盖；并行写 list 必丢数据</td>
+<td><code>operator.add</code>、<code>add_messages</code></td>
+<td>reducer 必须是函数</td>
+</tr>
+<tr>
+<td><code>Annotated[T, Field(...)]</code></td>
+<td>类型 + 约束</td>
+<td>把 Field 嵌进注解，可叠 reducer</td>
+<td>与右侧 <code>= Field(...)</code> 等价；内层可约束 list 元素</td>
+<td>元素级 <code>gt=0</code></td>
+<td>外层挂 reducer，内层挂约束</td>
+</tr>
+<tr>
+<td><code>ConfigDict(extra=...)</code></td>
+<td><code>&quot;ignore&quot;</code> 默认</td>
+<td>未知键策略</td>
+<td><code>&quot;forbid&quot;</code> 多一个键就失败；<code>&quot;allow&quot;</code> 脏字段进 state</td>
+<td>对外 <code>&quot;forbid&quot;</code></td>
+<td>内部调试可临时 <code>&quot;ignore&quot;</code></td>
+</tr>
+<tr>
+<td><code>ConfigDict(strict=...)</code></td>
+<td><code>False</code></td>
+<td>关闭 <code>&quot;42&quot;</code>→<code>int</code> 等强制转换</td>
+<td><code>True</code> 时 API 字符串入参大量失败</td>
+<td>默认 False 适配 HTTP JSON</td>
+<td>要精确类型再开</td>
+</tr>
+<tr>
+<td><code>input_schema</code></td>
+<td>type &#x2F; 同 state</td>
+<td><code>StateGraph(..., input_schema=)</code> 单独校验入参</td>
+<td>与内部 State 解耦；输出仍按 <code>output_schema</code> 裁剪</td>
+<td>对外 Pydantic、对内 TypedDict</td>
+<td><code>create_agent</code> 不可用 Pydantic State</td>
+</tr>
+<tr>
+<td><code>AnyMessage</code></td>
+<td>联合消息类型</td>
+<td>带 <code>type</code> 判别器，供序列化还原</td>
+<td>写成 <code>BaseMessage</code> 过线后可能丢子类信息</td>
+<td><code>messages</code> 字段</td>
+<td>与 <code>add_messages</code> 成对</td>
+</tr>
+<tr>
+<td><code>ValidationError</code></td>
+<td>异常</td>
+<td>入图校验失败</td>
+<td><code>error_count()</code> &#x2F; <code>errors()[0][&quot;type&quot;]</code> 给 API 映射 422</td>
+<td>边界测试</td>
+<td>不要在节点里吞掉</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-易踩坑"><a href="#8-易踩坑" class="headerlink" title="8. 易踩坑"></a>8. 易踩坑</h2><ol>
+<li><strong><code>logs: list = []</code></strong>：类级共享可变默认。必须 <code>Field(default_factory=list)</code>。  </li>
+<li><strong>以为 Field 能管住每一拍</strong>：后续节点返回负 <code>amount</code> 可能写进终态。关键不变量在节点里再断言，或把校验放到 <code>input_schema</code> + 节点显式检查。  </li>
+<li><strong><code>field_validator</code> 做规范化</strong>：<code>raise</code> 有效，<code>return</code> 改写常不落盘。去空格、改大小写写在节点返回值里。  </li>
+<li><strong>消息字段用 <code>list[BaseMessage]</code></strong>：过线&#x2F;checkpoint 还原可能丢具体子类。用 <code>list[AnyMessage]</code> + <code>add_messages</code>。  </li>
+<li><strong><code>create_agent</code> 传入 Pydantic State</strong>：官方不支持，改 TypedDict。  </li>
+<li><strong>Pydantic v1 <code>@validator</code></strong>：LangGraph 文档面向 v2，用 <code>field_validator</code> &#x2F; <code>Field</code>。  </li>
+<li><strong>把密钥放进 <code>SecretStr</code> State</strong>：打印被掩，checkpoint 仍可能持久化明文。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>Pydantic State</strong> &#x3D; 入图闸门（类型、边界、嵌套、未知键）+ TypedDict 同款 <strong>Annotated reducer</strong>。  </li>
+<li><strong>Annotated</strong> 一张图：左通道 <code>Field</code> &#x2F; Validator &#x2F; 语义类型，右通道 <code>operator.add</code> &#x2F; <code>add_messages</code> &#x2F; 自定义 <code>(left, right)</code>；可叠用。  </li>
+<li>输出是 <strong>dict</strong>；校验<strong>不覆盖后续节点写入</strong>。对外严、对内快：<code>input_schema</code> 用 Pydantic，内部用 TypedDict。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#define-state">Define state — Pydantic</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#reducers">Reducers &#x2F; Overwrite</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.pydantic.dev/latest/concepts/fields/">Pydantic v2 Fields</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.pydantic.dev/latest/concepts/types/">Pydantic types</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Pydantic/" rel="tag"><i class="fa fa-tag"></i> Pydantic</a>
+          
+            <a href="/tags/State/" rel="tag"><i class="fa fa-tag"></i> State</a>
+          
+            <a href="/tags/Annotated/" rel="tag"><i class="fa fa-tag"></i> Annotated</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-TypedDict%E4%B8%8EReducer/" rel="next" title="TypedDict与Reducer">
+                <i class="fa fa-chevron-left"></i> TypedDict与Reducer
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-Langgraph/LangGraph-02-%E7%8A%B6%E6%80%81-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%95%B0%E6%8D%AE%E6%95%B4%E5%90%88%E6%96%B9%E5%BC%8FReducer/" rel="prev" title="自定义数据整合方式Reducer">
+                自定义数据整合方式Reducer <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%9B%BE%E6%8B%93%E6%89%91"><span class="nav-number">2.</span> <span class="nav-text">2. 图拓扑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-invoke-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-number">3.</span> <span class="nav-text">3. invoke 生命周期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86"><span class="nav-number">4.</span> <span class="nav-text">4. 原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%B8%80%E6%AC%A1-invoke-%E7%9A%84%E6%95%B0%E6%8D%AE%E9%93%BE%E8%B7%AF"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 一次 invoke 的数据链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%AE%98%E6%96%B9%E9%99%90%E5%88%B6%EF%BC%88%E6%8C%82%E5%9C%A8%E9%93%BE%E8%B7%AF%E4%B8%8A%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 官方限制（挂在链路上）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%8A%9F%E8%83%BD%E5%9B%BE%E8%B0%B1%EF%BC%9AAnnotated-%C3%97-Pydantic"><span class="nav-number">5.</span> <span class="nav-text">5. 功能图谱：Annotated × Pydantic</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-Field-%E5%A3%B0%E6%98%8E%E5%8F%82%E6%95%B0%EF%BC%88%E9%9D%9E%E7%BA%A6%E6%9D%9F%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Field 声明参数（非约束）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%95%B0%E5%80%BC%E7%BA%A6%E6%9D%9F"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 数值约束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%B8%8E%E9%9B%86%E5%90%88%E7%BA%A6%E6%9D%9F"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 字符串与集合约束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E8%AF%AD%E4%B9%89%E7%B1%BB%E5%9E%8B%EF%BC%88%E5%86%99%E5%9C%A8-T-%E4%B8%8A%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 语义类型（写在 T 上）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-%E5%A4%8D%E5%90%88%E4%B8%8E%E5%B5%8C%E5%A5%97"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 复合与嵌套</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-6-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A0%A1%E9%AA%8C%E5%99%A8"><span class="nav-number">5.6.</span> <span class="nav-text">5.6 自定义校验器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-7-ConfigDict%EF%BC%88%E6%A8%A1%E5%9E%8B%E7%BA%A7%EF%BC%89"><span class="nav-number">5.7.</span> <span class="nav-text">5.7 ConfigDict（模型级）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-8-%E4%B8%89%E5%A5%97-schema-%E6%80%8E%E4%B9%88%E9%80%89"><span class="nav-number">5.8.</span> <span class="nav-text">5.8 三套 schema 怎么选</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">6.</span> <span class="nav-text">6. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%89%A7%E8%A1%8C%E8%BF%BD%E8%B8%AA"><span class="nav-number">7.</span> <span class="nav-text">7. 执行追踪</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">7.1.</span> <span class="nav-text">重要配置参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

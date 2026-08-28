@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,RouterRetriever,QueryFusionRetriever," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="RouterRetriever 用 LLM 在多路 RetrieverTool 里分流；QueryFusionRetriever 无差别跑多路再用 RRF 合并。二者不要当成一个开关。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Router与融合">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-04-%E6%A3%80%E7%B4%A2-Router%E4%B8%8E%E8%9E%8D%E5%90%88/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="RouterRetriever 用 LLM 在多路 RetrieverTool 里分流；QueryFusionRetriever 无差别跑多路再用 RRF 合并。二者不要当成一个开关。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-04-%E6%A3%80%E7%B4%A2-Router%E4%B8%8E%E8%9E%8D%E5%90%88/llamaindex-fig01-router-fusion.png">
+<meta property="article:published_time" content="2026-08-20T04:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="QueryFusionRetriever">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="RouterRetriever">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-04-%E6%A3%80%E7%B4%A2-Router%E4%B8%8E%E8%9E%8D%E5%90%88/llamaindex-fig01-router-fusion.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-LlamaIndex/LlamaIndex-04-检索-Router与融合/"/>
+
+
+
+
+
+  <title>Router与融合 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-04-%E6%A3%80%E7%B4%A2-Router%E4%B8%8E%E8%9E%8D%E5%90%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Router与融合</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-20T12:20:00+08:00">
+                2026-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LlamaIndex/" itemprop="url" rel="index">
+                    <span itemprop="name">LlamaIndex</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  RouterRetriever 用 LLM 在多路 RetrieverTool 里分流；QueryFusionRetriever 无差别跑多路再用 RRF 合并。二者不要当成一个开关。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>方法学库和语言教程库已经分开建索引。用户有时问「GAPDH 内参」，有时问「列表推导式」。把两个库的块混在一次 top-k 里，生成会被无关段落带偏。两条路：</p>
+<ul>
+<li><strong>先选路</strong>：LLM 读各路 <code>description</code>，只打一条（或几条）Retriever——<code>RouterRetriever</code></li>
+<li><strong>条条跑再合并</strong>：多路都召回，用 RRF 合成名单——跨索引的 <code>QueryFusionRetriever</code></li>
+</ul>
+<p>前者省嵌入与噪声，后者不怕选错路、但费用和噪声都更高。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RouterRetriever</strong> 按选择器挑 <code>RetrieverTool</code>；<strong>跨索引融合</strong> 与「同一语料上向量+BM25」都叫 Fusion，但选路条件不同。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-04-%E6%A3%80%E7%B4%A2-Router%E4%B8%8E%E8%9E%8D%E5%90%88/llamaindex-fig01-router-fusion.png" alt="左：站长扳道只放行一条；右：两路进漏斗做 RRF（科普示意）"></p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>知识层的<strong>多路调度</strong>：分流或融合，输出仍是 <code>list[NodeWithScore]</code></td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>query →（选路或全跑）→ 合并后的 NodeWithScore</td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>RouterRetriever(selector, retriever_tools)</code>、<code>QueryFusionRetriever([r1, r2], num_queries=1)</code></td>
+</tr>
+<tr>
+<td>与 LangChain &#x2F; LangGraph</td>
+<td>近邻是路由链 &#x2F; EnsembleRetriever；<strong>有环的重试选路</strong>仍用 LangGraph 条件边</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：单索引 <code>as_retriever</code> 假设「全世界只有一个抽屉」。多集合、多模态、事实问 vs 综述问，需要显式调度，而不是把 description 写进生成 prompt 碰运气。</p>
+<hr>
+<h2 id="2-前置依赖与环境"><a href="#2-前置依赖与环境" class="headerlink" title="2. 前置依赖与环境"></a>2. 前置依赖与环境</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br><span class="line">ollama pull qwen3.5:9b</span><br><span class="line">ollama pull nomic-embed-text</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Router 的 selector <strong>要 LLM</strong>；Fusion 在 <code>num_queries=1</code> 时<strong>不要 LLM</strong>  </li>
+<li>本地模型用 <code>LLMSingleSelector</code> 比强依赖 function calling 的 Pydantic selector 更稳  </li>
+<li><code>await router.aretrieve(q)</code> 与同步参数一致</li>
+</ul>
+<hr>
+<h2 id="3-实现逻辑"><a href="#3-实现逻辑" class="headerlink" title="3. 实现逻辑"></a>3. 实现逻辑</h2><p><strong>Router（选路）</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1. 每个子索引 as_retriever → RetrieverTool.from_defaults(description=...)</span><br><span class="line">2. RouterRetriever(selector=LLMSingleSelector, retriever_tools=[...])</span><br><span class="line">3. retrieve(q)：selector 输出工具名</span><br><span class="line">4. 只调用选中的 Retriever.retrieve</span><br><span class="line">5. 返回该路的 NodeWithScore</span><br></pre></td></tr></table></figure>
+
+<p><strong>Fusion（全跑）</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. 准备多路 Retriever（不同 index 或不同算法）</span><br><span class="line">2. QueryFusionRetriever(retrievers, num_queries=1, mode=&quot;reciprocal_rerank&quot;)</span><br><span class="line">3. 每路 retrieve 同一 query</span><br><span class="line">4. RRF 合并、截断 similarity_top_k</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形（Router）</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">query = &quot;GAPDH 内参是什么&quot;</span><br><span class="line">  → selector 选择 name/description 含「分子生物学方法」的 tool</span><br><span class="line">  → methods_retriever.retrieve(...)</span><br><span class="line">[NodeWithScore(..., metadata=&#123;collection:&quot;methods&quot;&#125;), ...]</span><br><span class="line">  不会出现 collection=lang 的块（选对的前提下）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-原理说明"><a href="#4-原理说明" class="headerlink" title="4. 原理说明"></a>4. 原理说明</h2><p>主轴是：<strong>Router 把「选哪路」交给 LLM；Fusion 把「选哪路」变成「全都要，事后按名次加权」。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">1. RetrieverTool 把 retriever + name + description 编成选择器可见的选项</span><br><span class="line">2. LLMSingleSelector 调 Settings.llm（或传入的 llm），输出选项下标/名称</span><br><span class="line">3. RouterRetriever 只执行命中 tool 的 retrieve；MultiSelector 可执行多路再拼接</span><br><span class="line">4. 选择失败或 description 互相抄 → 走错库，分数看起来仍很高</span><br><span class="line">5. Fusion 跳过第 2～3 步，对每个 retriever 调 retrieve</span><br><span class="line">6. 若 num_queries&gt;1：先用 LLM 生成额外 query，笛卡尔式放大调用次数</span><br><span class="line">7. reciprocal_rerank：同一 node_id 在多路出现则 RRF 累加</span><br><span class="line">8. 两路索引内容正交时 Fusion 会把「第二路的头名」抬进最终名单，即使与问题无关</span><br><span class="line">少了 description 差异 → Router 几乎随机</span><br><span class="line">Fusion 用于正交库且不问选路 → 噪声块稳定进 top-k</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>RetrieverTool.from_defaults(retriever, name=..., description=...)</code></strong> 出现在步骤 1。<code>description</code> 是给选择器的，不是给最终用户的。必须写清<strong>何时用 &#x2F; 何时不用</strong>。</p>
+<p><strong><code>LLMSingleSelector.from_defaults(llm=...)</code></strong> 出现在步骤 2。一次选一个。多路并行选 <code>LLMMultiSelector</code>。</p>
+<p><strong><code>RouterRetriever</code></strong> 出现在步骤 3。输入输出与普通 Retriever 相同，可再塞进 QueryEngine。</p>
+<p><strong><code>QueryFusionRetriever</code></strong> 出现在步骤 5。跨<strong>不同语料库</strong>时要自问：是否真的该全跑。同一语料向量+BM25 的 Fusion 是混合召回，不是分流。</p>
+<p>不要用 LangGraph 再画一个「选 Retriever」子图，除非选路失败要重试、要 HITL、要 checkpoint。</p>
+<hr>
+<h2 id="5-最小可运行示例"><a href="#5-最小可运行示例" class="headerlink" title="5. 最小可运行示例"></a>5. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> Document, Settings, VectorStoreIndex</span><br><span class="line"><span class="keyword">from</span> llama_index.core.node_parser <span class="keyword">import</span> SentenceSplitter</span><br><span class="line"><span class="keyword">from</span> llama_index.core.retrievers <span class="keyword">import</span> QueryFusionRetriever, RouterRetriever</span><br><span class="line"><span class="keyword">from</span> llama_index.core.selectors <span class="keyword">import</span> LLMSingleSelector</span><br><span class="line"><span class="keyword">from</span> llama_index.core.tools <span class="keyword">import</span> RetrieverTool</span><br><span class="line"><span class="keyword">from</span> llama_index.embeddings.ollama <span class="keyword">import</span> OllamaEmbedding</span><br><span class="line"><span class="keyword">from</span> llama_index.llms.ollama <span class="keyword">import</span> Ollama</span><br><span class="line"></span><br><span class="line">Settings.llm = Ollama(model=<span class="string">&quot;qwen3.5:9b&quot;</span>, request_timeout=<span class="number">120.0</span>, temperature=<span class="number">0</span>)</span><br><span class="line">Settings.embed_model = OllamaEmbedding(</span><br><span class="line">    model_name=<span class="string">&quot;nomic-embed-text&quot;</span>,</span><br><span class="line">    base_url=<span class="string">&quot;http://localhost:11434&quot;</span>,</span><br><span class="line">)</span><br><span class="line">splitter = SentenceSplitter(chunk_size=<span class="number">128</span>, chunk_overlap=<span class="number">20</span>)</span><br><span class="line"></span><br><span class="line">methods_index = VectorStoreIndex.from_documents(</span><br><span class="line">    [Document(text=<span class="string">&quot;定量 PCR 以小鼠肝脏 GAPDH 为内参。实验对象为 C57BL/6 小鼠。&quot;</span>,</span><br><span class="line">              doc_id=<span class="string">&quot;paper_001&quot;</span>, metadata=&#123;<span class="string">&quot;collection&quot;</span>: <span class="string">&quot;methods&quot;</span>&#125;)],</span><br><span class="line">    transformations=[splitter],</span><br><span class="line">)</span><br><span class="line">lang_index = VectorStoreIndex.from_documents(</span><br><span class="line">    [Document(text=<span class="string">&quot;Python 的列表推导式用一行从可迭代对象生成列表。&quot;</span>,</span><br><span class="line">              doc_id=<span class="string">&quot;py_001&quot;</span>, metadata=&#123;<span class="string">&quot;collection&quot;</span>: <span class="string">&quot;lang&quot;</span>&#125;)],</span><br><span class="line">    transformations=[splitter],</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">methods_tool = RetrieverTool.from_defaults(</span><br><span class="line">    retriever=methods_index.as_retriever(similarity_top_k=<span class="number">2</span>),</span><br><span class="line">    name=<span class="string">&quot;methods_search&quot;</span>,</span><br><span class="line">    description=<span class="string">&quot;检索分子生物学实验方法、剂量、物种、内参。不要用于编程语法问题。&quot;</span>,</span><br><span class="line">)</span><br><span class="line">lang_tool = RetrieverTool.from_defaults(</span><br><span class="line">    retriever=lang_index.as_retriever(similarity_top_k=<span class="number">2</span>),</span><br><span class="line">    name=<span class="string">&quot;python_search&quot;</span>,</span><br><span class="line">    description=<span class="string">&quot;检索 Python 语法与语言特性。不要用于实验动物或 PCR。&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关键参数：description 互斥；selector 用本地 LLM</span></span><br><span class="line">router = RouterRetriever(</span><br><span class="line">    selector=LLMSingleSelector.from_defaults(llm=Settings.llm),</span><br><span class="line">    retriever_tools=[methods_tool, lang_tool],</span><br><span class="line">)</span><br><span class="line"><span class="comment"># 输入</span></span><br><span class="line">q = <span class="string">&quot;GAPDH 内参对应的实验对象是什么物种？&quot;</span></span><br><span class="line">hits = router.retrieve(q)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;router&quot;</span>, [(h.node.metadata, h.node.text[:<span class="number">24</span>]) <span class="keyword">for</span> h <span class="keyword">in</span> hits])</span><br><span class="line"><span class="comment"># 预期：collection=methods，不含列表推导式</span></span><br><span class="line"></span><br><span class="line">fusion = QueryFusionRetriever(</span><br><span class="line">    [methods_index.as_retriever(similarity_top_k=<span class="number">2</span>), lang_index.as_retriever(similarity_top_k=<span class="number">2</span>)],</span><br><span class="line">    similarity_top_k=<span class="number">2</span>,</span><br><span class="line">    num_queries=<span class="number">1</span>,</span><br><span class="line">    mode=<span class="string">&quot;reciprocal_rerank&quot;</span>,</span><br><span class="line">)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;fusion&quot;</span>, [(h.node.metadata, h.node.text[:<span class="number">24</span>]) <span class="keyword">for</span> h <span class="keyword">in</span> fusion.retrieve(q)])</span><br><span class="line"><span class="comment"># 预期形态：可能混入 lang 块——这是「不选路、全跑」的可见代价</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-重要配置参数"><a href="#6-重要配置参数" class="headerlink" title="6. 重要配置参数"></a>6. 重要配置参数</h2><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RetrieverTool.description</code></td>
+<td>str，必填语义</td>
+<td>选择器用来判断「这条路是否该走」</td>
+<td>两路 description 雷同则乱跳</td>
+<td>含「何时用 &#x2F; 何时不用」各一句</td>
+<td>比 name 更重要</td>
+</tr>
+<tr>
+<td><code>selector</code></td>
+<td>LLMSingle &#x2F; Multi</td>
+<td>一次选 1 路还是多路</td>
+<td>Multi 接近弱融合，费用更高</td>
+<td>互斥库用 Single</td>
+<td>本地模型先 Single</td>
+</tr>
+<tr>
+<td><code>select_multi</code></td>
+<td>bool，部分 from_defaults</td>
+<td>是否允许多 tool</td>
+<td>True 时噪声近似 Fusion</td>
+<td>默认 False</td>
+<td>与 Fusion 二选一</td>
+</tr>
+<tr>
+<td><code>num_queries</code></td>
+<td>int，Fusion 默认 4</td>
+<td>额外生成几条 query</td>
+<td>Router 场景通常不需要改写</td>
+<td><strong>1</strong></td>
+<td>改写另做，不要叠在选路上</td>
+</tr>
+<tr>
+<td><code>similarity_top_k</code></td>
+<td>int</td>
+<td>Fusion 最终截断条数</td>
+<td>路数 × 每路 k 很大时必须截</td>
+<td>与单路 k 同量级</td>
+<td>先看各路再定</td>
+</tr>
+<tr>
+<td><code>temperature</code></td>
+<td>LLM，建议 0</td>
+<td>选择器采样</td>
+<td>&gt;0 时同一问可能换路</td>
+<td>0</td>
+<td>选路必须稳</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-适用-不适用"><a href="#7-适用-不适用" class="headerlink" title="7. 适用 &#x2F; 不适用"></a>7. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>适用</th>
+<th>不适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任务形态</td>
+<td>库主题互斥、问句类型可分</td>
+<td>同一库里语义+货号——用向量+BM25 Fusion，不要 Router</td>
+</tr>
+<tr>
+<td>集成约束</td>
+<td>能接受一次小 LLM 选路</td>
+<td>选路必须零 LLM——规则 if&#x2F;else 或 Fusion</td>
+</tr>
+<tr>
+<td>工程阶段</td>
+<td>2～5 个抽屉</td>
+<td>几十个工具还要失败重试——LangGraph 条件边 + 显式 state</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-易踩坑"><a href="#8-易踩坑" class="headerlink" title="8. 易踩坑"></a>8. 易踩坑</h2><ol>
+<li><strong>description 写成广告语</strong>（「非常有用」）：选择器无法互斥。  </li>
+<li><strong>用 Fusion 替代 Router 处理互斥库</strong>：第二库头名稳定污染。  </li>
+<li><strong>PydanticSingleSelector + 不支持 tool 的本地模型</strong>：解析失败，retrieve 空或乱。改 <code>LLMSingleSelector</code>。  </li>
+<li><strong>Router 里 <code>num_queries=4</code> 的 Fusion 当子路</strong>：一次用户问题变成选路 LLM + 多路改写，账算不清。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>互斥库 → Router</strong>；<strong>同一问题必须多路证据 → Fusion</strong>。  </li>
+<li>Tool <strong>description</strong> 是选路契约；<strong>temperature&#x3D;0</strong>。  </li>
+<li>跨索引 Fusion 会抬进「另一路的头名」，这是特性不是 bug。  </li>
+<li>选路失败要重试或审批时，把 Router 的结果当 LangGraph 一个节点的输出，不要在 Retriever 里造环。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/examples/retrievers/router_retriever/">Router Retriever</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/examples/retrievers/simple_fusion/">QueryFusionRetriever</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/RouterRetriever/" rel="tag"><i class="fa fa-tag"></i> RouterRetriever</a>
+          
+            <a href="/tags/QueryFusionRetriever/" rel="tag"><i class="fa fa-tag"></i> QueryFusionRetriever</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-05-%E6%9F%A5%E8%AF%A2-QueryEngine/" rel="next" title="QueryEngine">
+                <i class="fa fa-chevron-left"></i> QueryEngine
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-04-%E6%A3%80%E7%B4%A2-Retriever/" rel="prev" title="Retriever">
+                Retriever <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%89%8D%E7%BD%AE%E4%BE%9D%E8%B5%96%E4%B8%8E%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text">2. 前置依赖与环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">3.</span> <span class="nav-text">3. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">4. 原理说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">6. 重要配置参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">7.</span> <span class="nav-text">7. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

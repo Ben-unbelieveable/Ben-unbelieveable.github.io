@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,RAG," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="把切分策略当成可评测对象：冻结检索器，用 Recall@k 与语义完整率在候选窗口&#x2F;重叠之间做取舍。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chunking-centric-RAG">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86-Chunking-centric-RAG/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="把切分策略当成可评测对象：冻结检索器，用 Recall@k 与语义完整率在候选窗口&#x2F;重叠之间做取舍。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86-Chunking-centric-RAG/rag-fig01-chunk-boundary.png">
+<meta property="article:published_time" content="2026-03-26T09:34:44.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="RAG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86-Chunking-centric-RAG/rag-fig01-chunk-boundary.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-15.RAG/RAG-01数据切分-Chunking-centric-RAG/"/>
+
+
+
+
+
+  <title>Chunking-centric-RAG | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86-Chunking-centric-RAG/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Chunking-centric-RAG</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-26T17:34:44+08:00">
+                2026-03-26
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index">
+                    <span itemprop="name">工程实践</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  把切分策略当成可评测对象：冻结检索器，用 Recall@k 与语义完整率在候选窗口/重叠之间做取舍。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>固定窗口常把同一条方法约束拆开（「20 nM siRNA」和「处理 48 h 再抽 RNA」进不同块），多约束问句只能命中一半，后面换嵌入也补不回。根因是<strong>切分边界破坏了原子事实的完整性</strong>。本方法把 chunk 策略当成可评测对象，用冻结检索的 Recall@k 选窗口与 overlap。它不解决双栏乱序和表格错切（Document Parsing）。</p>
+<p>本文属于 RAG 工程框架中的「1 数据接入与文档切分」环节，聚焦「Chunking centric RAG」方法。</p>
+<h2 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>数据切分节点的<strong>策略选择器</strong>，不是解析器、不是检索器</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>已规整文本 → 带 <code>chunk_id</code> &#x2F; <code>doc_id</code> &#x2F; <code>text</code> &#x2F; <code>metadata</code> 的块列表</td>
+</tr>
+<tr>
+<td>默认组合</td>
+<td>结构边界（标题&#x2F;段落）+ 固定窗口网格；用同一批评测问句选参</td>
+</tr>
+<tr>
+<td>何时不用</td>
+<td>版式未还原（先 Parsing）；需要章节粗召回（改 Hierarchical）</td>
+</tr>
+</tbody></table>
+<h2 id="核心机制"><a href="#核心机制" class="headerlink" title="核心机制"></a>核心机制</h2><p>目标：在冻结嵌入与 $k$ 的前提下，选一组 $(s,o)$（窗口、重叠），使召回可达性最大，并控制膨胀。</p>
+<p>$$<br>(s^\star,o^\star)&#x3D;\arg\max_{s,o};\mathrm{Recall}@k\bigl(\mathrm{split}(D;s,o)\bigr)<br>\quad\text{s.t.}\quad<br>\mathrm{Inflation}(s,o)\le \tau<br>$$</p>
+<blockquote>
+<p>段末注释：<strong>召回率@k（Recall at k，Recall@k）</strong> &#x3D; 金标准相关块落入检索前 $k$ 条的比例；<strong>膨胀比（Inflation）</strong> &#x3D; 切分后 token 总数 &#x2F; 原文 token 数，overlap 会把它抬高。</p>
+</blockquote>
+<p>语义完整率（Semantic Completeness，SC）解释 Recall 为何随 $s$ 变化：原子事实 $f$ 必须落在同一块内，否则多约束问句的金标准块集合被拆散。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86-Chunking-centric-RAG/rag-fig01-chunk-boundary.png" alt="图 1　短窗口把剂量与时程切开，检索只能命中一半；完整块加 overlap 保住多约束"></p>
+<p><strong>实现路径与心智</strong>：不要把 splitter 当成「设一次就忘」的文本工具。离线路径是「枚举 $(s,o)$ → 物化 chunks → 用<strong>同一</strong> embedder 建临时索引 → 算冻结 Recall@k &#x2F; SC &#x2F; Inflation → 只 persist 胜者」；线上路径只有胜出的那一套切分，不再搜索。底层心智：切分是套在冻结检索器外面的<strong>参数搜索</strong>，评测器才是决策者，肉眼看块不是。</p>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><ul>
+<li><strong>优点</strong>：离线可网格搜索，在线几乎零额外时延；对后续任何检索器都抬上限。</li>
+<li><strong>缺点</strong>：最优 $(s,o)$ 随领域与问句类型变；一套参数打全部文档会在表格&#x2F;方法节失效。</li>
+</ul>
+<h2 id="契约与走通样例"><a href="#契约与走通样例" class="headerlink" title="契约与走通样例"></a>契约与走通样例</h2><p>本阶段输出停在 <strong>chunk 列表 + 选定策略</strong>，不生成答案。</p>
+<h3 id="输入"><a href="#输入" class="headerlink" title="输入"></a>输入</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;doc_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;P-GAPDH-01&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;section&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Methods&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;text&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Treat HEK293T cells with 20 nM siRNA targeting GAPDH for 48 h before RNA extraction.&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="中间量（两种策略）"><a href="#中间量（两种策略）" class="headerlink" title="中间量（两种策略）"></a>中间量（两种策略）</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">  <span class="punctuation">&#123;</span><span class="attr">&quot;strategy&quot;</span><span class="punctuation">:</span> <span class="string">&quot;fixed_40_overlap_0&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;chunks&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;Treat HEK293T cells with 20 nM siRNA targeting GAPDH&quot;</span><span class="punctuation">,</span> <span class="string">&quot;for 48 h before RNA extraction.&quot;</span><span class="punctuation">]</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span><span class="attr">&quot;strategy&quot;</span><span class="punctuation">:</span> <span class="string">&quot;fixed_120_overlap_24&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;chunks&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;Treat HEK293T cells with 20 nM siRNA targeting GAPDH for 48 h before RNA extraction.&quot;</span><span class="punctuation">]</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+<p>评测问句 $q$：「GAPDH siRNA 处理多久再抽 RNA？」金标准需含 <strong>48 h</strong>。冻结 <code>bge-m3</code>、$k&#x3D;5$：</p>
+<ul>
+<li><code>fixed_40_overlap_0</code>：含「48 h」的块排名第 7 → $\mathrm{Recall}@5&#x3D;0$，SC 对该事实为 0。</li>
+<li><code>fixed_120_overlap_24</code>：剂量与时程同块，排名第 2 → $\mathrm{Recall}@5&#x3D;1$，SC $&#x3D;1$。</li>
+</ul>
+<p>故选后者。$\mathrm{Inflation}$ 因 overlap 约为 $1.2$，低于预设 $\tau&#x3D;1.5$。</p>
+<h3 id="输出（给下游索引）"><a href="#输出（给下游索引）" class="headerlink" title="输出（给下游索引）"></a>输出（给下游索引）</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;selected_strategy&quot;</span><span class="punctuation">:</span> <span class="string">&quot;fixed_120_overlap_24&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;reason&quot;</span><span class="punctuation">:</span> <span class="string">&quot;冻结检索下 recall@5 更高且原子事实未拆散&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;chunks&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;chunk_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;P-GAPDH-01-C1&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;doc_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;P-GAPDH-01&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;text&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Treat HEK293T cells with 20 nM siRNA targeting GAPDH for 48 h before RNA extraction.&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;metadata&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;section&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Methods&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="社区实现"><a href="#社区实现" class="headerlink" title="社区实现"></a>社区实现</h2><p>默认 <strong>langchain-text-splitters</strong>（<code>RecursiveCharacterTextSplitter</code>）做窗口网格；LlamaIndex <code>SentenceSplitter</code> &#x2F; <code>SemanticSplitter</code> 作对照臂。</p>
+<ul>
+<li><strong>场景</strong>：版式已规整的方法&#x2F;SOP 正文。</li>
+<li><strong>接法</strong>：多套 <code>(chunk_size, chunk_overlap)</code> 建临时索引，同一 JSONL 评测集算 Recall@k，再 persist 胜者。</li>
+<li><strong>风险</strong>：按字符数切英文论文会在句子中途断开；优先按段落&#x2F;句号边界，窗口只作上限。SemanticSplitter 依赖额外嵌入，成本接近「再跑一遍 Naive」。</li>
+</ul>
+<h2 id="工程落地"><a href="#工程落地" class="headerlink" title="工程落地"></a>工程落地</h2><h3 id="最小可运行示例"><a href="#最小可运行示例" class="headerlink" title="最小可运行示例"></a>最小可运行示例</h3><p>复制为 <code>.py</code> 后直接运行（仅标准库）。冻结同一套评测问句，只换切分窗口。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;多策略切块 → 冻结词重叠检索算 Recall@k → 只 persist 胜者。&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Doc</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;一篇已规整正文。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    text: <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Chunk</span>:</span><br><span class="line">    chunk_id: <span class="built_in">str</span></span><br><span class="line">    text: <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowSplitter</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;按词窗口切。生产优先按段落/句号边界，窗口只作上限。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size: <span class="built_in">int</span>, overlap: <span class="built_in">int</span></span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">        <span class="variable language_">self</span>.size, <span class="variable language_">self</span>.overlap = size, overlap</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">split</span>(<span class="params">self, doc: Doc, prefix: <span class="built_in">str</span></span>) -&gt; <span class="built_in">list</span>[Chunk]:</span><br><span class="line">        words = doc.text.split()</span><br><span class="line">        step = <span class="built_in">max</span>(<span class="variable language_">self</span>.size - <span class="variable language_">self</span>.overlap, <span class="number">1</span>)</span><br><span class="line">        chunks = []</span><br><span class="line">        i, n = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">        <span class="keyword">while</span> i &lt; <span class="built_in">len</span>(words):</span><br><span class="line">            piece = <span class="string">&quot; &quot;</span>.join(words[i : i + <span class="variable language_">self</span>.size])</span><br><span class="line">            chunks.append(Chunk(<span class="string">f&quot;<span class="subst">&#123;prefix&#125;</span>-<span class="subst">&#123;n&#125;</span>&quot;</span>, piece))</span><br><span class="line">            n += <span class="number">1</span></span><br><span class="line">            i += step</span><br><span class="line">        <span class="keyword">return</span> chunks</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recall_at_k</span>(<span class="params">chunks: <span class="built_in">list</span>[Chunk], query: <span class="built_in">str</span>, gold_substr: <span class="built_in">str</span>, k: <span class="built_in">int</span></span>) -&gt; <span class="built_in">float</span>:</span><br><span class="line">    q = <span class="built_in">set</span>(query.lower().split())</span><br><span class="line">    ranked = <span class="built_in">sorted</span>(chunks, key=<span class="keyword">lambda</span> c: -<span class="built_in">len</span>(q &amp; <span class="built_in">set</span>(c.text.lower().split())))</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">float</span>(<span class="built_in">any</span>(gold_substr <span class="keyword">in</span> c.text <span class="keyword">for</span> c <span class="keyword">in</span> ranked[:k]))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">chunking_centric_build</span>(<span class="params">doc: Doc, query: <span class="built_in">str</span>, gold_substr: <span class="built_in">str</span>, k: <span class="built_in">int</span> = <span class="number">1</span></span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;输出胜出策略名与 Recall@k。&quot;&quot;&quot;</span></span><br><span class="line">    strategies = &#123;</span><br><span class="line">        <span class="string">&quot;w8&quot;</span>: WindowSplitter(<span class="number">8</span>, <span class="number">2</span>),</span><br><span class="line">        <span class="string">&quot;w4&quot;</span>: WindowSplitter(<span class="number">4</span>, <span class="number">1</span>),</span><br><span class="line">    &#125;</span><br><span class="line">    best = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> name, splitter <span class="keyword">in</span> strategies.items():</span><br><span class="line">        chunks = splitter.split(doc, name)</span><br><span class="line">        inflation = <span class="built_in">sum</span>(<span class="built_in">len</span>(c.text) <span class="keyword">for</span> c <span class="keyword">in</span> chunks) / <span class="built_in">max</span>(<span class="built_in">len</span>(doc.text), <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> inflation &gt; <span class="number">1.6</span>:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        rec = recall_at_k(chunks, query, gold_substr, k)</span><br><span class="line">        <span class="keyword">if</span> best <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> rec &gt; best[<span class="string">&quot;recall_at_k&quot;</span>]:</span><br><span class="line">            best = &#123;<span class="string">&quot;strategy&quot;</span>: name, <span class="string">&quot;recall_at_k&quot;</span>: rec, <span class="string">&quot;n_chunks&quot;</span>: <span class="built_in">len</span>(chunks)&#125;</span><br><span class="line">    <span class="keyword">return</span> best <span class="keyword">or</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    doc = Doc(<span class="string">&quot;Treat with 20 nM siRNA targeting GAPDH 48 h before RNA extraction&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(chunking_centric_build(doc, <span class="string">&quot;20 nM 48 h&quot;</span>, <span class="string">&quot;20 nM&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<h3 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>起点</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk_size</code></td>
+<td>英文方法节 256～512 token；过短先看 SC</td>
+<td>太小拆散原子事实，太大约噪声、Precision 下降</td>
+</tr>
+<tr>
+<td><code>chunk_overlap</code></td>
+<td>约为 <code>chunk_size</code> 的 10%～20%</td>
+<td>抬 Recall，抬 Inflation；过大近重复块拖慢检索</td>
+</tr>
+<tr>
+<td><code>k</code>（冻结评测）</td>
+<td>与线上 top-k 相同，常用 5</td>
+<td>评测 $k$ 与线上不一致，选出的策略会上线失效</td>
+</tr>
+<tr>
+<td><code>embedder</code></td>
+<td>与线上同一模型（如 <code>bge-m3</code>）</td>
+<td>换模型等于换评测器，网格结果不可迁移</td>
+</tr>
+<tr>
+<td><code>inflation_max</code></td>
+<td>1.3～1.6</td>
+<td>硬约束 overlap；超了直接淘汰该策略</td>
+</tr>
+</tbody></table>
+<h2 id="失效—信号—螺丝"><a href="#失效—信号—螺丝" class="headerlink" title="失效—信号—螺丝"></a>失效—信号—螺丝</h2><ul>
+<li><strong>只肉眼看一块、未跑冻结 Recall</strong>：上线后多约束问句仍漏。信号：SC 低而单句「看起来完整」。螺丝：锁评测 JSONL，禁止手选。</li>
+<li><strong>overlap 过大</strong>：索引体积涨、近重复占满 Top-k。信号：Inflation $&gt;1.6$ 且 Precision@k 掉。螺丝：降 overlap 或先按段落边界切。</li>
+<li><strong>一套参数打全部文档</strong>：表格&#x2F;试剂清单被切碎。信号：Methods 子集 Recall 远低于 Abstract 子集。螺丝：按 <code>section</code> 分策略，或把表格交给 Parsing 的 <code>merge_table</code>。</li>
+</ul>
+<h2 id="规模（100-篇生物学-PDF）"><a href="#规模（100-篇生物学-PDF）" class="headerlink" title="规模（100 篇生物学 PDF）"></a>规模（100 篇生物学 PDF）</h2><p>假设约 100 篇生物学 PDF、10–15 页&#x2F;篇；A10 24GB 非必需。版式已规整时，多策略网格 + 同一批评测问句约 <strong>0.5–2 CPU·h</strong>；内存 8–16 GB；磁盘增量约 0.5–1.5 GB。在线切分成本为零。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86-Hierarchical-Chunking-RAG/" rel="next" title="Hierarchical-Chunking-RAG">
+                <i class="fa fa-chevron-left"></i> Hierarchical-Chunking-RAG
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-01.%E6%95%B0%E6%8D%AE%E5%88%87%E5%88%86%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/" rel="prev" title="RAG：数据切分框架概述">
+                RAG：数据切分框架概述 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">核心机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">3.</span> <span class="nav-text">优缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A5%91%E7%BA%A6%E4%B8%8E%E8%B5%B0%E9%80%9A%E6%A0%B7%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">契约与走通样例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5"><span class="nav-number">4.1.</span> <span class="nav-text">输入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E9%97%B4%E9%87%8F%EF%BC%88%E4%B8%A4%E7%A7%8D%E7%AD%96%E7%95%A5%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">中间量（两种策略）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%87%BA%EF%BC%88%E7%BB%99%E4%B8%8B%E6%B8%B8%E7%B4%A2%E5%BC%95%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">输出（给下游索引）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BE%E5%8C%BA%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">社区实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E7%A8%8B%E8%90%BD%E5%9C%B0"><span class="nav-number">6.</span> <span class="nav-text">工程落地</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">6.1.</span> <span class="nav-text">最小可运行示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0"><span class="nav-number">6.2.</span> <span class="nav-text">参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%B1%E6%95%88%E2%80%94%E4%BF%A1%E5%8F%B7%E2%80%94%E8%9E%BA%E4%B8%9D"><span class="nav-number">7.</span> <span class="nav-text">失效—信号—螺丝</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E6%A8%A1%EF%BC%88100-%E7%AF%87%E7%94%9F%E7%89%A9%E5%AD%A6-PDF%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">规模（100 篇生物学 PDF）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

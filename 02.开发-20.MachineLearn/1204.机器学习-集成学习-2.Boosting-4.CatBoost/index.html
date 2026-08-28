@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Machine-Learning,Boosting,CatBoost," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="CatBoost（约 2017）：有序提升与类别特征处理；在 GBDT 族中的位置、适用边界与最小示例。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Boosting：CatBoost">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-4.CatBoost/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="CatBoost（约 2017）：有序提升与类别特征处理；在 GBDT 族中的位置、适用边界与最小示例。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-4.CatBoost/catboost-fig01-ordered.png">
+<meta property="article:published_time" content="2026-07-29T07:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Boosting">
+<meta property="article:tag" content="CatBoost">
+<meta property="article:tag" content="Machine-Learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-4.CatBoost/catboost-fig01-ordered.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/1204.机器学习-集成学习-2.Boosting-4.CatBoost/"/>
+
+
+
+
+
+  <title>Boosting：CatBoost | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-4.CatBoost/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Boosting：CatBoost</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-29T15:20:00+08:00">
+                2026-07-29
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">集成学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  CatBoost（约 2017）：有序提升与类别特征处理；在 GBDT 族中的位置、适用边界与最小示例。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>表格里一堆「城市 &#x2F; 店铺 &#x2F; 用户 ID」这类高基数类别：若用全表目标均值做编码，训练时容易把<strong>验证标签的味道</strong>渗进特征。GBDT 能吃数值，但类别怎么进树、怎么避免泄漏，仍是实务痛点。</p>
+<p><strong>CatBoost</strong>（Category Boosting，Yandex，约 <strong>2017</strong>）仍是梯度提升树，主打两件事：<strong>原生类别特征</strong> + <strong>有序提升（ordered boosting）</strong> 降低目标泄漏；默认参数往往较稳，推理也偏快。</p>
+<blockquote>
+<p>段末注释：<strong>CatBoost</strong> 与 XGBoost、LightGBM 同属 GBDT 工程实现族；发表时段与 LightGBM 接近（均为 2017），本系列按公开材料时间排在 XGBoost 之后、LightGBM 之前。后文沿用 CatBoost。</p>
+</blockquote>
+<p>配图目录：<code>./1204.机器学习-集成学习-2.Boosting-4.CatBoost/</code>。</p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>学习范式</td>
+<td>监督学习；GBDT 族（约 2017）</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>数值 + 类别列 → 多棵对称树分数之和</td>
+</tr>
+<tr>
+<td>在优化什么</td>
+<td>提升损失；用有序原则估计类别统计与残差，减轻「用未来标签编码现在」</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：Yandex 团队约 <strong>2017</strong> 提出（如 <em>Fighting biases with dynamic boosting</em>，arXiv:1706.09516；类别特征专论见 NeurIPS <strong>2018</strong> CatBoost 文）。当时高基数类别常用全表目标统计，易渗进标签信息；CatBoost 用<strong>有序提升 &#x2F; 有序统计</strong>降低这类目标泄漏，并强化原生类别支持。</p>
+<p><strong>比喻</strong>：算某个品类的「历史平均点击率」时，只准看<strong>排在当前样本之前</strong>的记录，不准翻后面的答案——考试只能参考已做过的卷子，不能偷看尚未开封的。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-4.CatBoost/catboost-fig01-ordered.png" alt="图 1　全表目标编码 vs 有序统计"></p>
+<hr>
+<h2 id="2-直觉：相对前代多了什么"><a href="#2-直觉：相对前代多了什么" class="headerlink" title="2. 直觉：相对前代多了什么"></a>2. 直觉：相对前代多了什么</h2><p>发展坐标（本系列）：AdaBoost（改权重）→ GBDT（拟合残差）→ XGBoost（正则 + 二阶）→ <strong>CatBoost（类别 + 有序）</strong> → LightGBM（直方图加速）→ NGBoost（分布参数）。</p>
+<p>CatBoost 相对「朴素 GBDT &#x2F; 粗糙目标编码」：</p>
+<ol>
+<li><strong>Ordered boosting</strong>：按排列构造，减少残差估计中的偏置与泄漏。  </li>
+<li><strong>类别组合与统计</strong>：类别可直接声明；内部用有序目标统计等，少做爆炸 one-hot。  </li>
+<li><strong>对称树（oblivious tree）</strong>：同一层共用分裂条件，结构规整，利于速度与正则。</li>
+</ol>
+<hr>
+<h2 id="3-核心链路"><a href="#3-核心链路" class="headerlink" title="3. 核心链路"></a>3. 核心链路</h2><p>主链路仍是加法树：$F_M(x)&#x3D;\sum_m \nu f_m(x)$。<br>差异在 $f_m$ 怎么用类别、怎么估梯度。教学上把两件事分开看：</p>
+<ol>
+<li><strong>有序目标统计（生成 $\phi$）</strong>：把类别编成数值特征。对样本 $t$，只用排列中<strong>更早</strong>的同类别真实标签 $y$ 估均值（加先验平滑）。<strong>同一类别、不同行的 $\phi_t$ 可以不同。</strong>  </li>
+<li><strong>其后的提升迭代</strong>：本篇手算里，$\phi$ 在首轮遍历算完后即<strong>冻结</strong>，当作普通数值特征送进各轮树；每轮变的是残差 $r$、树 $f_m$ 与预测 $F$，<strong>不再用 $y$ 重算 $\phi$。</strong>  </li>
+<li><strong>有序提升（ordered boosting，实现层）</strong>：完整 CatBoost 还会在估计残差&#x2F;梯度时尽量「只看过去」，那是另一套防泄漏，<strong>不等于</strong>每轮改写 $\phi$。本篇手算不展开该层。  </li>
+<li>读参数：<code>depth</code>、<code>learning_rate</code>、<code>iterations</code> + 早停；<code>cat_features</code> 声明类别列。</li>
+</ol>
+<p>抓住一句：<strong>先有序地生成类别编码特征，再（在教学简化下）用固定 $\phi$ 做提升；编码与提升都尽量「只看过去」。</strong></p>
+<hr>
+<h2 id="4-手算完整实例：有序类别统计-2-轮提升"><a href="#4-手算完整实例：有序类别统计-2-轮提升" class="headerlink" title="4. 手算完整实例：有序类别统计 + 2 轮提升"></a>4. 手算完整实例：有序类别统计 + 2 轮提升</h2><h3 id="A-问题与原始表"><a href="#A-问题与原始表" class="headerlink" title="A. 问题与原始表"></a>A. 问题与原始表</h3><p>类别「城市」+ 数值点击标签 $y\in{0,1}$（示意）。排列顺序按下表行序（先出现的在前）。</p>
+<table>
+<thead>
+<tr>
+<th>序号 $t$</th>
+<th>城市</th>
+<th>$y$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>沪</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>京</td>
+<td>1</td>
+</tr>
+<tr>
+<td>3</td>
+<td>沪</td>
+<td>1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>沪</td>
+<td>1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>京</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<h3 id="B-初始化"><a href="#B-初始化" class="headerlink" title="B. 初始化"></a>B. 初始化</h3><p>有序目标统计：对样本 $t$，只用<strong>更早的同城样本</strong>估均值，再加先验平滑。先验取全局均值 $m&#x3D;\frac{3}{5}&#x3D;0.6$，平滑强度 $a&#x3D;1$：</p>
+<p>$$<br>\phi_t&#x3D;\frac{\sum_{t’&lt;t,,c_{t’}&#x3D;c_t} y_{t’} + a,m}{n_{t,&lt;}+a}<br>$$</p>
+<p>$F_0&#x3D;0.6$；$\nu&#x3D;1$。第 1、2 轮在冻结的 $\phi$ 上各训一棵 stump：<strong>叶值 &#x3D; 该叶残差均值</strong>；阈值不事先拍脑袋，而由「相邻 $\phi$ 中点」候选里选出使拟合后 $\sum(r-f)^2$ 最小的那一刀（平方损失下 GBDT 式教学简化；非 CatBoost 全量实现）。</p>
+<h3 id="C-训练过程"><a href="#C-训练过程" class="headerlink" title="C. 训练过程"></a>C. 训练过程</h3><p>先算每行 $\phi_t$：</p>
+<table>
+<thead>
+<tr>
+<th>$t$</th>
+<th>城市</th>
+<th>更早同城个数 $n_{&lt;}$</th>
+<th>更早同城 $\sum y$</th>
+<th>$\phi_t&#x3D;\dfrac{\sum y + a m}{n_{&lt;}+a}$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>沪</td>
+<td>$0$</td>
+<td>$0$（尚无历史）</td>
+<td>$(0+0.6)&#x2F;(0+1)&#x3D;0.60$</td>
+</tr>
+<tr>
+<td>2</td>
+<td>京</td>
+<td>$0$</td>
+<td>$0$</td>
+<td>$0.60$</td>
+</tr>
+<tr>
+<td>3</td>
+<td>沪</td>
+<td>$1$（仅 $t_1$）</td>
+<td>$y_1&#x3D;0$</td>
+<td>$(0+0.6)&#x2F;(1+1)&#x3D;0.30$</td>
+</tr>
+<tr>
+<td>4</td>
+<td>沪</td>
+<td>$2$（$t_1,t_3$）</td>
+<td>$0+1&#x3D;1$</td>
+<td>$(1+0.6)&#x2F;(2+1)\approx0.53$</td>
+</tr>
+<tr>
+<td>5</td>
+<td>京</td>
+<td>$1$（仅 $t_2$）</td>
+<td>$y_2&#x3D;1$</td>
+<td>$(1+0.6)&#x2F;(1+1)&#x3D;0.80$</td>
+</tr>
+</tbody></table>
+<p>对 $t_3$：同城历史就是 $t_1$（$y_1&#x3D;0$），所以分子是「历史点击和 $0$ + 先验 $0.6$」，分母是「历史条数 $1$ + 平滑 $a&#x3D;1$」。若没有 $t_1$，会退化成和 $t_1$ 一样的 $(0+0.6)&#x2F;1&#x3D;0.60$，而不是 $0.30$。</p>
+<p><strong>$\phi$ 与后面提升轮次的关系（本篇约定）</strong>：</p>
+<ul>
+<li>上表是<strong>首轮遍历</strong>：用真实标签 $y$ 按有序规则生成编码特征 $\phi_t$（$\phi$ 不是预测值 $F$）。  </li>
+<li>生成完毕后，把各行的 $\phi_t$ <strong>固定下来</strong>，后面第 1、2 轮 stump 都读同一列 $\phi$，只更新 $r$、$f_m$、$F$。  </li>
+<li>因此「沪」在 $t_1&#x2F;t_3&#x2F;t_4$ 上 $\phi$ 不同，是编码阶段造成的；进入提升后不会每轮再改这些 $\phi$。</li>
+</ul>
+<p>若用<strong>全表</strong>目标编码，「沪」均值 $(0+1+1)&#x2F;3\approx0.67$ 会写进第 1 行——把后面标签味道提前泄露；有序统计避免这一点。</p>
+<p><strong>如何定 stump 阈值（每轮都做）</strong>：将本轮用到的 $\phi$ 去重排序得 ${0.30,,0.53,,0.60,,0.80}$，在相邻取值的中点形成候选</p>
+<p>$$<br>\tau\in{0.415,;0.565,;0.70}<br>$$</p>
+<p>（即 $(0.30+0.53)&#x2F;2$、$(0.53+0.60)&#x2F;2$、$(0.60+0.80)&#x2F;2$）。对每个 $\tau$：左叶 $\phi&lt;\tau$、右叶 $\phi\geq\tau$，叶值取该叶残差均值，再算拟合后的 $\sum_i(r_i-f(x_i))^2$，<strong>取最小者</strong>为 $\tau^*$。任意落在同一相邻区间内的阈值（例如旧写法 $0.55$）与 $0.565$ 分法相同；下文写中点，避免「数字从哪来」不清。</p>
+<p><strong>第 1 轮</strong>：残差 $r&#x3D;y-F_0$（$t_1$：$0-0.6&#x3D;-0.6$）。候选比较：</p>
+<table>
+<thead>
+<tr>
+<th>候选 $\tau$</th>
+<th>左叶</th>
+<th>右叶</th>
+<th>$f^{\mathrm{L}}$</th>
+<th>$f^{\mathrm{R}}$</th>
+<th>拟合后 $\sum(r-f)^2$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$0.415$</td>
+<td>$t_3$</td>
+<td>$t_1,t_2,t_4,t_5$</td>
+<td>$+0.40$</td>
+<td>$-0.10$</td>
+<td>$1.00$</td>
+</tr>
+<tr>
+<td>$0.565$</td>
+<td>$t_3,t_4$</td>
+<td>$t_1,t_2,t_5$</td>
+<td>$+0.40$</td>
+<td>$-0.267$</td>
+<td>$\mathbf{0.667}$（最优）</td>
+</tr>
+<tr>
+<td>$0.70$</td>
+<td>$t_1..t_4$</td>
+<td>$t_5$</td>
+<td>$+0.15$</td>
+<td>$-0.60$</td>
+<td>$0.75$</td>
+</tr>
+</tbody></table>
+<p>故 $\tau_1^*&#x3D;0.565$，$f_1^{\mathrm{L}}&#x3D;+0.4$，$f_1^{\mathrm{R}}&#x3D;(-0.6+0.4-0.6)&#x2F;3&#x3D;-0.8&#x2F;3\approx-0.267$。</p>
+<table>
+<thead>
+<tr>
+<th>$t$</th>
+<th>$y$</th>
+<th>$\phi$</th>
+<th>$F_0$</th>
+<th>$r&#x3D;y-F_0$</th>
+<th>叶</th>
+<th>$f_1$</th>
+<th>$F_1&#x3D;F_0+f_1$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>0</td>
+<td>0.60</td>
+<td>0.6</td>
+<td>−0.6</td>
+<td>右</td>
+<td>−0.267</td>
+<td>≈0.333</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>0.60</td>
+<td>0.6</td>
+<td>+0.4</td>
+<td>右</td>
+<td>−0.267</td>
+<td>≈0.333</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>0.30</td>
+<td>0.6</td>
+<td>+0.4</td>
+<td>左</td>
+<td>+0.4</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td>0.53</td>
+<td>0.6</td>
+<td>+0.4</td>
+<td>左</td>
+<td>+0.4</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0</td>
+<td>0.80</td>
+<td>0.6</td>
+<td>−0.6</td>
+<td>右</td>
+<td>−0.267</td>
+<td>≈0.333</td>
+</tr>
+</tbody></table>
+<p>平方残差和：$\sum r_0^2&#x3D;1.20$ → $\sum(y-F_1)^2\approx0.667$。$t_2$ 与右叶负残差同伴折中，单点可变差，但整体下降。</p>
+<p><strong>第 2 轮</strong>：残差 $r&#x3D;y-F_1$，<strong>重新</strong>枚举同一组候选 $\tau$（每棵新树都要重搜，不沿用 $\tau_1^*$）：</p>
+<table>
+<thead>
+<tr>
+<th>候选 $\tau$</th>
+<th>左叶</th>
+<th>右叶</th>
+<th>$f^{\mathrm{L}}$</th>
+<th>$f^{\mathrm{R}}$</th>
+<th>拟合后 $\sum(r-f)^2$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$0.415$</td>
+<td>$t_3$</td>
+<td>其余</td>
+<td>$0$</td>
+<td>$0$</td>
+<td>$0.667$（无改进）</td>
+</tr>
+<tr>
+<td>$0.565$</td>
+<td>$t_3,t_4$</td>
+<td>$t_1,t_2,t_5$</td>
+<td>$0$</td>
+<td>$0$</td>
+<td>$0.667$（无改进）</td>
+</tr>
+<tr>
+<td>$0.70$</td>
+<td>$t_1..t_4$</td>
+<td>$t_5$</td>
+<td>$+0.083$</td>
+<td>$-0.333$</td>
+<td>$\mathbf{0.528}$（最优）</td>
+</tr>
+</tbody></table>
+<p>故 $\tau_2^*&#x3D;0.70$，$f_2^{\mathrm{L}}&#x3D;(-\tfrac13+\tfrac23+0+0)&#x2F;4&#x3D;\tfrac1{12}\approx0.083$，$f_2^{\mathrm{R}}&#x3D;-\tfrac13$。</p>
+<table>
+<thead>
+<tr>
+<th>$t$</th>
+<th>$y$</th>
+<th>$\phi$</th>
+<th>$F_1$</th>
+<th>$r&#x3D;y-F_1$</th>
+<th>叶（相对 $\tau_2^*$）</th>
+<th>$f_2$</th>
+<th>$F_2&#x3D;F_1+f_2$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>0</td>
+<td>0.60</td>
+<td>≈0.333</td>
+<td>≈−0.333</td>
+<td>左</td>
+<td>+0.083</td>
+<td>≈0.417</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>0.60</td>
+<td>≈0.333</td>
+<td>≈+0.667</td>
+<td>左</td>
+<td>+0.083</td>
+<td>≈0.417</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>0.30</td>
+<td>1.0</td>
+<td>0</td>
+<td>左</td>
+<td>+0.083</td>
+<td>≈1.083</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td>0.53</td>
+<td>1.0</td>
+<td>0</td>
+<td>左</td>
+<td>+0.083</td>
+<td>≈1.083</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0</td>
+<td>0.80</td>
+<td>≈0.333</td>
+<td>≈−0.333</td>
+<td>右</td>
+<td>−0.333</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>平方残差和 ≈ $0.528$。第 2 棵树把阈值改到 $0.70$，才能再削误差——若死守第 1 轮的 $0.565$，叶均值全为 $0$，提升停住。</p>
+<h3 id="D-可部署对象"><a href="#D-可部署对象" class="headerlink" title="D. 可部署对象"></a>D. 可部署对象</h3><p>有序编码规则（含先验 $m,a$）+ 两棵 stump：<br>$f_1$ ：$\tau_1^<em>&#x3D;0.565$，叶值 ${+0.4,,-0.267}$；<br>$f_2$ ：$\tau_2^</em>&#x3D;0.70$，叶值 ${+0.083,,-0.333}$。<br>推理阶段<strong>不再</strong>给「同一类别、每一行各不相同的训练期 $\phi$」；而是对每个类别水平准备<strong>一份（或实现内部约定的）部署用统计</strong>，再进树。</p>
+<h3 id="E-预测-推断"><a href="#E-预测-推断" class="headerlink" title="E. 预测 &#x2F; 推断"></a>E. 预测 &#x2F; 推断</h3><p><strong>预测期 $\phi$ 怎么定（与训练期「同行不同 $\phi$」对照）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>同一类别（如「沪」）的 $\phi$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>训练编码</td>
+<td>每个样本 $t$ 只看<strong>排列中更早</strong>的同城 $y$，故 $t_1&#x2F;t_3&#x2F;t_4$ 的 $\phi$ 可以不同（防泄漏）</td>
+</tr>
+<tr>
+<td>预测 &#x2F; 上线</td>
+<td>新样本没有「自己在训练排列里的位置」，也<strong>不能用自己的 $y$</strong>（尚未发生或不可用）。通常把<strong>训练集里该类别的全部真实 $y$</strong>（加同一套先验平滑）聚成<strong>一个</strong>部署用 $\phi_{\text{cat}}$；同城新样本共用这个值</td>
+</tr>
+</tbody></table>
+<p>教学约定（与上表数据一致）：对类别 $c$，</p>
+<p>$$<br>\phi_{\text{deploy}}(c)&#x3D;\frac{\sum_{i:,c_i&#x3D;c} y_i + a,m}{n_c+a}<br>$$</p>
+<p>即：**会把训练阶段该类别的样本都当作「前置历史」**来估一个固定编码；不是沿用某一次训练行上的 $\phi_t$，也不是在线再编造排列。未见过的新类别则退回先验 $m$（或实现里的未知水平策略）。</p>
+<ul>
+<li><strong>训练内复核（$t&#x3D;3$）</strong>：$\phi_3&#x3D;0.30$ → $f_1$ 走左（$&lt;0.565$）得 $+0.4$；$f_2$ 走左（$&lt;0.70$）得 $+0.083$ ⇒ $F_2\approx1.083$，阈值 0.5 ⇒ 判 1。  </li>
+<li><strong>新样本（城市&#x3D;沪）</strong>：$\phi_{\text{deploy}}(\text{沪})&#x3D;(0+1+1+0.6)&#x2F;4&#x3D;0.65$ → $f_1$ 走右（$\geq0.565$）得 $-0.267$；$f_2$ 走左（$&lt;0.70$）得 $+0.083$ ⇒<br>$F&#x3D;0.6-0.267+0.083\approx0.416$，阈值 0.5 ⇒ 判 0。<br>（部署 $\phi$ 与训练行 $t_3$ 的有序 $\phi$ 不同，两棵树的左右叶归属也不同——对照「训练逐行 $\phi$ ≠ 部署聚合 $\phi$」。）</li>
+</ul>
+<blockquote>
+<p>段末注释：完整 CatBoost 在库内还会存更细的统计与组合特征；上表是教学口径。要点不变——<strong>训练用有序、逐行不同的 $\phi$ 防泄漏；预测用基于训练集聚合的类别统计；每轮 stump 阈值由候选切分按残差拟合误差选出，叶值取叶内残差均值。</strong></p>
+</blockquote>
+<hr>
+<h2 id="5-适用-不适用"><a href="#5-适用-不适用" class="headerlink" title="5. 适用 &#x2F; 不适用"></a>5. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>判定</th>
+<th>要求或边界</th>
+<th>具体例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>特征</td>
+<td>适用</td>
+<td>类别多、高基数；想少手工编码；可混数值</td>
+<td>电商：城市、店铺 ID、品类 + 价格、停留时长</td>
+</tr>
+<tr>
+<td>特征</td>
+<td>不适用</td>
+<td>纯数值、极小表；或类别已有可靠嵌入表征</td>
+<td>仅 5 个标准化数值列的小实验，XGB&#x2F;sklearn 即可</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>适用</td>
+<td>分类、回归、排序等常见监督任务</td>
+<td>CTR、违约、搜索相关性</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>不适用</td>
+<td>必须输出完整条件分布（均值+方差带）</td>
+<td>要预测区间时看 NGBoost 或分位数&#x2F;贝叶斯方案</td>
+</tr>
+<tr>
+<td>训练数据</td>
+<td>适用</td>
+<td>中等至大规模表格；验证集早停</td>
+<td>数十万行业务表，类别列直接 <code>cat_features</code></td>
+</tr>
+<tr>
+<td>训练数据</td>
+<td>不适用</td>
+<td>类别水平在线上会狂出新值且无兜底；样本极少却深度很大</td>
+<td>训练集未见过的 ID 占一半流量，却无未知水平策略</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-优缺点与常见坑"><a href="#6-优缺点与常见坑" class="headerlink" title="6. 优缺点与常见坑"></a>6. 优缺点与常见坑</h2><p><strong>优点</strong>：类别友好；默认较稳；有序思路降低一种常见泄漏；推理效率不错。<br><strong>缺点</strong>：超大纯数值表上不一定快过 LightGBM；原理细节比「开箱调用」重；GPU&#x2F;集群场景要查当前版本文档。</p>
+<p><strong>坑</strong>：忘了声明 <code>cat_features</code> 却把字符串当数值；早停指标与业务不一致；和 LightGBM 比速度时数据预处理不对齐。</p>
+<hr>
+<h2 id="7-最小可运行示例"><a href="#7-最小可运行示例" class="headerlink" title="7. 最小可运行示例"></a>7. 最小可运行示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;CatBoost：声明类别列，二分类训练与预测。&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> catboost <span class="keyword">import</span> CatBoostClassifier, Pool</span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split</span><br><span class="line"></span><br><span class="line"><span class="comment"># 示意：最后一列为类别城市编码</span></span><br><span class="line">rng = np.random.default_rng(<span class="number">42</span>)</span><br><span class="line">n = <span class="number">2000</span></span><br><span class="line">X_num = rng.normal(size=(n, <span class="number">3</span>))</span><br><span class="line">X_cat = rng.integers(<span class="number">0</span>, <span class="number">10</span>, size=(n, <span class="number">1</span>))</span><br><span class="line">X = np.hstack([X_num, X_cat])</span><br><span class="line">y = (X_num[:, <span class="number">0</span>] + <span class="number">0.3</span> * X_cat[:, <span class="number">0</span>] + rng.normal(scale=<span class="number">0.5</span>, size=n) &gt; <span class="number">0</span>).astype(<span class="built_in">int</span>)</span><br><span class="line"></span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(</span><br><span class="line">    X, y, test_size=<span class="number">0.2</span>, random_state=<span class="number">42</span>, stratify=y</span><br><span class="line">)</span><br><span class="line">cat_idx = [<span class="number">3</span>]</span><br><span class="line">train_pool = Pool(X_train, y_train, cat_features=cat_idx)</span><br><span class="line">test_pool = Pool(X_test, y_test, cat_features=cat_idx)</span><br><span class="line"></span><br><span class="line">model = CatBoostClassifier(</span><br><span class="line">    iterations=<span class="number">200</span>,</span><br><span class="line">    depth=<span class="number">6</span>,</span><br><span class="line">    learning_rate=<span class="number">0.1</span>,</span><br><span class="line">    loss_function=<span class="string">&quot;Logloss&quot;</span>,</span><br><span class="line">    eval_metric=<span class="string">&quot;AUC&quot;</span>,</span><br><span class="line">    random_seed=<span class="number">42</span>,</span><br><span class="line">    verbose=<span class="literal">False</span>,</span><br><span class="line">)</span><br><span class="line">model.fit(train_pool, eval_set=test_pool, early_stopping_rounds=<span class="number">30</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;best iteration:&quot;</span>, model.get_best_iteration())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;test pred[:5]:&quot;</span>, model.predict_proba(X_test)[:<span class="number">5</span>, <span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：随机示意数据示例，与上文有序统计手算表无关。</p>
+<h3 id="重要配置参数（CatBoost）"><a href="#重要配置参数（CatBoost）" class="headerlink" title="重要配置参数（CatBoost）"></a>重要配置参数（CatBoost）</h3><table>
+<thead>
+<tr>
+<th>参数（库内常用名）</th>
+<th>训练中的作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>iterations</code></td>
+<td>树&#x2F;迭代次数；过多易过拟合</td>
+<td>常 <code>500～3000</code>；<strong>必须配早停</strong></td>
+<td>用 <code>get_best_iteration()</code>，勿默认跑满</td>
+</tr>
+<tr>
+<td><code>depth</code></td>
+<td>对称树深度；过大易过拟合、变慢</td>
+<td>常 <code>4～8</code>；起点可 <code>6</code></td>
+<td>过拟合优先减 <code>depth</code> 或加 <code>l2_leaf_reg</code></td>
+</tr>
+<tr>
+<td><code>learning_rate</code></td>
+<td>步长；小更稳、常需更多迭代</td>
+<td>常 <code>0.03～0.2</code>；起点可 <code>0.1</code></td>
+<td>与 <code>iterations</code>&#x2F;早停联动；lr↓ 时放宽最大迭代</td>
+</tr>
+<tr>
+<td><code>l2_leaf_reg</code></td>
+<td>叶正则；越大越保守</td>
+<td>常从默认附近试；过拟合可增大</td>
+<td>比盲目减轮数更直接抑制叶爆炸</td>
+</tr>
+<tr>
+<td><code>cat_features</code></td>
+<td>声明类别列索引&#x2F;名；走有序目标统计</td>
+<td><strong>凡类别列都显式声明</strong></td>
+<td>漏声明会当数值乱切；与手算「有序 φ」同一条产品路径</td>
+</tr>
+<tr>
+<td>早停 <code>early_stopping_rounds</code></td>
+<td>验证集停滞则停</td>
+<td>常 <code>20～50</code></td>
+<td>务必提供 <code>eval_set</code>；生产用 best iteration</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-和近邻算法怎么挑"><a href="#8-和近邻算法怎么挑" class="headerlink" title="8. 和近邻算法怎么挑"></a>8. 和近邻算法怎么挑</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>更优先考虑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>教学：加重错分</td>
+<td>AdaBoost</td>
+</tr>
+<tr>
+<td>残差提升框架</td>
+<td>GBDT</td>
+</tr>
+<tr>
+<td>通用数值表强基线</td>
+<td>XGBoost</td>
+</tr>
+<tr>
+<td><strong>类别多、防目标编码泄漏</strong></td>
+<td><strong>CatBoost</strong></td>
+</tr>
+<tr>
+<td>行数极大、要更快训练</td>
+<td>LightGBM</td>
+</tr>
+<tr>
+<td>要整段预测分布</td>
+<td>NGBoost</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ul>
+<li>CatBoost ≈ <strong>GBDT + 有序提升 + 原生类别</strong>。  </li>
+<li>类别型业务表的常用默认之一；与 LightGBM 选型看「类别复杂度 vs 纯速度」。  </li>
+<li>最易踩的坑：<strong>类别列未声明进 <code>cat_features</code></strong>。</li>
+</ul>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Prokhorenkova L. et al. CatBoost: unbiased boosting with categorical features. <em>NeurIPS</em> <strong>2018</strong>.  </li>
+<li>Dorogush A.V. et al. Fighting biases with dynamic boosting. <em>arXiv:1706.09516</em> <strong>2017</strong>.  </li>
+<li><a target="_blank" rel="noopener" href="https://catboost.ai/docs/">CatBoost 文档</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Machine-Learning/" rel="tag"><i class="fa fa-tag"></i> Machine-Learning</a>
+          
+            <a href="/tags/Boosting/" rel="tag"><i class="fa fa-tag"></i> Boosting</a>
+          
+            <a href="/tags/CatBoost/" rel="tag"><i class="fa fa-tag"></i> CatBoost</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/03.%E5%BA%94%E7%94%A8-05.%E5%B7%A5%E5%85%B7%E6%8E%A8%E8%8D%90/%E8%B7%A8%E6%9C%BA-%E6%8C%82%E8%BD%BD-SSHFS-%E8%BF%9C%E7%A8%8B%E7%9B%AE%E5%BD%95%E6%9C%AC%E5%9C%B0%E5%8C%96/" rel="next" title="跨机-挂载-SSHFS-远程目录本地化">
+                <i class="fa fa-chevron-left"></i> 跨机-挂载-SSHFS-远程目录本地化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-6.NGBoost/" rel="prev" title="Boosting：NGBoost">
+                Boosting：NGBoost <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%9B%B4%E8%A7%89%EF%BC%9A%E7%9B%B8%E5%AF%B9%E5%89%8D%E4%BB%A3%E5%A4%9A%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-number">2.</span> <span class="nav-text">2. 直觉：相对前代多了什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E9%93%BE%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">3. 核心链路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%89%8B%E7%AE%97%E5%AE%8C%E6%95%B4%E5%AE%9E%E4%BE%8B%EF%BC%9A%E6%9C%89%E5%BA%8F%E7%B1%BB%E5%88%AB%E7%BB%9F%E8%AE%A1-2-%E8%BD%AE%E6%8F%90%E5%8D%87"><span class="nav-number">4.</span> <span class="nav-text">4. 手算完整实例：有序类别统计 + 2 轮提升</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-%E9%97%AE%E9%A2%98%E4%B8%8E%E5%8E%9F%E5%A7%8B%E8%A1%A8"><span class="nav-number">4.1.</span> <span class="nav-text">A. 问题与原始表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">4.2.</span> <span class="nav-text">B. 初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E8%AE%AD%E7%BB%83%E8%BF%87%E7%A8%8B"><span class="nav-number">4.3.</span> <span class="nav-text">C. 训练过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#D-%E5%8F%AF%E9%83%A8%E7%BD%B2%E5%AF%B9%E8%B1%A1"><span class="nav-number">4.4.</span> <span class="nav-text">D. 可部署对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#E-%E9%A2%84%E6%B5%8B-%E6%8E%A8%E6%96%AD"><span class="nav-number">4.5.</span> <span class="nav-text">E. 预测 &#x2F; 推断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">5. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%BC%98%E7%BC%BA%E7%82%B9%E4%B8%8E%E5%B8%B8%E8%A7%81%E5%9D%91"><span class="nav-number">6.</span> <span class="nav-text">6. 优缺点与常见坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">7.</span> <span class="nav-text">7. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%EF%BC%88CatBoost%EF%BC%89"><span class="nav-number">7.1.</span> <span class="nav-text">重要配置参数（CatBoost）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%92%8C%E8%BF%91%E9%82%BB%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E6%8C%91"><span class="nav-number">8.</span> <span class="nav-text">8. 和近邻算法怎么挑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">10.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

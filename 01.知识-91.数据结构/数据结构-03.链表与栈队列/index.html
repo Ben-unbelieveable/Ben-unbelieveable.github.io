@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,数据结构,deque,栈,队列,链表," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="以 CPython 为准介绍栈、队列、双端队列与链表：生产路径用 list 当栈、deque 当队列；手写节点只为讲清指针；附 LRU 组合体。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据结构：链表与栈队列">
+<meta property="og:url" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-03.%E9%93%BE%E8%A1%A8%E4%B8%8E%E6%A0%88%E9%98%9F%E5%88%97/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="以 CPython 为准介绍栈、队列、双端队列与链表：生产路径用 list 当栈、deque 当队列；手写节点只为讲清指针；附 LRU 组合体。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-03.%E9%93%BE%E8%A1%A8%E4%B8%8E%E6%A0%88%E9%98%9F%E5%88%97/fig01-deque-stack.png">
+<meta property="article:published_time" content="2026-08-24T02:10:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="deque">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="栈">
+<meta property="article:tag" content="链表">
+<meta property="article:tag" content="队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-03.%E9%93%BE%E8%A1%A8%E4%B8%8E%E6%A0%88%E9%98%9F%E5%88%97/fig01-deque-stack.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/01.知识-91.数据结构/数据结构-03.链表与栈队列/"/>
+
+
+
+
+
+  <title>数据结构：链表与栈队列 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-03.%E9%93%BE%E8%A1%A8%E4%B8%8E%E6%A0%88%E9%98%9F%E5%88%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">数据结构：链表与栈队列</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-24T10:10:00+08:00">
+                2026-08-24
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%94%9F%E7%89%A9%E4%BF%A1%E6%81%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">生物信息</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  以 CPython 为准介绍栈、队列、双端队列与链表：生产路径用 list 当栈、deque 当队列；手写节点只为讲清指针；附 LRU 组合体。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>线性家族的另一半纪律是 <strong>只从哪一端进出</strong>。Python 标准库不提供教科书式单链表类型；生产路径是：</p>
+<table>
+<thead>
+<tr>
+<th>纪律</th>
+<th>用这个</th>
+<th>不要用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>栈（stack）</strong> 后进先出</td>
+<td><code>list.append</code> &#x2F; <code>list.pop</code></td>
+<td>头插 <code>insert(0, …)</code></td>
+</tr>
+<tr>
+<td><strong>队列（queue）</strong> 先进先出</td>
+<td><code>collections.deque</code> 的 <code>append</code> &#x2F; <code>popleft</code></td>
+<td><code>list.pop(0)</code></td>
+</tr>
+<tr>
+<td><strong>双端队列（double-ended queue，deque）</strong></td>
+<td>同一个 <code>deque</code> 两头都动</td>
+<td>手写双向节点当默认</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>栈 &#x2F; 队列</strong> 是 ADT（谁能进出），<strong>链表</strong> 是实现。CPython 的 <code>deque</code> 不是「一节点一元素」的链表，而是双向串起来的 64 槽指针块。</p>
+</blockquote>
+<p><img src="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-03.%E9%93%BE%E8%A1%A8%E4%B8%8E%E6%A0%88%E9%98%9F%E5%88%97/fig01-deque-stack.png" alt="图 1　三种纪律：栈只动一头、队列一头进一头出、deque 两头都快"></p>
+<hr>
+<h2 id="1-为什么日常几乎不写链表"><a href="#1-为什么日常几乎不写链表" class="headerlink" title="1. 为什么日常几乎不写链表"></a>1. 为什么日常几乎不写链表</h2><p>已知节点处插入删除是 (O(1))，但「找到那个节点」在 Python 里通常已经 (O(n))。每个节点一次堆分配、两次指针跳转，缓存极差。CPython 自己实现队列时，选择 <strong>块状双向链表</strong>：每块 64 个 <code>PyObject*</code>，块与块之间才有 <code>prev</code> &#x2F; <code>next</code>。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">deque</span><br><span class="line">  leftblock ⇄ block ⇄ … ⇄ rightblock</span><br><span class="line">  每块：[ptr × 64]</span><br><span class="line">  leftindex / rightindex 标出两端用到哪一格</span><br></pre></td></tr></table></figure>
+
+<p>两端 <code>append</code> &#x2F; <code>pop</code> 均摊 (O(1))，且不 <code>realloc</code> 整块数据。<code>maxlen</code> 满员时从对面丢掉，用来做滑动窗口。</p>
+<hr>
+<h2 id="2-栈：list-就够"><a href="#2-栈：list-就够" class="headerlink" title="2. 栈：list 就够"></a>2. 栈：<code>list</code> 就够</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">eval_rpn</span>(<span class="params">tokens</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;后缀表达式求值（栈的经典用法）。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：tokens，数字与 + - * / 的字符串序列。</span></span><br><span class="line"><span class="string">    输出：计算结果 int。</span></span><br><span class="line"><span class="string">    处理：数字入栈；遇到算符弹出两个操作数，算完压回。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    st = []</span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> tokens:</span><br><span class="line">        <span class="keyword">if</span> t <span class="keyword">not</span> <span class="keyword">in</span> &#123;<span class="string">&quot;+&quot;</span>, <span class="string">&quot;-&quot;</span>, <span class="string">&quot;*&quot;</span>, <span class="string">&quot;/&quot;</span>&#125;:</span><br><span class="line">            st.append(<span class="built_in">int</span>(t))</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        b, a = st.pop(), st.pop()</span><br><span class="line">        <span class="keyword">if</span> t == <span class="string">&quot;+&quot;</span>:</span><br><span class="line">            st.append(a + b)</span><br><span class="line">        <span class="keyword">elif</span> t == <span class="string">&quot;-&quot;</span>:</span><br><span class="line">            st.append(a - b)</span><br><span class="line">        <span class="keyword">elif</span> t == <span class="string">&quot;*&quot;</span>:</span><br><span class="line">            st.append(a * b)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            st.append(<span class="built_in">int</span>(a / b))  <span class="comment"># 向零截断，对齐题面常见约定</span></span><br><span class="line">    <span class="keyword">return</span> st[-<span class="number">1</span>]</span><br></pre></td></tr></table></figure>
+
+<p>递归调用栈也是栈，只是你看不见。显式 <code>list</code> 当栈的好处是可控、可迭代、不会撞递归上限。</p>
+<p>线程间的栈用 <code>queue.LifoQueue</code>（内部有锁），不要多线程共用一个裸 <code>list</code>。</p>
+<hr>
+<h2 id="3-队列与双端队列：deque"><a href="#3-队列与双端队列：deque" class="headerlink" title="3. 队列与双端队列：deque"></a>3. 队列与双端队列：<code>deque</code></h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sliding_max</span>(<span class="params">nums, k</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;滑动窗口最大值。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：nums 序列，窗口长 k。</span></span><br><span class="line"><span class="string">    输出：每个窗口的最大值列表。</span></span><br><span class="line"><span class="string">    处理：单调双端队列存下标，队头过期就弹，队尾小于当前就弹。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    dq, out = deque(), []</span><br><span class="line">    <span class="keyword">for</span> i, x <span class="keyword">in</span> <span class="built_in">enumerate</span>(nums):</span><br><span class="line">        <span class="keyword">if</span> dq <span class="keyword">and</span> dq[<span class="number">0</span>] &lt;= i - k:</span><br><span class="line">            dq.popleft()</span><br><span class="line">        <span class="keyword">while</span> dq <span class="keyword">and</span> nums[dq[-<span class="number">1</span>]] &lt; x:</span><br><span class="line">            dq.pop()</span><br><span class="line">        dq.append(i)</span><br><span class="line">        <span class="keyword">if</span> i &gt;= k - <span class="number">1</span>:</span><br><span class="line">            out.append(nums[dq[<span class="number">0</span>]])</span><br><span class="line">    <span class="keyword">return</span> out</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th><code>deque</code></th>
+<th><code>list</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>右端进&#x2F;出</td>
+<td>(O(1))</td>
+<td>(O(1))</td>
+</tr>
+<tr>
+<td>左端进&#x2F;出</td>
+<td>(O(1))</td>
+<td>(O(n))</td>
+</tr>
+<tr>
+<td>按下标</td>
+<td>(O(n))（要跨块走）</td>
+<td>(O(1))</td>
+</tr>
+<tr>
+<td>按值查找</td>
+<td>(O(n))</td>
+<td>(O(n))</td>
+</tr>
+</tbody></table>
+<p><code>deque</code> 不是数组：不要用它当随机访问容器。<code>d[0]</code> &#x2F; <code>d[-1]</code> 可以，中间下标会慢。</p>
+<p>线程安全队列：<code>queue.Queue</code>（FIFO）、<code>queue.PriorityQueue</code>（堆 + 锁）。单线程算法题不要用它们，锁是纯开销。</p>
+<hr>
+<h2 id="4-手写链表：只为把指针讲清楚"><a href="#4-手写链表：只为把指针讲清楚" class="headerlink" title="4. 手写链表：只为把指针讲清楚"></a>4. 手写链表：只为把指针讲清楚</h2><p>生产代码默认不要走这条路。面试或要在已知节点 (O(1)) 摘链时才写。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Node</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;单向链表节点：value 为载荷，next 指向后继或 None。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, value, nxt=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.value = value</span><br><span class="line">        <span class="variable language_">self</span>.<span class="built_in">next</span> = nxt</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">reverse</span>(<span class="params">head</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;原地反转单向链表。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：head，链头或 None。</span></span><br><span class="line"><span class="string">    输出：新链头。</span></span><br><span class="line"><span class="string">    处理：三指针 prev / cur / nxt 逐个掉头。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    prev, cur = <span class="literal">None</span>, head</span><br><span class="line">    <span class="keyword">while</span> cur:</span><br><span class="line">        nxt = cur.<span class="built_in">next</span></span><br><span class="line">        cur.<span class="built_in">next</span> = prev</span><br><span class="line">        prev, cur = cur, nxt</span><br><span class="line">    <span class="keyword">return</span> prev</span><br></pre></td></tr></table></figure>
+
+<p>双向节点多一个 <code>prev</code>，删除当前节点不必找前驱。循环链表让尾的 <code>next</code> 指回头，用来做约瑟夫环或环形缓冲的教学模型；工程环形缓冲用 <code>deque(maxlen=…)</code> 或一块 <code>bytearray</code>。</p>
+<hr>
+<h2 id="5-组合体：哈希表-双向链表-LRU"><a href="#5-组合体：哈希表-双向链表-LRU" class="headerlink" title="5. 组合体：哈希表 + 双向链表 &#x3D; LRU"></a>5. 组合体：哈希表 + 双向链表 &#x3D; LRU</h2><p><strong>最近最少使用（Least Recently Used，LRU）</strong> 要同时：按键 (O(1)) 找到、(O(1)) 把该节点挪到「最新」端。标准库现成方案：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> OrderedDict</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LRUCache</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;容量固定的 LRU。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    输入：构造参数 cap 为正整数。</span></span><br><span class="line"><span class="string">    get(key) → 值或 -1；put(key, value) 写入，超员淘汰最旧。</span></span><br><span class="line"><span class="string">    处理：OrderedDict 保插入序，move_to_end 当「刷新」，popitem(last=False) 淘汰队头。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, cap</span>):</span><br><span class="line">        <span class="variable language_">self</span>.cap = cap</span><br><span class="line">        <span class="variable language_">self</span>.od = OrderedDict()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="keyword">if</span> key <span class="keyword">not</span> <span class="keyword">in</span> <span class="variable language_">self</span>.od:</span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line">        <span class="variable language_">self</span>.od.move_to_end(key)</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.od[key]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">put</span>(<span class="params">self, key, value</span>):</span><br><span class="line">        <span class="keyword">if</span> key <span class="keyword">in</span> <span class="variable language_">self</span>.od:</span><br><span class="line">            <span class="variable language_">self</span>.od.move_to_end(key)</span><br><span class="line">        <span class="variable language_">self</span>.od[key] = value</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(<span class="variable language_">self</span>.od) &gt; <span class="variable language_">self</span>.cap:</span><br><span class="line">            <span class="variable language_">self</span>.od.popitem(last=<span class="literal">False</span>)</span><br></pre></td></tr></table></figure>
+
+<p>函数结果缓存直接 <code>@functools.lru_cache</code>，不要自己造。<code>OrderedDict</code> 在 3.7+ 的普通 <code>dict</code> 已保序之后，<strong>仍多了 <code>move_to_end</code> &#x2F; <code>popitem(last=)</code></strong>，这才是它留下的理由。</p>
+<hr>
+<h2 id="6-踩坑"><a href="#6-踩坑" class="headerlink" title="6. 踩坑"></a>6. 踩坑</h2><ol>
+<li><strong><code>list</code> 当队列</strong>：<code>pop(0)</code> 总复杂度 (O(n^2))。</li>
+<li><strong>多线程共用 <code>deque</code></strong>：<code>deque</code> 两端操作大致原子，但「先看长度再 pop」不是原子。跨线程用 <code>queue.Queue</code>。</li>
+<li><strong>在 <code>deque</code> 中间 <code>insert</code></strong>：合法但 (O(n))，失去选它的意义。</li>
+<li><strong>手写链表当默认容器</strong>：分配与缓存成本通常大于 <code>list</code> 搬指针。</li>
+<li><strong>递归当队列</strong>：递归是栈，宽搜必须显式队列。</li>
+</ol>
+<hr>
+<h2 id="7-自检"><a href="#7-自检" class="headerlink" title="7. 自检"></a>7. 自检</h2><ol>
+<li>用一张表说出栈 &#x2F; 队列 &#x2F; deque 在 CPython 里各用谁实现。</li>
+<li><code>deque</code> 为什么比「一元素一节点」快？块大小是多少？</li>
+<li>什么情况下值得手写 <code>Node</code>？</li>
+<li>LRU 为什么必须「哈希 + 双向链（或 OrderedDict）」两样一起上？</li>
+</ol>
+<hr>
+<h2 id="8-社区口径与风险"><a href="#8-社区口径与风险" class="headerlink" title="8. 社区口径与风险"></a>8. 社区口径与风险</h2><p>队列实现见 CPython <code>Modules/_collectionsmodule.c</code>（<code>BLOCKLEN = 64</code>）。算法题社区默认 <code>from collections import deque</code>。第三方几乎不必为「普通队列」再引包。风险：把 Java <code>LinkedList</code> 的用法直接翻译成 Python 手写链，常数会差一个数量级。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag"><i class="fa fa-tag"></i> 数据结构</a>
+          
+            <a href="/tags/deque/" rel="tag"><i class="fa fa-tag"></i> deque</a>
+          
+            <a href="/tags/%E6%A0%88/" rel="tag"><i class="fa fa-tag"></i> 栈</a>
+          
+            <a href="/tags/%E9%98%9F%E5%88%97/" rel="tag"><i class="fa fa-tag"></i> 队列</a>
+          
+            <a href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag"><i class="fa fa-tag"></i> 链表</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-02.%E6%95%B0%E7%BB%84%E4%B8%8E%E5%8A%A8%E6%80%81%E6%95%B0%E7%BB%84/" rel="next" title="数据结构：数组与动态数组">
+                <i class="fa fa-chevron-left"></i> 数据结构：数组与动态数组
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-91.%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-04.%E5%93%88%E5%B8%8C%E8%A1%A8/" rel="prev" title="数据结构：哈希表">
+                数据结构：哈希表 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%97%A5%E5%B8%B8%E5%87%A0%E4%B9%8E%E4%B8%8D%E5%86%99%E9%93%BE%E8%A1%A8"><span class="nav-number">1.</span> <span class="nav-text">1. 为什么日常几乎不写链表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%A0%88%EF%BC%9Alist-%E5%B0%B1%E5%A4%9F"><span class="nav-number">2.</span> <span class="nav-text">2. 栈：list 就够</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E9%98%9F%E5%88%97%E4%B8%8E%E5%8F%8C%E7%AB%AF%E9%98%9F%E5%88%97%EF%BC%9Adeque"><span class="nav-number">3.</span> <span class="nav-text">3. 队列与双端队列：deque</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%89%8B%E5%86%99%E9%93%BE%E8%A1%A8%EF%BC%9A%E5%8F%AA%E4%B8%BA%E6%8A%8A%E6%8C%87%E9%92%88%E8%AE%B2%E6%B8%85%E6%A5%9A"><span class="nav-number">4.</span> <span class="nav-text">4. 手写链表：只为把指针讲清楚</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E7%BB%84%E5%90%88%E4%BD%93%EF%BC%9A%E5%93%88%E5%B8%8C%E8%A1%A8-%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8-LRU"><span class="nav-number">5.</span> <span class="nav-text">5. 组合体：哈希表 + 双向链表 &#x3D; LRU</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%B8%A9%E5%9D%91"><span class="nav-number">6.</span> <span class="nav-text">6. 踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E8%87%AA%E6%A3%80"><span class="nav-number">7.</span> <span class="nav-text">7. 自检</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E7%A4%BE%E5%8C%BA%E5%8F%A3%E5%BE%84%E4%B8%8E%E9%A3%8E%E9%99%A9"><span class="nav-number">8.</span> <span class="nav-text">8. 社区口径与风险</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

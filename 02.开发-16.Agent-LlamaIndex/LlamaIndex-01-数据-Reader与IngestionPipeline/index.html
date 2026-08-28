@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,Reader,IngestionPipeline," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="SimpleDirectoryReader 如何把目录变成 Document，以及 IngestionPipeline 如何用 transformation 哈希缓存做增量入库。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Reader与IngestionPipeline">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Reader%E4%B8%8EIngestionPipeline/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="SimpleDirectoryReader 如何把目录变成 Document，以及 IngestionPipeline 如何用 transformation 哈希缓存做增量入库。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Reader%E4%B8%8EIngestionPipeline/llamaindex-fig01-reader-pipeline.png">
+<meta property="article:published_time" content="2026-08-20T03:40:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="IngestionPipeline">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="Reader">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Reader%E4%B8%8EIngestionPipeline/llamaindex-fig01-reader-pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-LlamaIndex/LlamaIndex-01-数据-Reader与IngestionPipeline/"/>
+
+
+
+
+
+  <title>Reader与IngestionPipeline | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Reader%E4%B8%8EIngestionPipeline/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Reader与IngestionPipeline</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-20T11:40:00+08:00">
+                2026-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LlamaIndex/" itemprop="url" rel="index">
+                    <span itemprop="name">LlamaIndex</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  SimpleDirectoryReader 如何把目录变成 Document，以及 IngestionPipeline 如何用 transformation 哈希缓存做增量入库。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>目录里已经有几十篇方法学 Markdown &#x2F; PDF。每次改一篇就对整库重新切块、重新 embedding，会把迭代拖死。LlamaIndex 用 <strong>Reader</strong>（加载器）把文件变成 <code>Document</code> 列表；用 <strong>IngestionPipeline</strong> 把「切分、抽取、嵌入」收成可缓存的变换链——同一 <code>Document</code> + 同一变换的哈希命中则跳过。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Reader</strong> 负责「磁盘&#x2F;API → <code>list[Document]</code>」；<strong>IngestionPipeline</strong> 负责「Document → Node（可选写入向量库）」，按「节点 + 变换」做缓存。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Reader%E4%B8%8EIngestionPipeline/llamaindex-fig01-reader-pipeline.png" alt="文件夹经 SimpleDirectoryReader 盖章成 Document，再进带缓存的 IngestionPipeline（科普示意）"></p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>知识层的<strong>接入与离线变换</strong>：扫盘、注入文件级 metadata、增量跳过未改文档</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>目录路径 &#x2F; 文件列表 → <code>list[Document]</code> → <code>pipeline.run()</code> → <code>list[Node]</code></td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>SimpleDirectoryReader(...).load_data()</code>、<code>IngestionPipeline.run()</code> &#x2F; <code>arun()</code></td>
+</tr>
+<tr>
+<td>与 LangChain &#x2F; LangGraph</td>
+<td>近邻是 LangChain Loader；LangGraph 不跑离线入库，只在节点里消费已建好的索引</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：单次 <code>from_documents</code> 适合原型。文档会改、会追加时，需要稳定 <code>doc_id</code>、内容哈希和变换缓存，否则每次启动都全量打 embedding 账单。</p>
+<hr>
+<h2 id="2-前置依赖与环境"><a href="#2-前置依赖与环境" class="headerlink" title="2. 前置依赖与环境"></a>2. 前置依赖与环境</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Python 3.10+；版本锚点 <code>llama-index-core</code> <strong>0.14.x</strong>  </li>
+<li>本篇示例用 <code>.md</code>，<strong>不依赖</strong>额外 PDF 解析包；扫描件 PDF 另装解析集成或 LlamaParse  </li>
+<li>本篇 pipeline <strong>不含 Embedding</strong>（避免默认打 OpenAI）。接入向量库时必须把 embed 放进 <code>transformations</code></li>
+</ul>
+<p>生产批量入库用 <code>await pipeline.arun(...)</code>，参数与同步 <code>run</code> 一致。</p>
+<hr>
+<h2 id="3-实现逻辑"><a href="#3-实现逻辑" class="headerlink" title="3. 实现逻辑"></a>3. 实现逻辑</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1. 准备目录；可选 file_metadata / filename_as_id</span><br><span class="line">2. SimpleDirectoryReader.load_data() → list[Document]</span><br><span class="line">   每份自动带 file_name、file_path 等文件级 metadata</span><br><span class="line">3. 构造 IngestionPipeline(transformations=[SentenceSplitter, ...])</span><br><span class="line">4. pipeline.run(documents=docs) 对每个节点×变换算哈希</span><br><span class="line">5. 缓存命中：跳过该变换；未命中：执行并写入 cache</span><br><span class="line">6. 若挂了 docstore：用 doc_id → content hash 判断跳过 / 重处理</span><br><span class="line">7. 若挂了 vector_store：把最终 Node 写入向量库</span><br><span class="line">8. 返回 Node 列表；可选 pipeline.persist() 落本地 cache</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">./data/gapdh.md</span><br><span class="line">  → load_data</span><br><span class="line">Document(</span><br><span class="line">  text=&quot;定量 PCR……&quot;,</span><br><span class="line">  doc_id=&quot;/abs/path/data/gapdh.md&quot;,   # filename_as_id=True</span><br><span class="line">  metadata=&#123;&quot;file_name&quot;: &quot;gapdh.md&quot;, &quot;species&quot;: &quot;小鼠&quot;, ...&#125;</span><br><span class="line">)</span><br><span class="line">  → pipeline.run(SentenceSplitter)</span><br><span class="line">[TextNode(text=&quot;定量 PCR……&quot;, metadata=继承, SOURCE=该 doc_id), ...]</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-原理说明"><a href="#4-原理说明" class="headerlink" title="4. 原理说明"></a>4. 原理说明</h2><p>主轴是：<strong>Reader 只负责物化 Document；Pipeline 按哈希决定「这段变换要不要重做」。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">1. SimpleDirectoryReader 列目录（recursive / required_exts 过滤）</span><br><span class="line">2. 按扩展名选文件解析器，读出 text</span><br><span class="line">3. 调用 file_metadata(filename) 合并进 Document.metadata</span><br><span class="line">4. filename_as_id=True 时 doc_id = 文件路径，否则 UUID</span><br><span class="line">5. pipeline.run 取每个 Document，依次套 transformations[i]</span><br><span class="line">6. 哈希键 ≈ 当前节点内容 + 该变换配置；命中则读 IngestionCache</span><br><span class="line">7. docstore 存在时：doc_id 相同且 hash 未变 → 整篇跳过</span><br><span class="line">   hash 变了且挂了 vector_store → 重切并 upsert</span><br><span class="line">8. 无 vector_store 时只能跳过重复输入，不能替你更新远端向量</span><br><span class="line">少了第 4 步 → 每次 UUID，docstore 无法识别「同一文件」</span><br><span class="line">少了第 6 步 → 改一句无关配置也会被误判为可跳过/或每次全量重跑</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>SimpleDirectoryReader</code></strong>（类）出现在步骤 1。功能：把目录&#x2F;文件列表变成 <code>Document</code>。<code>load_data()</code> 返回 <code>list[Document]</code>。</p>
+<p><strong><code>file_metadata</code></strong>（构造参数，<code>(str) -&gt; dict</code>）出现在步骤 3。功能：按路径追加业务 metadata（物种、pmid）。默认 <code>None</code> 时仍可能有 Reader 内置的 <code>file_name</code> 等键。</p>
+<p><strong><code>IngestionPipeline</code></strong>（类）出现在步骤 5。功能：对 Document 顺序应用 <code>transformations</code>。<code>run(documents, num_workers=None)</code> 同步；<code>arun</code> 异步。</p>
+<p><strong><code>IngestionCache</code></strong>（缓存）出现在步骤 6。本地可用 <code>pipeline.persist(dir)</code> &#x2F; <code>load</code>；远程可用 Redis 等 KV。</p>
+<p><strong><code>SimpleDocumentStore</code></strong>（docstore）出现在步骤 7。功能：记住 <code>doc_id → hash</code>，支撑跳过与 upsert。</p>
+<p>挂 <code>vector_store</code> 却不在 <code>transformations</code> 里放 Embedding：后续 <code>VectorStoreIndex.from_vector_store</code> 会缺向量。</p>
+<hr>
+<h2 id="5-最小可运行示例"><a href="#5-最小可运行示例" class="headerlink" title="5. 最小可运行示例"></a>5. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-core</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> SimpleDirectoryReader</span><br><span class="line"><span class="keyword">from</span> llama_index.core.ingestion <span class="keyword">import</span> IngestionPipeline</span><br><span class="line"><span class="keyword">from</span> llama_index.core.node_parser <span class="keyword">import</span> SentenceSplitter</span><br><span class="line"><span class="keyword">from</span> llama_index.core.storage.docstore <span class="keyword">import</span> SimpleDocumentStore</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输入：自包含的演示目录（避免依赖仓库外文件）</span></span><br><span class="line">data = Path(<span class="string">&quot;data_reader_demo&quot;</span>)</span><br><span class="line">data.mkdir(exist_ok=<span class="literal">True</span>)</span><br><span class="line">(data / <span class="string">&quot;gapdh.md&quot;</span>).write_text(</span><br><span class="line">    <span class="string">&quot;定量 PCR 以小鼠肝脏 GAPDH 为内参。反应体系 20 μL，退火 60°C。&quot;</span>,</span><br><span class="line">    encoding=<span class="string">&quot;utf-8&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">file_metadata</span>(<span class="params">filename: <span class="built_in">str</span></span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;按路径注入业务 metadata。输入绝对或相对路径，输出扁平 dict。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;species&quot;</span>: <span class="string">&quot;小鼠&quot;</span>, <span class="string">&quot;collection&quot;</span>: <span class="string">&quot;methods&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关键参数：filename_as_id 让 doc_id 稳定</span></span><br><span class="line">documents = SimpleDirectoryReader(</span><br><span class="line">    <span class="built_in">str</span>(data),</span><br><span class="line">    required_exts=[<span class="string">&quot;.md&quot;</span>],</span><br><span class="line">    filename_as_id=<span class="literal">True</span>,</span><br><span class="line">    file_metadata=file_metadata,</span><br><span class="line">).load_data()</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>([(d.doc_id, d.metadata.get(<span class="string">&quot;file_name&quot;</span>), d.metadata.get(<span class="string">&quot;species&quot;</span>)) <span class="keyword">for</span> d <span class="keyword">in</span> documents])</span><br><span class="line"></span><br><span class="line">pipeline = IngestionPipeline(</span><br><span class="line">    transformations=[SentenceSplitter(chunk_size=<span class="number">64</span>, chunk_overlap=<span class="number">16</span>)],</span><br><span class="line">    docstore=SimpleDocumentStore(),</span><br><span class="line">)</span><br><span class="line">nodes = pipeline.run(documents=documents)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;first run n_nodes =&quot;</span>, <span class="built_in">len</span>(nodes))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 第二次相同输入：docstore 按 hash 跳过重复加工</span></span><br><span class="line">nodes2 = pipeline.run(documents=documents)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;second run n_nodes =&quot;</span>, <span class="built_in">len</span>(nodes2))</span><br><span class="line"><span class="comment"># 预期：第一次 ≥1 个 Node；metadata 含 species；第二次仍可返回但变换被缓存/跳过</span></span><br></pre></td></tr></table></figure>
+
+<p>第二次 <code>n_nodes</code> 视版本可能仍列出节点，但变换不会重做。要看缓存是否生效，对同一文件改一个字再跑，Node 的 <code>hash</code> &#x2F; 切分结果应变化。</p>
+<p>pipeline 落盘缓存：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pipeline.persist(<span class="string">&quot;./pipeline_storage&quot;</span>)</span><br><span class="line"><span class="comment"># 新进程：构造相同 transformations 后 pipeline.load(&quot;./pipeline_storage&quot;)</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="6-重要配置参数"><a href="#6-重要配置参数" class="headerlink" title="6. 重要配置参数"></a>6. 重要配置参数</h2><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>input_dir</code></td>
+<td>str，必填（或 <code>input_files</code>）</td>
+<td>Reader 扫描的根目录</td>
+<td>路径不存在则空列表或报错</td>
+<td>项目 <code>./data</code></td>
+<td>用绝对路径便于 <code>filename_as_id</code></td>
+</tr>
+<tr>
+<td><code>required_exts</code></td>
+<td>list[str]，可选</td>
+<td>只加载这些扩展名</td>
+<td>不设会连图片&#x2F;二进制当文本读</td>
+<td><code>[&quot;.md&quot;, &quot;.txt&quot;]</code></td>
+<td>明确白名单</td>
+</tr>
+<tr>
+<td><code>recursive</code></td>
+<td>bool，默认 <code>False</code></td>
+<td>是否进入子目录</td>
+<td><code>False</code> 会漏 <code>data/papers/*.md</code></td>
+<td>多层目录用 <code>True</code></td>
+<td>与 <code>exclude</code> 一起用</td>
+</tr>
+<tr>
+<td><code>filename_as_id</code></td>
+<td>bool，默认 <code>False</code></td>
+<td>用文件路径当 <code>doc_id</code></td>
+<td><code>False</code> 则 UUID，增量管理失效</td>
+<td>生产 <code>True</code></td>
+<td>文件改名等于新文档</td>
+</tr>
+<tr>
+<td><code>file_metadata</code></td>
+<td>callable，可选</td>
+<td><code>(path) -&gt; dict</code> 写入 <code>Document.metadata</code></td>
+<td>不设则只有 Reader 内置文件键</td>
+<td>返回扁平标量</td>
+<td>物种、pmid 在这里打</td>
+</tr>
+<tr>
+<td><code>transformations</code></td>
+<td>list，必填语义</td>
+<td>Pipeline 顺序变换</td>
+<td>顺序即契约；改顺序要清 cache</td>
+<td>先切分，后 embedding</td>
+<td>接向量库时必须含 embed</td>
+</tr>
+<tr>
+<td><code>docstore</code></td>
+<td>BaseDocumentStore，可选</td>
+<td>记录 <code>doc_id → hash</code></td>
+<td>不挂则只能靠变换 cache，不能按文档 upsert</td>
+<td><code>SimpleDocumentStore()</code></td>
+<td>增量入库必挂</td>
+</tr>
+<tr>
+<td><code>num_workers</code></td>
+<td>int，<code>run()</code> 参数，默认空</td>
+<td>多进程分批跑变换</td>
+<td>过大抢 CPU&#x2F;内存；过小吞吐低</td>
+<td>2～8</td>
+<td>先单进程跑通再开</td>
+</tr>
+<tr>
+<td><code>cache</code> &#x2F; <code>persist</code></td>
+<td>IngestionCache &#x2F; 目录</td>
+<td>保存变换结果</td>
+<td>变换配置变了仍命中旧哈希会得到错切分</td>
+<td>本地目录或 Redis</td>
+<td>改 <code>chunk_size</code> 后清 cache</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-适用-不适用"><a href="#7-适用-不适用" class="headerlink" title="7. 适用 &#x2F; 不适用"></a>7. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>适用</th>
+<th>不适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任务形态</td>
+<td>目录型知识库、文件会追加&#x2F;修订</td>
+<td>单次三条字符串——直接 <code>Document(text=...)</code></td>
+</tr>
+<tr>
+<td>集成约束</td>
+<td>离线可扫盘；PDF 需对应 reader</td>
+<td>实时 API 流式正文——用自定义 Reader 或手造 Document</td>
+</tr>
+<tr>
+<td>工程阶段</td>
+<td>从原型迈向「不要每次全量 embed」</td>
+<td>已有外部 ETL 只往向量库写向量——可跳过 Reader</td>
+</tr>
+</tbody></table>
+<p>环与 HITL 仍不在本层；Pipeline 是离线 DAG。</p>
+<hr>
+<h2 id="8-易踩坑"><a href="#8-易踩坑" class="headerlink" title="8. 易踩坑"></a>8. 易踩坑</h2><ol>
+<li><strong><code>filename_as_id=False</code> 却期望增量更新</strong>：每次 <code>doc_id</code> 新 UUID，docstore 认不出同一文件。  </li>
+<li><strong>Pipeline 接了 <code>vector_store</code> 但不做 Embedding</strong>：索引侧没有向量。  </li>
+<li><strong>改了 <code>chunk_size</code> 却不清 cache</strong>：命中旧哈希，切分看起来「没变化」。  </li>
+<li><strong>直接读扫描 PDF</strong>：core 默认解析很弱，需要专用 reader &#x2F; LlamaParse，否则 <code>text</code> 是乱码或空。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>Reader</strong> 把目录变成带文件 metadata 的 <strong>Document</strong>；<strong><code>filename_as_id</code></strong> 给出稳定 <code>doc_id</code>。  </li>
+<li><strong>IngestionPipeline</strong> 按「节点 + 变换」哈希跳过重复劳动；文档级 upsert 还要 <strong>docstore</strong>。  </li>
+<li>接向量库时，<strong>Embedding 必须是变换链中的一步</strong>。  </li>
+<li>本篇示例不含 embed；入库与 <code>query</code> 见 VectorStoreIndex。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader/">Simple Directory Reader</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/loading/ingestion_pipeline/">Ingestion Pipeline</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://llamahub.ai/">LlamaHub</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/Reader/" rel="tag"><i class="fa fa-tag"></i> Reader</a>
+          
+            <a href="/tags/IngestionPipeline/" rel="tag"><i class="fa fa-tag"></i> IngestionPipeline</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-02-%E5%88%87%E5%88%86-NodeParser/" rel="next" title="NodeParser">
+                <i class="fa fa-chevron-left"></i> NodeParser
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-01-%E6%95%B0%E6%8D%AE-Document%E4%B8%8ENode/" rel="prev" title="Document与Node">
+                Document与Node <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%89%8D%E7%BD%AE%E4%BE%9D%E8%B5%96%E4%B8%8E%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text">2. 前置依赖与环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">3.</span> <span class="nav-text">3. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">4. 原理说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">6. 重要配置参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">7.</span> <span class="nav-text">7. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">8.</span> <span class="nav-text">8. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

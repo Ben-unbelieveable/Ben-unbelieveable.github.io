@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,Embeddings," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="LangChain Embeddings 接口：embed_query 与 embed_documents、向量维度与批处理；本地真实语义建库落盘与加载检索。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Embeddings">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-01-%E6%A8%A1%E5%9E%8B-Embeddings/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="LangChain Embeddings 接口：embed_query 与 embed_documents、向量维度与批处理；本地真实语义建库落盘与加载检索。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-08-10T09:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Embeddings">
+<meta property="article:tag" content="RAG">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-langchain/LangChain-01-模型-Embeddings/"/>
+
+
+
+
+
+  <title>Embeddings | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-01-%E6%A8%A1%E5%9E%8B-Embeddings/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Embeddings</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T17:00:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LangChain/" itemprop="url" rel="index">
+                    <span itemprop="name">LangChain</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  LangChain Embeddings 接口：embed_query 与 embed_documents、向量维度与批处理；本地真实语义建库落盘与加载检索。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>私有文档问答要先把文本变成向量，再进向量库做相似度检索。各云厂商 Embedding API 的请求格式、维度、批大小限制不同。<strong>Embeddings</strong> 抽象把「一段或多段文本 → <code>list[float]</code> 向量」统一成两个入口：<code>embed_query</code>（单条检索）与 <code>embed_documents</code>（批量建库）。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Embeddings</strong> &#x3D; 文本嵌入（text embedding）模型的 LangChain 封装，输出固定维度的浮点向量。</p>
+</blockquote>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>能力层<strong>向量化</strong>：为 RAG 索引与 query 编码</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>str</code> 或 <code>list[str]</code> → <code>list[float]</code> 或 <code>list[list[float]]</code></td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>embeddings.embed_query(...)</code>、<code>embeddings.embed_documents(...)</code></td>
+</tr>
+<tr>
+<td>与 LangGraph</td>
+<td>通常作为索引离线步骤或 RAG 节点内一步；图编排见 LangGraph 目录</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-实现逻辑"><a href="#2-实现逻辑" class="headerlink" title="2. 实现逻辑"></a>2. 实现逻辑</h2><p>建库 + 检索的典型流程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1. 文档切分 → list[str] chunks</span><br><span class="line">2. embed_documents(chunks) → list[list[float]]，维度 = d</span><br><span class="line">3. 落盘 &#123;model, docs, vectors&#125;（JSON / npy）或交给 VectorStore</span><br><span class="line">4. 启动加载向量；用户问题 q → embed_query(q) → 向量 v_q（长度 d）</span><br><span class="line">5. 与落盘向量算相似度 → Top-K 原文（不再对已入库文档跑 embed_documents）</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&quot;LangChain 是什么？&quot;  → embed_query  → [0.12, -0.03, ..., 0.08]  # len=1536 等</span><br><span class="line">[&quot;chunk1&quot;, &quot;chunk2&quot;]   → embed_documents → [[...], [...]]</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-原理说明"><a href="#3-原理说明" class="headerlink" title="3. 原理说明"></a>3. 原理说明</h2><h3 id="3-1-Embeddings-基类"><a href="#3-1-Embeddings-基类" class="headerlink" title="3.1 Embeddings 基类"></a>3.1 Embeddings 基类</h3><p><code>langchain_core.embeddings.Embeddings</code> 定义 <code>embed_documents</code> 与 <code>embed_query</code>。检索时 query 与 document <strong>应使用同一模型、同一维度</strong>，否则相似度无意义。</p>
+<p><strong><code>Embeddings</code></strong>（抽象类）<br>功能：<code>str</code> &#x2F; <code>list[str]</code> → 定长浮点向量。子类如 <code>HuggingFaceEmbeddings</code>、<code>OpenAIEmbeddings</code>。<br>默认值：<code>model</code> &#x2F; <code>model_name</code> 视集成（HF 类默认常为 <code>sentence-transformers/all-mpnet-base-v2</code>）。<br>最小维度：文本至少 1 段非空 str；输出向量 dim 由模型固定（本系列示例多语言 MiniLM 为 <strong>384</strong>）。</p>
+<p><strong><code>embed_query(text: str)</code></strong>（方法）<br>功能：编码单条检索问句。无额外默认参数。<br>最小维度：<code>text</code> 长度 ≥1 字符；返回 <code>list[float]</code>，<code>len == d</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v = embeddings.embed_query(<span class="string">&quot;什么是 RAG？&quot;</span>)  <span class="comment"># len(v) == 384</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>embed_documents(texts: list[str])</code></strong>（方法）<br>功能：批量编码入库文本，内部按 batch 切分。<br>最小维度：<code>texts</code> len≥1（空列表返回 <code>[]</code>）；每条建议非空；返回 <code>list[list[float]]</code>，形状 <code>(n, d)</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vecs = embeddings.embed_documents([<span class="string">&quot;chunk A&quot;</span>, <span class="string">&quot;chunk B&quot;</span>])  <span class="comment"># n=2, d=模型维</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-query-与-document-是否区分"><a href="#3-2-query-与-document-是否区分" class="headerlink" title="3.2 query 与 document 是否区分"></a>3.2 query 与 document 是否区分</h3><p>部分模型（如 BGE）对 query&#x2F;document 用不同前缀；OpenAI <code>text-embedding-3-*</code> 通常同一接口。</p>
+<p><strong><code>HuggingFaceEmbeddings</code></strong>（数据类 &#x2F; 实现）<br>功能：本地 Sentence Transformers 推理，无需 API Key。</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>默认值</th>
+<th>最小维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>model_name</code></td>
+<td>str</td>
+<td><code>all-mpnet-base-v2</code></td>
+<td>非空模型 ID</td>
+</tr>
+<tr>
+<td><code>model_kwargs</code></td>
+<td>dict</td>
+<td><code>{}</code></td>
+<td>可空；<code>device</code> 常用 <code>&quot;cpu&quot;</code></td>
+</tr>
+<tr>
+<td><code>encode_kwargs</code></td>
+<td>dict</td>
+<td><code>{}</code></td>
+<td>可空；检索建议 <code>normalize_embeddings=True</code></td>
+</tr>
+<tr>
+<td><code>cache_folder</code></td>
+<td>str &#x2F; None</td>
+<td><code>None</code></td>
+<td>走 HF 默认缓存</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">HuggingFaceEmbeddings(</span><br><span class="line">    model_name=<span class="string">&quot;sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2&quot;</span>,</span><br><span class="line">    encode_kwargs=&#123;<span class="string">&quot;normalize_embeddings&quot;</span>: <span class="literal">True</span>&#125;,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-批处理与-rate-limit"><a href="#3-3-批处理与-rate-limit" class="headerlink" title="3.3 批处理与 rate limit"></a>3.3 批处理与 rate limit</h3><p><code>embed_documents</code> 内部常按 batch 切分；云 API 大批量应控并发，避免 429。维度写入 VectorStore 前须与 collection schema 一致。</p>
+<p><strong><code>OpenAIEmbeddings</code></strong>（实现类）<br>功能：调用云 Embedding API。默认 <code>model=&quot;text-embedding-3-small&quot;</code>（dim 1536，可 <code>dimensions</code> 截断）。<br>最小维度：同基类；<code>api_key</code> 从环境变量读取，构造器可省略。</p>
+<h3 id="3-4-与-VectorStore-的关系"><a href="#3-4-与-VectorStore-的关系" class="headerlink" title="3.4 与 VectorStore 的关系"></a>3.4 与 VectorStore 的关系</h3><p>多数 VectorStore 构造时传入 <code>embedding=embeddings</code>，<code>add_documents</code> 时自动调 <code>embed_documents</code>；也可手动算向量再 <code>add_embeddings</code>。</p>
+<p><strong><code>add_embeddings</code></strong>（VectorStore 方法，视实现）<br>功能：已有向量直接入库，跳过再编码。<br>最小维度：<code>texts</code> &#x2F; <code>embeddings</code> 等长，len≥1；每条向量 <code>len == d</code>。</p>
+<h3 id="3-5-向量落盘"><a href="#3-5-向量落盘" class="headerlink" title="3.5 向量落盘"></a>3.5 向量落盘</h3><p><code>embed_documents</code> 只返回内存 <code>list[list[float]]</code>。小库写 JSON <code>{model, docs, vectors}</code>；规模上来用 FAISS <code>save_local</code> 或 Chroma <code>persist_directory</code>。加载后只对用户问题调 <code>embed_query</code>。</p>
+<p><strong>落盘 JSON 最小结构</strong>（数据约定，非官方类）</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>默认值</th>
+<th>最小维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>model</code></td>
+<td>str</td>
+<td>必填</td>
+<td>非空，加载时须与当前模型一致</td>
+</tr>
+<tr>
+<td><code>dim</code></td>
+<td>int</td>
+<td>必填</td>
+<td>≥1，且等于 <code>len(vectors[0])</code></td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>list[str]</td>
+<td>必填</td>
+<td>len≥1</td>
+</tr>
+<tr>
+<td><code>vectors</code></td>
+<td>list[list[float]]</td>
+<td>必填</td>
+<td>形状 <code>(len(docs), dim)</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">payload = &#123;<span class="string">&quot;model&quot;</span>: MODEL, <span class="string">&quot;dim&quot;</span>: <span class="built_in">len</span>(vectors[<span class="number">0</span>]), <span class="string">&quot;docs&quot;</span>: docs, <span class="string">&quot;vectors&quot;</span>: vectors&#125;</span><br><span class="line">Path(<span class="string">&quot;kb.json&quot;</span>).write_text(json.dumps(payload, ensure_ascii=<span class="literal">False</span>), encoding=<span class="string">&quot;utf-8&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-最小可运行示例"><a href="#4-最小可运行示例" class="headerlink" title="4. 最小可运行示例"></a>4. 最小可运行示例</h2><p>社区方案：<a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/integrations/embeddings/huggingfacehub"><code>langchain-huggingface</code></a> + <a target="_blank" rel="noopener" href="https://sbert.net/">Sentence Transformers</a> 本地推理（官方集成，无需 API Key）。</p>
+<ul>
+<li><strong>场景</strong>：离线建库、内网&#x2F;隐私文本、无云额度原型。</li>
+<li><strong>做法</strong>：<code>embed_documents</code> 批量编码 → JSON 落盘（原文 + 向量 + 模型名）→ 下次启动只 <code>embed_query</code> 检索。</li>
+<li><strong>风险</strong>：首次下载权重（本例约 120MB）；换模型必须重建文件；JSON 只适合小库；<code>normalize_embeddings</code> 必须与检索度量一致（归一化后点积 &#x3D; 余弦相似度）。</li>
+</ul>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>L2 归一化</strong> &#x3D; 把向量长度缩到 1；开启后点积与余弦相似度数值相同。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U langchain-huggingface sentence-transformers</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> langchain_huggingface <span class="keyword">import</span> HuggingFaceEmbeddings</span><br><span class="line"></span><br><span class="line">MODEL = <span class="string">&quot;sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2&quot;</span></span><br><span class="line">KB_PATH = Path(<span class="string">&quot;./data/kb_embeddings.json&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 中文检索也可换 BAAI/bge-small-zh-v1.5（query 建议加官方指令前缀）</span></span><br><span class="line">embeddings = HuggingFaceEmbeddings(</span><br><span class="line">    model_name=MODEL,</span><br><span class="line">    model_kwargs=&#123;<span class="string">&quot;device&quot;</span>: <span class="string">&quot;cpu&quot;</span>&#125;,</span><br><span class="line">    encode_kwargs=&#123;<span class="string">&quot;normalize_embeddings&quot;</span>: <span class="literal">True</span>&#125;,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">docs = [</span><br><span class="line">    <span class="string">&quot;LangChain 把各厂商 LLM API 收成统一的 ChatModel 与 LCEL 管道。&quot;</span>,</span><br><span class="line">    <span class="string">&quot;RAG 先检索相关文档，再把片段交给模型生成答案。&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Embeddings 把文本映射成固定维度向量，供相似度检索使用。&quot;</span>,</span><br><span class="line">    <span class="string">&quot;LangGraph 负责带环、检查点与人工审批的图编排。&quot;</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1) 建库：embed_documents → 本地 JSON（已有文件则跳过，避免重复编码）</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> KB_PATH.exists():</span><br><span class="line">    KB_PATH.parent.mkdir(parents=<span class="literal">True</span>, exist_ok=<span class="literal">True</span>)</span><br><span class="line">    vectors = embeddings.embed_documents(docs)</span><br><span class="line">    KB_PATH.write_text(</span><br><span class="line">        json.dumps(</span><br><span class="line">            &#123;<span class="string">&quot;model&quot;</span>: MODEL, <span class="string">&quot;dim&quot;</span>: <span class="built_in">len</span>(vectors[<span class="number">0</span>]), <span class="string">&quot;docs&quot;</span>: docs, <span class="string">&quot;vectors&quot;</span>: vectors&#125;,</span><br><span class="line">            ensure_ascii=<span class="literal">False</span>,</span><br><span class="line">        ),</span><br><span class="line">        encoding=<span class="string">&quot;utf-8&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;已写入 <span class="subst">&#123;KB_PATH&#125;</span>，<span class="subst">&#123;<span class="built_in">len</span>(vectors)&#125;</span> 条 × <span class="subst">&#123;<span class="built_in">len</span>(vectors[<span class="number">0</span>])&#125;</span> 维&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 加载：读回向量，不再对文档调 embed_documents</span></span><br><span class="line">kb = json.loads(KB_PATH.read_text(encoding=<span class="string">&quot;utf-8&quot;</span>))</span><br><span class="line"><span class="keyword">assert</span> kb[<span class="string">&quot;model&quot;</span>] == MODEL, <span class="string">&quot;换模型必须重建索引&quot;</span></span><br><span class="line">mat = np.array(kb[<span class="string">&quot;vectors&quot;</span>], dtype=np.float32)  <span class="comment"># shape = (n, d)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 检索：只对 query 调 embed_query；已归一化，点积即余弦</span></span><br><span class="line">query = <span class="string">&quot;私有文档问答为什么要先检索再生成？&quot;</span></span><br><span class="line">q = np.array(embeddings.embed_query(query), dtype=np.float32)</span><br><span class="line">scores = mat @ q</span><br><span class="line">idx = <span class="built_in">int</span>(scores.argmax())</span><br><span class="line"><span class="built_in">print</span>(kb[<span class="string">&quot;docs&quot;</span>][idx], <span class="built_in">round</span>(<span class="built_in">float</span>(scores[idx]), <span class="number">3</span>))</span><br><span class="line"><span class="comment"># 预期命中 RAG 那条（真实语义，不是随机向量）</span></span><br></pre></td></tr></table></figure>
+
+<p>接 OpenAI（需 <code>OPENAI_API_KEY</code>）时只换构造器，落盘与检索逻辑不变：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> OpenAIEmbeddings</span><br><span class="line">embeddings = OpenAIEmbeddings(model=<span class="string">&quot;text-embedding-3-small&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="重要配置参数"><a href="#重要配置参数" class="headerlink" title="重要配置参数"></a>重要配置参数</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>model</code> &#x2F; <code>model_name</code></td>
+<td>str，构造器</td>
+<td>选定嵌入模型，决定语义空间与输出维 <code>d</code></td>
+<td>换模型必须重建索引，否则召回崩溃</td>
+<td>多语言 MiniLM &#x2F; <code>text-embedding-3-small</code></td>
+<td>建库与查询必须同一模型</td>
+</tr>
+<tr>
+<td><code>encode_kwargs.normalize_embeddings</code></td>
+<td>bool，默认 False</td>
+<td>编码后是否 L2 归一化（点积&#x3D;余弦）</td>
+<td>True 才能用点积检索；与落盘向量必须一致</td>
+<td>True（点积检索）</td>
+<td>中途改此值须重算全部向量</td>
+</tr>
+<tr>
+<td><code>model_kwargs.device</code></td>
+<td>str</td>
+<td>指定本地推理设备</td>
+<td><code>cuda</code> 加速、<code>cpu</code> 更稳</td>
+<td><code>cpu</code></td>
+<td>无 GPU 勿填 <code>cuda</code></td>
+</tr>
+<tr>
+<td><code>cache_folder</code></td>
+<td>str，可选</td>
+<td>本地权重缓存目录</td>
+<td>不设则走 HF 默认缓存</td>
+<td>Hugging Face 默认</td>
+<td>内网预先下载到此目录</td>
+</tr>
+<tr>
+<td><code>dimensions</code></td>
+<td>int，部分云模型可选</td>
+<td>截断输出向量维数</td>
+<td>越小越省存储、召回可能变差</td>
+<td>1536 &#x2F; 256</td>
+<td>必须与已落盘 <code>dim</code> 一致</td>
+</tr>
+<tr>
+<td><code>chunk_size</code></td>
+<td>int，云集成常见</td>
+<td>一次 API 最多送多少条文本</td>
+<td>过大易 413&#x2F;429；过小吞吐低</td>
+<td>100～1000</td>
+<td>批量建库按厂商限额拧</td>
+</tr>
+<tr>
+<td><code>max_retries</code></td>
+<td>int</td>
+<td>云 API 失败自动重试次数</td>
+<td>提高建库成功率、拉长尾延迟</td>
+<td>2～6</td>
+<td>批量索引建议保留</td>
+</tr>
+<tr>
+<td><code>api_key</code></td>
+<td>str</td>
+<td>云 Embedding 鉴权</td>
+<td>本地 HF 不需要</td>
+<td>环境变量</td>
+<td>勿进仓库</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-易踩坑"><a href="#5-易踩坑" class="headerlink" title="5. 易踩坑"></a>5. 易踩坑</h2><ol>
+<li><strong>索引与查询用了不同 Embeddings 模型</strong>：召回率骤降，且不易从日志直接看出；落盘文件须写入并校验 <code>model</code>。  </li>
+<li><strong>把 embed_documents 结果当 embed_query 混用维度</strong>：自定义 pipeline 时须校验 <code>len(v)</code> 与落盘 <code>dim</code> 一致。  </li>
+<li><strong>每次启动都对全量文档再跑 embed_documents</strong>：应加载已落盘向量，只对 query 编码。  </li>
+<li><strong>未归一化却用点积当余弦</strong>：<code>normalize_embeddings</code> 与检索公式必须同一套。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>Embeddings 提供 <strong>embed_query &#x2F; embed_documents</strong> 双入口，是 RAG 向量化的标准接口。  </li>
+<li>建库与检索须 <strong>同一模型、同一维度</strong>。  </li>
+<li><code>embed_documents</code> 结果须自行落盘（或交给 VectorStore）；查询阶段只 <code>embed_query</code>。  </li>
+<li>本地真实语义用 <strong>HuggingFaceEmbeddings + Sentence Transformers</strong>，无需 API Key。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langchain/embeddings">Embeddings 概念</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/integrations/embeddings/huggingfacehub">HuggingFaceEmbeddings</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://python.langchain.com/docs/integrations/text_embedding/openai/">OpenAIEmbeddings</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/Embeddings/" rel="tag"><i class="fa fa-tag"></i> Embeddings</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-01-%E6%A8%A1%E5%9E%8B-%E5%A4%9A%E6%A8%A1%E5%9E%8BFallback/" rel="next" title="多模型Fallback">
+                <i class="fa fa-chevron-left"></i> 多模型Fallback
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-01-%E6%A8%A1%E5%9E%8B-ChatModel/" rel="prev" title="ChatModel">
+                ChatModel <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">2.</span> <span class="nav-text">2. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">3.</span> <span class="nav-text">3. 原理说明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Embeddings-%E5%9F%BA%E7%B1%BB"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 Embeddings 基类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-query-%E4%B8%8E-document-%E6%98%AF%E5%90%A6%E5%8C%BA%E5%88%86"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 query 与 document 是否区分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%89%B9%E5%A4%84%E7%90%86%E4%B8%8E-rate-limit"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 批处理与 rate limit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E4%B8%8E-VectorStore-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 与 VectorStore 的关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%90%91%E9%87%8F%E8%90%BD%E7%9B%98"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 向量落盘</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">重要配置参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">5.</span> <span class="nav-text">5. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">7.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

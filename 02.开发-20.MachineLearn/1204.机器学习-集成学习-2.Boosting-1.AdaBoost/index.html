@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Machine-Learning,Boosting,AdaBoost," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="自适应提升（AdaBoost）：加重错分样本、顺序训练弱学习器再加权合成；适用边界与最小示例。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Boosting：AdaBoost">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="自适应提升（AdaBoost）：加重错分样本、顺序训练弱学习器再加权合成；适用边界与最小示例。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step1.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step2.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step3.png">
+<meta property="article:published_time" content="2024-08-20T01:27:20.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="AdaBoost">
+<meta property="article:tag" content="Boosting">
+<meta property="article:tag" content="Machine-Learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/1204.机器学习-集成学习-2.Boosting-1.AdaBoost/"/>
+
+
+
+
+
+  <title>Boosting：AdaBoost | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Boosting：AdaBoost</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-08-20T09:27:20+08:00">
+                2024-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">集成学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  自适应提升（AdaBoost）：加重错分样本、顺序训练弱学习器再加权合成；适用边界与最小示例。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>平面上红蓝两类点交织，一条直线怎么切都剩几个错分点。与其硬找一条「完美边界」，不如：<strong>先找一条还过得去的切线，把切错的点加重，再找下一条，最后把多条切线按表现好坏加权叠起来</strong>。</p>
+<p>这就是 <strong>自适应提升</strong>（Adaptive Boosting，<strong>AdaBoost</strong>）的核心动作：顺序加弱学习器，每轮根据上一轮对错<strong>改样本权重</strong>，错得多的下一轮更受关注。</p>
+<blockquote>
+<p>段末注释：<strong>AdaBoost</strong> 属于 Boosting 族（Freund &amp; Schapire，约 <strong>1995–1997</strong>）：同质弱学习器<strong>串行</strong>训练，侧重降偏置。本系列 Boosting 专篇按出现顺序编号。后文沿用 AdaBoost。</p>
+</blockquote>
+<p>配图目录：<code>./1204.机器学习-集成学习-2.Boosting-1.AdaBoost/</code>。</p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>学习范式</td>
+<td>监督学习；Boosting 集成</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>特征 $\mathbf{x}$ → 加权弱分类器之和，再取符号得类别（亦可扩回归变体）</td>
+</tr>
+<tr>
+<td>在优化什么</td>
+<td>让后续弱学习器盯紧当前难分样本；最终 $H(x)&#x3D;\mathrm{sign}(\sum_m \alpha_m h_m(x))$</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：Freund &amp; Schapire（约 1995–1997）提出 AdaBoost（决策论推广见 <em>JCSS</em> 1997）。当时单个弱分类器往往只略好于乱猜，该方法通过<strong>加重错分样本、顺序再学、按表现加权合成</strong>，把一批弱规则提升成可用的强分类器。</p>
+<p><strong>比喻</strong>：像会考补习——第一次模考错的题，下次课加练；每轮老师（弱学习器）按班级进步给不同话语权，最后综合意见。</p>
+<hr>
+<h2 id="2-直觉：加重错分-→-再学-→-加权合成"><a href="#2-直觉：加重错分-→-再学-→-加权合成" class="headerlink" title="2. 直觉：加重错分 → 再学 → 加权合成"></a>2. 直觉：加重错分 → 再学 → 加权合成</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step1.png" alt="图 1　第一轮切分并加重错分点"></p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step2.png" alt="图 2　后续轮次继续关注难分点"></p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-1.AdaBoost/AdaBoost-step3.png" alt="图 3　多条弱边界加权叠成强分类器"></p>
+<p>典型基学习器是<strong>浅决策树桩</strong>（<code>max_depth=1</code>）：单个很弱，合起来可以拟合弯曲边界。</p>
+<hr>
+<h2 id="3-核心链路"><a href="#3-核心链路" class="headerlink" title="3. 核心链路"></a>3. 核心链路</h2><p>训练集 $T&#x3D;{(x_i,y_i)}_{i&#x3D;1}^n$，$y_i\in{-1,+1}$。</p>
+<p><strong>① 初始化权重</strong>（每人一样重）：</p>
+<p>$$<br>w_{1i}&#x3D;\frac{1}{n}<br>$$</p>
+<p><strong>② 第 $m$ 轮</strong>：在当前权重 $D_m$ 下训练弱学习器 $h_m$，算加权错误率 $\epsilon_m$，再定该轮话语权：</p>
+<p>$$<br>\alpha_m&#x3D;\frac{1}{2}\ln\frac{1-\epsilon_m}{\epsilon_m}<br>$$</p>
+<p>$\epsilon_m$ 越小，$\alpha_m$ 越大。其中算出来的$\alpha_m$ 就是这轮训练得到的弱选择器在最终预测中的<strong>所占权重</strong>。</p>
+<p><strong>③ 更新样本权重</strong>（错分的乘上 $e^{\alpha_m}$ 量级，对的压低），再规范化：</p>
+<p>$$<br>w_{m+1,i}&#x3D;\frac{w_{m,i}}{Z_m}\exp(-\alpha_m y_i h_m(x_i))<br>$$</p>
+<p><strong>④ 最终决策</strong>：<br>使用所有训练的弱选择器进行预测，然后使用②中，评估的每个选择器的权重，进行加权合并，得到最终的强分类器：<br>$$<br>H(x)&#x3D;\mathrm{sign}\left(\sum_{m&#x3D;1}^{M}\alpha_m h_m(x)\right)<br>$$</p>
+<blockquote>
+<p>段末注释：与 <strong>GBDT</strong> 不同——AdaBoost 改的是<strong>样本权重</strong>；GBDT 改的是下一轮要拟合的<strong>残差&#x2F;梯度目标</strong>。</p>
+</blockquote>
+<hr>
+<h2 id="4-手算完整实例：一维二分类（2-轮）"><a href="#4-手算完整实例：一维二分类（2-轮）" class="headerlink" title="4. 手算完整实例：一维二分类（2 轮）"></a>4. 手算完整实例：一维二分类（2 轮）</h2><h3 id="A-问题与原始表"><a href="#A-问题与原始表" class="headerlink" title="A. 问题与原始表"></a>A. 问题与原始表</h3><p>特征 $x$ 为实数，标签 $y\in{-1,+1}$。</p>
+<table>
+<thead>
+<tr>
+<th>样本 $i$</th>
+<th>$x_i$</th>
+<th>$y_i$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>0</td>
+<td>$-1$</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>$+1$</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2</td>
+<td>$-1$</td>
+</tr>
+<tr>
+<td>4</td>
+<td>3</td>
+<td>$+1$</td>
+</tr>
+</tbody></table>
+<h3 id="B-初始化"><a href="#B-初始化" class="headerlink" title="B. 初始化"></a>B. 初始化</h3><p>$$<br>w_{1i}&#x3D;\frac14,\quad i&#x3D;1,2,3,4<br>$$</p>
+<p>弱学习器用<strong>决策树</strong>：选阈值 $\theta$ 与左右符号，使加权错误率最小。</p>
+<h3 id="C-训练过程"><a href="#C-训练过程" class="headerlink" title="C. 训练过程"></a>C. 训练过程</h3><p><strong>第 1 轮</strong></p>
+<p>取 $\theta&#x3D;0.5$，规则 $h_1(x)&#x3D;-1\ (x&lt;0.5),\ +1\ (x\ge0.5)$。</p>
+<table>
+<thead>
+<tr>
+<th>$i$</th>
+<th>$h_1(x_i)$</th>
+<th>对错</th>
+<th>$w_{1i}$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>$-1$</td>
+<td>对</td>
+<td>0.25</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$+1$</td>
+<td>对</td>
+<td>0.25</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$+1$</td>
+<td><strong>错</strong></td>
+<td>0.25</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$+1$</td>
+<td>对</td>
+<td>0.25</td>
+</tr>
+</tbody></table>
+<p>$\epsilon_1&#x3D;0.25$，$\alpha_1&#x3D;\frac12\ln3\approx0.549$。</p>
+<p>未规范化因子：$e^{-\alpha_1}\approx0.577$（分对），$e^{\alpha_1}\approx1.732$（分错）。</p>
+<table>
+<thead>
+<tr>
+<th>$i$</th>
+<th>更新前 $w$</th>
+<th>乘子</th>
+<th>未规范化</th>
+<th>$w_{2i}$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>0.25</td>
+<td>0.577</td>
+<td>0.144</td>
+<td>0.167</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.25</td>
+<td>0.577</td>
+<td>0.144</td>
+<td>0.167</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.25</td>
+<td>1.732</td>
+<td>0.433</td>
+<td><strong>0.500</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>0.25</td>
+<td>0.577</td>
+<td>0.144</td>
+<td>0.167</td>
+</tr>
+</tbody></table>
+<p>（$Z_1\approx0.866$；样本 3 被加重。）</p>
+<p><strong>第 2 轮</strong></p>
+<p>在 $w_2$ 下取 $\theta&#x3D;2.5$，规则 $h_2(x)&#x3D;-1\ (x&lt;2.5),\ +1\ (x\ge2.5)$。</p>
+<table>
+<thead>
+<tr>
+<th>$i$</th>
+<th>$h_2$</th>
+<th>对错</th>
+<th>加权贡献</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>$-1$</td>
+<td>对</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$-1$</td>
+<td><strong>错</strong></td>
+<td>0.167</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$-1$</td>
+<td>对</td>
+<td>0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$+1$</td>
+<td>对</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>$\epsilon_2\approx0.167$，$\alpha_2&#x3D;\frac12\ln5\approx0.805$。</p>
+<p>（实装会继续到 $M$；此处截断。）</p>
+<h3 id="D-可部署对象"><a href="#D-可部署对象" class="headerlink" title="D. 可部署对象"></a>D. 可部署对象</h3><p>$$<br>{(\alpha_1,h_1),(\alpha_2,h_2)},\quad<br>H(x)&#x3D;\mathrm{sign}\big(\alpha_1 h_1(x)+\alpha_2 h_2(x)\big)<br>$$</p>
+<p>推理<strong>不再使用</strong>各样本的 $w_i$。</p>
+<h3 id="E-预测-推断"><a href="#E-预测-推断" class="headerlink" title="E. 预测 &#x2F; 推断"></a>E. 预测 &#x2F; 推断</h3><ul>
+<li><strong>训练内复核（样本 1，$x&#x3D;0$）</strong>：$h_1&#x3D;-1$，$h_2&#x3D;-1$，$H&#x3D;\mathrm{sign}(-0.549-0.805)&#x3D;-1$，与 $y_1$ 一致。  </li>
+<li><strong>新样本 $x&#x3D;2.2$</strong>：$h_1&#x3D;+1$，$h_2&#x3D;-1$，$H&#x3D;\mathrm{sign}(0.549-0.805)&#x3D;\mathrm{sign}(-0.256)&#x3D;-1$。</li>
+</ul>
+<hr>
+<h2 id="5-适用-不适用"><a href="#5-适用-不适用" class="headerlink" title="5. 适用 &#x2F; 不适用"></a>5. 适用 &#x2F; 不适用</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>判定</th>
+<th>要求或边界</th>
+<th>具体例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>特征</td>
+<td>适用</td>
+<td>表格数值&#x2F;已编码类别；浅树可切分；噪声别极端</td>
+<td>信用表：收入、负债率、账龄，用树桩做基学习器</td>
+</tr>
+<tr>
+<td>特征</td>
+<td>不适用</td>
+<td>原始图像&#x2F;长文本需深层表征；标签噪声很多</td>
+<td>未表征的原始像素直接 AdaBoost，错标会被越加重越疯</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>适用</td>
+<td>二分类为主（多类有扩展）；接受「加权投票」式集成</td>
+<td>垃圾邮件二分类，弱学习器为单词&#x2F;规则树桩</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>不适用</td>
+<td>只要一条全局线性概率模型且强调系数解释</td>
+<td>要对数赔率系数时优先 Logistic；AdaBoost 解释落在「哪几轮、哪些样本」</td>
+</tr>
+<tr>
+<td>训练数据</td>
+<td>适用</td>
+<td>有标签；样本量中等；基学习器略好于随机猜</td>
+<td>数千条标注样本，<code>n_estimators</code> 几十到一两百试起</td>
+</tr>
+<tr>
+<td>训练数据</td>
+<td>不适用</td>
+<td>错标率高还猛加轮数；或类别极端不平衡未处理</td>
+<td>10% 标签写反，越 boost 越把噪声当「难例」</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-优缺点与常见坑"><a href="#6-优缺点与常见坑" class="headerlink" title="6. 优缺点与常见坑"></a>6. 优缺点与常见坑</h2><p><strong>优点</strong>：思路清晰；弱学习器可很简单；对不少表格二分类仍是好教学与基线。<br><strong>缺点</strong>：对噪声&#x2F;异常值敏感；串行难并行；现代表格赛场更多用 GBDT&#x2F;XGBoost&#x2F;LightGBM。</p>
+<p><strong>坑</strong>：$M$ 过大过拟合；基学习器太强（深树）失去「弱」的意义；把 AdaBoost 当默认「最强 Boosting」而不试梯度提升族。</p>
+<hr>
+<h2 id="7-最小可运行示例"><a href="#7-最小可运行示例" class="headerlink" title="7. 最小可运行示例"></a>7. 最小可运行示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;AdaBoost：浅树桩为基学习器，输入特征矩阵，输出类别。&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">from</span> sklearn.datasets <span class="keyword">import</span> load_breast_cancer</span><br><span class="line"><span class="keyword">from</span> sklearn.ensemble <span class="keyword">import</span> AdaBoostClassifier</span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split</span><br><span class="line"><span class="keyword">from</span> sklearn.tree <span class="keyword">import</span> DecisionTreeClassifier</span><br><span class="line"></span><br><span class="line">X, y = load_breast_cancer(return_X_y=<span class="literal">True</span>)</span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(</span><br><span class="line">    X, y, test_size=<span class="number">0.2</span>, random_state=<span class="number">42</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">clf = AdaBoostClassifier(</span><br><span class="line">    estimator=DecisionTreeClassifier(max_depth=<span class="number">1</span>),</span><br><span class="line">    n_estimators=<span class="number">50</span>,</span><br><span class="line">    random_state=<span class="number">42</span>,</span><br><span class="line">)</span><br><span class="line">clf.fit(X_train, y_train)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;test acc:&quot;</span>, clf.score(X_test, y_test))</span><br></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：公开数据集示例，与上文手算表无关。</p>
+<h3 id="重要配置参数（sklearn-AdaBoostClassifier）"><a href="#重要配置参数（sklearn-AdaBoostClassifier）" class="headerlink" title="重要配置参数（sklearn AdaBoostClassifier）"></a>重要配置参数（sklearn <code>AdaBoostClassifier</code>）</h3><table>
+<thead>
+<tr>
+<th>参数（库内常用名）</th>
+<th>训练中的作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>n_estimators</code></td>
+<td>弱学习器个数；越多拟合能力越强，也越易过拟合、越慢</td>
+<td>常从 <code>50～200</code> 起</td>
+<td>验证集不再升 → 停增；可配合更小 <code>learning_rate</code></td>
+</tr>
+<tr>
+<td><code>learning_rate</code></td>
+<td>缩小每轮对最终组合的贡献；小则更保守，常需更多轮</td>
+<td>常 <code>0.5～1.0</code>；不稳可降到 <code>0.1</code> 量级</td>
+<td>与 <code>n_estimators</code> 对调：lr↓ 时常需 estimators↑</td>
+</tr>
+<tr>
+<td><code>estimator</code>（弱学习器）</td>
+<td>默认决策树桩；加深单树会改变「弱」的程度</td>
+<td>教学&#x2F;稳妥：<code>DecisionTreeClassifier(max_depth=1)</code></td>
+<td>先保持树桩；换强基学习器前先确认是否还符合 AdaBoost 调参直觉</td>
+</tr>
+<tr>
+<td><code>algorithm</code></td>
+<td>多分类实现路径（如 <code>SAMME</code>）</td>
+<td>跟库默认；版本差异以文档为准</td>
+<td>升级 sklearn 后核对弃用项，避免 silent 行为变化</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-和近邻算法怎么挑"><a href="#8-和近邻算法怎么挑" class="headerlink" title="8. 和近邻算法怎么挑"></a>8. 和近邻算法怎么挑</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>更优先考虑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>教学：加重错分</td>
+<td><strong>AdaBoost</strong></td>
+</tr>
+<tr>
+<td>残差提升框架</td>
+<td>GBDT</td>
+</tr>
+<tr>
+<td>通用数值表强基线</td>
+<td>XGBoost</td>
+</tr>
+<tr>
+<td>类别多、防目标编码泄漏</td>
+<td>CatBoost</td>
+</tr>
+<tr>
+<td>行数极大、要更快训练</td>
+<td>LightGBM</td>
+</tr>
+<tr>
+<td>要整段预测分布</td>
+<td>NGBoost</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ul>
+<li>AdaBoost &#x3D; <strong>改样本权重</strong> + <strong>顺序弱学习器</strong> + <strong>$\alpha_m$ 加权投票</strong>。  </li>
+<li>适合干净标签的表格二分类与教学；噪声大或大数据量时优先看梯度提升实现。  </li>
+<li>最易踩的坑：<strong>错标被当成难例越加越重</strong>。</li>
+</ul>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Freund Y., Schapire R.E. A Decision-Theoretic Generalization of On-Line Learning and an Application to Boosting. <em>JCSS</em> <strong>1997</strong>.  </li>
+<li><a target="_blank" rel="noopener" href="https://scikit-learn.org/stable/modules/ensemble.html#adaboost">scikit-learn AdaBoost</a>  </li>
+<li>Mohri 讲义：<a target="_blank" rel="noopener" href="https://cs.nyu.edu/~mohri/mls/ml_boosting.pdf">Boosting</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Machine-Learning/" rel="tag"><i class="fa fa-tag"></i> Machine-Learning</a>
+          
+            <a href="/tags/Boosting/" rel="tag"><i class="fa fa-tag"></i> Boosting</a>
+          
+            <a href="/tags/AdaBoost/" rel="tag"><i class="fa fa-tag"></i> AdaBoost</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-3.XGBoost/" rel="next" title="Boosting：XGBoost">
+                <i class="fa fa-chevron-left"></i> Boosting：XGBoost
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-05.MachineLearn/1204.%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0-2.Boosting-Adaboost/" rel="prev" title="集成学习-Adaboost">
+                集成学习-Adaboost <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%9B%B4%E8%A7%89%EF%BC%9A%E5%8A%A0%E9%87%8D%E9%94%99%E5%88%86-%E2%86%92-%E5%86%8D%E5%AD%A6-%E2%86%92-%E5%8A%A0%E6%9D%83%E5%90%88%E6%88%90"><span class="nav-number">2.</span> <span class="nav-text">2. 直觉：加重错分 → 再学 → 加权合成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E9%93%BE%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">3. 核心链路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%89%8B%E7%AE%97%E5%AE%8C%E6%95%B4%E5%AE%9E%E4%BE%8B%EF%BC%9A%E4%B8%80%E7%BB%B4%E4%BA%8C%E5%88%86%E7%B1%BB%EF%BC%882-%E8%BD%AE%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. 手算完整实例：一维二分类（2 轮）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-%E9%97%AE%E9%A2%98%E4%B8%8E%E5%8E%9F%E5%A7%8B%E8%A1%A8"><span class="nav-number">4.1.</span> <span class="nav-text">A. 问题与原始表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">4.2.</span> <span class="nav-text">B. 初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E8%AE%AD%E7%BB%83%E8%BF%87%E7%A8%8B"><span class="nav-number">4.3.</span> <span class="nav-text">C. 训练过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#D-%E5%8F%AF%E9%83%A8%E7%BD%B2%E5%AF%B9%E8%B1%A1"><span class="nav-number">4.4.</span> <span class="nav-text">D. 可部署对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#E-%E9%A2%84%E6%B5%8B-%E6%8E%A8%E6%96%AD"><span class="nav-number">4.5.</span> <span class="nav-text">E. 预测 &#x2F; 推断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E9%80%82%E7%94%A8-%E4%B8%8D%E9%80%82%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">5. 适用 &#x2F; 不适用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%BC%98%E7%BC%BA%E7%82%B9%E4%B8%8E%E5%B8%B8%E8%A7%81%E5%9D%91"><span class="nav-number">6.</span> <span class="nav-text">6. 优缺点与常见坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">7.</span> <span class="nav-text">7. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%EF%BC%88sklearn-AdaBoostClassifier%EF%BC%89"><span class="nav-number">7.1.</span> <span class="nav-text">重要配置参数（sklearn AdaBoostClassifier）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%92%8C%E8%BF%91%E9%82%BB%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E6%8C%91"><span class="nav-number">8.</span> <span class="nav-text">8. 和近邻算法怎么挑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">9. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">10.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

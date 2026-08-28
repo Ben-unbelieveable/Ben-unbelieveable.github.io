@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RAG,TextSplitter," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="langchain-text-splitters：RecursiveCharacterTextSplitter 与 chunk 策略对 RAG 的影响。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TextSplitter">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-05-%E6%A3%80%E7%B4%A2-TextSplitter/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="langchain-text-splitters：RecursiveCharacterTextSplitter 与 chunk 策略对 RAG 的影响。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-08-10T09:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="TextSplitter">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-langchain/LangChain-05-检索-TextSplitter/"/>
+
+
+
+
+
+  <title>TextSplitter | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-05-%E6%A3%80%E7%B4%A2-TextSplitter/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TextSplitter</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T17:00:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LangChain/" itemprop="url" rel="index">
+                    <span itemprop="name">LangChain</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  langchain-text-splitters：RecursiveCharacterTextSplitter 与 chunk 策略对 RAG 的影响。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>长 PDF 整页 embedding 会稀释语义，检索时只命中整页噪声。<strong>TextSplitter</strong> 把 Document 切成更小 chunk，在 <strong>上下文长度</strong> 与 <strong>语义完整</strong> 之间折中。LangChain 将切分器独立为 <code>langchain-text-splitters</code> 包，与 Loader、VectorStore 串联。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>TextSplitter</strong>（文本切分器）&#x3D; 按字符&#x2F;token&#x2F;结构把长文本拆成多个 Document 的组件。</p>
+</blockquote>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>能力层 <strong>索引前处理</strong>：长 Document → 多个小 Document</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td><code>list[Document]</code> 或 str → <code>list[Document]</code></td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>splitter.split_documents(docs)</code>、<code>split_text(text)</code></td>
+</tr>
+<tr>
+<td>与 LangGraph</td>
+<td>切分多在离线 ETL；在线 Agent 偶发动态切分</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-实现逻辑"><a href="#2-实现逻辑" class="headerlink" title="2. 实现逻辑"></a>2. 实现逻辑</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. loader.load() → list[Document]（可能一页一条）</span><br><span class="line">2. splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)</span><br><span class="line">3. chunks = splitter.split_documents(docs)</span><br><span class="line">4. 每条 chunk 继承/合并 metadata（source、page）</span><br><span class="line">5. vectorstore.add_documents(chunks)</span><br><span class="line">6. 检索命中 chunk 级片段 → 拼入 prompt</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Document(page_content=&quot;AAAA...2000字...&quot;, metadata=&#123;page:1&#125;)</span><br><span class="line">  → split_documents</span><br><span class="line">[Document(content=chunk1, metadata=&#123;page:1&#125;), Document(content=chunk2, ...), ...]</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-原理说明"><a href="#3-原理说明" class="headerlink" title="3. 原理说明"></a>3. 原理说明</h2><h3 id="3-1-RecursiveCharacterTextSplitter"><a href="#3-1-RecursiveCharacterTextSplitter" class="headerlink" title="3.1 RecursiveCharacterTextSplitter"></a>3.1 RecursiveCharacterTextSplitter</h3><p><strong><code>RecursiveCharacterTextSplitter</code></strong>（类，<code>langchain_text_splitters</code>）<br>功能：按分隔符列表从粗到细递归切，尽量在段落边界断开。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>默认值</th>
+<th>最小维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk_size</code></td>
+<td>int</td>
+<td><code>1000</code></td>
+<td>≥1；须 &gt; <code>chunk_overlap</code></td>
+</tr>
+<tr>
+<td><code>chunk_overlap</code></td>
+<td>int</td>
+<td><code>200</code></td>
+<td>≥0；0&#x3D;不重叠</td>
+</tr>
+<tr>
+<td><code>length_function</code></td>
+<td>callable</td>
+<td><code>len</code>（字符）</td>
+<td>返回非负 int</td>
+</tr>
+<tr>
+<td><code>separators</code></td>
+<td>list[str]</td>
+<td><code>[&quot;\n\n&quot;, &quot;\n&quot;, &quot; &quot;, &quot;&quot;]</code></td>
+<td>len≥1，最后常为 <code>&quot;&quot;</code> 保底</td>
+</tr>
+<tr>
+<td><code>keep_separator</code></td>
+<td>bool</td>
+<td><code>False</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>is_separator_regex</code></td>
+<td>bool</td>
+<td><code>False</code></td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p><strong><code>split_text(text: str)</code></strong>（方法）<br>最小输入：任意 str（含空串 → <code>[]</code> 或 <code>[&#39;&#39;]</code> 视实现）；短于 <code>chunk_size</code> 则返回 <strong>len&#x3D;1</strong>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">splitter = RecursiveCharacterTextSplitter(chunk_size=<span class="number">100</span>, chunk_overlap=<span class="number">20</span>)</span><br><span class="line">parts = splitter.split_text(<span class="string">&quot;短文本无需切分。&quot;</span>)  <span class="comment"># 通常 1 段</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>split_documents(documents)</code></strong>（方法）<br>功能：切 Document 并<strong>复制 metadata</strong> 到各 chunk。<br>最小维度：<code>documents</code> len≥1。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chunks = splitter.split_documents([Document(page_content=text, metadata=&#123;<span class="string">&quot;source&quot;</span>: <span class="string">&quot;a.md&quot;</span>&#125;)])</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-chunk-overlap"><a href="#3-2-chunk-overlap" class="headerlink" title="3.2 chunk_overlap"></a>3.2 chunk_overlap</h3><p>相邻 chunk 共享尾&#x2F;头部，避免句子在边界被截断。overlap 过大则索引冗余。<br>最小有意义：<code>0 ≤ overlap &lt; chunk_size</code>；overlap&#x3D;0 语法合法但易断句。</p>
+<h3 id="3-3-结构化切分"><a href="#3-3-结构化切分" class="headerlink" title="3.3 结构化切分"></a>3.3 结构化切分</h3><p><strong><code>MarkdownHeaderTextSplitter</code></strong>（类）<br>功能：按 Markdown 标题切，标题写入 metadata。<br>默认值：<code>headers_to_split_on</code> 必填。最小：至少 1 个 <code>(级别, 元数据键)</code>，如 <code>[(&quot;#&quot;, &quot;h1&quot;)]</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_text_splitters <span class="keyword">import</span> MarkdownHeaderTextSplitter</span><br><span class="line">MarkdownHeaderTextSplitter(headers_to_split_on=[(<span class="string">&quot;#&quot;</span>, <span class="string">&quot;h1&quot;</span>), (<span class="string">&quot;##&quot;</span>, <span class="string">&quot;h2&quot;</span>)]).split_text(<span class="string">&quot;# A\n正文&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>代码可用 <code>RecursiveCharacterTextSplitter.from_language(Language.PYTHON, ...)</code>，<code>Language</code> 为枚举。</p>
+<h3 id="3-4-与-RAG-方法论"><a href="#3-4-与-RAG-方法论" class="headerlink" title="3.4 与 RAG 方法论"></a>3.4 与 RAG 方法论</h3><p>切分影响召回率与答案完整性；评测与业务架构不在本篇。本篇只讲 API。</p>
+<hr>
+<h2 id="4-最小可运行示例"><a href="#4-最小可运行示例" class="headerlink" title="4. 最小可运行示例"></a>4. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U langchain-text-splitters langchain-core</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.documents <span class="keyword">import</span> Document</span><br><span class="line"><span class="keyword">from</span> langchain_text_splitters <span class="keyword">import</span> RecursiveCharacterTextSplitter</span><br><span class="line"></span><br><span class="line">text = <span class="string">&quot;LangChain 支持 LCEL。&quot;</span> * <span class="number">30</span>  <span class="comment"># 长文本</span></span><br><span class="line">doc = Document(page_content=text, metadata=&#123;<span class="string">&quot;source&quot;</span>: <span class="string">&quot;demo.md&quot;</span>&#125;)</span><br><span class="line">splitter = RecursiveCharacterTextSplitter(chunk_size=<span class="number">100</span>, chunk_overlap=<span class="number">20</span>)</span><br><span class="line">chunks = splitter.split_documents([doc])</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(chunks), <span class="built_in">len</span>(chunks[<span class="number">0</span>].page_content) &lt;= <span class="number">100</span>)</span><br><span class="line"><span class="comment"># 预期：多条 True（最后一条可能略短）</span></span><br></pre></td></tr></table></figure>
+
+<p>纯字符串：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">parts = splitter.split_text(<span class="string">&quot;短文本无需切分。&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(parts))  <span class="comment"># 1</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="重要配置参数"><a href="#重要配置参数" class="headerlink" title="重要配置参数"></a>重要配置参数</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk_size</code></td>
+<td>int，默认 1000</td>
+<td>单块最大长度（默认按字符，可换 token 计数）</td>
+<td>过大超 embedding 窗；过小语义破碎</td>
+<td>300～1000 字符</td>
+<td>代码库偏小；FAQ 可大</td>
+</tr>
+<tr>
+<td><code>chunk_overlap</code></td>
+<td>int，默认 200</td>
+<td>相邻块首尾重叠多少，避免句子被切断</td>
+<td>过大索引冗余、存储涨；0 易断句</td>
+<td>chunk_size 的 10%～20%</td>
+<td>必须 <code>&lt; chunk_size</code></td>
+</tr>
+<tr>
+<td><code>length_function</code></td>
+<td>callable，默认 <code>len</code></td>
+<td>用什么函数量「长度」</td>
+<td>改成 tiktoken 后 chunk_size 含义变成 token</td>
+<td>len &#x2F; tiktoken</td>
+<td>按 token 切更贴近模型窗</td>
+</tr>
+<tr>
+<td><code>separators</code></td>
+<td>list[str]，默认段落→行→空格→空串</td>
+<td>从粗到细尝试的切分优先级</td>
+<td>中文可保留 <code>\n\n</code>；最后 <code>&quot;&quot;</code> 保底硬切</td>
+<td>默认即可</td>
+<td>不要删掉最后的 <code>&quot;&quot;</code></td>
+</tr>
+<tr>
+<td><code>keep_separator</code></td>
+<td>bool，默认 False</td>
+<td>切分后是否把分隔符留在块里</td>
+<td>True 可保留 Markdown 标题标记</td>
+<td>False</td>
+<td>需标题进 metadata 时另用 Header splitter</td>
+</tr>
+<tr>
+<td><code>is_separator_regex</code></td>
+<td>bool，默认 False</td>
+<td>把 separators 当正则而非字面量</td>
+<td>True 写错正则会切出意外块</td>
+<td>False</td>
+<td>复杂结构才开</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-易踩坑"><a href="#5-易踩坑" class="headerlink" title="5. 易踩坑"></a>5. 易踩坑</h2><ol>
+<li><strong>chunk 过大仍超 embedding 模型输入上限</strong>：需在 splitter 层压长度。  </li>
+<li><strong>split 丢 metadata</strong>：用 <code>split_documents</code> 而非 <code>split_text</code>+手动组，除非自行复制 metadata。  </li>
+<li><strong>overlap&#x3D;0 且 chunk 边界在表格&#x2F;代码中间</strong>：检索到半表半码，模型胡答。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>RecursiveCharacterTextSplitter</strong> 是最常用的通用切分器。  </li>
+<li><strong>chunk_size &#x2F; chunk_overlap</strong> 是 RAG 质量的一阶旋钮。  </li>
+<li>切分输出仍是 <strong>Document</strong>，直接 <code>add_documents</code>。  </li>
+<li>策略评测与业务切分见 RAG 目录。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/oss/python/langchain/text_splitters">Text splitters</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://reference.langchain.com/python/langchain_text_splitters/character/RecursiveCharacterTextSplitter">RecursiveCharacterTextSplitter</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://pypi.org/project/langchain-text-splitters/">langchain-text-splitters PyPI</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/TextSplitter/" rel="tag"><i class="fa fa-tag"></i> TextSplitter</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-05-%E6%A3%80%E7%B4%A2-VectorStore%E9%9B%86%E6%88%90/" rel="next" title="VectorStore集成">
+                <i class="fa fa-chevron-left"></i> VectorStore集成
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-05-%E6%A3%80%E7%B4%A2-Document%E4%B8%8ERetriever/" rel="prev" title="Document与Retriever">
+                Document与Retriever <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">2.</span> <span class="nav-text">2. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">3.</span> <span class="nav-text">3. 原理说明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-RecursiveCharacterTextSplitter"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 RecursiveCharacterTextSplitter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-chunk-overlap"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 chunk_overlap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E7%BB%93%E6%9E%84%E5%8C%96%E5%88%87%E5%88%86"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 结构化切分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E4%B8%8E-RAG-%E6%96%B9%E6%B3%95%E8%AE%BA"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 与 RAG 方法论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">重要配置参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">5.</span> <span class="nav-text">5. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">7.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

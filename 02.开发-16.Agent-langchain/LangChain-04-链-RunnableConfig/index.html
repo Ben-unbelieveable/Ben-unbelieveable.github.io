@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LCEL,RunnableConfig," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="RunnableConfig 运行时传参：两层键、ContextVar 合并传播、configurable_fields &#x2F; alternatives、同链多租户切模型。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RunnableConfig">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="RunnableConfig 运行时传参：两层键、ContextVar 合并传播、configurable_fields &#x2F; alternatives、同链多租户切模型。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/langchain-fig01-config-sidecar.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/langchain-fig02-config-merge.png">
+<meta property="article:published_time" content="2026-08-10T09:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="LCEL">
+<meta property="article:tag" content="RunnableConfig">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/langchain-fig01-config-sidecar.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-langchain/LangChain-04-链-RunnableConfig/"/>
+
+
+
+
+
+  <title>RunnableConfig | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">RunnableConfig</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T17:00:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LangChain/" itemprop="url" rel="index">
+                    <span itemprop="name">LangChain</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  RunnableConfig 运行时传参：两层键、ContextVar 合并传播、configurable_fields / alternatives、同链多租户切模型。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>同一条链在开发环境要打 trace、在生产要换模型名、在多租户里要带 <code>tenant_id</code>。若把这些写进构造器，每次改环境都要重建对象。<strong>RunnableConfig</strong> 是 <code>invoke</code> 的<strong>第二参</strong>：业务数据走 input，租户 &#x2F; 模型旋钮 &#x2F; 观测钩子走 config，链的输入输出类型不变。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>RunnableConfig</strong> &#x3D; 单次 Runnable 调用的运行时配置字典（<code>tags</code>、<code>metadata</code>、<code>callbacks</code>、<code>configurable</code> 等）。</p>
+</blockquote>
+<p>社区方案即官方 <code>langchain_core.runnables.config.RunnableConfig</code>（<code>TypedDict</code>）。适用「一条链、多种运行时旋钮」；风险是 <code>configurable</code> 键拼错时<strong>静默不生效</strong>，以及把密钥、个人身份信息（Personally Identifiable Information，<strong>PII</strong>）写进会进 trace 的字段。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>PII</strong> &#x3D; 能直接或间接识别自然人的数据，如用户 id、邮箱；不要放进 <code>metadata</code> &#x2F; 可被抄进 trace 的 <code>configurable</code>。</p>
+</blockquote>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>能力层<strong>运行时配置</strong>：观测、可配置字段、并发与递归上限</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>不改变链 I&#x2F;O 类型；改变内部行为与 tracing</td>
+</tr>
+<tr>
+<td>典型调用入口</td>
+<td><code>chain.invoke(x, config={...})</code>、<code>with_config</code>、<code>configurable_fields</code></td>
+</tr>
+<tr>
+<td>与 LangGraph</td>
+<td>图的 <code>config[&quot;configurable&quot;]</code> 同源；<code>thread_id</code> 等检查点键在图侧消费</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：旧 Chain 把 <code>verbose</code>、<code>callbacks</code>、模型名散落在构造器。Runnable 协议把「这次怎么跑」收成 <code>invoke(input, config)</code> 第二参；<code>TypedDict</code> 设 <code>total=False</code>，允许部分键、再按规则合并。</p>
+<p>异步入口相同：<code>await chain.ainvoke(x, config={...})</code>。</p>
+<hr>
+<h2 id="2-实现逻辑"><a href="#2-实现逻辑" class="headerlink" title="2. 实现逻辑"></a>2. 实现逻辑</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">1. 组装链（与 config 无关）：prompt | model | parser</span><br><span class="line">2. 可选：model.configurable_fields(...) 或 configurable_alternatives(...)</span><br><span class="line">3. chain.invoke(</span><br><span class="line">       &#123;&quot;q&quot;: &quot;...&quot;&#125;,                          # 业务输入</span><br><span class="line">       config=&#123;</span><br><span class="line">           &quot;configurable&quot;: &#123;&quot;llm&quot;: &quot;full&quot;&#125;,   # 行为：换实现 / 换字段</span><br><span class="line">           &quot;tags&quot;: [&quot;prod&quot;],                  # 观测：过滤</span><br><span class="line">           &quot;metadata&quot;: &#123;&quot;tenant&quot;: &quot;t1&quot;&#125;,      # 观测：维度</span><br><span class="line">           &quot;callbacks&quot;: [handler],            # 观测：钩子</span><br><span class="line">           &quot;max_concurrency&quot;: 8,              # 行为：batch 并行</span><br><span class="line">       &#125;,</span><br><span class="line">   )</span><br><span class="line">4. ensure_config 补默认键 → 写入 ContextVar</span><br><span class="line">5. 子步骤 ensure_config / merge_configs：tags 并集，configurable 浅合并</span><br><span class="line">6. 输出类型仍由链决定（如 str）；trace 上多出 tags / metadata</span><br></pre></td></tr></table></figure>
+
+<p><strong>字段级变形</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">input  &#123;&quot;q&quot;: &quot;发票错了&quot;&#125;     → 仍是这条 dict，链尾仍是 str</span><br><span class="line">config &#123;&quot;tags&quot;:[&quot;prod&quot;], &quot;configurable&quot;:&#123;&quot;llm&quot;:&quot;full&quot;&#125;, &quot;metadata&quot;:&#123;&quot;tenant&quot;:&quot;t1&quot;&#125;&#125;</span><br><span class="line">        ↓ 随管道下行，不进入 prompt 变量</span><br><span class="line">LangSmith / callback 看到 tags、metadata；model 读到 configurable[&quot;llm&quot;]</span><br></pre></td></tr></table></figure>
+
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/langchain-fig01-config-sidecar.png" alt="图 1　config 是并行信封：input 走管道变 str，config 不改变 I&#x2F;O 类型（对应上表第 3–6 步）"></p>
+<hr>
+<h2 id="3-原理说明"><a href="#3-原理说明" class="headerlink" title="3. 原理说明"></a>3. 原理说明</h2><h3 id="3-1-两层键：观测-vs-行为"><a href="#3-1-两层键：观测-vs-行为" class="headerlink" title="3.1 两层键：观测 vs 行为"></a>3.1 两层键：观测 vs 行为</h3><p><strong><code>RunnableConfig</code></strong>（数据类，<code>TypedDict, total=False</code>）<br>功能：一次 <code>invoke</code> 的观测与行为参数。合法键由 <code>CONFIG_KEYS</code> 限定；键表外的项会被塞进 <code>configurable</code>（历史兼容），不要依赖这个旁路。<br>默认值 &#x2F; 最小维度：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>类型</th>
+<th>默认值</th>
+<th>最小维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tags</code></td>
+<td>list[str]</td>
+<td><code>[]</code></td>
+<td>0 条合法</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td>dict</td>
+<td><code>{}</code></td>
+<td>值须 JSON 可序列化</td>
+</tr>
+<tr>
+<td><code>callbacks</code></td>
+<td>list &#x2F; None</td>
+<td><code>None</code></td>
+<td>0&#x3D;无本地 handler</td>
+</tr>
+<tr>
+<td><code>run_name</code></td>
+<td>str &#x2F; None</td>
+<td><code>None</code></td>
+<td>非空才覆盖默认名</td>
+</tr>
+<tr>
+<td><code>run_id</code></td>
+<td>UUID &#x2F; None</td>
+<td>每步新建</td>
+<td>不要手填子步骤</td>
+</tr>
+<tr>
+<td><code>configurable</code></td>
+<td>dict</td>
+<td><code>{}</code></td>
+<td>键 &#x3D; <code>ConfigurableField.id</code></td>
+</tr>
+<tr>
+<td><code>max_concurrency</code></td>
+<td>int &#x2F; None</td>
+<td><code>None</code></td>
+<td>≥1 才限制并行</td>
+</tr>
+<tr>
+<td><code>recursion_limit</code></td>
+<td>int</td>
+<td><code>25</code></td>
+<td>≥1</td>
+</tr>
+</tbody></table>
+<p>空 config <code>{}</code> 合法。观测层（tags&#x2F;metadata&#x2F;callbacks）不应改变模型输出；行为层（configurable 等）可以。把工单正文放进 <code>configurable</code> 是用错层——那是 input。</p>
+<p>传播规则：<code>tags</code> <strong>并集</strong>去重；<code>metadata</code> 浅合并；<code>callbacks</code> 列表拼接；<code>configurable</code> 浅合并且<strong>后写覆盖</strong>；<code>run_id</code> <strong>不</strong>传给子步骤（每步新建）。</p>
+<h3 id="3-2-传播：ContextVar-ensure-config-merge-configs"><a href="#3-2-传播：ContextVar-ensure-config-merge-configs" class="headerlink" title="3.2 传播：ContextVar + ensure_config + merge_configs"></a>3.2 传播：ContextVar + ensure_config + merge_configs</h3><p><strong><code>ensure_config(config=None)</code></strong>（函数）<br>功能：把 <code>None</code> &#x2F; 残缺 dict 补成完整 RunnableConfig。默认 <code>tags=[]</code>、<code>metadata={}</code>、<code>configurable={}</code>、<code>recursion_limit=25</code>。最小输入：<code>None</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.runnables.config <span class="keyword">import</span> ensure_config</span><br><span class="line">ensure_config(<span class="literal">None</span>)[<span class="string">&quot;recursion_limit&quot;</span>]  <span class="comment"># 25</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>merge_configs(*configs)</code></strong>（函数）<br>功能：合并父子 config。<code>tags</code> 并集去重；<code>configurable</code> 后写覆盖；<code>run_id</code> 不向子步骤继承。参数均可 <code>None</code>。</p>
+<p>一次 <code>invoke</code> 里 config <strong>不是</strong>每个子步骤重新传入的普通 kwargs，而是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1. ensure_config(用户 config)</span><br><span class="line">   缺省：tags=[]、metadata=&#123;&#125;、configurable=&#123;&#125;、recursion_limit=25</span><br><span class="line">2. _set_config_context → 写入 var_child_runnable_config（contextvars.ContextVar）</span><br><span class="line">3. 子 Runnable.invoke 即使不写 config，ensure_config(None) 仍能从 ContextVar 读到父配置</span><br><span class="line">4. 子步骤若自带 tags / configurable，走 merge_configs，规则见 3.1 表</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>段末注释</strong>：<strong>ContextVar</strong> &#x3D; Python 按任务&#x2F;协程隔离的上下文变量；LangChain 用它在调用栈上隐式传递 config，避免每层手写转发。</p>
+</blockquote>
+<p>合并是<strong>合并不是覆盖</strong>：父 <code>tags=[&quot;prod&quot;]</code>、子再加 <code>retriever</code> → <code>[&quot;prod&quot;,&quot;retriever&quot;]</code>（实现里会排序去重）。<code>configurable</code> 则是 <code>{**父, **子}</code>，同名键以靠近叶子的为准。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-RunnableConfig/langchain-fig02-config-merge.png" alt="图 2　父 config 经 ContextVar 下行：tags 并集、configurable 后写覆盖（对应 §3.2）"></p>
+<p>因此：同线程、同一次 invoke 内，<code>RunnableLambda</code> 里再调 <code>sub.invoke(x)</code> 常常仍能读到父 config。<strong>新线程、进程、或显式传入 <code>config={}</code> 空字典</strong>会切断或冲掉继承——这是 trace 断树的主因。</p>
+<h3 id="3-3-四条改配置的路"><a href="#3-3-四条改配置的路" class="headerlink" title="3.3 四条改配置的路"></a>3.3 四条改配置的路</h3><p><strong><code>with_config(...)</code></strong>（方法）<br>功能：返回新 Runnable，预置 tags &#x2F; metadata &#x2F; configurable。与单次 <code>invoke(..., config=)</code> 再 merge。至少 1 个非空键。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">prod = chain.with_config(tags=[<span class="string">&quot;prod&quot;</span>])</span><br><span class="line">prod.invoke(x, config=&#123;<span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;canary&quot;</span>]&#125;)  <span class="comment"># tags 并集</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>ConfigurableField(id, name=None, description=None)</code></strong>（数据类）<br><code>id: str</code> 必填、非空；<code>config[&quot;configurable&quot;]</code> 必须用同一 id。</p>
+<p><strong><code>configurable_fields(**field_map)</code></strong>（方法）<br>功能：把构造参数暴露成运行时键。至少 1 个 <code>ConfigurableField</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> ConfigurableField</span><br><span class="line">llm.configurable_fields(max_tokens=ConfigurableField(<span class="built_in">id</span>=<span class="string">&quot;max_tokens&quot;</span>))</span><br><span class="line">llm.invoke(msg, config=&#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;max_tokens&quot;</span>: <span class="number">64</span>&#125;&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>configurable_alternatives(which, **alternatives)</code></strong>（方法）<br>功能：整段 Runnable 换实现。至少 1 个 alternative + 默认 self。</p>
+<table>
+<thead>
+<tr>
+<th>手段</th>
+<th>生效时机</th>
+<th>改什么</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>构造器 &#x2F; <code>bind()</code></td>
+<td>组装链时</td>
+<td>模型 kwargs（如 <code>temperature=0</code>）</td>
+<td>整条链永远同一组硬参数</td>
+</tr>
+<tr>
+<td><code>with_config(...)</code></td>
+<td>返回<strong>新</strong> Runnable</td>
+<td>绑一份默认 tags &#x2F; metadata &#x2F; configurable</td>
+<td>预置「生产链」「租户 A 链」</td>
+</tr>
+<tr>
+<td><code>configurable_fields</code></td>
+<td>每次 invoke 的 <code>configurable</code></td>
+<td><strong>同一类</strong>的字段值（如 <code>max_tokens</code>）</td>
+<td>同厂商同接口，只拧数字或模型名</td>
+</tr>
+<tr>
+<td><code>configurable_alternatives</code></td>
+<td>每次 invoke 的 <code>configurable</code></td>
+<td><strong>整段</strong> Runnable 换实现</td>
+<td>mini &#x2F; full、不同厂商</td>
+</tr>
+</tbody></table>
+<p><code>with_config</code> 与 <code>invoke(..., config=)</code> 会再走 <code>merge_configs</code>：预置 tags 不会被单次调用的 tags 清掉，而是并集。要「完全换一套」只能绑另一条 <code>with_config</code>，或不要预置、全部放进单次 <code>config</code>。</p>
+<p><code>configurable</code> 的键必须等于 <code>ConfigurableField(id=...)</code> 的 <strong>id</strong>。id 写成 <code>&quot;llm&quot;</code>、调用写成 <code>&quot;model&quot;</code>，会静默走默认实现（见 §5 案例的错误键）。</p>
+<p>标量 <code>configurable</code>（<code>str</code> &#x2F; <code>int</code> &#x2F; <code>float</code> &#x2F; <code>bool</code>，且非 <code>__</code> 前缀）会被抄进 trace 的 <code>metadata</code>；<code>api_key</code> 在排除名单里，<strong>其它 token 字段不会自动排除</strong>。</p>
+<h3 id="3-4-callbacks-与-Lambda-签名"><a href="#3-4-callbacks-与-Lambda-签名" class="headerlink" title="3.4 callbacks 与 Lambda 签名"></a>3.4 callbacks 与 Lambda 签名</h3><p><strong><code>BaseCallbackHandler</code></strong>（类）<br>功能：实现 <code>on_chain_start/end</code>、<code>on_llm_start/end</code> 等钩子。无必填字段。最小实现：继承后覆盖 ≥1 个钩子。handler 内避免阻塞，勿再 <code>invoke</code> 同链。</p>
+<p>子 Runnable 默认继承父 <code>callbacks</code>。<code>RunnableLambda</code> 第二参标注 <code>RunnableConfig</code> 时框架会传入；<code>def f(x)</code> 则纯函数读不到（下游 Runnable 仍可能经 ContextVar 继承）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">LogHandler</span>(<span class="title class_ inherited__">BaseCallbackHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">on_chain_start</span>(<span class="params">self, serialized, inputs, **kwargs</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;start&quot;</span>, <span class="built_in">type</span>(inputs).__name__)</span><br><span class="line">chain.invoke(x, config=&#123;<span class="string">&quot;callbacks&quot;</span>: [LogHandler()]&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-5-与环境变量"><a href="#3-5-与环境变量" class="headerlink" title="3.5 与环境变量"></a>3.5 与环境变量</h3><p><code>LANGCHAIN_TRACING_V2=true</code> 加 API Key 是<strong>进程级</strong>打开 LangSmith；单次 invoke 仍用 config 覆盖 <code>run_name</code> &#x2F; <code>tags</code> &#x2F; <code>metadata</code>。没有 LangSmith 时，<code>callbacks</code> 照样触发本地 handler。</p>
+<hr>
+<h2 id="4-最小可运行示例"><a href="#4-最小可运行示例" class="headerlink" title="4. 最小可运行示例"></a>4. 最小可运行示例</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U langchain-openai</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI</span><br><span class="line"><span class="keyword">from</span> langchain_core.callbacks <span class="keyword">import</span> BaseCallbackHandler</span><br><span class="line"><span class="keyword">from</span> langchain_core.prompts <span class="keyword">import</span> ChatPromptTemplate</span><br><span class="line"><span class="keyword">from</span> langchain_core.output_parsers <span class="keyword">import</span> StrOutputParser</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LogHandler</span>(<span class="title class_ inherited__">BaseCallbackHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">on_chain_start</span>(<span class="params">self, serialized, inputs, **kwargs</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;chain_start&quot;</span>, kwargs.get(<span class="string">&quot;tags&quot;</span>))</span><br><span class="line"></span><br><span class="line">model = ChatOpenAI(</span><br><span class="line">    model=<span class="string">&quot;qwen3.5:9b&quot;</span>,</span><br><span class="line">    api_key=<span class="string">&quot;ollama&quot;</span>,</span><br><span class="line">    base_url=<span class="string">&quot;http://localhost:11434/v1&quot;</span>,</span><br><span class="line">    temperature=<span class="number">0</span>,</span><br><span class="line">)</span><br><span class="line">chain = (</span><br><span class="line">    ChatPromptTemplate.from_template(<span class="string">&quot;只答一个词：&#123;x&#125; 的反义词&quot;</span>)</span><br><span class="line">    | model</span><br><span class="line">    | StrOutputParser()</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(chain.invoke(</span><br><span class="line">    &#123;<span class="string">&quot;x&quot;</span>: <span class="string">&quot;hot&quot;</span>&#125;,</span><br><span class="line">    config=&#123;<span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;demo&quot;</span>], <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;u1&quot;</span>&#125;, <span class="string">&quot;callbacks&quot;</span>: [LogHandler()]&#125;,</span><br><span class="line">))</span><br><span class="line"><span class="comment"># 预期：多次 chain_start（每步一次），tags 含 demo；答案形态为 cold 一类单词</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="5-案例：同一条链，按租户切模型"><a href="#5-案例：同一条链，按租户切模型" class="headerlink" title="5. 案例：同一条链，按租户切模型"></a>5. 案例：同一条链，按租户切模型</h2><p>教学场景：客服草稿只有一条链；租户 A 默认走 <code>qwen3.5:9b</code>，租户 B 在 <code>configurable</code> 里切到 <code>llama3.1:8b</code>；每次带上 tenant，便于过滤 trace。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI</span><br><span class="line"><span class="keyword">from</span> langchain_core.output_parsers <span class="keyword">import</span> StrOutputParser</span><br><span class="line"><span class="keyword">from</span> langchain_core.prompts <span class="keyword">import</span> ChatPromptTemplate</span><br><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> ConfigurableField, RunnableConfig, RunnableLambda</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ollama_chat</span>(<span class="params">model: <span class="built_in">str</span></span>) -&gt; ChatOpenAI:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;指向本地 Ollama 的 ChatOpenAI。输入为模型名，输出为客户端。&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> ChatOpenAI(</span><br><span class="line">        model=model, api_key=<span class="string">&quot;ollama&quot;</span>,</span><br><span class="line">        base_url=<span class="string">&quot;http://localhost:11434/v1&quot;</span>, temperature=<span class="number">0</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">qwen = ollama_chat(<span class="string">&quot;qwen3.5:9b&quot;</span>)</span><br><span class="line">llama = ollama_chat(<span class="string">&quot;llama3.1:8b&quot;</span>)</span><br><span class="line">model = qwen.configurable_alternatives(</span><br><span class="line">    ConfigurableField(<span class="built_in">id</span>=<span class="string">&quot;llm&quot;</span>),</span><br><span class="line">    default_key=<span class="string">&quot;qwen&quot;</span>,</span><br><span class="line">    llama=llama,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">stamp</span>(<span class="params">text: <span class="built_in">str</span>, config: RunnableConfig</span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;把 tenant 戳到回复前。输入为模型文本与当前 config，输出为带前缀的字符串。&quot;&quot;&quot;</span></span><br><span class="line">    tenant = (config.get(<span class="string">&quot;metadata&quot;</span>) <span class="keyword">or</span> &#123;&#125;).get(<span class="string">&quot;tenant&quot;</span>, <span class="string">&quot;?&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;<span class="subst">&#123;tenant&#125;</span>|<span class="subst">&#123;text&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">chain = (</span><br><span class="line">    ChatPromptTemplate.from_template(<span class="string">&quot;用一句话回复工单，不要标题。工单：&#123;x&#125;&quot;</span>)</span><br><span class="line">    | model</span><br><span class="line">    | StrOutputParser()</span><br><span class="line">    | RunnableLambda(stamp)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(chain.invoke(</span><br><span class="line">    &#123;<span class="string">&quot;x&quot;</span>: <span class="string">&quot;发票抬头开错了&quot;</span>&#125;,</span><br><span class="line">    config=&#123;<span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;a&quot;</span>&#125;, <span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;tenant:a&quot;</span>]&#125;,</span><br><span class="line">))</span><br><span class="line"><span class="comment"># 预期形态：a|…（默认 qwen）</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(chain.invoke(</span><br><span class="line">    &#123;<span class="string">&quot;x&quot;</span>: <span class="string">&quot;发票抬头开错了&quot;</span>&#125;,</span><br><span class="line">    config=&#123;</span><br><span class="line">        <span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;llm&quot;</span>: <span class="string">&quot;llama&quot;</span>&#125;,</span><br><span class="line">        <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;b&quot;</span>&#125;,</span><br><span class="line">        <span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;tenant:b&quot;</span>, <span class="string">&quot;env:prod&quot;</span>],</span><br><span class="line">    &#125;,</span><br><span class="line">))</span><br><span class="line"><span class="comment"># 预期形态：b|…（llama 实现；措辞与上一行通常不同）</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(chain.invoke(</span><br><span class="line">    &#123;<span class="string">&quot;x&quot;</span>: <span class="string">&quot;发票抬头开错了&quot;</span>&#125;,</span><br><span class="line">    config=&#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;model&quot;</span>: <span class="string">&quot;llama&quot;</span>&#125;, <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;c&quot;</span>&#125;&#125;,</span><br><span class="line">))</span><br><span class="line"><span class="comment"># 预期：仍走 qwen（id 是 llm 不是 model，静默默认）</span></span><br></pre></td></tr></table></figure>
+
+<p><code>with_config</code> 预置生产标签时，单次 tags 会并入而不是替换：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">prod = chain.with_config(tags=[<span class="string">&quot;prod&quot;</span>])</span><br><span class="line"><span class="built_in">print</span>(prod.invoke(&#123;<span class="string">&quot;x&quot;</span>: <span class="string">&quot;无法登录&quot;</span>&#125;, config=&#123;<span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;call&quot;</span>], <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;tenant&quot;</span>: <span class="string">&quot;c&quot;</span>&#125;&#125;))</span><br><span class="line"><span class="comment"># tags 同时含 prod 与 call（并集）；stamp 读到 tenant=c</span></span><br></pre></td></tr></table></figure>
+
+<p>同一套调用点可把 <code>qwen</code> &#x2F; <code>llama</code> 换成两个云厂商客户端。</p>
+<hr>
+<h3 id="重要配置参数"><a href="#重要配置参数" class="headerlink" title="重要配置参数"></a>重要配置参数</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>configurable</code></td>
+<td>dict，默认 <code>{}</code>，invoke config</td>
+<td>覆盖 <code>configurable_fields</code> &#x2F; <code>alternatives</code> 已声明的运行时字段</td>
+<td>键拼错静默走默认，无报错</td>
+<td><code>{&quot;llm&quot;: &quot;llama&quot;}</code></td>
+<td>键必须等于 <code>ConfigurableField.id</code></td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>list[str]，默认 <code>[]</code></td>
+<td>给本次 run 打标签，供 LangSmith&#x2F;callback 过滤</td>
+<td>与子步骤 <strong>并集</strong>，不会被单次调用清掉</td>
+<td><code>[&quot;env:prod&quot;]</code></td>
+<td>环境、版本分开打</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td>dict，默认 <code>{}</code></td>
+<td>附加可序列化维度（租户、场景）</td>
+<td>会进 trace；勿放密钥&#x2F;PII</td>
+<td><code>tenant_id</code></td>
+<td>只放检索过滤需要的键</td>
+</tr>
+<tr>
+<td><code>callbacks</code></td>
+<td>list[Handler]，默认空</td>
+<td>挂生命周期钩子（on_llm_end 等）</td>
+<td>handler 阻塞会拖垮整条链</td>
+<td>本地日志</td>
+<td>勿在 handler 里再 invoke 本链</td>
+</tr>
+<tr>
+<td><code>run_name</code></td>
+<td>str，可选</td>
+<td>本步在 trace UI 上的显示名</td>
+<td>不替代 tags，只改可读性</td>
+<td>业务场景名</td>
+<td>调试用短名</td>
+</tr>
+<tr>
+<td><code>max_concurrency</code></td>
+<td>int &#x2F; None</td>
+<td>限制 batch 与 Parallel 的同时执行数</td>
+<td>过大 429；None 由实现自定</td>
+<td>5～20</td>
+<td>视 API 限额</td>
+</tr>
+<tr>
+<td><code>recursion_limit</code></td>
+<td>int，默认 25</td>
+<td>限制链&#x2F;图递归深度</td>
+<td>Agent 环触及上限会停；线性链很少要拧</td>
+<td>Agent 环</td>
+<td>按工具轮次 ×2 估算</td>
+</tr>
+<tr>
+<td><code>with_config</code></td>
+<td>方法，返回新 Runnable</td>
+<td>预置一份默认 tags&#x2F;metadata&#x2F;configurable</td>
+<td>与单次 config <strong>合并</strong>不是覆盖</td>
+<td>生产链</td>
+<td>预置「租户 A 链」时用</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-易踩坑"><a href="#6-易踩坑" class="headerlink" title="6. 易踩坑"></a>6. 易踩坑</h2><ol>
+<li><strong><code>configurable</code> 键与 <code>ConfigurableField.id</code> 不一致</strong>：覆盖不生效且无报错，案例里 <code>&quot;model&quot;</code> 仍走 <code>qwen</code>。  </li>
+<li><strong><code>metadata</code> 过大或含 PII &#x2F; 密钥</strong>：会进 LangSmith；<code>configurable</code> 里的标量也会被抄进 metadata。  </li>
+<li><strong>Lambda &#x2F; 新线程里 <code>sub.invoke(x)</code> 不传 config</strong>：ContextVar 跨线程不走，callbacks 断树。签名加 <code>config: RunnableConfig</code> 并向下传。  </li>
+<li><strong>以为 <code>invoke(config=)</code> 会清空 <code>with_config</code> 的 tags</strong>：实际是并集。  </li>
+<li><strong>把业务字段塞进 <code>configurable</code></strong>：那是 input；<code>configurable</code> 只放旋钮。</li>
+</ol>
+<p><strong>适用</strong>：同链多环境、多租户、运行时换模型或 <code>max_tokens</code>、给 trace 打标签。<br><strong>不适用</strong>：按输入内容做业务分支（那是 <code>RunnableBranch</code> &#x2F; 图）；持久会话 id 的检查点语义在图编排侧。</p>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>RunnableConfig</strong> 是 <code>invoke</code> 第二参：input 管业务，config 管观测与旋钮，I&#x2F;O 类型不变。  </li>
+<li>传播靠 <strong>ContextVar + ensure_config + merge_configs</strong>：tags 并集，configurable 后写覆盖，<code>run_id</code> 每步新建。  </li>
+<li><strong>configurable_fields</strong> 拧同一实现的字段；<strong>configurable_alternatives</strong> 换整段实现；键必须等于 Field <strong>id</strong>。  </li>
+<li>子调用显式传 config（或靠同线程 ContextVar）；新线程必须手传，否则 trace 断树。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://reference.langchain.com/python/langchain_core/runnables/config/RunnableConfig">RunnableConfig</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://python.langchain.com/docs/concepts/runnables/#configurable-runnables">Configurable runnables</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.langchain.com/langsmith/trace-with-langchain">LangSmith tracing</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LCEL/" rel="tag"><i class="fa fa-tag"></i> LCEL</a>
+          
+            <a href="/tags/RunnableConfig/" rel="tag"><i class="fa fa-tag"></i> RunnableConfig</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-05-%E6%A3%80%E7%B4%A2-Document%E4%B8%8ERetriever/" rel="next" title="Document与Retriever">
+                <i class="fa fa-chevron-left"></i> Document与Retriever
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-04-%E9%93%BE-LCEL%E4%B8%8ERunnable/" rel="prev" title="LCEL与Runnable">
+                LCEL与Runnable <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">2.</span> <span class="nav-text">2. 实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E"><span class="nav-number">3.</span> <span class="nav-text">3. 原理说明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%B8%A4%E5%B1%82%E9%94%AE%EF%BC%9A%E8%A7%82%E6%B5%8B-vs-%E8%A1%8C%E4%B8%BA"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 两层键：观测 vs 行为</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%BC%A0%E6%92%AD%EF%BC%9AContextVar-ensure-config-merge-configs"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 传播：ContextVar + ensure_config + merge_configs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%9B%9B%E6%9D%A1%E6%94%B9%E9%85%8D%E7%BD%AE%E7%9A%84%E8%B7%AF"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 四条改配置的路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-callbacks-%E4%B8%8E-Lambda-%E7%AD%BE%E5%90%8D"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 callbacks 与 Lambda 签名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 与环境变量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 最小可运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%A1%88%E4%BE%8B%EF%BC%9A%E5%90%8C%E4%B8%80%E6%9D%A1%E9%93%BE%EF%BC%8C%E6%8C%89%E7%A7%9F%E6%88%B7%E5%88%87%E6%A8%A1%E5%9E%8B"><span class="nav-number">5.</span> <span class="nav-text">5. 案例：同一条链，按租户切模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">5.1.</span> <span class="nav-text">重要配置参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">6.</span> <span class="nav-text">6. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">8.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

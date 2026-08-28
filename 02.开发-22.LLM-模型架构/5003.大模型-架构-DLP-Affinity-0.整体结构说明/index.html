@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="ESM-2,LLM,序列模型,抗体,亲和力预测,DLP-Affinity," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="DLP-Affinity（双层蛋白质表征亲和力预测）整体结构：微调 ESM2-3B、R2R 残基互作与 GSPE 全局随机投影，仅序列预测 pKd；据 Bioinformatics 2026 论文与官方代码仓归纳。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DLP-Affinity：整体结构说明">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="DLP-Affinity（双层蛋白质表征亲和力预测）整体结构：微调 ESM2-3B、R2R 残基互作与 GSPE 全局随机投影，仅序列预测 pKd；据 Bioinformatics 2026 论文与官方代码仓归纳。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/image.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/pipeline.png">
+<meta property="article:published_time" content="2026-07-20T08:40:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="DLP-Affinity">
+<meta property="article:tag" content="ESM-2">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="亲和力预测">
+<meta property="article:tag" content="序列模型">
+<meta property="article:tag" content="抗体">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/image.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-22.LLM-模型架构/5003.大模型-架构-DLP-Affinity-0.整体结构说明/"/>
+
+
+
+
+
+  <title>DLP-Affinity：整体结构说明 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">DLP-Affinity：整体结构说明</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-20T16:40:00+08:00">
+                2026-07-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">大模型</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/%E6%9E%B6%E6%9E%84/" itemprop="url" rel="index">
+                    <span itemprop="name">架构</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  DLP-Affinity（双层蛋白质表征亲和力预测）整体结构：微调 ESM2-3B、R2R 残基互作与 GSPE 全局随机投影，仅序列预测 pKd；据 Bioinformatics 2026 论文与官方代码仓归纳。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>DLP-Affinity</strong>（dual-level protein representation for affinity prediction，双层蛋白质表征亲和力预测）是面向<strong>抗体–抗原结合亲和力</strong>的<strong>仅序列</strong>深度学习框架：以微调后的 <strong>ESM2-3B</strong> 提取残基嵌入，经 <strong>R2R</strong>（residue-to-residue）刻画局部界面接触、经 <strong>GSPE</strong>（global stochastic projection embedding）刻画全局蛋白性质，再融合为 (\mathrm{p}K_{\mathrm{d}}) 回归。相对多特征集成方法，它用<strong>单一统一模型、纯序列输入</strong>，在 <strong>AB-Bind</strong> 上将 <strong>MAE</strong> 相对强基线最多降低约 <strong>20.9%</strong>，在 <strong>sdAb-DB</strong> 上亦具竞争力。</p>
+<blockquote>
+<p><strong>段末注释</strong>：(\mathrm{p}K_{\mathrm{d}}&#x3D;-\log_{10}K_{\mathrm{D}})（(K_{\mathrm{D}}) 单位为 M）；<strong>sdAb</strong>（single-domain antibody，单域抗体）含纳米抗体等；<strong>pLM</strong>（protein language model，蛋白质语言模型）；<strong>KAN</strong>（Kolmogorov–Arnold Networks）为可学习样条激活的网络结构。</p>
+</blockquote>
+<p><strong>官方资源</strong></p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>链接</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>论文</td>
+<td><a target="_blank" rel="noopener" href="https://academic.oup.com/bioinformatics/article/42/4/btag109/8513493">Bioinformatics 42(4): btag109</a> · <a target="_blank" rel="noopener" href="https://doi.org/10.1093/bioinformatics/btag109">DOI 10.1093&#x2F;bioinformatics&#x2F;btag109</a> · <a target="_blank" rel="noopener" href="https://pubmed.ncbi.nlm.nih.gov/41808445/">PubMed</a></td>
+</tr>
+<tr>
+<td>代码</td>
+<td><a target="_blank" rel="noopener" href="https://github.com/Zy-Wang-bit/DLP_Affinity">GitHub: Zy-Wang-bit&#x2F;DLP_Affinity</a>（当前主分支以 <code>release_package.zip</code> 发布）</td>
+</tr>
+<tr>
+<td>归档</td>
+<td><a target="_blank" rel="noopener" href="https://doi.org/10.5281/zenodo.18437656">Zenodo 10.5281&#x2F;zenodo.18437656</a> · MIT</td>
+</tr>
+<tr>
+<td>微调语料来源</td>
+<td>INDI &#x2F; NaturalAntibody 约 1120 万条抗体序列（学术用途见原数据方条款）</td>
+</tr>
+</tbody></table>
+<p><strong>关联笔记</strong>：<a href="./5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-AbAffinity-0.%E6%A1%86%E6%9E%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E4%BD%BF%E7%94%A8.md">AbAffinity 架构</a> · <a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-04.%E5%B7%A5%E5%85%B7-01.%E6%8A%97%E4%BD%93%E4%BA%B2%E5%92%8C%E5%8A%9B%E9%A2%84%E6%B5%8B%E5%B7%A5%E5%85%B7%E8%B0%83%E7%A0%94%E7%BB%BC%E8%BF%B0.md">抗体亲和力预测工具调研</a> · <a href="../01.%E7%9F%A5%E8%AF%86-15.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-02.%E6%8C%87%E6%A0%87-01.%E4%BA%B2%E5%92%8C%E5%8A%9B%E6%8C%87%E6%A0%87%E6%80%BB%E8%A7%88.md">亲和力指标总览</a></p>
+<hr>
+<h2 id="1-要解决什么问题"><a href="#1-要解决什么问题" class="headerlink" title="1. 要解决什么问题"></a>1. 要解决什么问题</h2><ol>
+<li><strong>结构稀缺</strong>：可靠复合物结构往往滞后于序列库规模；高通量筛选需要<strong>只吃序列</strong>的亲和力估计。  </li>
+<li><strong>序列信息利用不足</strong>：既有序列方法难以同时抓住<strong>界面局部接触</strong>与<strong>全长蛋白全局性质</strong>。  </li>
+<li><strong>多样抗体格式</strong>：尤其是 <strong>sdAb</strong>，序列爆炸、结构不足，需要领域适配的 pLM。</li>
+</ol>
+<p>形式化：输入抗体序列 (A&#x3D;{a_1,\ldots,a_m}) 与抗原序列 (G&#x3D;{g_1,\ldots,g_n})，预测 (y&#x3D;-\log_{10}(K_{\mathrm{D}}))；训练目标为预测值与真值的 <strong>MSE</strong>。</p>
+<hr>
+<h2 id="2-整体软件-模型结构"><a href="#2-整体软件-模型结构" class="headerlink" title="2. 整体软件 &#x2F; 模型结构"></a>2. 整体软件 &#x2F; 模型结构</h2><p><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/image.png" alt="DLP-Affinity 双层表征架构示意"></p>
+<p>论文 Fig.1 逻辑可概括为下图（与官方表述一致）：<br><img src="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/pipeline.png" alt="DLP-Affinity 双层表征架构示意"></p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>组件</th>
+<th>输入 → 输出</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>表征骨干</td>
+<td><strong>ESM2-3B</strong> + 抗体微调</td>
+<td>序列 → (L\times 2560)</td>
+<td>上下文残基嵌入</td>
+</tr>
+<tr>
+<td>降维</td>
+<td><strong>KAN</strong> 栈</td>
+<td>(2560\to 1)（残基势）</td>
+<td>非线性压缩到互作势</td>
+</tr>
+<tr>
+<td>局部支路</td>
+<td><strong>R2R</strong></td>
+<td>(V_{ab},V_{ag}\to H_{AA})</td>
+<td>类接触图的残基对互作</td>
+</tr>
+<tr>
+<td>全局支路</td>
+<td><strong>GSPE</strong></td>
+<td>(X\to h_{pair})</td>
+<td>定长、置换不变的全局签名</td>
+</tr>
+<tr>
+<td>读出</td>
+<td><strong>FFN</strong></td>
+<td>双层特征 → (\mathrm{p}K_{\mathrm{d}})</td>
+<td>连续亲和力回归</td>
+</tr>
+</tbody></table>
+<p>仓库发布形态：GitHub <code>main</code> 目前主要为 <strong><code>release_package.zip</code></strong>（完整源码与数据打包）；细节以解压包与 Zenodo 归档为准。</p>
+<hr>
+<h2 id="3-模块详解（对应论文-§3）"><a href="#3-模块详解（对应论文-§3）" class="headerlink" title="3. 模块详解（对应论文 §3）"></a>3. 模块详解（对应论文 §3）</h2><h3 id="3-1-微调-pLM（Fine-tuned-ESM2-3B）"><a href="#3-1-微调-pLM（Fine-tuned-ESM2-3B）" class="headerlink" title="3.1 微调 pLM（Fine-tuned ESM2-3B）"></a>3.1 微调 pLM（Fine-tuned ESM2-3B）</h3><ul>
+<li><strong>基座</strong>：预训练 <strong>ESM2-3B</strong>（Lin et al. 2023）。  </li>
+<li><strong>微调数据</strong>：约 <strong>11 228 599</strong> 条抗体序列（INDI &#x2F; NaturalAntibody）。  </li>
+<li><strong>目标</strong>：掩码语言模型（<strong>MLM</strong>），约 15% 位点掩码；交叉熵损失。  </li>
+<li><strong>领域适配</strong>：<ul>
+<li><strong>CDR 优先掩码</strong>：更关注互补决定区（paratope 相关模式）；</li>
+<li><strong>批次分层</strong>：按序列长度平衡重&#x2F;轻链暴露。</li>
+</ul>
+</li>
+<li><strong>训练规模（论文）</strong>：AdamW、线性 warmup（约 40 step，峰值 LR (10^{-5})），约 <strong>3 周 &#x2F; 16×A40</strong>。  </li>
+<li><strong>效果</strong>：t-SNE 上家族聚类轮廓系数约 (0.44\to 0.68)（补充材料）。</li>
+</ul>
+<h3 id="3-2-R2R：残基–残基互作（局部层）"><a href="#3-2-R2R：残基–残基互作（局部层）" class="headerlink" title="3.2 R2R：残基–残基互作（局部层）"></a>3.2 R2R：残基–残基互作（局部层）</h3><p>对应「界面接触 &#x2F; CDR–表位」直觉。</p>
+<ol>
+<li><strong>初值</strong>：微调 ESM 得到 (X_{ab}\in\mathbb{R}^{L_{ab}\times 2560})、(X_{ag}\in\mathbb{R}^{L_{ag}\times 2560})。  </li>
+<li><strong>KAN 投影</strong>：压成 (V_{ab}\in\mathbb{R}^{L_{ab}\times 1})、(V_{ag}\in\mathbb{R}^{L_{ag}\times 1})。选用 KAN 是因「高维嵌入 → 互作势」高度非线性，且亲和力数据有限时样条激活更省参、更稳（论文对照 MLP，见补充表）。  </li>
+<li><strong>互作矩阵（外积）</strong>：</li>
+</ol>
+<p>[<br>M_{\mathrm{inter}}&#x3D;V_{ab}\otimes V_{ag}^{\top}\in\mathbb{R}^{L_{ab}\times L_{ag}}<br>]</p>
+<p>(M_{\mathrm{inter}}[i,j]) 可理解为第 (i) 个抗体残基与第 (j) 个抗原残基的互作势——<strong>无参、全 pairwise</strong>，利于小数据、避免注意力漏掉稀有互作模式。  </p>
+<ol start="4">
+<li><strong>与抗体特征拼接</strong>再过 KAN，得到残基级互作表征 (H_{AA})。KAN 使用可学习系数的正弦类激活。</li>
+</ol>
+<h3 id="3-3-GSPE：全局随机投影嵌入（全局层）"><a href="#3-3-GSPE：全局随机投影嵌入（全局层）" class="headerlink" title="3.3 GSPE：全局随机投影嵌入（全局层）"></a>3.3 GSPE：全局随机投影嵌入（全局层）</h3><p>应对「只看局部则难建模整体折叠与长程依赖」：</p>
+<ol>
+<li>对残基矩阵 (X\in\mathbb{R}^{L\times d}) 采 (m) 个随机向量 (r\sim\mathcal{N}(0,I_d)) 并列归一化，构成投影矩阵 (R)。  </li>
+<li>对每个 (r_i)：(P_i&#x3D;X\cdot r_i\in\mathbb{R}^{L})，再 <strong>排序</strong> (\tilde{P}_i&#x3D;\mathrm{sort}(P_i)) → 置换不变的全局签名（顺序信息已含在 pLM 嵌入中）。  </li>
+<li>拼接 (m) 路投影得蛋白级向量；抗体–抗原对计算缩放后的投影差平方和，经 softplus 类 (\Phi(x)&#x3D;\log(1+e^{x})) 得到 <strong>(h_{pair})</strong>。</li>
+</ol>
+<h3 id="3-4-双层融合与预测"><a href="#3-4-双层融合与预测" class="headerlink" title="3.4 双层融合与预测"></a>3.4 双层融合与预测</h3><p>R2R 的局部表征与 GSPE 的全局对特征送入 <strong>前馈网络</strong>，输出连续 (\mathrm{p}K_{\mathrm{d}})。消融表明两支路<strong>互补</strong>：sdAb-DB 上 R2R 贡献更大（紧凑界面），AB-Bind 上 GSPE 同样关键（格式更多样）。</p>
+<hr>
+<h2 id="4-数据与评测结构"><a href="#4-数据与评测结构" class="headerlink" title="4. 数据与评测结构"></a>4. 数据与评测结构</h2><table>
+<thead>
+<tr>
+<th>数据集</th>
+<th>角色</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>sdAb-DB</strong></td>
+<td>单域抗体亲和力基准</td>
+<td>Wilton et al. 2018</td>
+</tr>
+<tr>
+<td><strong>AB-Bind</strong></td>
+<td>更广抗体–抗原亲和力基准</td>
+<td>Sirin et al. 2016；本文最大增益场景</td>
+</tr>
+<tr>
+<td><strong>INDI ~11M</strong></td>
+<td>ESM 微调语料</td>
+<td>非亲和力标签训练，属领域语言适配</td>
+</tr>
+<tr>
+<td><strong>LY-CoV555（7KMG）DMS</strong></td>
+<td>独立突变验证</td>
+<td>AUC≈0.85 区分破坏性 vs 中性突变（定量仍受限）</td>
+</tr>
+</tbody></table>
+<p><strong>主指标</strong>：MAE、RMSE、PCC、(R^{2}) 等。论文报告（ESM-FT 版）：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>sdAb-DB</th>
+<th>AB-Bind</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MAE</td>
+<td>0.174</td>
+<td><strong>0.136</strong>（相对 DeepNano-seq 约 −20.9%）</td>
+</tr>
+<tr>
+<td>相对定位</td>
+<td>与 DeepNano-seq 接近，但<strong>单模型纯序列</strong></td>
+<td>多数指标 SOTA</td>
+</tr>
+</tbody></table>
+<p>DeepNano-seq 为多特征（含 PSSM）+ 多架构集成；DLP-Affinity 强调<strong>可部署的单模型流水线</strong>。</p>
+<hr>
+<h2 id="5-端到端数据流（工程视角）"><a href="#5-端到端数据流（工程视角）" class="headerlink" title="5. 端到端数据流（工程视角）"></a>5. 端到端数据流（工程视角）</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1)（可选，离线）抗体语料 MLM 微调 → 得到 ESM-FT 权重</span><br><span class="line">2) 推理/训练样本：抗体序列 + 抗原序列</span><br><span class="line">3) ESM-FT 前向 → 残基嵌入</span><br><span class="line">4) 并行：R2R 支路 ∥ GSPE 支路</span><br><span class="line">5) 拼接 / 融合 → FFN → pKd</span><br><span class="line">6) 训练：MSE(ŷ, y)；推理：库规模打分 / 排序</span><br></pre></td></tr></table></figure>
+
+<p>适用：结构不可得时的筛选、sdAb 序列库排序；论文声明<strong>多链 IgG 空间组织尚未充分验证</strong>，VH–VL 拼接或图模型为后续扩展。</p>
+<hr>
+<h2 id="6-局限（论文结论）"><a href="#6-局限（论文结论）" class="headerlink" title="6. 局限（论文结论）"></a>6. 局限（论文结论）</h2><ol>
+<li><strong>多链抗体</strong>（如完整 IgG）：R2R 线性化序列，未必刻画重轻链非邻接空间互作。  </li>
+<li><strong>无结构先验</strong>：可进一步用 AlphaFold3 等接触图替换外积（GNN）。  </li>
+<li><strong>环境缺失</strong>：pH、离子强度、糖基化等未入模。  </li>
+<li><strong>实验闭环</strong>：需 SPR &#x2F; BLI 等实测 (K_{\mathrm{D}}) 验证计算预测。</li>
+</ol>
+<hr>
+<h2 id="7-与-AbAffinity-的边界（站内对照）"><a href="#7-与-AbAffinity-的边界（站内对照）" class="headerlink" title="7. 与 AbAffinity 的边界（站内对照）"></a>7. 与 AbAffinity 的边界（站内对照）</h2><table>
+<thead>
+<tr>
+<th></th>
+<th><strong>DLP-Affinity</strong></th>
+<th><strong>AbAffinity</strong>（站内另文）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>骨干</td>
+<td>ESM2-<strong>3B</strong>，<strong>微调</strong></td>
+<td>ESM-2 <strong>650M</strong>，多冻结</td>
+</tr>
+<tr>
+<td>结构归纳</td>
+<td><strong>R2R + GSPE</strong> 双层</td>
+<td>三流（H&#x2F;L&#x2F;Ag）+ CDR 池化 + 门控交叉注意力</td>
+</tr>
+<tr>
+<td>强调</td>
+<td>局部接触图直觉 + 全局随机投影</td>
+<td>链感知与轻重融合门</td>
+</tr>
+<tr>
+<td>基准焦点</td>
+<td>sdAb-DB、AB-Bind</td>
+<td>SAAINT-DB 等（见 AbAffinity 文）</td>
+</tr>
+</tbody></table>
+<p>二者同属「序列亲和力」路线，<strong>模块哲学不同</strong>，不宜混用仓库权重。</p>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>DLP-Affinity</strong> &#x3D; <strong>微调 ESM2-3B</strong> + <strong>R2R（局部）</strong> + <strong>GSPE（全局）</strong> → (\mathrm{p}K_{\mathrm{d}})。  </li>
+<li>软件发布以 GitHub &#x2F; Zenodo 的 <strong>release 包</strong>为主；方法细节以 <em>Bioinformatics</em> 2026 论文为准。  </li>
+<li>定位：结构稀缺下的<strong>可部署单模型</strong>序列亲和力预测，尤其照顾 <strong>sdAb</strong> 与通用 <strong>AB-Bind</strong> 场景。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ESM-2/" rel="tag"><i class="fa fa-tag"></i> ESM-2</a>
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/%E5%BA%8F%E5%88%97%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 序列模型</a>
+          
+            <a href="/tags/%E6%8A%97%E4%BD%93/" rel="tag"><i class="fa fa-tag"></i> 抗体</a>
+          
+            <a href="/tags/%E4%BA%B2%E5%92%8C%E5%8A%9B%E9%A2%84%E6%B5%8B/" rel="tag"><i class="fa fa-tag"></i> 亲和力预测</a>
+          
+            <a href="/tags/DLP-Affinity/" rel="tag"><i class="fa fa-tag"></i> DLP-Affinity</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket/" rel="next" title="网络基础-TCP-HTTP与WebSocket">
+                <i class="fa fa-chevron-left"></i> 网络基础-TCP-HTTP与WebSocket
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/01.%E7%9F%A5%E8%AF%86-42.%E6%8A%97%E4%BD%93/%E6%8A%97%E4%BD%93-00.%E6%8A%97%E4%BD%93%E4%BA%B2%E5%92%8C%E5%8A%9B%E6%94%B9%E9%80%A0%E5%8F%91%E5%B1%95%E8%8C%83%E5%BC%8F/" rel="prev" title="抗体亲和力改造范式发展趋势">
+                抗体亲和力改造范式发展趋势 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%A6%81%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">1. 要解决什么问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%95%B4%E4%BD%93%E8%BD%AF%E4%BB%B6-%E6%A8%A1%E5%9E%8B%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">2. 整体软件 &#x2F; 模型结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A8%A1%E5%9D%97%E8%AF%A6%E8%A7%A3%EF%BC%88%E5%AF%B9%E5%BA%94%E8%AE%BA%E6%96%87-%C2%A73%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 模块详解（对应论文 §3）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%BE%AE%E8%B0%83-pLM%EF%BC%88Fine-tuned-ESM2-3B%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 微调 pLM（Fine-tuned ESM2-3B）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-R2R%EF%BC%9A%E6%AE%8B%E5%9F%BA%E2%80%93%E6%AE%8B%E5%9F%BA%E4%BA%92%E4%BD%9C%EF%BC%88%E5%B1%80%E9%83%A8%E5%B1%82%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 R2R：残基–残基互作（局部层）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-GSPE%EF%BC%9A%E5%85%A8%E5%B1%80%E9%9A%8F%E6%9C%BA%E6%8A%95%E5%BD%B1%E5%B5%8C%E5%85%A5%EF%BC%88%E5%85%A8%E5%B1%80%E5%B1%82%EF%BC%89"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 GSPE：全局随机投影嵌入（全局层）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E5%8F%8C%E5%B1%82%E8%9E%8D%E5%90%88%E4%B8%8E%E9%A2%84%E6%B5%8B"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 双层融合与预测</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E4%B8%8E%E8%AF%84%E6%B5%8B%E7%BB%93%E6%9E%84"><span class="nav-number">4.</span> <span class="nav-text">4. 数据与评测结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%95%B0%E6%8D%AE%E6%B5%81%EF%BC%88%E5%B7%A5%E7%A8%8B%E8%A7%86%E8%A7%92%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 端到端数据流（工程视角）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B1%80%E9%99%90%EF%BC%88%E8%AE%BA%E6%96%87%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">6. 局限（论文结论）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%B8%8E-AbAffinity-%E7%9A%84%E8%BE%B9%E7%95%8C%EF%BC%88%E7%AB%99%E5%86%85%E5%AF%B9%E7%85%A7%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. 与 AbAffinity 的边界（站内对照）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

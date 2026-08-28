@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LLM,RAG," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="宽池买 Recall，Cross-encoder 买排序。池里没有金标准时换更强 reranker 无效。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Retrieval-Rerank-centric-RAG">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="宽池买 Recall，Cross-encoder 买排序。池里没有金标准时换更强 reranker 无效。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/rag-fig01-rerank.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/rag-fig02-ce-vs-fusion.png">
+<meta property="article:published_time" content="2026-03-26T09:34:44.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="RAG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/rag-fig01-rerank.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-15.RAG/RAG-03重排组装-Retrieval-Rerank-centric-RAG/"/>
+
+
+
+
+
+  <title>Retrieval-Rerank-centric-RAG | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Retrieval-Rerank-centric-RAG</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-26T17:34:44+08:00">
+                2026-03-26
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index">
+                    <span itemprop="name">工程实践</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  宽池买 Recall，Cross-encoder 买排序。池里没有金标准时换更强 reranker 无效。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>候选里已经有正确答案，但排在第 20 名，进不了生成窗口。根因是<strong>双塔&#x2F;稀疏召回的排序分辨率不够</strong>。本方法用交叉编码器（Cross-encoder，CE）精排。若 Recall@k 本身低，精排无效，应先改召回或切分。</p>
+<p>本文属于 RAG 工程框架中的「3 重排与证据组装」环节，聚焦「Retrieval Rerank centric RAG」方法。</p>
+<h2 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>候选集上的<strong>精排</strong></td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>召回池 $k$ 条 → Cross-encoder Top-$n$（$n\ll k$）</td>
+</tr>
+<tr>
+<td>默认组合</td>
+<td>bge-reranker-v2-m3；或 Cohere Rerank API</td>
+</tr>
+<tr>
+<td>何时不用</td>
+<td>池中已无金标准；P95 不允许 +80–400 ms</td>
+</tr>
+</tbody></table>
+<h2 id="核心机制"><a href="#核心机制" class="headerlink" title="核心机制"></a>核心机制</h2><p>对池中每条算 $s(q,d)&#x3D;\mathrm{CE}(q,d)$，取 Top-$n$。评测用精排后 nDCG@n。</p>
+<blockquote>
+<p>段末注释：<strong>双塔（bi-encoder）</strong> &#x3D; 查询与文档分塔编码再点积&#x2F;余弦，文档可预计算、能 ANN；<strong>交叉编码器（Cross-encoder，CE）</strong> &#x3D; 把 $(q,d)$ 拼成一对做 token 级交互，输出 $P(\mathrm{rel}\mid q,d)$。</p>
+</blockquote>
+<p><img src="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/rag-fig01-rerank.png" alt="图 1　宽网先捞候选，交叉编码器把含 48 h 的方法段梳到最前"></p>
+<p><strong>实现路径与心智</strong>：双塔&#x2F;稀疏（可再经融合）先以低成本捞宽池（$k$ 大），再用 CE 对每对 $(q,d)$ 做一次完整前向，按新分取 $n\ll k$。底层心智：第一段买 Recall，第二段买排序分辨率；精排看不见池外的金标准。池子里没有正确答案时，换更强 reranker 无效。</p>
+<h2 id="实现方式"><a href="#实现方式" class="headerlink" title="实现方式"></a>实现方式</h2><p>CE <strong>不再使用</strong> BM25 &#x2F; 余弦原值。把 query 与文档拼成 $[q;\mathrm{SEP};d]$，过一遍 Transformer，用注意力直接看「这段能不能回答这个问题」，得到单一相关性分。成本随 $k$ 线性涨：每问要对池内每条做一次前向。</p>
+<p>社区默认 FlagEmbedding <code>bge-reranker-v2-m3</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pool = retriever.search(query, k=<span class="number">50</span>)          <span class="comment"># 可已是 RRF 融合结果</span></span><br><span class="line">pairs = [[query, d.text] <span class="keyword">for</span> d <span class="keyword">in</span> pool]</span><br><span class="line">scores = reranker.compute_score(pairs)        <span class="comment"># 每对一次 CE 前向</span></span><br><span class="line">ranked = <span class="built_in">sorted</span>(<span class="built_in">zip</span>(pool, scores), key=<span class="keyword">lambda</span> x: -x[<span class="number">1</span>])[:<span class="number">8</span>]</span><br></pre></td></tr></table></figure>
+
+<p>截断长度必须盖住方法句；query 与 doc 被切掉 <code>48 h</code> 时，CE 看不见时程。</p>
+<h2 id="与融合加权的区别"><a href="#与融合加权的区别" class="headerlink" title="与融合加权的区别"></a>与融合加权的区别</h2><p>融合（RRF &#x2F; 通道加权）是在<strong>已经排好的多路名单上做元排序</strong>：合并名次或校准后的通道分。它不读原文，不产生新相关性信号，也变不出任何一路都没召回的文档。CE 丢掉通道分，<strong>重新读文本对</strong>。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>融合加权 &#x2F; RRF</th>
+<th>Cross-encoder 精排</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>输入</td>
+<td>各路 <code>rank_list</code> 或原始分</td>
+<td>文本对 $(q,d)$</td>
+</tr>
+<tr>
+<td>看什么</td>
+<td>通道共识（谁在多路都靠前）</td>
+<td>query 与文档的 token 交互</td>
+</tr>
+<tr>
+<td>分数含义</td>
+<td>「检索器们有多同意」</td>
+<td>「这段是否回答该问」</td>
+</tr>
+<tr>
+<td>能否重排池内顺序</td>
+<td>只能按通道名次&#x2F;分重组</td>
+<td>可以：召回第 20 提到第 1</td>
+</tr>
+<tr>
+<td>新召回</td>
+<td>不能</td>
+<td>也不能（看不见池外）</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>毫秒、无 GPU</td>
+<td>每问 +80–400 ms，随 $k$ 涨</td>
+</tr>
+</tbody></table>
+<p>融合解决 <strong>BM25 分和余弦不可比</strong>；CE 解决 <strong>双塔&#x2F;稀疏的排序分辨率不够</strong>。二者串联：先融合买 Recall，再 CE 买 Precision。只做加权融合，货号段可能进了池但仍排在综述段后面。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Retrieval-Rerank-centric-RAG/rag-fig02-ce-vs-fusion.png" alt="图 2　RRF 只合并名次；CE 拼接 $(q,d)$ 重打分，把含 48 h 的 C1 提到第一"></p>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><ul>
+<li><strong>优点</strong>：排序提升最稳、可单独评测。</li>
+<li><strong>缺点</strong>：算力随池大小线性涨。</li>
+</ul>
+<h2 id="契约与走通样例"><a href="#契约与走通样例" class="headerlink" title="契约与走通样例"></a>契约与走通样例</h2><h3 id="输入"><a href="#输入" class="headerlink" title="输入"></a>输入</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="string">&quot;GAPDH siRNA 处理多久&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;pool&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;C1-48h&quot;</span><span class="punctuation">,</span> <span class="string">&quot;C2-actin&quot;</span><span class="punctuation">,</span> <span class="string">&quot;C3-review&quot;</span><span class="punctuation">]</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="中间量"><a href="#中间量" class="headerlink" title="中间量"></a>中间量</h3><p>召回 rank：C3, C2, C1。CE 分：C1&#x3D;$0.92$，C3&#x3D;$0.41$，C2&#x3D;$0.33$。精排后 C1 第一，nDCG@3 从 $0.63$ 到 $1.0$。</p>
+<h3 id="输出"><a href="#输出" class="headerlink" title="输出"></a>输出</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span><span class="punctuation">&#123;</span><span class="attr">&quot;rank&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span> <span class="attr">&quot;doc_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;C1-48h&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;ce&quot;</span><span class="punctuation">:</span> <span class="number">0.92</span><span class="punctuation">&#125;</span><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="社区实现"><a href="#社区实现" class="headerlink" title="社区实现"></a>社区实现</h2><p><strong>bge-reranker-v2-m3</strong>（FlagEmbedding <code>compute_score</code>）。风险：query 与 doc 长度截断切掉 48 h；把 CE 当成融合加权的替代——通道共识解决不了「池内第 20 名该不该进窗口」。</p>
+<h2 id="工程落地"><a href="#工程落地" class="headerlink" title="工程落地"></a>工程落地</h2><h3 id="最小可运行示例"><a href="#最小可运行示例" class="headerlink" title="最小可运行示例"></a>最小可运行示例</h3><p>复制为 <code>.py</code> 后直接运行（仅标准库）。教学用词重叠代替 CE 前向；生产换成 <code>FlagEmbedding.FlagReranker</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;宽召回后对 (query, doc) 重打分再取 Top-n。&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Chunk</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;召回池中的一条文档。生产对应 ES / Qdrant hit。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    doc_id: <span class="built_in">str</span></span><br><span class="line">    text: <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">FirstStageRetriever</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;宽池召回。生产对应 BM25 / dense / RRF 的 top-k。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, corpus: <span class="built_in">list</span>[Chunk]</span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">        <span class="variable language_">self</span>.corpus = corpus</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">search</span>(<span class="params">self, query: <span class="built_in">str</span>, k: <span class="built_in">int</span></span>) -&gt; <span class="built_in">list</span>[Chunk]:</span><br><span class="line">        <span class="keyword">del</span> query</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.corpus[:k]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LexicalOverlapReranker</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;教学用 (q,d) 打分：token 重叠。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    生产：from FlagEmbedding import FlagReranker</span></span><br><span class="line"><span class="string">    reranker = FlagReranker(&quot;BAAI/bge-reranker-v2-m3&quot;)</span></span><br><span class="line"><span class="string">    scores = reranker.compute_score([[q, d.text] for d in pool])</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">compute_score</span>(<span class="params">self, pairs: <span class="built_in">list</span>[<span class="built_in">list</span>[<span class="built_in">str</span>]]</span>) -&gt; <span class="built_in">list</span>[<span class="built_in">float</span>]:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;输入 [[query, doc], ...]；输出与 pairs 对齐的分数。&quot;&quot;&quot;</span></span><br><span class="line">        out = []</span><br><span class="line">        <span class="keyword">for</span> query, doc <span class="keyword">in</span> pairs:</span><br><span class="line">            q, d = <span class="built_in">set</span>(query.lower().split()), <span class="built_in">set</span>(doc.lower().split())</span><br><span class="line">            out.append(<span class="built_in">len</span>(q &amp; d) / <span class="built_in">max</span>(<span class="built_in">len</span>(q), <span class="number">1</span>))</span><br><span class="line">        <span class="keyword">return</span> out</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">two_stage_retrieve</span>(<span class="params"></span></span><br><span class="line"><span class="params">    query: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    retriever: FirstStageRetriever,</span></span><br><span class="line"><span class="params">    reranker: LexicalOverlapReranker,</span></span><br><span class="line"><span class="params">    pool_k: <span class="built_in">int</span>,</span></span><br><span class="line"><span class="params">    top_n: <span class="built_in">int</span>,</span></span><br><span class="line"><span class="params"></span>) -&gt; <span class="built_in">list</span>[<span class="built_in">tuple</span>[Chunk, <span class="built_in">float</span>]]:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;先捞池，丢掉召回分，按文本对分数重排。&quot;&quot;&quot;</span></span><br><span class="line">    pool = retriever.search(query, k=pool_k)</span><br><span class="line">    scores = reranker.compute_score([[query, d.text] <span class="keyword">for</span> d <span class="keyword">in</span> pool])</span><br><span class="line">    ranked = <span class="built_in">sorted</span>(<span class="built_in">zip</span>(pool, scores), key=<span class="keyword">lambda</span> x: -x[<span class="number">1</span>])</span><br><span class="line">    <span class="keyword">return</span> ranked[:top_n]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    corpus = [</span><br><span class="line">        Chunk(<span class="string">&quot;C3-review&quot;</span>, <span class="string">&quot;This review discusses GAPDH literature.&quot;</span>),</span><br><span class="line">        Chunk(<span class="string">&quot;C2-actin&quot;</span>, <span class="string">&quot;ACTB knockdown is unrelated.&quot;</span>),</span><br><span class="line">        Chunk(<span class="string">&quot;C1-48h&quot;</span>, <span class="string">&quot;Treat with GAPDH siRNA for 48 h.&quot;</span>),</span><br><span class="line">    ]</span><br><span class="line">    hits = two_stage_retrieve(</span><br><span class="line">        <span class="string">&quot;GAPDH siRNA 处理多久&quot;</span>,</span><br><span class="line">        FirstStageRetriever(corpus),</span><br><span class="line">        LexicalOverlapReranker(),</span><br><span class="line">        pool_k=<span class="number">3</span>,</span><br><span class="line">        top_n=<span class="number">1</span>,</span><br><span class="line">    )</span><br><span class="line">    <span class="built_in">print</span>([(h.doc_id, <span class="built_in">round</span>(s, <span class="number">2</span>)) <span class="keyword">for</span> h, s <span class="keyword">in</span> hits])</span><br></pre></td></tr></table></figure>
+
+<h3 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>起点</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>pool_k</code></td>
+<td>50～100</td>
+<td>过小漏金标准；过大 GPU 线性涨</td>
+</tr>
+<tr>
+<td><code>top_n</code></td>
+<td>5～10</td>
+<td>进生成的条数</td>
+</tr>
+<tr>
+<td>截断长度</td>
+<td>覆盖方法句</td>
+<td>过短切掉剂量&#x2F;时程</td>
+</tr>
+</tbody></table>
+<h2 id="失效—信号—螺丝"><a href="#失效—信号—螺丝" class="headerlink" title="失效—信号—螺丝"></a>失效—信号—螺丝</h2><ul>
+<li><strong>池内无金标准</strong>：nDCG 不动。螺丝：回退抬 Recall。</li>
+<li><strong>P95 爆</strong>：螺丝：减 <code>pool_k</code> 或只对高价值查询精排。</li>
+<li><strong>截断</strong>：螺丝：先切段再精排。</li>
+</ul>
+<h2 id="规模（100-篇生物学-PDF）"><a href="#规模（100-篇生物学-PDF）" class="headerlink" title="规模（100 篇生物学 PDF）"></a>规模（100 篇生物学 PDF）</h2><p>GPU <strong>8–16 GB</strong>。离线 5k–20k 对约 <strong>0.5–3 GPU·h</strong>；在线每问 <strong>+80–400 ms</strong>。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LLM/" rel="tag"><i class="fa fa-tag"></i> LLM</a>
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-04.%E7%94%9F%E6%88%90%E7%BC%96%E6%8E%92%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/" rel="next" title="RAG：生成编排框架概述">
+                <i class="fa fa-chevron-left"></i> RAG：生成编排框架概述
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-15.RAG/RAG-03%E9%87%8D%E6%8E%92%E7%BB%84%E8%A3%85-Context-Compression-RAG/" rel="prev" title="Context-Compression-RAG">
+                Context-Compression-RAG <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">核心机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8E%E8%9E%8D%E5%90%88%E5%8A%A0%E6%9D%83%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">4.</span> <span class="nav-text">与融合加权的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">5.</span> <span class="nav-text">优缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A5%91%E7%BA%A6%E4%B8%8E%E8%B5%B0%E9%80%9A%E6%A0%B7%E4%BE%8B"><span class="nav-number">6.</span> <span class="nav-text">契约与走通样例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5"><span class="nav-number">6.1.</span> <span class="nav-text">输入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E9%97%B4%E9%87%8F"><span class="nav-number">6.2.</span> <span class="nav-text">中间量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%87%BA"><span class="nav-number">6.3.</span> <span class="nav-text">输出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BE%E5%8C%BA%E5%AE%9E%E7%8E%B0"><span class="nav-number">7.</span> <span class="nav-text">社区实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E7%A8%8B%E8%90%BD%E5%9C%B0"><span class="nav-number">8.</span> <span class="nav-text">工程落地</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">8.1.</span> <span class="nav-text">最小可运行示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0"><span class="nav-number">8.2.</span> <span class="nav-text">参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%B1%E6%95%88%E2%80%94%E4%BF%A1%E5%8F%B7%E2%80%94%E8%9E%BA%E4%B8%9D"><span class="nav-number">9.</span> <span class="nav-text">失效—信号—螺丝</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E6%A8%A1%EF%BC%88100-%E7%AF%87%E7%94%9F%E7%89%A9%E5%AD%A6-PDF%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">规模（100 篇生物学 PDF）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

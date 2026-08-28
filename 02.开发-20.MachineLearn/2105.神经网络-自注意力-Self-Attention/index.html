@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Transformer,neural_network,序列模型,attention,self-attention," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="自注意力（Self-Attention）的演进脉络、相对 RNN 要解决的并行与长依赖问题、Scaled Dot-Product 架构原理、可训练参数与训练流程，以及 O(T²) 等应用局限；面向具备线性代数基础的读者。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Self-Attention">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="自注意力（Self-Attention）的演进脉络、相对 RNN 要解决的并行与长依赖问题、Scaled Dot-Product 架构原理、可训练参数与训练流程，以及 O(T²) 等应用局限；面向具备线性代数基础的读者。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig01-evolution.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig02-architecture.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig03-training.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig04-limitations.png">
+<meta property="article:published_time" content="2026-08-10T01:45:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Transformer">
+<meta property="article:tag" content="attention">
+<meta property="article:tag" content="neural_network">
+<meta property="article:tag" content="self-attention">
+<meta property="article:tag" content="序列模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig01-evolution.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-20.MachineLearn/2105.神经网络-自注意力-Self-Attention/"/>
+
+
+
+
+
+  <title>Self-Attention | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Self-Attention</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-10T09:45:00+08:00">
+                2026-08-10
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index">
+                    <span itemprop="name">神经网络</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  自注意力（Self-Attention）的演进脉络、相对 RNN 要解决的并行与长依赖问题、Scaled Dot-Product 架构原理、可训练参数与训练流程，以及 O(T²) 等应用局限；面向具备线性代数基础的读者。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p><strong>自注意力</strong>（Self-Attention）是一种让序列<strong>每个位置直接关注序列中所有位置</strong>（含自身）的注意力机制：查询（Query）、键（Key）、值（Value）均来自<strong>同一输入序列</strong>。Vaswani 等（2017）在 <strong>Transformer</strong> 中将其作为核心构建块，以 <strong>Scaled Dot-Product Attention</strong> 实现，彻底摆脱 RNN 的<strong>时间步串行</strong>约束，成为现代大语言模型（Large Language Model，<strong>LLM</strong>）的基石。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Self-Attention</strong> 的”自”指 Q&#x2F;K&#x2F;V 同源；与之相对，<strong>Cross-Attention</strong>（交叉注意力）的 Q 来自一方序列、K&#x2F;V 来自另一方（如解码器 attend 编码器）。</p>
+</blockquote>
+<p><strong>读前说明</strong>：配图位于同名目录 <code>2105.神经网络-自注意力-Self-Attention/</code>。本文独立成篇；更宽泛的注意力机制入门（含 Nadaraya-Watson 核回归）见 <a href="./2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6.md">2105.神经网络-注意力机制</a>；Transformer 整体见 <a href="./2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-Transformer.md">2105.神经网络-Transformer</a>。</p>
+<hr>
+<h2 id="1-从何处来：演进脉络"><a href="#1-从何处来：演进脉络" class="headerlink" title="1. 从何处来：演进脉络"></a>1. 从何处来：演进脉络</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig01-evolution.png" alt="图 1　从 RNN+Attention 到 Self-Attention 与 Transformer（科普示意）"></p>
+<h3 id="1-1-前驱：RNN-与编码器瓶颈"><a href="#1-1-前驱：RNN-与编码器瓶颈" class="headerlink" title="1.1 前驱：RNN 与编码器瓶颈"></a>1.1 前驱：RNN 与编码器瓶颈</h3><p><strong>循环神经网络</strong>（Recurrent Neural Network，<strong>RNN</strong>）及其门控变体（<strong>LSTM</strong>、<strong>GRU</strong>）按时间步递推隐藏状态，存在：</p>
+<ul>
+<li><strong>串行计算</strong>：$t$ 必须等 $t-1$ 完成；</li>
+<li><strong>固定向量瓶颈</strong>：seq2seq 编码器将整个源句压入单个 $\mathbf{h}_T$，长句信息损失严重；</li>
+<li><strong>长距离路径</strong>：位置 $i$ 与 $j$ 的信息需经 $|i-j|$ 步递归传递。</li>
+</ul>
+<h3 id="1-2-注意力机制的介入"><a href="#1-2-注意力机制的介入" class="headerlink" title="1.2 注意力机制的介入"></a>1.2 注意力机制的介入</h3><table>
+<thead>
+<tr>
+<th>年份</th>
+<th>工作</th>
+<th>贡献</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>2014</strong></td>
+<td>Bahdanau 等</td>
+<td><strong>加性注意力</strong>（Additive Attention）：解码每步动态 attend 编码器所有隐状态</td>
+</tr>
+<tr>
+<td><strong>2015</strong></td>
+<td>Luong 等</td>
+<td><strong>乘性&#x2F;点积注意力</strong>（Multiplicative&#x2F;Dot Attention）：更简洁高效</td>
+</tr>
+<tr>
+<td><strong>2016</strong></td>
+<td>Cheng 等、Lin 等</td>
+<td>在 RNN 内部引入 self-attention 思想</td>
+</tr>
+<tr>
+<td><strong>2017</strong></td>
+<td>Vaswani 等，<em>Attention Is All You Need</em></td>
+<td><strong>Scaled Dot-Product Self-Attention</strong> + <strong>Multi-Head Attention</strong>，纯注意力架构 <strong>Transformer</strong></td>
+</tr>
+</tbody></table>
+<p>Bahdanau 注意力解决的是 <strong>Cross-Attention</strong>（解码 query attend 编码 key&#x2F;value）；Transformer 将其推广为<strong>同一序列内部的 Self-Attention</strong>，并用堆叠层替代全部 RNN。</p>
+<h3 id="1-3-后续发展"><a href="#1-3-后续发展" class="headerlink" title="1.3 后续发展"></a>1.3 后续发展</h3><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>代表</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>2018</strong></td>
+<td>BERT、GPT</td>
+<td>预训练 + Self-Attention 成为 NLP 默认</td>
+</tr>
+<tr>
+<td><strong>2020+</strong></td>
+<td>ViT、CLIP</td>
+<td>Self-Attention 扩展至视觉</td>
+</tr>
+<tr>
+<td><strong>2022+</strong></td>
+<td>LLaMA、GPT-4 等</td>
+<td>仅微调架构细节，核心仍为 Multi-Head Self-Attention</td>
+</tr>
+<tr>
+<td><strong>2023+</strong></td>
+<td>FlashAttention、线性注意力</td>
+<td>缓解 $O(T^2)$ 显存与计算</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>Multi-Head Attention</strong>（多头注意力）并行运行 $h$ 组独立 Self-Attention，再拼接投影，使模型在不同子空间捕获不同关系模式。</p>
+</blockquote>
+<hr>
+<h2 id="2-要解决什么问题"><a href="#2-要解决什么问题" class="headerlink" title="2. 要解决什么问题"></a>2. 要解决什么问题</h2><h3 id="2-1-核心问题形式化"><a href="#2-1-核心问题形式化" class="headerlink" title="2.1 核心问题形式化"></a>2.1 核心问题形式化</h3><p>给定序列 $\mathbf{X} &#x3D; [\mathbf{x}_1, \ldots, \mathbf{x}_T]^\top \in \mathbb{R}^{T \times d}$，希望每个位置 $i$ 的输出 $\mathbf{o}_i$ 能<strong>直接</strong>融合全序列信息：</p>
+<p>$$<br>\mathbf{o}<em>i &#x3D; \sum</em>{j&#x3D;1}^{T} \alpha_{ij}, \mathbf{v}<em>j, \qquad \sum_j \alpha</em>{ij} &#x3D; 1,; \alpha_{ij} \ge 0<br>$$</p>
+<p>其中 $\alpha_{ij}$ 为位置 $i$ 对位置 $j$ 的<strong>注意力权重</strong>。理想性质：</p>
+<table>
+<thead>
+<tr>
+<th>性质</th>
+<th>RNN 的问题</th>
+<th>Self-Attention</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>任意距离依赖</strong></td>
+<td>路径长 $O(|i-j|)$</td>
+<td>路径长 $O(1)$</td>
+</tr>
+<tr>
+<td><strong>训练并行</strong></td>
+<td>时间维串行</td>
+<td>一次矩阵乘覆盖全序列</td>
+</tr>
+<tr>
+<td><strong>动态权重</strong></td>
+<td>隐状态固定维度压缩</td>
+<td>权重随 $(i,j)$ 内容自适应</td>
+</tr>
+<tr>
+<td><strong>可解释性</strong></td>
+<td>门控&#x2F;隐状态难读</td>
+<td>$\alpha_{ij}$ 可可视化</td>
+</tr>
+</tbody></table>
+<h3 id="2-2-Q-K-V-抽象"><a href="#2-2-Q-K-V-抽象" class="headerlink" title="2.2 Q&#x2F;K&#x2F;V 抽象"></a>2.2 Q&#x2F;K&#x2F;V 抽象</h3><p>Self-Attention 将”谁查、查谁、取什么”参数化为：</p>
+<ul>
+<li><strong>Query</strong> $\mathbf{q}_i$：位置 $i$ 的<strong>查询</strong>——“我在找什么信息”；</li>
+<li><strong>Key</strong> $\mathbf{k}_j$：位置 $j$ 的<strong>键</strong>——“我提供什么索引”；</li>
+<li><strong>Value</strong> $\mathbf{v}_j$：位置 $j$ 的<strong>值</strong>——“被取走的内容”。</li>
+</ul>
+<p>相似度 $\mathrm{sim}(\mathbf{q}_i, \mathbf{k}<em>j)$ 越大，$\alpha</em>{ij}$ 越大。Q&#x2F;K&#x2F;V 均由同一 $\mathbf{x}_i$ 线性投影得到，故为 <strong>Self</strong>-Attention。</p>
+<hr>
+<h2 id="3-模型架构与原理"><a href="#3-模型架构与原理" class="headerlink" title="3. 模型架构与原理"></a>3. 模型架构与原理</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig02-architecture.png" alt="图 2　Scaled Dot-Product Self-Attention 结构（科普示意）"></p>
+<h3 id="3-1-符号约定"><a href="#3-1-符号约定" class="headerlink" title="3.1 符号约定"></a>3.1 符号约定</h3><table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>典型维度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$\mathbf{X}$</td>
+<td>输入序列</td>
+<td>$\mathbb{R}^{T \times d_{\mathrm{model}}}$</td>
+</tr>
+<tr>
+<td>$\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$</td>
+<td>投影矩阵</td>
+<td>$\mathbb{R}^{d_{\mathrm{model}} \times d_k}$（或 $d_v$）</td>
+</tr>
+<tr>
+<td>$\mathbf{Q}, \mathbf{K}, \mathbf{V}$</td>
+<td>投影后的 Q&#x2F;K&#x2F;V</td>
+<td>$\mathbb{R}^{T \times d_k}$、$\mathbb{R}^{T \times d_k}$、$\mathbb{R}^{T \times d_v}$</td>
+</tr>
+<tr>
+<td>$d_k$</td>
+<td>键&#x2F;查询维度</td>
+<td>常取 $d_{\mathrm{model}}&#x2F;h$（$h$ 为头数）</td>
+</tr>
+<tr>
+<td>$\alpha_{ij}$</td>
+<td>注意力权重</td>
+<td>标量</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-Scaled-Dot-Product-Attention"><a href="#3-2-Scaled-Dot-Product-Attention" class="headerlink" title="3.2 Scaled Dot-Product Attention"></a>3.2 Scaled Dot-Product Attention</h3><p><strong>矩阵形式</strong>（一次处理全序列）：</p>
+<p>$$<br>\mathrm{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) &#x3D; \mathrm{softmax}!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right) \mathbf{V}<br>$$</p>
+<p><strong>逐元素理解</strong>：</p>
+<p>$$<br>\alpha_{ij} &#x3D; \frac{\exp(\mathbf{q}<em>i^\top \mathbf{k}<em>j &#x2F; \sqrt{d_k})}{\sum</em>{j’&#x3D;1}^{T} \exp(\mathbf{q}<em>i^\top \mathbf{k}</em>{j’} &#x2F; \sqrt{d_k})}, \qquad<br>\mathbf{o}<em>i &#x3D; \sum</em>{j&#x3D;1}^{T} \alpha</em>{ij}, \mathbf{v}_j<br>$$</p>
+<p><strong>缩放因子</strong> $\sqrt{d_k}$：当 $d_k$ 较大时，点积方差随 $d_k$ 增大，softmax 易饱和导致梯度消失；除以 $\sqrt{d_k}$ 稳定训练（Vaswani 等，2017）。</p>
+<p><strong>投影</strong>：</p>
+<p>$$<br>\mathbf{Q} &#x3D; \mathbf{X}\mathbf{W}_Q, \quad \mathbf{K} &#x3D; \mathbf{X}\mathbf{W}_K, \quad \mathbf{V} &#x3D; \mathbf{X}\mathbf{W}_V<br>$$</p>
+<h3 id="3-3-Multi-Head-Self-Attention"><a href="#3-3-Multi-Head-Self-Attention" class="headerlink" title="3.3 Multi-Head Self-Attention"></a>3.3 Multi-Head Self-Attention</h3><p>$h$ 个头并行计算，每头维度 $d_k &#x3D; d_v &#x3D; d_{\mathrm{model}}&#x2F;h$：</p>
+<p>$$<br>\mathrm{head}_i &#x3D; \mathrm{Attention}(\mathbf{X}\mathbf{W}_Q^{(i)}, \mathbf{X}\mathbf{W}_K^{(i)}, \mathbf{X}\mathbf{W}_V^{(i)})<br>$$</p>
+<p>$$<br>\mathrm{MultiHead}(\mathbf{X}) &#x3D; \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h), \mathbf{W}_O<br>$$</p>
+<p>不同头可学习关注<strong>语法、共指、局部 n-gram、长程依赖</strong>等不同模式。</p>
+<h3 id="3-4-掩码变体"><a href="#3-4-掩码变体" class="headerlink" title="3.4 掩码变体"></a>3.4 掩码变体</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>作用</th>
+<th>典型场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Padding Mask</strong></td>
+<td>忽略填充位</td>
+<td>batch 内不等长序列</td>
+</tr>
+<tr>
+<td><strong>Causal Mask</strong>（下三角）</td>
+<td>位置 $i$ 只能看 $j \le i$</td>
+<td>GPT 类自回归解码</td>
+</tr>
+<tr>
+<td><strong>无掩码</strong></td>
+<td>双向全连接</td>
+<td>BERT 编码器</td>
+</tr>
+</tbody></table>
+<p>因果掩码矩阵 $\mathbf{M}$：$M_{ij} &#x3D; -\infty$（或极大负数）当 $j &gt; i$，使 $\alpha_{ij} &#x3D; 0$。</p>
+<h3 id="3-5-与-Bahdanau-加性注意力对比"><a href="#3-5-与-Bahdanau-加性注意力对比" class="headerlink" title="3.5 与 Bahdanau 加性注意力对比"></a>3.5 与 Bahdanau 加性注意力对比</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Bahdanau（加性）</th>
+<th>Scaled Dot-Product</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>分数</td>
+<td>$v^\top \tanh(W_q q + W_k k)$</td>
+<td>$\mathbf{q}^\top \mathbf{k} &#x2F; \sqrt{d_k}$</td>
+</tr>
+<tr>
+<td>计算</td>
+<td>需额外 MLP</td>
+<td>纯矩阵乘，GPU 友好</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>相对差</td>
+<td>极佳</td>
+</tr>
+</tbody></table>
+<h3 id="3-6-在-Transformer-块中的位置"><a href="#3-6-在-Transformer-块中的位置" class="headerlink" title="3.6 在 Transformer 块中的位置"></a>3.6 在 Transformer 块中的位置</h3><p>标准 <strong>Transformer Encoder Layer</strong>：</p>
+<p>$$<br>\mathbf{X}’ &#x3D; \mathrm{LayerNorm}(\mathbf{X} + \mathrm{MultiHead}(\mathbf{X}))<br>$$<br>$$<br>\mathbf{O} &#x3D; \mathrm{LayerNorm}(\mathbf{X}’ + \mathrm{FFN}(\mathbf{X}’))<br>$$</p>
+<p><strong>FFN</strong>（前馈网络）为逐位置 MLP；Self-Attention 负责<strong>跨位置</strong>信息交换，FFN 负责<strong>逐位置</strong>非线性变换。</p>
+<hr>
+<h2 id="4-训练哪些参数"><a href="#4-训练哪些参数" class="headerlink" title="4. 训练哪些参数"></a>4. 训练哪些参数</h2><h3 id="4-1-单层-Multi-Head-Self-Attention-参数"><a href="#4-1-单层-Multi-Head-Self-Attention-参数" class="headerlink" title="4.1 单层 Multi-Head Self-Attention 参数"></a>4.1 单层 Multi-Head Self-Attention 参数</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>形状</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$\mathbf{W}_Q^{(i)}, \mathbf{W}_K^{(i)}, \mathbf{W}_V^{(i)}$</td>
+<td>各 $\mathbb{R}^{d_{\mathrm{model}} \times d_k}$</td>
+<td>第 $i$ 头的 Q&#x2F;K&#x2F;V 投影</td>
+</tr>
+<tr>
+<td>$\mathbf{W}_O$</td>
+<td>$\mathbb{R}^{h d_v \times d_{\mathrm{model}}}$</td>
+<td>多头拼接后的输出投影</td>
+</tr>
+</tbody></table>
+<p><strong>等价合并实现</strong>：PyTorch 常用单个大矩阵 $\mathbf{W}<em>{QKV} \in \mathbb{R}^{d</em>{\mathrm{model}} \times 3 d_{\mathrm{model}}}$ 一次投影再拆分。</p>
+<p><strong>参数量估算</strong>（单头简化，$d_k &#x3D; d_v &#x3D; d_{\mathrm{model}}$）：</p>
+<p>$$<br>|\Theta|<em>{\mathrm{MHA}} \approx 4, d</em>{\mathrm{model}}^2<br>$$</p>
+<p>（$\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V, \mathbf{W}<em>O$ 各 $d</em>{\mathrm{model}}^2$）</p>
+<p>完整 Transformer 层还需 <strong>FFN</strong>（通常 $4 d_{\mathrm{model}}^2$ 量级）及 <strong>LayerNorm</strong> 的 $\gamma, \beta$。</p>
+<h3 id="4-2-通常还包括（模型级）"><a href="#4-2-通常还包括（模型级）" class="headerlink" title="4.2 通常还包括（模型级）"></a>4.2 通常还包括（模型级）</h3><ul>
+<li><strong>词嵌入</strong> $\mathbf{E}<em>{\mathrm{token}} \in \mathbb{R}^{V \times d</em>{\mathrm{model}}}$；</li>
+<li><strong>位置编码</strong>（正弦或可学习 $\mathbf{E}_{\mathrm{pos}}$）——Self-Attention 本身<strong>置换等变</strong>，不含顺序信息；</li>
+<li><strong>输出层</strong>（语言建模头）$\mathbf{W}<em>{\mathrm{lm}} \in \mathbb{R}^{d</em>{\mathrm{model}} \times V}$。</li>
+</ul>
+<hr>
+<h2 id="5-如何训练"><a href="#5-如何训练" class="headerlink" title="5. 如何训练"></a>5. 如何训练</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig03-training.png" alt="图 3　Self-Attention 训练：并行前向与端到端反向传播（科普示意）"></p>
+<h3 id="5-1-与-RNN-训练的关键差异"><a href="#5-1-与-RNN-训练的关键差异" class="headerlink" title="5.1 与 RNN 训练的关键差异"></a>5.1 与 RNN 训练的关键差异</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>RNN (LSTM&#x2F;GRU)</th>
+<th>Self-Attention</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>展开方式</td>
+<td>时间步串行</td>
+<td>全序列一次矩阵运算</td>
+</tr>
+<tr>
+<td>反向传播</td>
+<td>BPTT</td>
+<td>标准 autograd（无时间展开瓶颈）</td>
+</tr>
+<tr>
+<td>并行度</td>
+<td>低</td>
+<td>高（训练吞吐的核心优势）</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-损失函数"><a href="#5-2-损失函数" class="headerlink" title="5.2 损失函数"></a>5.2 损失函数</h3><p>依任务而定，与序列模型通用：</p>
+<ul>
+<li><strong>语言建模</strong>：$\mathcal{L} &#x3D; -\sum_{t} \log P(x_t \mid x_{&lt;t})$（因果掩码）；</li>
+<li><strong>掩码语言模型（MLM）</strong>：仅对 masked 位置算交叉熵（BERT）；</li>
+<li><strong>序列标注</strong>：每 token 交叉熵；</li>
+<li><strong>回归&#x2F;分类</strong>：在 [CLS] 或池化表示上算损失。</li>
+</ul>
+<h3 id="5-3-反向传播要点"><a href="#5-3-反向传播要点" class="headerlink" title="5.3 反向传播要点"></a>5.3 反向传播要点</h3><p>注意力权重 $\mathbf{A} &#x3D; \mathrm{softmax}(\mathbf{Q}\mathbf{K}^\top &#x2F; \sqrt{d_k})$ 对 $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$ 可微；梯度经 $\mathbf{A}$ 与 $\mathbf{V}$ 回传至输入 $\mathbf{X}$。</p>
+<p><strong>Softmax 梯度</strong>：若某行 $\mathbf{A}$ 接近 one-hot，其余 key 的梯度近零（<strong>注意力饱和</strong>）；缩放 $\sqrt{d_k}$ 与多头机制有助于缓解。</p>
+<p><strong>深度堆叠</strong>：$L$ 层 Encoder 重复 Self-Attention + FFN，梯度经残差连接 $\mathbf{X} + \mathrm{SubLayer}(\mathbf{X})$ 传播，需 <strong>LayerNorm</strong> 与适当初始化（如 Xavier）稳定训练。</p>
+<h3 id="5-4-优化实践"><a href="#5-4-优化实践" class="headerlink" title="5.4 优化实践"></a>5.4 优化实践</h3><table>
+<thead>
+<tr>
+<th>技巧</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>AdamW</strong></td>
+<td>Transformer 默认；weight decay 与 Adam 解耦</td>
+</tr>
+<tr>
+<td><strong>Warmup + 衰减</strong></td>
+<td>学习率先线性增后余弦&#x2F;多项式降（原论文）</td>
+</tr>
+<tr>
+<td><strong>Label Smoothing</strong></td>
+<td>缓解过拟合与过度自信</td>
+</tr>
+<tr>
+<td><strong>Dropout</strong></td>
+<td>加在注意力权重 $\mathbf{A}$ 或子层输出</td>
+</tr>
+<tr>
+<td><strong>Gradient Checkpointing</strong></td>
+<td>以算换显存，应对深模型</td>
+</tr>
+<tr>
+<td><strong>FlashAttention</strong></td>
+<td>IO 感知的精确注意力，降显存</td>
+</tr>
+</tbody></table>
+<h3 id="5-5-PyTorch-最小示例"><a href="#5-5-PyTorch-最小示例" class="headerlink" title="5.5 PyTorch 最小示例"></a>5.5 PyTorch 最小示例</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn</span><br><span class="line"><span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ScaledDotProductSelfAttention</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;单头 Scaled Dot-Product Self-Attention&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model: <span class="built_in">int</span>, d_k: <span class="built_in">int</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.d_k = d_k</span><br><span class="line">        <span class="variable language_">self</span>.W_q = nn.Linear(d_model, d_k, bias=<span class="literal">False</span>)</span><br><span class="line">        <span class="variable language_">self</span>.W_k = nn.Linear(d_model, d_k, bias=<span class="literal">False</span>)</span><br><span class="line">        <span class="variable language_">self</span>.W_v = nn.Linear(d_model, d_k, bias=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x: torch.Tensor, mask: torch.Tensor | <span class="literal">None</span> = <span class="literal">None</span></span>) -&gt; torch.Tensor:</span><br><span class="line">        <span class="comment"># x: (batch, T, d_model)</span></span><br><span class="line">        q, k, v = <span class="variable language_">self</span>.W_q(x), <span class="variable language_">self</span>.W_k(x), <span class="variable language_">self</span>.W_v(x)</span><br><span class="line">        scores = q @ k.transpose(-<span class="number">2</span>, -<span class="number">1</span>) / math.sqrt(<span class="variable language_">self</span>.d_k)  <span class="comment"># (batch, T, T)</span></span><br><span class="line">        <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            scores = scores.masked_fill(mask == <span class="number">0</span>, <span class="built_in">float</span>(<span class="string">&quot;-inf&quot;</span>))</span><br><span class="line">        attn = F.softmax(scores, dim=-<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> attn @ v  <span class="comment"># (batch, T, d_k)</span></span><br></pre></td></tr></table></figure>
+
+<p><code>nn.MultiheadAttention</code> 或 <code>nn.TransformerEncoder</code> 提供生产级实现。</p>
+<hr>
+<h2 id="6-应用与局限"><a href="#6-应用与局限" class="headerlink" title="6. 应用与局限"></a>6. 应用与局限</h2><p><img src="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2105.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B-Self-Attention/sa-fig04-limitations.png" alt="图 4　Self-Attention 的典型局限（科普示意）"></p>
+<h3 id="6-1-典型应用场景"><a href="#6-1-典型应用场景" class="headerlink" title="6.1 典型应用场景"></a>6.1 典型应用场景</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>大语言模型</strong></td>
+<td>GPT、LLaMA、Qwen 等解码器</td>
+</tr>
+<tr>
+<td><strong>预训练编码器</strong></td>
+<td>BERT、RoBERTa 双向建模</td>
+</tr>
+<tr>
+<td><strong>机器翻译</strong></td>
+<td>Transformer 仍是工业标准</td>
+</tr>
+<tr>
+<td><strong>视觉</strong></td>
+<td>ViT、Swin 将 patch 序列化后 Self-Attention</td>
+</tr>
+<tr>
+<td><strong>多模态</strong></td>
+<td>CLIP、LLaVA 的跨模态 Cross-Attention</td>
+</tr>
+<tr>
+<td><strong>生物序列</strong></td>
+<td>蛋白质&#x2F; DNA 长序列建模（需线性注意力等优化）</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-主要局限性"><a href="#6-2-主要局限性" class="headerlink" title="6.2 主要局限性"></a>6.2 主要局限性</h3><p><strong>（1）$O(T^2)$ 时间与显存</strong></p>
+<p>注意力矩阵 $\mathbf{A} \in \mathbb{R}^{T \times T}$：序列长度翻倍，内存约 <strong>4 倍</strong>。$T &gt; 10\text{K}$ 时常不可行；需 <strong>FlashAttention</strong>、<strong>稀疏注意力</strong>、<strong>线性注意力</strong>（Performers 等）或 <strong>分块&#x2F;滑动窗口</strong>。</p>
+<p><strong>（2）无内置顺序，依赖位置编码</strong></p>
+<p>Self-Attention 对输入置换等变（无 mask 时）；必须额外注入<strong>绝对&#x2F;相对位置编码</strong>。外推更长序列时，位置编码泛化常是瓶颈（<strong>ALiBi</strong>、<strong>RoPE</strong> 等为此改进）。</p>
+<p><strong>（3）长上下文外推弱</strong></p>
+<p>训练长度 $L_{\mathrm{train}}$ 有限，推理 $L_{\mathrm{test}} \gg L_{\mathrm{train}}$ 时性能常显著下降；RNN 虽慢但在理论上无固定长度上限（实践中也受 BPTT 截断）。</p>
+<p><strong>（4）注意力权重 $\neq$ 因果解释</strong></p>
+<p>$\alpha_{ij}$ 可视化直观，但<strong>不保证</strong>对应人类语义”重要性”；对抗扰动下权重可大幅变化。</p>
+<p><strong>（5）小数据易过拟合</strong></p>
+<p>参数量 $O(d_{\mathrm{model}}^2)$ 级，小语料需预训练、正则或蒸馏。</p>
+<p><strong>（6）归纳偏置弱于 CNN&#x2F;RNN</strong></p>
+<p>局部平移不变性（CNN）、顺序递归偏置（RNN）需靠数据量学出来；小样本或强结构数据上未必最优。</p>
+<h3 id="6-3-与-RNN-的定位对比"><a href="#6-3-与-RNN-的定位对比" class="headerlink" title="6.3 与 RNN 的定位对比"></a>6.3 与 RNN 的定位对比</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>LSTM&#x2F;GRU</th>
+<th>Self-Attention</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>长依赖路径</td>
+<td>$O(T)$</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td>训练并行</td>
+<td>差</td>
+<td>优</td>
+</tr>
+<tr>
+<td>推理（自回归）</td>
+<td>每步 $O(d^2)$</td>
+<td>需 KV Cache，仍可行</td>
+</tr>
+<tr>
+<td>序列长度扩展</td>
+<td>线性内存</td>
+<td>二次内存（朴素实现）</td>
+</tr>
+<tr>
+<td>归纳偏置</td>
+<td>强顺序</td>
+<td>弱，需位置编码</td>
+</tr>
+</tbody></table>
+<p><strong>结论</strong>：Self-Attention 是大规模序列建模的<strong>默认选择</strong>；在<strong>极长流式、极低算力</strong>场景，RNN&#x2F;GRU 或线性注意力变体仍有 niche。</p>
+<hr>
+<h2 id="7-小结"><a href="#7-小结" class="headerlink" title="7. 小结"></a>7. 小结</h2><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>由来</strong></td>
+<td>Bahdanau&#x2F;Luong 注意力 → 2017 Transformer 的 Scaled Dot-Product Self-Attention</td>
+</tr>
+<tr>
+<td><strong>解决什么</strong></td>
+<td>任意距离依赖、训练并行、动态内容寻址</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td>$\mathrm{softmax}(\mathbf{Q}\mathbf{K}^\top&#x2F;\sqrt{d_k})\mathbf{V}$；可扩展为 Multi-Head</td>
+</tr>
+<tr>
+<td><strong>训练参数</strong></td>
+<td>$\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V, \mathbf{W}_O$ 及 FFN、嵌入、位置编码</td>
+</tr>
+<tr>
+<td><strong>训练方式</strong></td>
+<td>标准 autograd + AdamW + warmup；因果&#x2F;填充掩码</td>
+</tr>
+<tr>
+<td><strong>局限</strong></td>
+<td>$O(T^2)$、需位置编码、长上下文外推、权重非因果解释</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Vaswani, A., et al. (2017). Attention Is All You Need. <em>NeurIPS</em>.</li>
+<li>Bahdanau, D., Cho, K., &amp; Bengio, Y. (2014). Neural Machine Translation by Jointly Learning to Align and Translate. <em>ICLR</em>.</li>
+<li>Luong, T., Pham, H., &amp; Manning, C. D. (2015). Effective Approaches to Attention-based Neural Machine Translation. <em>EMNLP</em>.</li>
+<li>Devlin, J., et al. (2018). BERT: Pre-training of Deep Bidirectional Transformers. <em>NAACL</em>.</li>
+<li>Dao, T., et al. (2022). FlashAttention: Fast and Memory-Efficient Exact Attention. <em>NeurIPS</em>.</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Transformer/" rel="tag"><i class="fa fa-tag"></i> Transformer</a>
+          
+            <a href="/tags/neural-network/" rel="tag"><i class="fa fa-tag"></i> neural_network</a>
+          
+            <a href="/tags/%E5%BA%8F%E5%88%97%E6%A8%A1%E5%9E%8B/" rel="tag"><i class="fa fa-tag"></i> 序列模型</a>
+          
+            <a href="/tags/attention/" rel="tag"><i class="fa fa-tag"></i> attention</a>
+          
+            <a href="/tags/self-attention/" rel="tag"><i class="fa fa-tag"></i> self-attention</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-20.MachineLearn/2104.%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C-GRU/" rel="next" title="GRU">
+                <i class="fa fa-chevron-left"></i> GRU
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-00.%E7%9F%A5%E8%AF%86%E7%82%B9%E7%B4%A2%E5%BC%95/" rel="prev" title="LangChain：知识点索引">
+                LangChain：知识点索引 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BB%8E%E4%BD%95%E5%A4%84%E6%9D%A5%EF%BC%9A%E6%BC%94%E8%BF%9B%E8%84%89%E7%BB%9C"><span class="nav-number">1.</span> <span class="nav-text">1. 从何处来：演进脉络</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%89%8D%E9%A9%B1%EF%BC%9ARNN-%E4%B8%8E%E7%BC%96%E7%A0%81%E5%99%A8%E7%93%B6%E9%A2%88"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 前驱：RNN 与编码器瓶颈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6%E7%9A%84%E4%BB%8B%E5%85%A5"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 注意力机制的介入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E5%90%8E%E7%BB%AD%E5%8F%91%E5%B1%95"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 后续发展</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%A6%81%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">2. 要解决什么问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98%E5%BD%A2%E5%BC%8F%E5%8C%96"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 核心问题形式化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Q-K-V-%E6%8A%BD%E8%B1%A1"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Q&#x2F;K&#x2F;V 抽象</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">3. 模型架构与原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%AC%A6%E5%8F%B7%E7%BA%A6%E5%AE%9A"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 符号约定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Scaled-Dot-Product-Attention"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Scaled Dot-Product Attention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-Multi-Head-Self-Attention"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 Multi-Head Self-Attention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E6%8E%A9%E7%A0%81%E5%8F%98%E4%BD%93"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 掩码变体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E4%B8%8E-Bahdanau-%E5%8A%A0%E6%80%A7%E6%B3%A8%E6%84%8F%E5%8A%9B%E5%AF%B9%E6%AF%94"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 与 Bahdanau 加性注意力对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E5%9C%A8-Transformer-%E5%9D%97%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-number">3.6.</span> <span class="nav-text">3.6 在 Transformer 块中的位置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%AE%AD%E7%BB%83%E5%93%AA%E4%BA%9B%E5%8F%82%E6%95%B0"><span class="nav-number">4.</span> <span class="nav-text">4. 训练哪些参数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%8D%95%E5%B1%82-Multi-Head-Self-Attention-%E5%8F%82%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 单层 Multi-Head Self-Attention 参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E9%80%9A%E5%B8%B8%E8%BF%98%E5%8C%85%E6%8B%AC%EF%BC%88%E6%A8%A1%E5%9E%8B%E7%BA%A7%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 通常还包括（模型级）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%A6%82%E4%BD%95%E8%AE%AD%E7%BB%83"><span class="nav-number">5.</span> <span class="nav-text">5. 如何训练</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E4%B8%8E-RNN-%E8%AE%AD%E7%BB%83%E7%9A%84%E5%85%B3%E9%94%AE%E5%B7%AE%E5%BC%82"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 与 RNN 训练的关键差异</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 损失函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E8%A6%81%E7%82%B9"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 反向传播要点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E4%BC%98%E5%8C%96%E5%AE%9E%E8%B7%B5"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 优化实践</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-PyTorch-%E6%9C%80%E5%B0%8F%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 PyTorch 最小示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%BA%94%E7%94%A8%E4%B8%8E%E5%B1%80%E9%99%90"><span class="nav-number">6.</span> <span class="nav-text">6. 应用与局限</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%85%B8%E5%9E%8B%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 典型应用场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E4%B8%BB%E8%A6%81%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 主要局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E4%B8%8E-RNN-%E7%9A%84%E5%AE%9A%E4%BD%8D%E5%AF%B9%E6%AF%94"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 与 RNN 的定位对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%B0%8F%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">7. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">8.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

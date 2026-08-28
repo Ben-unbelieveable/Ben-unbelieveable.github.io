@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Agent,RAG,安装," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="LlamaIndex 知识层概述：与 LangChain&#x2F;LangGraph 的三层分工、包拆分与安装、Document→QueryEngine 最小示例、FunctionAgent 把检索当工具，以及推荐阅读顺序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LlamaIndex：概述与安装">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="LlamaIndex 知识层概述：与 LangChain&#x2F;LangGraph 的三层分工、包拆分与安装、Document→QueryEngine 最小示例、FunctionAgent 把检索当工具，以及推荐阅读顺序。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/llamaindex-fig01-stack-layers.png">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/llamaindex-fig02-rag-pipeline.png">
+<meta property="article:published_time" content="2026-08-20T03:20:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="安装">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/llamaindex-fig01-stack-layers.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-16.Agent-LlamaIndex/LlamaIndex-00.概述与安装/"/>
+
+
+
+
+
+  <title>LlamaIndex：概述与安装 | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">LlamaIndex：概述与安装</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-20T11:20:00+08:00">
+                2026-08-20
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">Agent工程</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Agent%E5%B7%A5%E7%A8%8B/LlamaIndex/" itemprop="url" rel="index">
+                    <span itemprop="name">LlamaIndex</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  LlamaIndex 知识层概述：与 LangChain/LangGraph 的三层分工、包拆分与安装、Document→QueryEngine 最小示例、FunctionAgent 把检索当工具，以及推荐阅读顺序。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>你已经能用 <strong>LangChain</strong> 把模型、消息、工具拼成管道，也能用 <strong>LangGraph</strong> 画带环的状态图。还缺一块：<strong>私有文档怎么变成可检索、可引用的上下文</strong>。手写会变成：PDF 解析、切块、向量库、混合检索、重排、引用回填各写一套。<strong>LlamaIndex</strong> 把这条「数据 → 索引 → 召回 → 合成」收成一等公民抽象。</p>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>LlamaIndex</strong> 在本教程系列中指 Python 包生态（<code>llama-index-core</code> 及各类 <code>llama-index-*</code> 集成包），侧重<strong>知识层</strong>；消息 &#x2F; 模型 &#x2F; LCEL 见 LangChain，环与检查点见 LangGraph。三者可叠用，不是三选一。</p>
+</blockquote>
+<p>下文配图均为科普示意，<strong>非</strong>官方架构图。</p>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/llamaindex-fig01-stack-layers.png" alt="三层栈：LangGraph 编排、LangChain 能力、LlamaIndex 知识（科普示意）"></p>
+<hr>
+<h2 id="1-一句话定位"><a href="#1-一句话定位" class="headerlink" title="1. 一句话定位"></a>1. 一句话定位</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>LLM 应用的<strong>知识层</strong>：解析、切块、索引、召回、合成、把 QueryEngine 当 Agent 工具</td>
+</tr>
+<tr>
+<td>输入 → 输出</td>
+<td>常见为 <code>Document</code> &#x2F; <code>query: str</code> → <code>Response</code>（含 <code>source_nodes</code>）</td>
+</tr>
+<tr>
+<td>典型入口</td>
+<td><code>VectorStoreIndex.from_documents()</code>、<code>as_query_engine().query()</code>、<code>FunctionAgent.run()</code></td>
+</tr>
+<tr>
+<td>与 LangChain &#x2F; LangGraph</td>
+<td>检索质量走本层；ChatModel 胶水仍可用 LangChain；<strong>环、checkpoint、HITL</strong> 交给 LangGraph</td>
+</tr>
+</tbody></table>
+<p><strong>出现背景</strong>：LlamaIndex 约 2022 年起把「把私有数据接到 LLM」做成产品，早期叫 GPT Index；2024 年起补 <strong>Workflows</strong>（事件驱动编排）和 <strong>FunctionAgent &#x2F; AgentWorkflow</strong>。本系列示例按 <strong>0.14.x + 拆分包</strong> 写法。</p>
+<hr>
+<h2 id="2-LlamaIndex-在-Agent-栈中的位置"><a href="#2-LlamaIndex-在-Agent-栈中的位置" class="headerlink" title="2. LlamaIndex 在 Agent 栈中的位置"></a>2. LlamaIndex 在 Agent 栈中的位置</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">用户 / API</span><br><span class="line">    ↓</span><br><span class="line">LangGraph（可选）—— 图编排、checkpoint、interrupt</span><br><span class="line">    ↓</span><br><span class="line">LangChain（可选）—— ChatModel、Prompt、Tool、LCEL</span><br><span class="line">    ↓</span><br><span class="line">LlamaIndex —— Document / Node、Index、Retriever、QueryEngine</span><br><span class="line">    ↓</span><br><span class="line">向量库 / 解析器 / 本地推理 —— Qdrant、LlamaParse、Ollama…</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>解决的问题</th>
+<th>本目录是否专讲</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent 通用概念（ReAct、选型）</td>
+<td>为什么要工具、怎么评估</td>
+<td>见 <code>02.开发-16.Agent开发/</code></td>
+</tr>
+<tr>
+<td><strong>LangChain</strong></td>
+<td>怎么调模型、怎么绑工具、怎么串链</td>
+<td>见 <code>02.开发-16.Agent-langchain/</code></td>
+</tr>
+<tr>
+<td><strong>LangGraph</strong></td>
+<td>多步失败重试、会话恢复、人工审批</td>
+<td>见 <code>02.开发-16.Agent-Langgraph/</code></td>
+</tr>
+<tr>
+<td>RAG 业务架构</td>
+<td>切分策略、召回评测、忠实度口径</td>
+<td>见 <code>02.开发-15.RAG/</code></td>
+</tr>
+<tr>
+<td><strong>LlamaIndex</strong></td>
+<td>上述 RAG 步骤用哪套 API 落地</td>
+<td><strong>是</strong></td>
+</tr>
+</tbody></table>
+<p>生产常见组合：LlamaIndex 管 ingest &#x2F; index &#x2F; retrieve &#x2F; synthesize；LangGraph 管工具环、失败重试、HITL、会话恢复；LangChain 在图节点内当 ChatModel &#x2F; Tool 胶水（也可全程用 LlamaIndex 自己的 LLM 封装）。</p>
+<hr>
+<h2 id="3-包拆分地图（安装前必读）"><a href="#3-包拆分地图（安装前必读）" class="headerlink" title="3. 包拆分地图（安装前必读）"></a>3. 包拆分地图（安装前必读）</h2><p>LlamaIndex 是<strong>多包 monorepo</strong>，按需安装，不必一次装全站。</p>
+<table>
+<thead>
+<tr>
+<th>PyPI 包</th>
+<th>职责</th>
+<th>是否几乎必装</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>llama-index-core</code></td>
+<td>Document、Index、Retriever、QueryEngine、Agent、Workflow 抽象</td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>llama-index</code></td>
+<td>入门伞包：core + 一组 OpenAI 等默认集成</td>
+<td>入门可选；本系列不依赖它</td>
+</tr>
+<tr>
+<td><code>llama-index-llms-ollama</code></td>
+<td>本地 Ollama 生成模型</td>
+<td>本系列默认</td>
+</tr>
+<tr>
+<td><code>llama-index-embeddings-ollama</code></td>
+<td>本地 Ollama 嵌入</td>
+<td>本系列默认</td>
+</tr>
+<tr>
+<td><code>llama-index-llms-openai</code> &#x2F; <code>llama-index-embeddings-openai</code></td>
+<td>云端 OpenAI</td>
+<td>按模型选</td>
+</tr>
+<tr>
+<td><code>llama-index-vector-stores-*</code></td>
+<td>Qdrant &#x2F; Milvus &#x2F; pgvector 等</td>
+<td>生产按需</td>
+</tr>
+<tr>
+<td><code>llama-index-readers-*</code> &#x2F; LlamaHub</td>
+<td>数据连接器</td>
+<td>按数据源</td>
+</tr>
+<tr>
+<td><code>llama-parse</code></td>
+<td>复杂 PDF 版面解析</td>
+<td>扫描件 &#x2F; 双栏论文按需</td>
+</tr>
+<tr>
+<td><code>llama-index-workflows</code></td>
+<td>Workflows 独立包；core 仍从 <code>llama_index.core.workflow</code> 再导出</td>
+<td>编排专篇按需</td>
+</tr>
+</tbody></table>
+<p>官方文档常默认 OpenAI。<strong>未显式设置 <code>Settings.embed_model</code> &#x2F; <code>Settings.llm</code> 时会打 OpenAI</strong>，与「本机已装 Ollama」无关。</p>
+<hr>
+<h2 id="4-环境与安装"><a href="#4-环境与安装" class="headerlink" title="4. 环境与安装"></a>4. 环境与安装</h2><h3 id="4-1-要求"><a href="#4-1-要求" class="headerlink" title="4.1 要求"></a>4.1 要求</h3><ul>
+<li><strong>Python 3.10+</strong></li>
+<li>推荐虚拟环境：<code>venv</code> &#x2F; <code>conda</code> &#x2F; <code>uv</code></li>
+<li>本系列默认本地 <strong>Ollama</strong>：先 <code>ollama serve</code>，再 pull 生成模型与嵌入模型</li>
+</ul>
+<p><strong>版本锚点</strong>（检索于 2026-08-20 PyPI）：</p>
+<table>
+<thead>
+<tr>
+<th>包</th>
+<th>当时最新稳定版</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>llama-index</code></td>
+<td><strong>0.14.23</strong></td>
+<td>伞包；依赖 <code>llama-index-core&gt;=0.14.23,&lt;0.15</code></td>
+</tr>
+<tr>
+<td><code>llama-index-core</code></td>
+<td><strong>0.14.23</strong></td>
+<td>知识层抽象</td>
+</tr>
+<tr>
+<td><code>llama-index-workflows</code></td>
+<td>独立包，core 再导出</td>
+<td>Event 驱动编排</td>
+</tr>
+</tbody></table>
+<p>安装仍用 <code>pip install -U ...</code>；专篇若行为依赖小版本，在该篇标明「验证于 x.x.x」。</p>
+<h3 id="4-2-最小安装（Ollama-示例）"><a href="#4-2-最小安装（Ollama-示例）" class="headerlink" title="4.2 最小安装（Ollama 示例）"></a>4.2 最小安装（Ollama 示例）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">python -m venv .venv</span><br><span class="line"><span class="built_in">source</span> .venv/bin/activate   <span class="comment"># Windows: .venv\Scripts\activate</span></span><br><span class="line"></span><br><span class="line">pip install -U llama-index-core llama-index-llms-ollama llama-index-embeddings-ollama</span><br><span class="line"></span><br><span class="line">ollama pull qwen3.5:9b</span><br><span class="line">ollama pull nomic-embed-text</span><br></pre></td></tr></table></figure>
+
+<p>云厂商示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pip install -U llama-index-llms-openai llama-index-embeddings-openai</span><br><span class="line"><span class="built_in">export</span> OPENAI_API_KEY=<span class="string">&quot;sk-...&quot;</span>   <span class="comment"># 勿提交到 Git</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-验证安装"><a href="#4-3-验证安装" class="headerlink" title="4.3 验证安装"></a>4.3 验证安装</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&quot;from importlib.metadata import version; print(&#x27;ok&#x27;, version(&#x27;llama-index-core&#x27;))&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>无报错即基础环境可用。</p>
+<h3 id="4-4-常见安装问题"><a href="#4-4-常见安装问题" class="headerlink" title="4.4 常见安装问题"></a>4.4 常见安装问题</h3><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ModuleNotFoundError: llama_index.llms.ollama</code></td>
+<td>未装集成包：<code>pip install llama-index-llms-ollama</code></td>
+</tr>
+<tr>
+<td>本地模型却请求 OpenAI</td>
+<td>未设 <code>Settings.llm</code> &#x2F; <code>Settings.embed_model</code></td>
+</tr>
+<tr>
+<td><code>ServiceContext</code> 找不到</td>
+<td>0.10 后改为全局 <code>Settings</code>；对照<a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/settings/">官方 Settings</a></td>
+</tr>
+<tr>
+<td><code>GPTSimpleVectorIndex</code></td>
+<td>2023 旧 API；改用 <code>VectorStoreIndex</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-核心抽象（读专篇前的最小概念）"><a href="#5-核心抽象（读专篇前的最小概念）" class="headerlink" title="5. 核心抽象（读专篇前的最小概念）"></a>5. 核心抽象（读专篇前的最小概念）</h2><p>LlamaIndex 的主轴不是「消息列表」，而是 <strong>Document → Node → Index → Retriever →（Postprocessor）→ Response Synthesizer</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>做什么</th>
+<th>接近谁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Document</code></td>
+<td>一份原始来源（PDF、网页、API 结果）</td>
+<td>LangChain <code>Document</code></td>
+</tr>
+<tr>
+<td><code>Node</code></td>
+<td>带 metadata &#x2F; 父子关系的可索引块</td>
+<td>切分后的 chunk，多了关系字段</td>
+</tr>
+<tr>
+<td><code>Index</code>（如 <code>VectorStoreIndex</code>）</td>
+<td>为 Node 建可查询结构</td>
+<td>LangChain <code>VectorStore</code> + 检索策略</td>
+</tr>
+<tr>
+<td><code>Retriever</code></td>
+<td>给定 query 返回相关 Node</td>
+<td>LangChain <code>BaseRetriever</code></td>
+</tr>
+<tr>
+<td><code>NodePostprocessor</code></td>
+<td>重排、过滤、压缩</td>
+<td>compressor &#x2F; reranker</td>
+</tr>
+<tr>
+<td><code>QueryEngine</code></td>
+<td>检索 + 合成，一次问答</td>
+<td>LCEL：<code>retriever | prompt | model</code></td>
+</tr>
+<tr>
+<td><code>ChatEngine</code></td>
+<td>带历史的多轮数据对话</td>
+<td>新项目优先 LangGraph checkpoint</td>
+</tr>
+<tr>
+<td><code>FunctionAgent</code></td>
+<td>把函数 &#x2F; QueryEngine 当工具循环调用</td>
+<td>LangChain <code>create_agent</code></td>
+</tr>
+<tr>
+<td><code>Workflow</code>（<code>@step</code> + Event）</td>
+<td>事件驱动多步编排</td>
+<td>LangGraph 的近邻，<strong>不是同一模型</strong></td>
+</tr>
+<tr>
+<td><code>AgentWorkflow</code></td>
+<td>多 Agent 交接</td>
+<td>LangGraph Subgraph &#x2F; handoff</td>
+</tr>
+</tbody></table>
+<p><img src="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-00.%E6%A6%82%E8%BF%B0%E4%B8%8E%E5%AE%89%E8%A3%85/llamaindex-fig02-rag-pipeline.png" alt="Document 到 QueryEngine 的六站流水线（科普示意）"></p>
+<p>一次 Naive RAG 的数据流：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1. Reader 把文件变成 Document</span><br><span class="line">2. NodeParser 切成 Node（chunk_size / overlap / metadata）</span><br><span class="line">3. Embedding 写入 VectorStoreIndex</span><br><span class="line">4. query 被编码，Retriever 取 top-k NodeWithScore</span><br><span class="line">5. 可选 Postprocessor（rerank / 元数据过滤）</span><br><span class="line">6. ResponseSynthesizer 把 Node + 问题交给 LLM</span><br><span class="line">7. 返回 Response；引用看 response.source_nodes</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>段末注释</strong>：<strong>检索增强生成</strong>（retrieval-augmented generation，<strong>RAG</strong>）&#x3D; 先检索相关片段，再让模型基于片段生成。QueryEngine 默认是这条 DAG；工具失败再检索、审批后再发信，要上 Agent 或 LangGraph。</p>
+</blockquote>
+<hr>
+<h2 id="6-LlamaIndex-Workflows-vs-LangGraph"><a href="#6-LlamaIndex-Workflows-vs-LangGraph" class="headerlink" title="6. LlamaIndex Workflows vs LangGraph"></a>6. LlamaIndex Workflows vs LangGraph</h2><p>两边都叫「workflow」，运行时模型不同：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>LangGraph</th>
+<th>LlamaIndex Workflows</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>调度单位</td>
+<td>节点读写共享 <code>State</code>，边决定下一拍</td>
+<td><code>@step</code> 消费 &#x2F; 发出<strong>类型化 Event</strong></td>
+</tr>
+<tr>
+<td>状态</td>
+<td><code>TypedDict</code> + reducer，编译期契约</td>
+<td><code>Context</code>；默认 run 之间无记忆，要显式传入</td>
+</tr>
+<tr>
+<td>持久化</td>
+<td><code>checkpointer</code> + <code>thread_id</code> 一等公民</td>
+<td>有 durable&#x2F;checkpoint，文档与生态厚度弱于 LangGraph</td>
+</tr>
+<tr>
+<td>HITL</td>
+<td><code>interrupt</code> &#x2F; <code>Command(resume=...)</code></td>
+<td><code>wait_for_event</code> 能做、不是默认心智</td>
+</tr>
+<tr>
+<td>擅长</td>
+<td>有环 Agent、审批、可恢复长任务</td>
+<td>RAG 多步 DAG（改写 → 多路召回 → 重排 → 合成）</td>
+</tr>
+</tbody></table>
+<p>选型：<strong>流程形状是「知识管道」→ LlamaIndex；是「状态机 + 环」→ LangGraph。</strong> 不必在 LlamaIndex 里再造一套 Pregel。</p>
+<hr>
+<h2 id="7-最小可运行示例"><a href="#7-最小可运行示例" class="headerlink" title="7. 最小可运行示例"></a>7. 最小可运行示例</h2><p>先 <code>ollama serve</code>，并已 <code>ollama pull qwen3.5:9b</code> 与 <code>nomic-embed-text</code>。把待问文档放进 <code>./data/</code>。</p>
+<h3 id="7-1-知识层：QueryEngine"><a href="#7-1-知识层：QueryEngine" class="headerlink" title="7.1 知识层：QueryEngine"></a>7.1 知识层：QueryEngine</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> VectorStoreIndex, SimpleDirectoryReader, Settings</span><br><span class="line"><span class="keyword">from</span> llama_index.llms.ollama <span class="keyword">import</span> Ollama</span><br><span class="line"><span class="keyword">from</span> llama_index.embeddings.ollama <span class="keyword">import</span> OllamaEmbedding</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关键参数：必须同时关掉默认 OpenAI</span></span><br><span class="line">Settings.llm = Ollama(model=<span class="string">&quot;qwen3.5:9b&quot;</span>, request_timeout=<span class="number">120.0</span>, temperature=<span class="number">0</span>)</span><br><span class="line">Settings.embed_model = OllamaEmbedding(</span><br><span class="line">    model_name=<span class="string">&quot;nomic-embed-text&quot;</span>,</span><br><span class="line">    base_url=<span class="string">&quot;http://localhost:11434&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输入：./data 下的文本 / PDF</span></span><br><span class="line">documents = SimpleDirectoryReader(<span class="string">&quot;data&quot;</span>).load_data()</span><br><span class="line">index = VectorStoreIndex.from_documents(documents)</span><br><span class="line">qe = index.as_query_engine(similarity_top_k=<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出：Response；引用在 source_nodes</span></span><br><span class="line">resp = qe.query(<span class="string">&quot;这篇文献的实验对象是什么物种？&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(resp)</span><br><span class="line"><span class="keyword">for</span> n <span class="keyword">in</span> resp.source_nodes:</span><br><span class="line">    <span class="built_in">print</span>(n.node_id, n.score, n.metadata)</span><br></pre></td></tr></table></figure>
+
+<p>预期形态：答案句含物种名（措辞会变）；至少打印若干 <code>node_id</code> &#x2F; <code>score</code> &#x2F; <code>metadata</code>。生产异步服务用 <code>await qe.aquery(...)</code>。</p>
+<p>要点：</p>
+<ul>
+<li><code>Settings</code> 是进程级默认；也可在 <code>from_documents(embed_model=...)</code>、<code>as_query_engine(llm=...)</code> 局部覆盖。</li>
+<li><code>query()</code> 一次走完检索 + 生成；审计看 <code>source_nodes</code>，不要只信 <code>str(resp)</code>。</li>
+<li>避免每次启动全量重建：</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">index.storage_context.persist(<span class="string">&quot;storage&quot;</span>)</span><br><span class="line"><span class="comment"># 下次：</span></span><br><span class="line"><span class="keyword">from</span> llama_index.core <span class="keyword">import</span> StorageContext, load_index_from_storage</span><br><span class="line">index = load_index_from_storage(StorageContext.from_defaults(persist_dir=<span class="string">&quot;storage&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-2-Agent：QueryEngine-当工具"><a href="#7-2-Agent：QueryEngine-当工具" class="headerlink" title="7.2 Agent：QueryEngine 当工具"></a>7.2 Agent：QueryEngine 当工具</h3><p>有 native function calling 的模型优先 <code>FunctionAgent</code>；无工具调用的模型用 <code>ReActAgent</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"><span class="keyword">from</span> llama_index.core.agent.workflow <span class="keyword">import</span> FunctionAgent</span><br><span class="line"><span class="keyword">from</span> llama_index.core.tools <span class="keyword">import</span> QueryEngineTool</span><br><span class="line"></span><br><span class="line">search = QueryEngineTool.from_defaults(</span><br><span class="line">    query_engine=qe,</span><br><span class="line">    name=<span class="string">&quot;paper_search&quot;</span>,</span><br><span class="line">    description=<span class="string">&quot;检索本地论文，回答方法、剂量、物种等事实问题。&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">agent = FunctionAgent(</span><br><span class="line">    tools=[search],</span><br><span class="line">    llm=Settings.llm,</span><br><span class="line">    system_prompt=<span class="string">&quot;只根据检索结果回答；没有证据就说不知道。&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="comment"># 输入：自然语言任务；输出：Agent 终态文本</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="keyword">await</span> agent.run(<span class="string">&quot;实验对象是什么物种？&quot;</span>))</span><br><span class="line"></span><br><span class="line">asyncio.run(main())</span><br></pre></td></tr></table></figure>
+
+<p>多轮要显式传 <code>Context</code>，默认两次 <code>run</code> 之间<strong>无记忆</strong>。多角色交接用 <code>AgentWorkflow</code>。有环、审批、进程重启续跑时，把同一个 <code>QueryEngine</code> 包成工具交给 LangGraph 节点，不要在 QueryEngine 上硬撑。</p>
+<h3 id="重要配置参数（入门）"><a href="#重要配置参数（入门）" class="headerlink" title="重要配置参数（入门）"></a>重要配置参数（入门）</h3><table>
+<thead>
+<tr>
+<th>参数（API 名）</th>
+<th>类型 &#x2F; 默认值</th>
+<th>功能说明</th>
+<th>作用与影响</th>
+<th>参考起点 &#x2F; 常用范围</th>
+<th>配置指导</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Settings.llm</code></td>
+<td>LLM 实例 &#x2F; 默认 OpenAI</td>
+<td>全局生成模型；QueryEngine &#x2F; Agent 未局部指定时使用</td>
+<td>未设则打云端 API；设错模型则工具调用失败</td>
+<td><code>Ollama(model=&quot;qwen3.5:9b&quot;)</code></td>
+<td>本系列必设；与 embed 成对出现</td>
+</tr>
+<tr>
+<td><code>Settings.embed_model</code></td>
+<td>Embedding 实例 &#x2F; 默认 OpenAI</td>
+<td>切块入库与 query 编码</td>
+<td>未设则本地 LLM 仍会请求 OpenAI embedding</td>
+<td><code>OllamaEmbedding(model_name=&quot;nomic-embed-text&quot;)</code></td>
+<td>与生成模型分开 pull</td>
+</tr>
+<tr>
+<td><code>Settings.chunk_size</code></td>
+<td>int &#x2F; 1024</td>
+<td>NodeParser 默认块长（token 量级）</td>
+<td>过大混入噪声，过小切断方法句</td>
+<td>256～1024</td>
+<td>方法节、表格宜偏小并加 overlap</td>
+</tr>
+<tr>
+<td><code>Settings.chunk_overlap</code></td>
+<td>int &#x2F; 20</td>
+<td>相邻 Node 重叠</td>
+<td>过小丢跨段指代，过大重复占上下文</td>
+<td>20～128</td>
+<td>与 chunk_size 联动，约 10%～20%</td>
+</tr>
+<tr>
+<td><code>similarity_top_k</code></td>
+<td>int &#x2F; 2</td>
+<td><code>as_query_engine</code> &#x2F; <code>as_retriever</code> 召回条数</td>
+<td>过小漏证据，过大稀释注意力与费用</td>
+<td>5～10（入门）</td>
+<td>后面有 rerank 可先放大再截断</td>
+</tr>
+<tr>
+<td><code>response_mode</code></td>
+<td>str &#x2F; <code>&quot;compact&quot;</code></td>
+<td>合成器如何把多 Node 喂给 LLM</td>
+<td><code>compact</code> 拼上下文；<code>refine</code> 逐段迭代更稳也更贵；<code>tree_summarize</code> 适合长汇总</td>
+<td><code>compact</code> &#x2F; <code>refine</code> &#x2F; <code>tree_summarize</code></td>
+<td>单事实用 compact；综述用 tree_summarize</td>
+</tr>
+<tr>
+<td><code>Ollama.request_timeout</code></td>
+<td>float &#x2F; 30</td>
+<td>单次生成 HTTP 超时秒数</td>
+<td>过短误杀本地慢模型</td>
+<td>60～180</td>
+<td>长上下文加大</td>
+</tr>
+<tr>
+<td><code>FunctionAgent.system_prompt</code></td>
+<td>str</td>
+<td>Agent 角色与引用约束</td>
+<td>不写「无证据则拒答」时易把工具噪声写成事实</td>
+<td>短系统提示 + 工具 description</td>
+<td>工具 description 决定会不会被选中</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-推荐阅读顺序"><a href="#8-推荐阅读顺序" class="headerlink" title="8. 推荐阅读顺序"></a>8. 推荐阅读顺序</h2><p>配合 <a href="./LlamaIndex-00.%E7%9F%A5%E8%AF%86%E7%82%B9%E7%B4%A2%E5%BC%95.md">LlamaIndex-00.知识点索引</a> 使用。</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>专篇主题</th>
+<th>你会获得什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Document、Node、Reader</td>
+<td>会把文件变成带 metadata 的块</td>
+</tr>
+<tr>
+<td>2</td>
+<td>NodeParser、IngestionPipeline</td>
+<td>会切分、会增量入库</td>
+</tr>
+<tr>
+<td>3</td>
+<td>VectorStoreIndex 与 persist</td>
+<td>会建索引、会避免全量重建</td>
+</tr>
+<tr>
+<td>3b</td>
+<td>PropertyGraphIndex</td>
+<td>会抽边、会沿 hop 回填原文</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Retriever、hybrid、Router</td>
+<td>会多路召回与分流</td>
+</tr>
+<tr>
+<td>5</td>
+<td>QueryEngine、ResponseSynthesizer、source_nodes</td>
+<td>会问答且能审计引用</td>
+</tr>
+<tr>
+<td>6</td>
+<td>NodePostprocessor &#x2F; Rerank</td>
+<td>会压噪声</td>
+</tr>
+<tr>
+<td>7</td>
+<td>FunctionAgent + QueryEngineTool</td>
+<td>检索成为工具</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Workflows</td>
+<td>RAG 多步 DAG 的事件编排</td>
+</tr>
+<tr>
+<td>9+</td>
+<td>作为 LangGraph 节点</td>
+<td>环、checkpoint、HITL</td>
+</tr>
+</tbody></table>
+<p>若完全没接触过 RAG 评测口径，并行阅读 <code>02.开发-15.RAG/</code> 的阶段概述（方法层，非本目录 API）。</p>
+<hr>
+<h2 id="9-何时只用-LlamaIndex、何时上-LangGraph"><a href="#9-何时只用-LlamaIndex、何时上-LangGraph" class="headerlink" title="9. 何时只用 LlamaIndex、何时上 LangGraph"></a>9. 何时只用 LlamaIndex、何时上 LangGraph</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单库文档问答、要引用</td>
+<td><strong>只 LlamaIndex QueryEngine</strong></td>
+</tr>
+<tr>
+<td>多索引路由（论文 vs SOP vs SQL）</td>
+<td>LlamaIndex <code>RouterRetriever</code> &#x2F; <code>RouterQueryEngine</code></td>
+</tr>
+<tr>
+<td>改写 + 混合检索 + 重排的 DAG</td>
+<td>IngestionPipeline + Retriever + Postprocessor；复杂再上 Workflows</td>
+</tr>
+<tr>
+<td>工具失败重试、多步规划</td>
+<td>LangGraph；检索节点里调 LlamaIndex</td>
+</tr>
+<tr>
+<td>进程重启续跑、发信前审批</td>
+<td><strong>LangGraph checkpointer + interrupt</strong></td>
+</tr>
+<tr>
+<td>线性 prompt | model、无私有库</td>
+<td>只 LangChain，不必上 LlamaIndex</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-调试与观测（入门）"><a href="#10-调试与观测（入门）" class="headerlink" title="10. 调试与观测（入门）"></a>10. 调试与观测（入门）</h2><table>
+<thead>
+<tr>
+<th>手段</th>
+<th>用法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>打印 <code>source_nodes</code></td>
+<td><code>node_id</code>、<code>score</code>、<code>metadata</code>、<code>text</code> 前 200 字</td>
+</tr>
+<tr>
+<td><code>Settings.callback_manager</code></td>
+<td>Token 计数、事件回调</td>
+</tr>
+<tr>
+<td>向量库自检</td>
+<td>建完索引用同一句 query 看 top-k 是否含金标准段</td>
+</tr>
+<tr>
+<td>OpenTelemetry &#x2F; Phoenix</td>
+<td>可选 <code>llama-index-instrumentation</code>；LangGraph 侧仍用 LangSmith</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="11-易踩坑"><a href="#11-易踩坑" class="headerlink" title="11. 易踩坑"></a>11. 易踩坑</h2><ol>
+<li><strong>未设 <code>Settings.embed_model</code></strong>：生成走 Ollama，嵌入仍打 OpenAI。  </li>
+<li><strong>只 <code>print(str(response))</code></strong>：丢掉引用，无法审计幻觉。  </li>
+<li><strong>每次启动 <code>from_documents</code> 全量重建</strong>：应用 <code>persist</code> 或外部向量库。  </li>
+<li><strong>用 QueryEngine 硬撑多步工具环 &#x2F; HITL</strong>：控制流交给 LangGraph。  </li>
+<li><strong>照抄 2023 import</strong>：<code>GPTSimpleVectorIndex</code>、<code>ServiceContext</code> 已失效。  </li>
+<li><strong>把 <code>FunctionAgent</code> 的 <code>Context</code> 当成生产 checkpointer</strong>：进程退出即失；要持久化用 LangGraph Saver。</li>
+</ol>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>LlamaIndex 提供 <strong>Document &#x2F; Node &#x2F; Index &#x2F; Retriever &#x2F; QueryEngine</strong>，是 Agent 应用的<strong>知识层</strong>。  </li>
+<li>安装按包拆分：<strong><code>llama-index-core</code> + LLM&#x2F;Embedding 集成包</strong>；Python <strong>3.10+</strong>；本系列默认 Ollama。  </li>
+<li>先跑通 <strong>Reader → VectorStoreIndex → query + source_nodes</strong>，再把 QueryEngine 包成 <code>FunctionAgent</code> 工具。  </li>
+<li>出现<strong>环、持久化、审批</strong>时，检索仍用本层，编排转到 LangGraph。</li>
+</ul>
+<hr>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/getting_started/concepts/">LlamaIndex 概念</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/getting_started/starter_example/">Starter（Agent + RAG）</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/settings/">Settings</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/module_guides/indexing/index_guide/">索引类型</a>  </li>
+<li><a target="_blank" rel="noopener" href="https://docs.llamaindex.ai/en/stable/understanding/workflows/">Workflows</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Agent/" rel="tag"><i class="fa fa-tag"></i> Agent</a>
+          
+            <a href="/tags/RAG/" rel="tag"><i class="fa fa-tag"></i> RAG</a>
+          
+            <a href="/tags/%E5%AE%89%E8%A3%85/" rel="tag"><i class="fa fa-tag"></i> 安装</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-langchain/LangChain-03-%E6%B6%88%E6%81%AF-Message%E7%B1%BB%E5%9E%8B/" rel="next" title="Message类型">
+                <i class="fa fa-chevron-left"></i> Message类型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-16.Agent-LlamaIndex/LlamaIndex-03-%E7%B4%A2%E5%BC%95-VectorStoreIndex/" rel="prev" title="VectorStoreIndex">
+                VectorStoreIndex <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text">1. 一句话定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-LlamaIndex-%E5%9C%A8-Agent-%E6%A0%88%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">2. LlamaIndex 在 Agent 栈中的位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8C%85%E6%8B%86%E5%88%86%E5%9C%B0%E5%9B%BE%EF%BC%88%E5%AE%89%E8%A3%85%E5%89%8D%E5%BF%85%E8%AF%BB%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">3. 包拆分地图（安装前必读）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%8E%AF%E5%A2%83%E4%B8%8E%E5%AE%89%E8%A3%85"><span class="nav-number">4.</span> <span class="nav-text">4. 环境与安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E8%A6%81%E6%B1%82"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E6%9C%80%E5%B0%8F%E5%AE%89%E8%A3%85%EF%BC%88Ollama-%E7%A4%BA%E4%BE%8B%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 最小安装（Ollama 示例）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E9%AA%8C%E8%AF%81%E5%AE%89%E8%A3%85"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 验证安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E5%B8%B8%E8%A7%81%E5%AE%89%E8%A3%85%E9%97%AE%E9%A2%98"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 常见安装问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%A0%B8%E5%BF%83%E6%8A%BD%E8%B1%A1%EF%BC%88%E8%AF%BB%E4%B8%93%E7%AF%87%E5%89%8D%E7%9A%84%E6%9C%80%E5%B0%8F%E6%A6%82%E5%BF%B5%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. 核心抽象（读专篇前的最小概念）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-LlamaIndex-Workflows-vs-LangGraph"><span class="nav-number">6.</span> <span class="nav-text">6. LlamaIndex Workflows vs LangGraph</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">7.</span> <span class="nav-text">7. 最小可运行示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E7%9F%A5%E8%AF%86%E5%B1%82%EF%BC%9AQueryEngine"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 知识层：QueryEngine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-Agent%EF%BC%9AQueryEngine-%E5%BD%93%E5%B7%A5%E5%85%B7"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 Agent：QueryEngine 当工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%EF%BC%88%E5%85%A5%E9%97%A8%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">重要配置参数（入门）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="nav-number">8.</span> <span class="nav-text">8. 推荐阅读顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%BD%95%E6%97%B6%E5%8F%AA%E7%94%A8-LlamaIndex%E3%80%81%E4%BD%95%E6%97%B6%E4%B8%8A-LangGraph"><span class="nav-number">9.</span> <span class="nav-text">9. 何时只用 LlamaIndex、何时上 LangGraph</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E8%B0%83%E8%AF%95%E4%B8%8E%E8%A7%82%E6%B5%8B%EF%BC%88%E5%85%A5%E9%97%A8%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">10. 调试与观测（入门）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E6%98%93%E8%B8%A9%E5%9D%91"><span class="nav-number">11.</span> <span class="nav-text">11. 易踩坑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">12.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">13.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

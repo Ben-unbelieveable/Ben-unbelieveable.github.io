@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+  <script>
+    (function(){
+      if(''){
+        if (prompt('请输入文章密码') !== ''){
+          alert('密码错误！');
+          history.back();
+        }
+      }
+    })();
+  </script>
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="FastAPI,HTTP,WebSocket,TCP," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="系列基础知识补充：host&#x2F;port、TCP、HTTP 请求–响应与 keep-alive、WebSocket 长连接结束点、HTTP 流式与 WebSocket 的本质区别；为理解 uvicorn 与 ASGI 铺垫。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络基础-TCP-HTTP与WebSocket">
+<meta property="og:url" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket/index.html">
+<meta property="og:site_name" content="Ben-air">
+<meta property="og:description" content="系列基础知识补充：host&#x2F;port、TCP、HTTP 请求–响应与 keep-alive、WebSocket 长连接结束点、HTTP 流式与 WebSocket 的本质区别；为理解 uvicorn 与 ASGI 铺垫。">
+<meta property="og:locale">
+<meta property="og:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket/image.png">
+<meta property="article:published_time" content="2026-07-17T03:50:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T02:01:00.000Z">
+<meta property="article:author" content="Ben-air">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="HTTP">
+<meta property="article:tag" content="TCP">
+<meta property="article:tag" content="WebSocket">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket/image.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://ben-air.cn/02.开发-02.python-FastAPI/FastAPI-01补.网络基础-TCP-HTTP与WebSocket/"/>
+
+
+
+
+
+  <title>网络基础-TCP-HTTP与WebSocket | Ben-air</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ben-air</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ben-air.cn/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ben-air">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">网络基础-TCP-HTTP与WebSocket</h1>
+        
+
+        <div class="post-meta">
+	  
+
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-07-17T11:50:00+08:00">
+                2026-07-17
+              </time>
+            
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-08-28T10:01:00+08:00">
+                2026-08-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index">
+                    <span itemprop="name">工程实践</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/Python/" itemprop="url" rel="index">
+                    <span itemprop="name">Python</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  系列基础知识补充：host/port、TCP、HTTP 请求–响应与 keep-alive、WebSocket 长连接结束点、HTTP 流式与 WebSocket 的本质区别；为理解 uvicorn 与 ASGI 铺垫。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+      
+      
+
+      
+        <p>本系列：<strong><a href="./FastAPI-00.%E7%B3%BB%E5%88%97%E5%AF%BC%E8%AF%BB%E4%B8%8E%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95.md">00 导读</a></strong> · <strong>01补 网络基础（本文）</strong> · <strong><a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 心智模型</a></strong> · <a href="./FastAPI-02.%E8%B7%AF%E7%94%B1%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B.md">02 路由与数据模型</a> · <strong><a href="./FastAPI-02%E8%A1%A5.HTTP%E8%AF%B7%E6%B1%82%E6%96%B9%E6%B3%95%E5%AF%B9%E6%AF%94%E6%89%8B%E5%86%8C.md">02补 HTTP 方法对比</a></strong> · <a href="./FastAPI-03.%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E4%B8%8E%E5%88%86%E5%B1%82.md">03 依赖注入与分层</a> · <a href="./FastAPI-04.%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%97%A5%E5%BF%97.md">04 中间件异常日志</a> · <a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 异步后台与流式</a> · <a href="./FastAPI-06.%E9%89%B4%E6%9D%83%E4%B8%8E%E5%AE%89%E5%85%A8.md">06 鉴权与安全</a> · <a href="./FastAPI-07.%E6%B5%8B%E8%AF%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E9%AA%A8%E6%9E%B6.md">07 测试与项目骨架</a> · <a href="./FastAPI-08.%E5%AE%9E%E6%88%98-HTTP%E4%B8%8EMCP%E5%85%B1%E8%BF%9B%E7%A8%8B.md">08 实战 HTTP↔MCP</a></p>
+<p><strong>行文：T1 原理篇（补充）</strong>　｜　<strong>本篇方法</strong>：费曼 + 双重编码　｜　<strong>阅读时机</strong>：读 <a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 ASGI</a> 前，或卡在「uvicorn 听端口 &#x2F; 流式 vs WebSocket」时回看</p>
+<hr>
+<h2 id="0-本文解决什么"><a href="#0-本文解决什么" class="headerlink" title="0. 本文解决什么"></a>0. 本文解决什么</h2><p>读 FastAPI &#x2F; uvicorn 时常遇到的空白：</p>
+<ul>
+<li><code>host:port</code>、TCP、「收 HTTP&#x2F;WebSocket 流量」分别是什么？</li>
+<li>HTTP 是不是「回一次响应就结束会话」？</li>
+<li>WebSocket 长连接里，任务何时算结束？</li>
+<li><strong>HTTP 流式输出</strong>和 <strong>WebSocket 多次推送</strong>本质差在哪？</li>
+</ul>
+<p>本篇只补<strong>网络与协议心智模型</strong>，不写业务路由；ASGI 合同见 01，流式代码见 05。</p>
+<hr>
+<h2 id="1-寄信类比：host、port、uvicorn"><a href="#1-寄信类比：host、port、uvicorn" class="headerlink" title="1. 寄信类比：host、port、uvicorn"></a>1. 寄信类比：host、port、uvicorn</h2><p><img src="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-01%E8%A1%A5.%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80-TCP-HTTP%E4%B8%8EWebSocket/image.png" alt="host &#x2F; port &#x2F; TCP &#x2F; HTTP 科普示意"></p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>通俗含义</th>
+<th>常见例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>主机（host）</strong></td>
+<td>哪台机器 &#x2F; 哪栋楼</td>
+<td><code>127.0.0.1</code>（本机）、<code>0.0.0.0</code>（本机所有网卡对外）、域名</td>
+</tr>
+<tr>
+<td><strong>端口（port）</strong></td>
+<td>这栋楼里的哪个窗口</td>
+<td><code>8000</code>、<code>80</code>、<code>443</code></td>
+</tr>
+<tr>
+<td><strong>uvicorn</strong></td>
+<td>守在某个窗口的门房</td>
+<td><code>uvicorn main:app --port 8000</code></td>
+</tr>
+</tbody></table>
+<p>一台机器上同时跑很多程序，不能都抢同一个入口，所以：</p>
+<ul>
+<li><strong>IP &#x2F; 主机名</strong> → 找到机器  </li>
+<li><strong>端口号（0～65535）</strong> → 找到这台机器上的<strong>某一个程序</strong></li>
+</ul>
+<p>uvicorn 的职责可以记成：</p>
+<ol>
+<li>在指定 <code>host:port</code> <strong>值班</strong>（听连接）  </li>
+<li>把进来的字节按 <strong>HTTP &#x2F; WebSocket</strong> 规则拆开  </li>
+<li>按 <strong>ASGI</strong> 约定调用你的 <code>app</code>（<code>scope</code> &#x2F; <code>receive</code> &#x2F; <code>send</code>）——详见 <a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01</a></li>
+</ol>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>TCP</strong>（Transmission Control Protocol，传输控制协议）在两台机器间建立可靠字节通道；<strong>HTTP</strong>（HyperText Transfer Protocol，超文本传输协议）是通道上「请求&#x2F;响应」的说话方式；<strong>WebSocket</strong> 是可在同一连接上持续双向传消息的协议。后文沿用缩写。</p>
+</blockquote>
+<hr>
+<h2 id="2-TCP：先接通电话，再说话"><a href="#2-TCP：先接通电话，再说话" class="headerlink" title="2. TCP：先接通电话，再说话"></a>2. TCP：先接通电话，再说话</h2><p>访问 <code>http://127.0.0.1:8000/ping</code> 时，底层大致是：</p>
+<ol>
+<li>用 <code>127.0.0.1</code> 找到机器（本机即自己）  </li>
+<li>向 <strong>8000</strong> 端口发起 <strong>TCP 连接</strong>（握手 ≈「电话接通」）  </li>
+<li>接通后传送的是<strong>字节流</strong>，本身不懂「这是网页还是聊天」  </li>
+<li>上层协议（HTTP &#x2F; WebSocket）规定这些字节<strong>怎么解读</strong></li>
+</ol>
+<p>没有 TCP，就没有稳定通道；没有 HTTP&#x2F;WebSocket，通道里只是无结构的字节。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">浏览器 / 客户端</span><br><span class="line">    │  host + port</span><br><span class="line">    │  建立 TCP</span><br><span class="line">    │  按 HTTP 或 WebSocket 说话</span><br><span class="line">    ▼</span><br><span class="line">uvicorn（守窗口）</span><br><span class="line">    │  读字节 → 理解协议</span><br><span class="line">    │  调 app(scope, receive, send)</span><br><span class="line">    ▼</span><br><span class="line">FastAPI（路由与业务）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-HTTP：结束的是「这一问一答」，不一定拆线"><a href="#3-HTTP：结束的是「这一问一答」，不一定拆线" class="headerlink" title="3. HTTP：结束的是「这一问一答」，不一定拆线"></a>3. HTTP：结束的是「这一问一答」，不一定拆线</h2><h3 id="3-1-一次交互-vs-底下的连接"><a href="#3-1-一次交互-vs-底下的连接" class="headerlink" title="3.1 一次交互 vs 底下的连接"></a>3.1 一次交互 vs 底下的连接</h3><table>
+<thead>
+<tr>
+<th>层级</th>
+<th>发生什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一次 HTTP 交互</strong></td>
+<td>客户端发一个请求 → 服务器回一个响应 → <strong>这一次事务结束</strong></td>
+</tr>
+<tr>
+<td><strong>底下的 TCP</strong></td>
+<td>常 <strong>不立刻断开</strong>（HTTP&#x2F;1.1 默认 keep-alive），同一条线上还可再发下一个请求</td>
+</tr>
+</tbody></table>
+<p>更准确的说法：</p>
+<blockquote>
+<p>HTTP 是 <strong>请求–响应</strong> 模型：一次请求对应一次完整响应，语义上「这一单办完」。<br><strong>不是</strong>「响应一回去，整个网络会话必然结束」——电话可能还握着，只是这句对话说完了。</p>
+</blockquote>
+<p>HTTP&#x2F;2、HTTP&#x2F;3 还可在一条连接上并行多个请求，但每个请求仍是「问完答完」。</p>
+<h3 id="3-2-和-uvicorn-FastAPI-的关系"><a href="#3-2-和-uvicorn-FastAPI-的关系" class="headerlink" title="3.2 和 uvicorn &#x2F; FastAPI 的关系"></a>3.2 和 uvicorn &#x2F; FastAPI 的关系</h3><ul>
+<li>你写的每个 <code>@app.get</code> &#x2F; <code>@app.post</code>，对应的是 <strong>一次 HTTP 请求–响应</strong>（在 ASGI 里常表现为一次 <code>http</code> scope 调用）。  </li>
+<li>「会话」若指登录态，那是 Cookie &#x2F; Token 等<strong>应用层</strong>概念，不是「TCP 必须一直连着」。</li>
+</ul>
+<hr>
+<h2 id="4-WebSocket：长连接聊天，结束点谁定？"><a href="#4-WebSocket：长连接聊天，结束点谁定？" class="headerlink" title="4. WebSocket：长连接聊天，结束点谁定？"></a>4. WebSocket：长连接聊天，结束点谁定？</h2><p>握手成功后（常从 HTTP「升级」而来），进入 <strong>长连接</strong>：双方可随时推消息，<strong>没有</strong>「每个消息必须有一次响应就结束」的强制规则。</p>
+<h3 id="4-1-连接何时断（协议-运行时）"><a href="#4-1-连接何时断（协议-运行时）" class="headerlink" title="4.1 连接何时断（协议 &#x2F; 运行时）"></a>4.1 连接何时断（协议 &#x2F; 运行时）</h3><ul>
+<li>任一方主动 <strong>close</strong>（正常关）  </li>
+<li>网络中断、进程退出、代理掐断  </li>
+<li>心跳（ping&#x2F;pong）失败被判定掉线</li>
+</ul>
+<h3 id="4-2-业务任务何时算完（应用层）"><a href="#4-2-业务任务何时算完（应用层）" class="headerlink" title="4.2 业务任务何时算完（应用层）"></a>4.2 业务任务何时算完（应用层）</h3><p>协议<strong>不管</strong>「聊天任务做完没」。结束节点要你自己约定，例如：</p>
+<table>
+<thead>
+<tr>
+<th>结束方式</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>显式结束消息</strong></td>
+<td>客户端发 <code>{&quot;type&quot;:&quot;done&quot;}</code>，服务端确认后双方 close</td>
+</tr>
+<tr>
+<td><strong>业务状态完成</strong></td>
+<td>生成结束，发完最后一个 chunk 再发 <code>finish</code></td>
+</tr>
+<tr>
+<td><strong>超时</strong></td>
+<td>60s 无消息 → 服务端关闭</td>
+</tr>
+<tr>
+<td><strong>心跳失败</strong></td>
+<td>多次 ping 无 pong → 关闭</td>
+</tr>
+<tr>
+<td><strong>资源上限</strong></td>
+<td>达到最大时长 &#x2F; 消息数后强制关</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>HTTP</strong>：协议帮你定义「一问一答完事」。<br><strong>WebSocket</strong>：协议只保证「线还通着就能聊」；<strong>任务结束点 &#x3D; 消息约定 &#x2F; 状态机 + 最后 close</strong>。</p>
+</blockquote>
+<hr>
+<h2 id="5-HTTP-流式-vs-WebSocket：本质区别"><a href="#5-HTTP-流式-vs-WebSocket：本质区别" class="headerlink" title="5. HTTP 流式 vs WebSocket：本质区别"></a>5. HTTP 流式 vs WebSocket：本质区别</h2><p>表象都是「分多次把数据给客户端」，<strong>合同不同</strong>。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>HTTP 流式</strong>（含 SSE、<code>StreamingResponse</code>）</th>
+<th><strong>WebSocket</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>本质</strong></td>
+<td><strong>一次请求 → 一次响应</strong>，响应体可<strong>边生成边写出</strong></td>
+<td><strong>一条长连接上的双向消息通道</strong>，每条消息相对独立</td>
+</tr>
+<tr>
+<td><strong>像什么</strong></td>
+<td>点了菜，厨房<strong>分批上菜，这桌上完即结束</strong></td>
+<td>两人拿着<strong>对讲机</strong>，谁都能随时喊，直到挂断</td>
+</tr>
+<tr>
+<td><strong>典型方向</strong></td>
+<td>服务端 → 客户端（客户端先问一次）</td>
+<td><strong>双向</strong></td>
+</tr>
+<tr>
+<td><strong>「多次」是什么</strong></td>
+<td>同一响应的 <strong>chunk &#x2F; event</strong></td>
+<td>多条 <strong>独立 message</strong></td>
+</tr>
+<tr>
+<td><strong>默认结束点</strong></td>
+<td><strong>响应写完</strong>（生成器结束）</td>
+<td><strong>应用约定 + close</strong></td>
+</tr>
+<tr>
+<td><strong>客户端中途插话</strong></td>
+<td>弱（断流或另开请求）</td>
+<td>强（随时发消息）</td>
+</tr>
+</tbody></table>
+<h3 id="5-1-交互模型对照"><a href="#5-1-交互模型对照" class="headerlink" title="5.1 交互模型对照"></a>5.1 交互模型对照</h3><p><strong>HTTP 流式：</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">客户端 ──一次 Request──► 服务器</span><br><span class="line">客户端 ◄──一次 Response（可拆成很多 chunk）── 服务器</span><br><span class="line">          Response 写完 → 这一次 HTTP 事务结束</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>流里的「多次」≠ 多次独立 HTTP 响应，而是<strong>同一个响应体的持续写出</strong>。  </li>
+<li>代码形态见 <a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 流式响应</a>。</li>
+</ul>
+<p><strong>WebSocket：</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">握手之后：</span><br><span class="line">客户端 ◄──► 服务器   （任意次、双向、独立消息）</span><br><span class="line">直到某方 close</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-怎么选"><a href="#5-2-怎么选" class="headerlink" title="5.2 怎么选"></a>5.2 怎么选</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>更合适</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LLM token、日志尾随、进度条、只推不互动</td>
+<td><strong>HTTP 流式 &#x2F; SSE</strong></td>
+</tr>
+<tr>
+<td>双向实时、协同、客户端也要随时发指令</td>
+<td><strong>WebSocket</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>段末注释</strong>：<strong>SSE</strong>（Server-Sent Events，服务器发送事件）是服务端向浏览器单向推送文本事件流的 HTTP 机制；规范上偏单向，实现上常挂在 <code>text/event-stream</code>。</p>
+</blockquote>
+<hr>
+<h2 id="6-和本系列其它篇的衔接"><a href="#6-和本系列其它篇的衔接" class="headerlink" title="6. 和本系列其它篇的衔接"></a>6. 和本系列其它篇的衔接</h2><table>
+<thead>
+<tr>
+<th>读完本篇应能…</th>
+<th>下一站</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>解释 uvicorn 为何要 <code>host:port</code></td>
+<td><a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 ASGI 与请求生命周期</a></td>
+</tr>
+<tr>
+<td>区分「HTTP 事务结束」与「TCP 拆线」</td>
+<td>01、日常调试 keep-alive</td>
+</tr>
+<tr>
+<td>说明流式 ≠ WebSocket</td>
+<td><a href="./FastAPI-05.%E5%BC%82%E6%AD%A5%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E4%B8%8E%E6%B5%81%E5%BC%8F%E5%93%8D%E5%BA%94.md">05 异步与流式</a></td>
+</tr>
+<tr>
+<td>知道长连接结束要自己约定</td>
+<td>05 &#x2F; 实战里的推送设计</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-合书自测"><a href="#7-合书自测" class="headerlink" title="7. 合书自测"></a>7. 合书自测</h2><ol>
+<li>用寄信类比说出 <strong>host、port、TCP、HTTP</strong> 各像什么。  </li>
+<li>「HTTP 回完响应」是否等于「TCP 一定断开」？为什么？  </li>
+<li>WebSocket 上「业务做完」和「连接关闭」分别由谁决定？  </li>
+<li>一句话区分 <strong>HTTP 流式</strong> 与 <strong>WebSocket 多次消息</strong>。</li>
+</ol>
+<hr>
+<h2 id="8-闪卡候选"><a href="#8-闪卡候选" class="headerlink" title="8. 闪卡候选"></a>8. 闪卡候选</h2><table>
+<thead>
+<tr>
+<th>正面</th>
+<th>背面</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>port 是什么？</td>
+<td>同一主机上区分不同服务的「窗口号」</td>
+</tr>
+<tr>
+<td>uvicorn 听端口之后做什么？</td>
+<td>解析 HTTP&#x2F;WS → 调 ASGI <code>app</code></td>
+</tr>
+<tr>
+<td>HTTP 一次事务结束标志？</td>
+<td>该请求的响应完整结束（流式则写完 body）</td>
+</tr>
+<tr>
+<td>HTTP keep-alive 含义？</td>
+<td>TCP 可复用，多次 HTTP 事务共用连接</td>
+</tr>
+<tr>
+<td>WebSocket 任务结束靠？</td>
+<td>应用约定 + close，非协议自动判「业务完」</td>
+</tr>
+<tr>
+<td>流式 vs WebSocket 本质？</td>
+<td>一次响应边写边发 vs 双向消息通道</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>host:port</strong> &#x3D; 寄到哪台机、哪个窗口；<strong>TCP</strong> &#x3D; 先接通；<strong>HTTP&#x2F;WebSocket</strong> &#x3D; 接通后用哪种说话规矩。  </li>
+<li><strong>HTTP</strong> 结束的是一问一答；TCP 往往还能接着用。  </li>
+<li><strong>WebSocket</strong> 是长连接对讲；业务结束点要自己定。  </li>
+<li><strong>流式</strong>仍是 HTTP 的一次响应；<strong>WebSocket</strong> 是升级后的双向通道——别被「都是多次推数据」骗过去。  </li>
+<li><strong>HTTP 方法</strong>（安全&#x2F;幂等、POST vs PUT vs PATCH）见 <strong><a href="./FastAPI-02%E8%A1%A5.HTTP%E8%AF%B7%E6%B1%82%E6%96%B9%E6%B3%95%E5%AF%B9%E6%AF%94%E6%89%8B%E5%86%8C.md">02补</a></strong>。</li>
+</ul>
+<p>下一篇：<strong><a href="./FastAPI-01.%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B-ASGI%E4%B8%8E%E8%AF%B7%E6%B1%82%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.md">01 心智模型：ASGI 与请求生命周期</a></strong>。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/FastAPI/" rel="tag"><i class="fa fa-tag"></i> FastAPI</a>
+          
+            <a href="/tags/HTTP/" rel="tag"><i class="fa fa-tag"></i> HTTP</a>
+          
+            <a href="/tags/WebSocket/" rel="tag"><i class="fa fa-tag"></i> WebSocket</a>
+          
+            <a href="/tags/TCP/" rel="tag"><i class="fa fa-tag"></i> TCP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-02.python-FastAPI/FastAPI-08.%E5%AE%9E%E6%88%98-HTTP%E4%B8%8EMCP%E5%85%B1%E8%BF%9B%E7%A8%8B/" rel="next" title="FastAPI：实战-HTTP与MCP共进程">
+                <i class="fa fa-chevron-left"></i> FastAPI：实战-HTTP与MCP共进程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/02.%E5%BC%80%E5%8F%91-22.LLM-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/5003.%E5%A4%A7%E6%A8%A1%E5%9E%8B-%E6%9E%B6%E6%9E%84-DLP-Affinity-0.%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E/" rel="prev" title="DLP-Affinity：整体结构说明">
+                DLP-Affinity：整体结构说明 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zNTI3OS8xMTgxNQ"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1023</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">909</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E6%9C%AC%E6%96%87%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">0. 本文解决什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AF%84%E4%BF%A1%E7%B1%BB%E6%AF%94%EF%BC%9Ahost%E3%80%81port%E3%80%81uvicorn"><span class="nav-number">2.</span> <span class="nav-text">1. 寄信类比：host、port、uvicorn</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-TCP%EF%BC%9A%E5%85%88%E6%8E%A5%E9%80%9A%E7%94%B5%E8%AF%9D%EF%BC%8C%E5%86%8D%E8%AF%B4%E8%AF%9D"><span class="nav-number">3.</span> <span class="nav-text">2. TCP：先接通电话，再说话</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-HTTP%EF%BC%9A%E7%BB%93%E6%9D%9F%E7%9A%84%E6%98%AF%E3%80%8C%E8%BF%99%E4%B8%80%E9%97%AE%E4%B8%80%E7%AD%94%E3%80%8D%EF%BC%8C%E4%B8%8D%E4%B8%80%E5%AE%9A%E6%8B%86%E7%BA%BF"><span class="nav-number">4.</span> <span class="nav-text">3. HTTP：结束的是「这一问一答」，不一定拆线</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%B8%80%E6%AC%A1%E4%BA%A4%E4%BA%92-vs-%E5%BA%95%E4%B8%8B%E7%9A%84%E8%BF%9E%E6%8E%A5"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 一次交互 vs 底下的连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%92%8C-uvicorn-FastAPI-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 和 uvicorn &#x2F; FastAPI 的关系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-WebSocket%EF%BC%9A%E9%95%BF%E8%BF%9E%E6%8E%A5%E8%81%8A%E5%A4%A9%EF%BC%8C%E7%BB%93%E6%9D%9F%E7%82%B9%E8%B0%81%E5%AE%9A%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">4. WebSocket：长连接聊天，结束点谁定？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E8%BF%9E%E6%8E%A5%E4%BD%95%E6%97%B6%E6%96%AD%EF%BC%88%E5%8D%8F%E8%AE%AE-%E8%BF%90%E8%A1%8C%E6%97%B6%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">4.1 连接何时断（协议 &#x2F; 运行时）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%B8%9A%E5%8A%A1%E4%BB%BB%E5%8A%A1%E4%BD%95%E6%97%B6%E7%AE%97%E5%AE%8C%EF%BC%88%E5%BA%94%E7%94%A8%E5%B1%82%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">4.2 业务任务何时算完（应用层）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-HTTP-%E6%B5%81%E5%BC%8F-vs-WebSocket%EF%BC%9A%E6%9C%AC%E8%B4%A8%E5%8C%BA%E5%88%AB"><span class="nav-number">6.</span> <span class="nav-text">5. HTTP 流式 vs WebSocket：本质区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E4%BA%A4%E4%BA%92%E6%A8%A1%E5%9E%8B%E5%AF%B9%E7%85%A7"><span class="nav-number">6.1.</span> <span class="nav-text">5.1 交互模型对照</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%80%8E%E4%B9%88%E9%80%89"><span class="nav-number">6.2.</span> <span class="nav-text">5.2 怎么选</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%92%8C%E6%9C%AC%E7%B3%BB%E5%88%97%E5%85%B6%E5%AE%83%E7%AF%87%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-number">7.</span> <span class="nav-text">6. 和本系列其它篇的衔接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%90%88%E4%B9%A6%E8%87%AA%E6%B5%8B"><span class="nav-number">8.</span> <span class="nav-text">7. 合书自测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E9%97%AA%E5%8D%A1%E5%80%99%E9%80%89"><span class="nav-number">9.</span> <span class="nav-text">8. 闪卡候选</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ben-air</span>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+      已有<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人访问
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+      总访问<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
